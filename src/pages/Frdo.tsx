@@ -12,7 +12,9 @@ import {
   FileText,
   Building2,
   GraduationCap,
-  Send
+  Send,
+  Scale,
+  ExternalLink
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -139,10 +141,10 @@ const FrdoPage = () => {
                 {
                   title: "Регистрация в системе",
                   items: [
-                    "Получение ЭЦП для организации",
-                    "Настройка защищённого канала",
+                    "Настройка ЭЦП организации",
                     "Регистрация в ФИС ФРДО",
-                    "Обучение работе с системой"
+                    "Обучение работе с системой",
+                    "Подключение к нашему каналу"
                   ]
                 },
                 {
@@ -181,6 +183,42 @@ const FrdoPage = () => {
                 </Card>
               ))}
             </div>
+          </section>
+
+          {/* Legal Basis */}
+          <section className="mb-24">
+            <Card className="luxury-card border-primary/20">
+              <CardContent className="p-8 md:p-12">
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Scale className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-display font-semibold mb-4">
+                      Юридическое <span className="gradient-gold-text">обоснование</span>
+                    </h3>
+                    <p className="text-muted-foreground mb-4 leading-relaxed">
+                      Передача персональных данных в ФИС ФРДО осуществляется на основании 
+                      <strong className="text-foreground"> ФЗ-273 «Об образовании»</strong> (статьи 98, 107) 
+                      и <strong className="text-foreground">ФЗ-152 «О персональных данных»</strong> (статья 6).
+                    </p>
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      Согласно официальному письму Рособрнадзора № Уа-718/07-4080 от 24.07.2020, 
+                      обработка персональных данных при внесении сведений в реестр ФРДО 
+                      осуществляется в соответствии с законодательством и не требует 
+                      дополнительного согласия субъекта.
+                    </p>
+                    <Button variant="heroOutline" size="sm" asChild>
+                      <a href="/docs/rosobrnadzor-legal.pdf" target="_blank" rel="noopener noreferrer">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Письмо Рособрнадзора
+                        <ExternalLink className="w-3 h-3 ml-2" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Pricing */}
