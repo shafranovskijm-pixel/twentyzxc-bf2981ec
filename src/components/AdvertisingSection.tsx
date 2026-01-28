@@ -1,6 +1,25 @@
 import { Button } from "@/components/ui/button";
-import { Megaphone, Target, BarChart3, ArrowRight, Diamond } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Target, Megaphone, BarChart3, ArrowRight, Diamond } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
+
+const platforms = [
+  { 
+    icon: Target, 
+    name: "Яндекс.Директ", 
+    tags: ["Поиск", "РСЯ", "Ретаргетинг"] 
+  },
+  { 
+    icon: Megaphone, 
+    name: "Таргет", 
+    tags: ["VK", "Telegram", "MyTarget"] 
+  },
+  { 
+    icon: BarChart3, 
+    name: "Google Ads", 
+    tags: ["Поиск", "КМС", "YouTube"] 
+  },
+];
 
 const AdvertisingSection = () => {
   return (
@@ -14,7 +33,7 @@ const AdvertisingSection = () => {
       <div className="container relative z-10 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section header */}
-          <div className="text-center mb-20">
+          <div className="text-center mb-16">
             <div className="inline-flex items-center gap-4 mb-6">
               <Diamond className="w-5 h-5 text-primary" />
               <span className="text-sm tracking-[0.2em] uppercase text-primary">Реклама</span>
@@ -24,42 +43,47 @@ const AdvertisingSection = () => {
               Привлекаем
               <span className="gradient-gold-text"> клиентов</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Стратегическая настройка рекламных кампаний с фокусом на результат
-            </p>
           </div>
 
-          {/* Services */}
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
-            <AdCard 
-              icon={<Target className="w-8 h-8" />}
-              title="Яндекс.Директ"
-              features={["Поисковые кампании", "РСЯ", "Ретаргетинг", "Аналитика"]}
-            />
-            <AdCard 
-              icon={<Megaphone className="w-8 h-8" />}
-              title="Таргет"
-              features={["VK Реклама", "Telegram Ads", "MyTarget", "Look-alike"]}
-            />
-            <AdCard 
-              icon={<BarChart3 className="w-8 h-8" />}
-              title="Google Ads"
-              features={["Поиск", "КМС", "YouTube", "Ремаркетинг"]}
-            />
+          {/* Compact Platform Row */}
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-16">
+            {platforms.map((platform) => (
+              <div 
+                key={platform.name}
+                className="flex items-center gap-3 px-6 py-4 luxury-card rounded-sm group hover:border-primary/40 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full border border-primary/40 flex items-center justify-center text-primary group-hover:border-primary transition-colors">
+                  <platform.icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="font-semibold text-sm">{platform.name}</span>
+                  <div className="flex gap-1.5 mt-1">
+                    {platform.tags.map((tag) => (
+                      <Badge 
+                        key={tag} 
+                        variant="outline" 
+                        className="text-[10px] px-1.5 py-0 border-border text-muted-foreground"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-            <AnimatedStatBlock value={500} suffix="+" label="Кампаний запущено" />
-            <AnimatedStatBlock value={30} suffix="%" label="Рост конверсии" />
-            <AnimatedStatBlock value={5} suffix="M+" label="Рекламный бюджет" />
-            <AnimatedStatBlock value={100} suffix="+" label="Клиентов" />
+          {/* Stats - Inline */}
+          <div className="flex flex-wrap justify-center gap-8 md:gap-16 mb-16">
+            <AnimatedStat value={500} suffix="+" label="кампаний" />
+            <AnimatedStat value={30} suffix="%" label="рост конверсии" />
+            <AnimatedStat value={5} suffix="M+" label="бюджет" />
+            <AnimatedStat value={100} suffix="+" label="клиентов" />
           </div>
 
           {/* CTA */}
           <div className="text-center">
-            <p className="text-muted-foreground mb-6">Бесплатный аудит текущих рекламных кампаний</p>
-            <Button variant="hero" size="xl">
+            <Button variant="hero" size="lg">
               Получить аудит
               <ArrowRight className="w-5 h-5" />
             </Button>
@@ -70,38 +94,15 @@ const AdvertisingSection = () => {
   );
 };
 
-interface AdCardProps {
-  icon: React.ReactNode;
-  title: string;
-  features: string[];
-}
-
-const AdCard = ({ icon, title, features }: AdCardProps) => (
-  <div className="luxury-card rounded-sm p-10 group transition-all duration-500 text-center">
-    <div className="w-20 h-20 rounded-full border-2 border-primary/40 flex items-center justify-center text-primary mx-auto mb-8 group-hover:border-primary group-hover:shadow-[0_0_30px_hsl(45_80%_55%/0.2)] transition-all duration-500">
-      {icon}
-    </div>
-    <h3 className="text-2xl font-display font-semibold mb-6">{title}</h3>
-    <ul className="space-y-3">
-      {features.map((feature) => (
-        <li key={feature} className="text-muted-foreground text-sm flex items-center justify-center gap-2">
-          <span className="w-1.5 h-1.5 bg-primary rounded-full" />
-          {feature}
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
-const AnimatedStatBlock = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
+const AnimatedStat = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
   const { ref, displayValue } = useCountUp({ end: value, suffix, duration: 2000 });
   
   return (
     <div ref={ref} className="text-center">
-      <div className="text-3xl md:text-5xl font-display font-bold gradient-gold-text mb-2">
+      <span className="text-3xl md:text-4xl font-display font-bold gradient-gold-text">
         {displayValue}
-      </div>
-      <div className="text-sm text-muted-foreground">{label}</div>
+      </span>
+      <span className="text-sm text-muted-foreground ml-2">{label}</span>
     </div>
   );
 };
