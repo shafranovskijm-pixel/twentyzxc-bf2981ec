@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
+import { useInView } from "@/hooks/use-in-view";
 
 interface Project {
   title: string;
@@ -144,7 +145,7 @@ const Portfolio = () => {
             </h2>
             <div className="grid md:grid-cols-2 gap-8">
               {projects.filter(p => p.featured).map((project, i) => (
-                <FeaturedProjectCard key={i} project={project} />
+                <FeaturedProjectCard key={i} project={project} index={i} />
               ))}
             </div>
           </div>
@@ -157,7 +158,7 @@ const Portfolio = () => {
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.filter(p => !p.featured).map((project, i) => (
-                <ProjectCard key={i} project={project} />
+                <ProjectCard key={i} project={project} index={i} />
               ))}
             </div>
           </div>
@@ -184,97 +185,111 @@ const Portfolio = () => {
   );
 };
 
-const FeaturedProjectCard = ({ project }: { project: Project }) => (
-  <a 
-    href={project.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="group block luxury-card p-8 rounded-sm transition-all duration-500 hover:glow-subtle"
-  >
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h3 className="text-xl font-display font-semibold group-hover:text-primary transition-colors mb-1">
-          {project.title}
-        </h3>
-        {project.location && (
-          <p className="text-sm text-muted-foreground">{project.location}</p>
-        )}
+const FeaturedProjectCard = ({ project, index }: { project: Project; index: number }) => {
+  const [ref, isInView] = useInView<HTMLAnchorElement>({ threshold: 0.1 });
+  
+  return (
+    <a 
+      ref={ref}
+      href={project.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group block luxury-card p-8 rounded-sm transition-all duration-500 hover:glow-subtle
+        ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+      style={{ transitionDelay: `${index * 150}ms` }}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="text-xl font-display font-semibold group-hover:text-primary transition-colors mb-1">
+            {project.title}
+          </h3>
+          {project.location && (
+            <p className="text-sm text-muted-foreground">{project.location}</p>
+          )}
+        </div>
+        <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
       </div>
-      <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-    </div>
-    
-    <p className="text-muted-foreground mb-6 leading-relaxed">
-      {project.description}
-    </p>
-    
-    <div className="flex flex-wrap gap-2 mb-6">
-      {project.tags.map((tag, i) => (
-        <Badge 
-          key={i} 
-          variant="outline" 
-          className="border-border text-xs flex items-center gap-1"
-        >
-          {tagIcons[tag]}
-          {tag}
-        </Badge>
-      ))}
-    </div>
-    
-    {(project.price || project.priceAlt) && (
-      <div className="flex gap-3 pt-4 border-t border-border">
-        {project.price && (
-          <span className="text-sm font-medium text-primary">{project.price}</span>
-        )}
-        {project.priceAlt && (
-          <span className="text-sm text-muted-foreground">{project.priceAlt}</span>
-        )}
+      
+      <p className="text-muted-foreground mb-6 leading-relaxed">
+        {project.description}
+      </p>
+      
+      <div className="flex flex-wrap gap-2 mb-6">
+        {project.tags.map((tag, i) => (
+          <Badge 
+            key={i} 
+            variant="outline" 
+            className="border-border text-xs flex items-center gap-1"
+          >
+            {tagIcons[tag]}
+            {tag}
+          </Badge>
+        ))}
       </div>
-    )}
-  </a>
-);
+      
+      {(project.price || project.priceAlt) && (
+        <div className="flex gap-3 pt-4 border-t border-border">
+          {project.price && (
+            <span className="text-sm font-medium text-primary">{project.price}</span>
+          )}
+          {project.priceAlt && (
+            <span className="text-sm text-muted-foreground">{project.priceAlt}</span>
+          )}
+        </div>
+      )}
+    </a>
+  );
+};
 
-const ProjectCard = ({ project }: { project: Project }) => (
-  <a 
-    href={project.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="group block luxury-card p-6 rounded-sm transition-all duration-300 hover:border-primary/40"
-  >
-    <div className="flex justify-between items-start mb-3">
-      <div>
-        <h3 className="font-semibold group-hover:text-primary transition-colors text-sm mb-0.5">
-          {project.title}
-        </h3>
-        {project.location && (
-          <p className="text-xs text-muted-foreground">{project.location}</p>
-        )}
+const ProjectCard = ({ project, index }: { project: Project; index: number }) => {
+  const [ref, isInView] = useInView<HTMLAnchorElement>({ threshold: 0.1 });
+  
+  return (
+    <a 
+      ref={ref}
+      href={project.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`group block luxury-card p-6 rounded-sm transition-all duration-500 hover:border-primary/40
+        ${isInView ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'}`}
+      style={{ transitionDelay: `${(index % 3) * 100}ms` }}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h3 className="font-semibold group-hover:text-primary transition-colors text-sm mb-0.5">
+            {project.title}
+          </h3>
+          {project.location && (
+            <p className="text-xs text-muted-foreground">{project.location}</p>
+          )}
+        </div>
+        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
       </div>
-      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
-    </div>
-    
-    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-      {project.description}
-    </p>
-    
-    <div className="flex flex-wrap gap-1.5 mb-4">
-      {project.tags.slice(0, 3).map((tag, i) => (
-        <Badge 
-          key={i} 
-          variant="outline" 
-          className="border-border text-[10px] px-2 py-0"
-        >
-          {tag}
-        </Badge>
-      ))}
-    </div>
-    
-    {project.price && (
-      <div className="text-xs font-medium text-primary">
-        {project.price}
+      
+      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+        {project.description}
+      </p>
+      
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {project.tags.slice(0, 3).map((tag, i) => (
+          <Badge 
+            key={i} 
+            variant="outline" 
+            className="border-border text-[10px] px-2 py-0"
+          >
+            {tag}
+          </Badge>
+        ))}
       </div>
-    )}
-  </a>
-);
+      
+      {project.price && (
+        <div className="text-xs font-medium text-primary">
+          {project.price}
+        </div>
+      )}
+    </a>
+  );
+};
 
 const StatCard = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
   const { ref, displayValue } = useCountUp({ end: value, suffix, duration: 2000 });
