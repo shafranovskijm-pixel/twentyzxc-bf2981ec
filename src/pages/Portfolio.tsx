@@ -111,13 +111,58 @@ const tagIcons: Record<string, React.ReactNode> = {
 
 const Portfolio = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {/* Top-right glow */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
+        
+        {/* Bottom-left glow */}
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
+        
+        {/* Floating geometric shapes */}
+        <div className="absolute top-1/4 right-10 w-32 h-32 border border-primary/10 rotate-45 animate-float" />
+        <div className="absolute top-1/3 left-5 w-20 h-20 border border-primary/5 rotate-12 animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-16 h-16 border border-primary/10 -rotate-12 animate-float" style={{ animationDelay: '4s' }} />
+        
+        {/* Decorative lines */}
+        <div className="absolute top-40 left-0 w-64 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute bottom-60 right-0 w-48 h-[1px] bg-gradient-to-l from-transparent via-primary/20 to-transparent" />
+        
+        {/* Dot grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }} />
+        
+        {/* Diagonal lines */}
+        <svg className="absolute top-20 right-20 w-40 h-40 text-primary/5" viewBox="0 0 100 100">
+          <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="0.5" />
+          <line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="0.5" />
+          <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="0.5" />
+        </svg>
+        
+        {/* Corner ornament top-left */}
+        <svg className="absolute top-32 left-8 w-16 h-16 text-primary/20" viewBox="0 0 50 50">
+          <path d="M0 25 L25 0 L25 10 L10 25 L25 25 L25 50 L0 25" fill="none" stroke="currentColor" strokeWidth="0.5" />
+        </svg>
+        
+        {/* Small diamonds */}
+        <div className="absolute top-1/2 left-20 w-3 h-3 bg-primary/20 rotate-45" />
+        <div className="absolute top-[60%] right-32 w-2 h-2 bg-primary/15 rotate-45" />
+        <div className="absolute top-[80%] left-1/3 w-2 h-2 bg-primary/10 rotate-45" />
+      </div>
+
       <Header />
       
-      <main className="pt-32 pb-24">
+      <main className="pt-32 pb-24 relative z-10">
         <div className="container px-4">
           {/* Hero */}
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 relative">
+            {/* Hero decorative elements */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-40 h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary/40 rotate-45" />
+            
             <Badge variant="outline" className="mb-6 border-primary/30 text-primary">
               Наши проекты
             </Badge>
@@ -127,6 +172,13 @@ const Portfolio = () => {
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Более 50 успешных проектов по всей России — от веб-разработки до комплексного маркетинга
             </p>
+            
+            {/* Bottom decorative line */}
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
+              <div className="w-16 h-[1px] bg-gradient-to-r from-transparent to-primary/30" />
+              <div className="w-1.5 h-1.5 bg-primary/40 rotate-45" />
+              <div className="w-16 h-[1px] bg-gradient-to-l from-transparent to-primary/30" />
+            </div>
           </div>
 
           {/* Stats */}
