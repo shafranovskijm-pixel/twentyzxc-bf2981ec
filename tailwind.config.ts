@@ -15,9 +15,14 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        display: ["Playfair Display", "serif"],
       },
       colors: {
+        gold: {
+          DEFAULT: "hsl(45 80% 55%)",
+          light: "hsl(45 70% 70%)",
+          dark: "hsl(45 90% 40%)",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
