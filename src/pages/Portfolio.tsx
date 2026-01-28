@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck } from "lucide-react";
+import { useCountUp } from "@/hooks/use-count-up";
 
 interface Project {
   title: string;
@@ -129,19 +130,10 @@ const Portfolio = () => {
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
-            {[
-              { value: "50+", label: "Проектов" },
-              { value: "30+", label: "Клиентов" },
-              { value: "5", label: "Лет опыта" },
-              { value: "98%", label: "Довольных" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center p-6 luxury-card rounded-sm">
-                <div className="text-3xl md:text-4xl font-display font-bold gradient-gold-text mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
+            <StatCard value={50} suffix="+" label="Проектов" />
+            <StatCard value={30} suffix="+" label="Клиентов" />
+            <StatCard value={5} suffix="" label="Лет опыта" />
+            <StatCard value={98} suffix="%" label="Довольных" />
           </div>
 
           {/* Featured Projects */}
@@ -283,5 +275,18 @@ const ProjectCard = ({ project }: { project: Project }) => (
     )}
   </a>
 );
+
+const StatCard = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
+  const { ref, displayValue } = useCountUp({ end: value, suffix, duration: 2000 });
+  
+  return (
+    <div ref={ref} className="text-center p-6 luxury-card rounded-sm">
+      <div className="text-3xl md:text-4xl font-display font-bold gradient-gold-text mb-2">
+        {displayValue}
+      </div>
+      <div className="text-sm text-muted-foreground">{label}</div>
+    </div>
+  );
+};
 
 export default Portfolio;
