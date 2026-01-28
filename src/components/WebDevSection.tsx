@@ -5,7 +5,43 @@ import { Link } from "react-router-dom";
 const WebDevSection = () => {
   return (
     <section id="webdev" className="py-32 relative overflow-hidden">
-      {/* Decorative corner */}
+      {/* Background decorations */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Glowing orbs */}
+        <div className="absolute top-20 -right-32 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
+        
+        {/* Geometric shapes */}
+        <div className="absolute top-1/4 right-[5%] w-24 h-24 border border-primary/10 rotate-45 animate-float" />
+        <div className="absolute bottom-1/3 left-[8%] w-16 h-16 border border-primary/5 rotate-12 animate-float" style={{ animationDelay: '3s' }} />
+        <div className="absolute top-[60%] right-[15%] w-12 h-12 border border-primary/10 rotate-[30deg] animate-float" style={{ animationDelay: '5s' }} />
+        
+        {/* Diamond accents */}
+        <div className="absolute top-[15%] left-[12%] w-3 h-3 bg-primary/20 rotate-45" />
+        <div className="absolute top-[45%] right-[8%] w-2 h-2 bg-primary/30 rotate-45" />
+        <div className="absolute bottom-[20%] left-[5%] w-2 h-2 bg-primary/20 rotate-45" />
+        <div className="absolute top-[75%] right-[25%] w-2 h-2 bg-primary/15 rotate-45" />
+        
+        {/* Dot grid pattern */}
+        <div className="absolute inset-0 opacity-[0.015]" style={{
+          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
+          backgroundSize: '50px 50px'
+        }} />
+        
+        {/* Decorative lines */}
+        <div className="absolute top-[30%] left-0 w-20 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+        <div className="absolute top-[70%] right-0 w-28 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        
+        {/* Corner ornaments */}
+        <svg className="absolute top-8 right-8 w-16 h-16 text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+          <path d="M100 50 L50 100 M100 30 L30 100 M100 10 L10 100" strokeWidth="1" />
+        </svg>
+        <svg className="absolute bottom-8 left-8 w-16 h-16 text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+          <path d="M0 50 L50 0 M0 70 L70 0 M0 90 L90 0" strokeWidth="1" />
+        </svg>
+      </div>
+      
+      {/* Decorative corner borders */}
       <div className="absolute top-0 left-0 w-32 h-32 border-l border-t border-primary/20" />
       <div className="absolute bottom-0 right-0 w-32 h-32 border-r border-b border-primary/20" />
       
