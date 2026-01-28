@@ -233,7 +233,7 @@ const FrdoPage = () => {
                   <h3 className="text-xl font-display font-semibold mb-2">Разовая настройка</h3>
                   <p className="text-muted-foreground mb-6">Регистрация и обучение</p>
                   <div className="text-4xl font-display font-bold gradient-gold-text mb-6">
-                    от 35 000 ₽
+                    от 3 500 ₽
                   </div>
                   <ul className="space-y-3 mb-8">
                     {[
