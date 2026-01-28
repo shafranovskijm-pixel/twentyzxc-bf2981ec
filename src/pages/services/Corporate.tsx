@@ -140,10 +140,10 @@ const CorporatePage = () => {
                 { icon: Shield, title: "Надёжность", desc: "Защита данных" },
                 { icon: Layers, title: "Масштабируемость", desc: "Рост вместе с бизнесом" },
               ].map((item, i) => (
-                <Card key={i} className="luxury-card border-0">
+                <Card key={i} className="luxury-card border-0 group hover:border-primary/30 transition-all duration-500">
                   <CardContent className="p-6 text-center">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <item.icon className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4 relative icon-glow group-hover:bg-primary/20 transition-colors">
+                      <item.icon className="w-6 h-6 text-primary relative z-10" />
                     </div>
                     <h4 className="font-semibold mb-1">{item.title}</h4>
                     <p className="text-sm text-muted-foreground">{item.desc}</p>
