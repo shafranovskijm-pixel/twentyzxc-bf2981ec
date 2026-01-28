@@ -34,9 +34,9 @@ const Header = () => {
       <div className="container px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="#" className="text-2xl font-display font-bold gradient-gold-text">
+          <Link to="/" className="text-2xl font-display font-bold gradient-gold-text">
             24ZXC
-          </a>
+          </Link>
 
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-10">
