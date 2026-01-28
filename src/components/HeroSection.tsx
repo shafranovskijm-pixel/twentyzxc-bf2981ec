@@ -32,8 +32,9 @@ const HeroSection = () => {
 
           {/* Main heading */}
           <h1 className="mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <span className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight">
+            <span className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
               <span className="gradient-gold-text">24ZXC</span>
+              <span className="absolute inset-0 gradient-gold-text shimmer">24ZXC</span>
             </span>
           </h1>
 

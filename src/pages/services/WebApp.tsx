@@ -106,8 +106,9 @@ const WebAppPage = () => {
               SPA, PWA, сложные системы
             </p>
             
-            <div className="text-3xl font-display font-bold gradient-gold-text">
-              индивидуально
+            <div className="text-3xl font-display font-bold relative inline-block">
+              <span className="gradient-gold-text">индивидуально</span>
+              <span className="absolute inset-0 gradient-gold-text shimmer">индивидуально</span>
             </div>
           </div>
 

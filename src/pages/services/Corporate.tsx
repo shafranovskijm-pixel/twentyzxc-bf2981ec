@@ -126,8 +126,9 @@ const CorporatePage = () => {
               Многостраничные решения для бизнеса
             </p>
             
-            <div className="text-3xl font-display font-bold gradient-gold-text">
-              от 50 000 ₽
+            <div className="text-3xl font-display font-bold relative inline-block">
+              <span className="gradient-gold-text">от 50 000 ₽</span>
+              <span className="absolute inset-0 gradient-gold-text shimmer">от 50 000 ₽</span>
             </div>
           </div>
 
