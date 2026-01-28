@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { href: "#webdev", label: "Веб-разработка" },
+  { href: "#webdev", label: "Разработка" },
   { href: "#advertising", label: "Реклама" },
   { href: "#services", label: "Услуги" },
   { href: "#contact", label: "Контакты" },
@@ -23,26 +23,26 @@ const Header = () => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled 
-          ? "glass-card border-b py-3" 
-          : "bg-transparent py-5"
+          ? "bg-background/90 backdrop-blur-xl border-b border-border py-4" 
+          : "bg-transparent py-6"
       }`}
     >
       <div className="container px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <a href="#" className="text-2xl font-bold gradient-text">
+          <a href="#" className="text-2xl font-display font-bold gradient-gold-text">
             24ZXC
           </a>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <a 
                 key={link.href}
                 href={link.href}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors relative line-reveal"
               >
                 {link.label}
               </a>
@@ -58,7 +58,7 @@ const Header = () => {
 
           {/* Mobile menu button */}
           <button 
-            className="md:hidden p-2"
+            className="md:hidden p-2 text-foreground"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? (
@@ -71,22 +71,22 @@ const Header = () => {
 
         {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden pt-6 pb-4 animate-fade-in">
-            <nav className="flex flex-col gap-4">
+          <div className="md:hidden pt-8 pb-6 animate-fade-in">
+            <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <a 
                   key={link.href}
                   href={link.href}
-                  className="text-lg py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.label}
                 </a>
               ))}
-              <Button variant="hero" size="lg" className="mt-4">
-                Связаться
-              </Button>
             </nav>
+            <Button variant="hero" size="lg" className="w-full mt-6">
+              Связаться
+            </Button>
           </div>
         )}
       </div>

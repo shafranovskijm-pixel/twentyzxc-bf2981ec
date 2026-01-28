@@ -1,69 +1,67 @@
 import { Button } from "@/components/ui/button";
-import { Megaphone, Target, TrendingUp, BarChart3, Search, Users, ArrowRight } from "lucide-react";
+import { Megaphone, Target, BarChart3, TrendingUp, ArrowRight, Diamond } from "lucide-react";
 
 const AdvertisingSection = () => {
   return (
-    <section id="advertising" className="py-24 relative overflow-hidden bg-secondary/30">
-      {/* Background effects */}
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
+    <section id="advertising" className="py-32 relative overflow-hidden bg-secondary/30">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+      </div>
       
       <div className="container relative z-10 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section header */}
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-              <Megaphone className="w-4 h-4" />
-              Реклама
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-4 mb-6">
+              <Diamond className="w-5 h-5 text-primary" />
+              <span className="text-sm tracking-[0.2em] uppercase text-primary">Реклама</span>
+              <Diamond className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Привлекаем <span className="gradient-text">клиентов</span>
+            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">
+              Привлекаем
+              <span className="gradient-gold-text"> клиентов</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Профессиональная настройка и ведение рекламных кампаний. Максимум результата при оптимальном бюджете
+              Стратегическая настройка рекламных кампаний с фокусом на результат
             </p>
           </div>
 
-          {/* Services grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {/* Services */}
+          <div className="grid md:grid-cols-3 gap-8 mb-20">
             <AdCard 
-              icon={<Search className="w-6 h-6" />}
+              icon={<Target className="w-8 h-8" />}
               title="Яндекс.Директ"
-              description="Контекстная реклама в поиске и РСЯ. Точное попадание в целевую аудиторию"
-              features={["Поисковые кампании", "РСЯ", "Ретаргетинг"]}
+              features={["Поисковые кампании", "РСЯ", "Ретаргетинг", "Аналитика"]}
             />
             <AdCard 
-              icon={<Target className="w-6 h-6" />}
-              title="Таргетированная реклама"
-              description="Реклама в социальных сетях с точной настройкой на вашу аудиторию"
-              features={["VK Реклама", "Telegram Ads", "MyTarget"]}
+              icon={<Megaphone className="w-8 h-8" />}
+              title="Таргет"
+              features={["VK Реклама", "Telegram Ads", "MyTarget", "Look-alike"]}
             />
             <AdCard 
-              icon={<BarChart3 className="w-6 h-6" />}
+              icon={<BarChart3 className="w-8 h-8" />}
               title="Google Ads"
-              description="Контекстная и медийная реклама в Google для международных проектов"
-              features={["Поиск", "КМС", "YouTube"]}
+              features={["Поиск", "КМС", "YouTube", "Ремаркетинг"]}
             />
           </div>
 
           {/* Stats */}
-          <div className="glass-card rounded-3xl p-8 md:p-12">
-            <div className="grid md:grid-cols-4 gap-8 text-center">
-              <StatItem value="500+" label="Рекламных кампаний" />
-              <StatItem value="30%" label="Средний рост конверсии" />
-              <StatItem value="5M+" label="Рекламного бюджета" />
-              <StatItem value="100+" label="Довольных клиентов" />
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border mb-16">
+            <StatBlock value="500+" label="Кампаний запущено" />
+            <StatBlock value="30%" label="Рост конверсии" />
+            <StatBlock value="5M+" label="Рекламный бюджет" />
+            <StatBlock value="100+" label="Клиентов" />
           </div>
 
           {/* CTA */}
-          <div className="text-center mt-12">
-            <Button variant="hero" size="lg">
-              Получить аудит рекламы
-              <ArrowRight className="w-4 h-4" />
+          <div className="text-center">
+            <p className="text-muted-foreground mb-6">Бесплатный аудит текущих рекламных кампаний</p>
+            <Button variant="hero" size="xl">
+              Получить аудит
+              <ArrowRight className="w-5 h-5" />
             </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              Бесплатный анализ текущих рекламных кампаний
-            </p>
           </div>
         </div>
       </div>
@@ -74,30 +72,29 @@ const AdvertisingSection = () => {
 interface AdCardProps {
   icon: React.ReactNode;
   title: string;
-  description: string;
   features: string[];
 }
 
-const AdCard = ({ icon, title, description, features }: AdCardProps) => (
-  <div className="glass-card rounded-2xl p-6 hover:border-primary/50 transition-all duration-300 group">
-    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+const AdCard = ({ icon, title, features }: AdCardProps) => (
+  <div className="luxury-card rounded-sm p-10 group transition-all duration-500 text-center">
+    <div className="w-20 h-20 rounded-full border border-primary/30 flex items-center justify-center text-primary mx-auto mb-8 group-hover:border-primary/60 group-hover:glow-subtle transition-all">
       {icon}
     </div>
-    <h3 className="text-xl font-semibold mb-2">{title}</h3>
-    <p className="text-muted-foreground text-sm mb-4">{description}</p>
-    <div className="flex flex-wrap gap-2">
+    <h3 className="text-2xl font-display font-semibold mb-6">{title}</h3>
+    <ul className="space-y-3">
       {features.map((feature) => (
-        <span key={feature} className="px-3 py-1 rounded-full bg-secondary text-xs font-medium">
+        <li key={feature} className="text-muted-foreground text-sm flex items-center justify-center gap-2">
+          <span className="w-1 h-1 bg-primary rounded-full" />
           {feature}
-        </span>
+        </li>
       ))}
-    </div>
+    </ul>
   </div>
 );
 
-const StatItem = ({ value, label }: { value: string; label: string }) => (
-  <div>
-    <div className="text-3xl md:text-4xl font-bold gradient-text mb-2">{value}</div>
+const StatBlock = ({ value, label }: { value: string; label: string }) => (
+  <div className="bg-card p-8 text-center">
+    <div className="text-3xl md:text-4xl font-display font-bold gradient-gold-text mb-2">{value}</div>
     <div className="text-sm text-muted-foreground">{label}</div>
   </div>
 );
