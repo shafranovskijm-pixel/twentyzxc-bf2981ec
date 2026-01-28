@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { Megaphone, Target, BarChart3, TrendingUp, ArrowRight, Diamond } from "lucide-react";
+import { Megaphone, Target, BarChart3, ArrowRight, Diamond } from "lucide-react";
+import { useCountUp } from "@/hooks/use-count-up";
 
 const AdvertisingSection = () => {
   return (
@@ -48,11 +49,11 @@ const AdvertisingSection = () => {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border mb-16">
-            <StatBlock value="500+" label="Кампаний запущено" />
-            <StatBlock value="30%" label="Рост конверсии" />
-            <StatBlock value="5M+" label="Рекламный бюджет" />
-            <StatBlock value="100+" label="Клиентов" />
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
+            <AnimatedStatBlock value={500} suffix="+" label="Кампаний запущено" />
+            <AnimatedStatBlock value={30} suffix="%" label="Рост конверсии" />
+            <AnimatedStatBlock value={5} suffix="M+" label="Рекламный бюджет" />
+            <AnimatedStatBlock value={100} suffix="+" label="Клиентов" />
           </div>
 
           {/* CTA */}
@@ -77,14 +78,14 @@ interface AdCardProps {
 
 const AdCard = ({ icon, title, features }: AdCardProps) => (
   <div className="luxury-card rounded-sm p-10 group transition-all duration-500 text-center">
-    <div className="w-20 h-20 rounded-full border border-primary/30 flex items-center justify-center text-primary mx-auto mb-8 group-hover:border-primary/60 group-hover:glow-subtle transition-all">
+    <div className="w-20 h-20 rounded-full border-2 border-primary/40 flex items-center justify-center text-primary mx-auto mb-8 group-hover:border-primary group-hover:shadow-[0_0_30px_hsl(45_80%_55%/0.2)] transition-all duration-500">
       {icon}
     </div>
     <h3 className="text-2xl font-display font-semibold mb-6">{title}</h3>
     <ul className="space-y-3">
       {features.map((feature) => (
         <li key={feature} className="text-muted-foreground text-sm flex items-center justify-center gap-2">
-          <span className="w-1 h-1 bg-primary rounded-full" />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full" />
           {feature}
         </li>
       ))}
@@ -92,11 +93,17 @@ const AdCard = ({ icon, title, features }: AdCardProps) => (
   </div>
 );
 
-const StatBlock = ({ value, label }: { value: string; label: string }) => (
-  <div className="bg-card p-8 text-center">
-    <div className="text-3xl md:text-4xl font-display font-bold gradient-gold-text mb-2">{value}</div>
-    <div className="text-sm text-muted-foreground">{label}</div>
-  </div>
-);
+const AnimatedStatBlock = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
+  const { ref, displayValue } = useCountUp({ end: value, suffix, duration: 2000 });
+  
+  return (
+    <div ref={ref} className="text-center">
+      <div className="text-3xl md:text-5xl font-display font-bold gradient-gold-text mb-2">
+        {displayValue}
+      </div>
+      <div className="text-sm text-muted-foreground">{label}</div>
+    </div>
+  );
+};
 
 export default AdvertisingSection;
