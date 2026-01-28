@@ -81,8 +81,9 @@ const WebDevSection = () => {
             
             <div className="relative z-10">
               <span className="text-xs tracking-[0.3em] uppercase text-primary mb-4 block">Flagship Project</span>
-              <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 gradient-gold-text">
-                Синтагма
+              <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 relative inline-block">
+                <span className="gradient-gold-text">Синтагма</span>
+                <span className="absolute inset-0 gradient-gold-text shimmer">Синтагма</span>
               </h3>
               <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed">
                 Наша флагманская платформа для создания современных веб-решений. Передовые технологии, безупречная архитектура, масштабируемость без компромиссов.
