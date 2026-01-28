@@ -54,10 +54,9 @@ const projects: Project[] = [
   {
     title: "Учебный центр «Lady Frost»",
     location: "Самара",
-    description: "Добавление раздела «Сведения об образовательной организации» на существующий сайт. Подготовка полного пакета документов для получения лицензии на образовательную деятельность, поддержка ФРДО.",
+    description: "Раздел «Сведения об образовательной организации» на существующий сайт. Подготовка документов для лицензии, поддержка ФРДО.",
     tags: ["license", "support"],
-    price: "24 000 ₽/год (ФРДО)",
-    priceAlt: "35 000 ₽ лицензия",
+    price: "50 000 ₽",
     url: "https://lady-frost.ru/",
   },
   {
@@ -320,7 +319,7 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
         <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
       </div>
       
-      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
         {project.description}
       </p>
       
