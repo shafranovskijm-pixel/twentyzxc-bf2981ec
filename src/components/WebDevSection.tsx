@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Code2, Layers, Zap, ArrowUpRight, Diamond } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const WebDevSection = () => {
   return (
@@ -69,21 +70,25 @@ const WebDevSection = () => {
               title="Лендинги"
               price="от 15 000 ₽"
               description="Продающие страницы с высокой конверсией"
+              href="/services/landing"
             />
             <ServiceCard 
               title="Корпоративные сайты"
               price="от 50 000 ₽"
               description="Многостраничные решения для бизнеса"
+              href="/services/corporate"
             />
             <ServiceCard 
               title="Интернет-магазины"
               price="от 100 000 ₽"
               description="E-commerce платформы любой сложности"
+              href="/services/ecommerce"
             />
             <ServiceCard 
               title="Веб-приложения"
               price="индивидуально"
               description="SPA, PWA, сложные системы"
+              href="/services/webapp"
             />
           </div>
         </div>
@@ -104,8 +109,8 @@ const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode; title: stri
   </div>
 );
 
-const ServiceCard = ({ title, price, description }: { title: string; price: string; description: string }) => (
-  <div className="bg-card p-10 group cursor-pointer hover:bg-secondary/50 transition-all duration-300">
+const ServiceCard = ({ title, price, description, href }: { title: string; price: string; description: string; href: string }) => (
+  <Link to={href} className="bg-card p-10 group cursor-pointer hover:bg-secondary/50 transition-all duration-300 block">
     <div className="flex items-start justify-between mb-4">
       <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
       <span className="text-primary text-sm font-medium">{price}</span>
@@ -115,7 +120,7 @@ const ServiceCard = ({ title, price, description }: { title: string; price: stri
       <span>Подробнее</span>
       <ArrowUpRight className="w-4 h-4" />
     </div>
-  </div>
+  </Link>
 );
 
 export default WebDevSection;
