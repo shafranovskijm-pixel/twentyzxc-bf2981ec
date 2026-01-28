@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const navLinks = [
-  { href: "#webdev", label: "Разработка" },
-  { href: "#advertising", label: "Реклама" },
+  { href: "/#webdev", label: "Разработка" },
+  { href: "/#advertising", label: "Реклама" },
   { href: "/frdo", label: "ФРДО" },
   { href: "/portfolio", label: "Портфолио" },
-  { href: "#contact", label: "Контакты" },
+  { href: "/#contact", label: "Контакты" },
 ];
 
 const Header = () => {
@@ -41,23 +41,13 @@ const Header = () => {
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
-              link.href.startsWith('/') ? (
-                <Link 
-                  key={link.href}
-                  to={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors relative line-reveal"
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <a 
-                  key={link.href}
-                  href={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors relative line-reveal"
-                >
-                  {link.label}
-                </a>
-              )
+              <Link 
+                key={link.href}
+                to={link.href}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors relative line-reveal"
+              >
+                {link.label}
+              </Link>
             ))}
           </nav>
 
@@ -86,25 +76,14 @@ const Header = () => {
           <div className="md:hidden pt-8 pb-6 animate-fade-in">
             <nav className="flex flex-col gap-1">
               {navLinks.map((link) => (
-                link.href.startsWith('/') ? (
-                  <Link 
-                    key={link.href}
-                    to={link.href}
-                    className="text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                ) : (
-                  <a 
-                    key={link.href}
-                    href={link.href}
-                    className="text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                )
+                <Link 
+                  key={link.href}
+                  to={link.href}
+                  className="text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
               ))}
             </nav>
             <Button variant="hero" size="lg" className="w-full mt-6">
