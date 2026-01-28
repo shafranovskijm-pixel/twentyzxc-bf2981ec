@@ -72,13 +72,40 @@ const EcommercePage = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {/* Glowing orbs */}
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/3 right-1/3 w-72 h-72 bg-primary/5 rounded-full blur-[90px]" />
+        
+        {/* Geometric shapes */}
         <div className="absolute top-1/4 right-10 w-32 h-32 border border-primary/10 rotate-45 animate-float" />
+        <div className="absolute top-[45%] left-6 w-20 h-20 border border-primary/5 rotate-[20deg] animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-1/4 right-1/6 w-14 h-14 border border-primary/10 rotate-45 animate-float" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-3/4 left-1/4 w-8 h-8 bg-primary/10 rotate-45 animate-float" style={{ animationDelay: '3s' }} />
+        
+        {/* Diamond accents */}
+        <div className="absolute top-[18%] left-[18%] w-3 h-3 bg-primary/20 rotate-45" />
+        <div className="absolute top-[50%] right-[12%] w-2 h-2 bg-primary/30 rotate-45" />
+        <div className="absolute bottom-[35%] left-[6%] w-2 h-2 bg-primary/20 rotate-45" />
+        <div className="absolute top-[75%] right-[20%] w-2 h-2 bg-primary/15 rotate-45" />
+        
+        {/* Dot grid pattern */}
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }} />
+        
+        {/* Corner ornaments */}
+        <svg className="absolute top-20 left-4 w-24 h-24 text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+          <path d="M0 50 L50 0 M0 70 L70 0 M0 90 L90 0" strokeWidth="1" />
+        </svg>
+        <svg className="absolute bottom-20 right-4 w-24 h-24 text-primary/10 rotate-180" viewBox="0 0 100 100" fill="none" stroke="currentColor">
+          <path d="M0 50 L50 0 M0 70 L70 0 M0 90 L90 0" strokeWidth="1" />
+        </svg>
+        
+        {/* Decorative lines */}
+        <div className="absolute top-[35%] left-0 w-28 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-[65%] right-0 w-36 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       </div>
 
       <Header />
