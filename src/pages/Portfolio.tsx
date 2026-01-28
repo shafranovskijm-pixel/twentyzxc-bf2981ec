@@ -71,9 +71,9 @@ const projects: Project[] = [
   {
     title: "Магазин «Flowrish»",
     location: "Уссурийск",
-    description: "Сайт и реклама в Яндекс Директ.",
-    tags: ["web", "ads"],
-    price: "24 000 ₽/год",
+    description: "Сайт с админ-панелью для учёта клиентов, сбора заявок и управления товарами. Мобильное приложение для сотрудников магазина.",
+    tags: ["web", "CRM", "ads"],
+    price: "15 000 ₽/мес",
     url: "https://flowrish.ru/",
   },
   {
