@@ -2,7 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck } from "lucide-react";
+import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck, Bot, BarChart3 } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useInView } from "@/hooks/use-in-view";
 
@@ -21,8 +21,8 @@ const projects: Project[] = [
   {
     title: "Анна Чмулева — Риелтор",
     location: "Дальний Восток",
-    description: "Персональный сайт эксперта по недвижимости. 8+ лет опыта, 1000+ сделок. Полный спектр услуг от поиска до заселения.",
-    tags: ["web", "дизайн", "SEO"],
+    description: "Персональный сайт эксперта по недвижимости с личным кабинетом клиента. ИИ-помощник для написания статей блога о недвижимости, статистика посещений, система сбора заявок и настройки сайта.",
+    tags: ["web", "дизайн", "SEO", "AI", "CRM"],
     url: "https://xn----7sbfldrqgb2aseye2d.xn--p1ai/",
     featured: true,
   },
@@ -107,6 +107,8 @@ const tagIcons: Record<string, React.ReactNode> = {
   LMS: <GraduationCap className="w-3 h-3" />,
   support: <Headphones className="w-3 h-3" />,
   license: <FileCheck className="w-3 h-3" />,
+  AI: <Bot className="w-3 h-3" />,
+  CRM: <BarChart3 className="w-3 h-3" />,
 };
 
 const Portfolio = () => {
