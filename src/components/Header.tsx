@@ -1,9 +1,18 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navLinks = [
+  { href: "/services", label: "Каталог услуг" },
   { href: "/#webdev", label: "Разработка" },
   { href: "/#advertising", label: "Реклама" },
   { 
@@ -22,6 +31,8 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { user, signOut, isAdmin } = useAuthContext();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,6 +52,11 @@ const Header = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/");
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
@@ -57,7 +73,7 @@ const Header = () => {
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-10">
+          <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               'dropdown' in link ? (
                 <div 
@@ -101,9 +117,46 @@ const Header = () => {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:block">
-            <Button variant="hero" size="default">
-              Связаться
+          <div className="hidden md:flex items-center gap-3">
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    Аккаунт
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Личный кабинет
+                    </Link>
+                  </DropdownMenuItem>
+                  {isAdmin() && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">
+                        <LayoutDashboard className="h-4 w-4 mr-2" />
+                        Админ-панель
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Выйти
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link to="/auth">Войти</Link>
+              </Button>
+            )}
+            <Button variant="hero" size="default" asChild>
+              <Link to={user ? "/dashboard/listings/new" : "/auth"}>
+                Разместить объявление
+              </Link>
             </Button>
           </div>
 
@@ -164,9 +217,42 @@ const Header = () => {
                 )
               ))}
             </nav>
-            <Button variant="hero" size="lg" className="w-full mt-6">
-              Связаться
-            </Button>
+            
+            <div className="mt-6 space-y-3">
+              {user ? (
+                <>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      Личный кабинет
+                    </Link>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full" 
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    Выйти
+                  </Button>
+                </>
+              ) : (
+                <Button asChild variant="outline" className="w-full">
+                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                    Войти
+                  </Link>
+                </Button>
+              )}
+              <Button variant="hero" size="lg" className="w-full" asChild>
+                <Link 
+                  to={user ? "/dashboard/listings/new" : "/auth"} 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Разместить объявление
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>
