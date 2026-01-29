@@ -83,7 +83,16 @@ const AdvertisingSection = () => {
 
           {/* CTA */}
           <div className="text-center">
-            <Button variant="hero" size="lg">
+            <Button 
+              variant="hero" 
+              size="lg"
+              onClick={() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                  contactSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
               Получить аудит
               <ArrowRight className="w-5 h-5" />
             </Button>
