@@ -1,19 +1,17 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AnimatedSection from "@/components/AnimatedSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
-  FileCheck, 
   Shield, 
-  Clock, 
   CheckCircle2, 
   FileText,
   Building2,
   GraduationCap,
   Send,
   Scale,
-  ClipboardList,
   Users,
   BookOpen,
   Award
@@ -127,269 +125,278 @@ const LicensingPage = () => {
           </div>
 
           {/* What is licensing */}
-          <section className="mb-24">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-3xl font-display font-semibold mb-6">
-                  Зачем нужна <span className="gradient-gold-text">лицензия</span>?
-                </h2>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Образовательная лицензия — обязательный документ для организаций, 
-                  осуществляющих образовательную деятельность. Без неё невозможно 
-                  легально обучать и выдавать документы об образовании.
-                </p>
-                <p className="text-muted-foreground mb-6 leading-relaxed">
-                  Лицензия подтверждает соответствие организации требованиям 
-                  законодательства и даёт право на ведение образовательной деятельности.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Badge variant="outline" className="border-primary/30">
-                    <GraduationCap className="w-3 h-3 mr-1" />
-                    Учебные центры
-                  </Badge>
-                  <Badge variant="outline" className="border-primary/30">
-                    <Building2 className="w-3 h-3 mr-1" />
-                    ДПО
-                  </Badge>
-                  <Badge variant="outline" className="border-primary/30">
-                    <BookOpen className="w-3 h-3 mr-1" />
-                    Онлайн-школы
-                  </Badge>
+          <AnimatedSection>
+            <section className="mb-24">
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <AnimatedSection delay={100} direction="right">
+                  <div>
+                    <h2 className="text-3xl font-display font-semibold mb-6">
+                      Зачем нужна <span className="gradient-gold-text">лицензия</span>?
+                    </h2>
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      Образовательная лицензия — обязательный документ для организаций, 
+                      осуществляющих образовательную деятельность. Без неё невозможно 
+                      легально обучать и выдавать документы об образовании.
+                    </p>
+                    <p className="text-muted-foreground mb-6 leading-relaxed">
+                      Лицензия подтверждает соответствие организации требованиям 
+                      законодательства и даёт право на ведение образовательной деятельности.
+                    </p>
+                    <div className="flex flex-wrap gap-3">
+                      <Badge variant="outline" className="border-primary/30">
+                        <GraduationCap className="w-3 h-3 mr-1" />
+                        Учебные центры
+                      </Badge>
+                      <Badge variant="outline" className="border-primary/30">
+                        <Building2 className="w-3 h-3 mr-1" />
+                        ДПО
+                      </Badge>
+                      <Badge variant="outline" className="border-primary/30">
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        Онлайн-школы
+                      </Badge>
+                    </div>
+                  </div>
+                </AnimatedSection>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { icon: Shield, title: "Легальная работа", desc: "Официальный статус" },
+                    { icon: FileText, title: "Выдача документов", desc: "Дипломы и сертификаты" },
+                    { icon: Users, title: "Доверие клиентов", desc: "Повышение репутации" },
+                    { icon: Scale, title: "Соответствие", desc: "Требованиям закона" },
+                  ].map((item, i) => (
+                    <AnimatedSection key={i} delay={200 + i * 100} direction="scale">
+                      <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-500">
+                        <CardContent className="p-6">
+                          <item.icon className="w-8 h-8 text-primary mb-3" />
+                          <h4 className="font-semibold mb-1">{item.title}</h4>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        </CardContent>
+                      </Card>
+                    </AnimatedSection>
+                  ))}
                 </div>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: Shield, title: "Легальная работа", desc: "Официальный статус" },
-                  { icon: FileText, title: "Выдача документов", desc: "Дипломы и сертификаты" },
-                  { icon: Users, title: "Доверие клиентов", desc: "Повышение репутации" },
-                  { icon: Scale, title: "Соответствие", desc: "Требованиям закона" },
-                ].map((item, i) => (
-                  <Card 
-                    key={i} 
-                    className="luxury-card border-0 hover:glow-subtle transition-all duration-500 animate-fade-in"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  >
-                    <CardContent className="p-6">
-                      <item.icon className="w-8 h-8 text-primary mb-3 animate-pulse" style={{ animationDuration: '3s' }} />
-                      <h4 className="font-semibold mb-1">{item.title}</h4>
-                      <p className="text-sm text-muted-foreground">{item.desc}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </section>
+            </section>
+          </AnimatedSection>
 
           {/* Services */}
-          <section className="mb-24">
-            <h2 className="text-3xl font-display font-semibold text-center mb-12">
-              Что <span className="gradient-gold-text">включено</span>
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  title: "Подготовка документов",
-                  items: [
-                    "Анализ требований",
-                    "Разработка программ",
-                    "Оформление заявления",
-                    "Подготовка справок"
-                  ]
-                },
-                {
-                  title: "Сопровождение",
-                  items: [
-                    "Подача в Рособрнадзор",
-                    "Взаимодействие с органами",
-                    "Устранение замечаний",
-                    "Получение лицензии"
-                  ]
-                },
-                {
-                  title: "После получения",
-                  items: [
-                    "Консультации по работе",
-                    "Помощь с проверками",
-                    "Переоформление",
-                    "Внесение изменений"
-                  ]
-                }
-              ].map((service, i) => (
-                <Card 
-                  key={i} 
-                  className="luxury-card border-0 hover:glow-subtle transition-all duration-500 group animate-fade-in"
-                  style={{ animationDelay: `${i * 200}ms` }}
-                >
-                  <CardContent className="p-8">
-                    <h3 className="text-xl font-display font-semibold mb-6 gradient-gold-text group-hover:scale-105 transition-transform">
-                      {service.title}
-                    </h3>
-                    <ul className="space-y-3">
-                      {service.items.map((item, j) => (
-                        <li 
-                          key={j} 
-                          className="flex items-start gap-3 text-muted-foreground animate-fade-in"
-                          style={{ animationDelay: `${i * 200 + j * 100}ms` }}
-                        >
-                          <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-
-          {/* Stages */}
-          <section id="stages" className="mb-24">
-            <h2 className="text-3xl font-display font-semibold text-center mb-12">
-              Этапы <span className="gradient-gold-text">работы</span>
-            </h2>
-            
-            <div className="max-w-4xl mx-auto">
-              <div className="space-y-6">
+          <AnimatedSection>
+            <section className="mb-24">
+              <h2 className="text-3xl font-display font-semibold text-center mb-12">
+                Что <span className="gradient-gold-text">включено</span>
+              </h2>
+              
+              <div className="grid md:grid-cols-3 gap-8">
                 {[
-                  { num: "01", title: "Консультация", desc: "Анализируем вашу ситуацию и определяем требования" },
-                  { num: "02", title: "Подготовка", desc: "Разрабатываем программы и готовим пакет документов" },
-                  { num: "03", title: "Подача", desc: "Подаём заявление и сопровождаем процесс рассмотрения" },
-                  { num: "04", title: "Получение", desc: "Получаем лицензию и передаём вам с инструкциями" },
-                ].map((stage, i) => (
-                  <Card 
-                    key={i} 
-                    className="luxury-card border-0 hover:glow-subtle transition-all duration-500 hover:translate-x-2 animate-fade-in"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  >
-                    <CardContent className="p-6 flex items-center gap-6">
-                      <div className="relative">
-                        <div className="text-4xl font-display font-bold gradient-gold-text">
-                          {stage.num}
-                        </div>
-                        <div className="absolute inset-0 text-4xl font-display font-bold shimmer gradient-gold-text" aria-hidden="true">
-                          {stage.num}
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-lg mb-1">{stage.title}</h4>
-                        <p className="text-muted-foreground">{stage.desc}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {
+                    title: "Подготовка документов",
+                    items: [
+                      "Анализ требований",
+                      "Разработка программ",
+                      "Оформление заявления",
+                      "Подготовка справок"
+                    ]
+                  },
+                  {
+                    title: "Сопровождение",
+                    items: [
+                      "Подача в Рособрнадзор",
+                      "Взаимодействие с органами",
+                      "Устранение замечаний",
+                      "Получение лицензии"
+                    ]
+                  },
+                  {
+                    title: "После получения",
+                    items: [
+                      "Консультации по работе",
+                      "Помощь с проверками",
+                      "Переоформление",
+                      "Внесение изменений"
+                    ]
+                  }
+                ].map((service, i) => (
+                  <AnimatedSection key={i} delay={i * 150} direction="up">
+                    <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-500 group h-full">
+                      <CardContent className="p-8">
+                        <h3 className="text-xl font-display font-semibold mb-6 gradient-gold-text group-hover:scale-105 transition-transform">
+                          {service.title}
+                        </h3>
+                        <ul className="space-y-3">
+                          {service.items.map((item, j) => (
+                            <li key={j} className="flex items-start gap-3 text-muted-foreground">
+                              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  </AnimatedSection>
                 ))}
               </div>
-            </div>
-          </section>
+            </section>
+          </AnimatedSection>
+
+          {/* Stages */}
+          <AnimatedSection>
+            <section id="stages" className="mb-24">
+              <h2 className="text-3xl font-display font-semibold text-center mb-12">
+                Этапы <span className="gradient-gold-text">работы</span>
+              </h2>
+              
+              <div className="max-w-4xl mx-auto">
+                <div className="space-y-6">
+                  {[
+                    { num: "01", title: "Консультация", desc: "Анализируем вашу ситуацию и определяем требования" },
+                    { num: "02", title: "Подготовка", desc: "Разрабатываем программы и готовим пакет документов" },
+                    { num: "03", title: "Подача", desc: "Подаём заявление и сопровождаем процесс рассмотрения" },
+                    { num: "04", title: "Получение", desc: "Получаем лицензию и передаём вам с инструкциями" },
+                  ].map((stage, i) => (
+                    <AnimatedSection key={i} delay={i * 150} direction="left">
+                      <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-500 hover:translate-x-2">
+                        <CardContent className="p-6 flex items-center gap-6">
+                          <div className="relative">
+                            <div className="text-4xl font-display font-bold gradient-gold-text">
+                              {stage.num}
+                            </div>
+                            <div className="absolute inset-0 text-4xl font-display font-bold shimmer gradient-gold-text" aria-hidden="true">
+                              {stage.num}
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-lg mb-1">{stage.title}</h4>
+                            <p className="text-muted-foreground">{stage.desc}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </AnimatedSection>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* Pricing */}
-          <section className="mb-24">
-            <h2 className="text-3xl font-display font-semibold text-center mb-12">
-              <span className="gradient-gold-text">Стоимость</span>
-            </h2>
-            
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-500">
-                <CardContent className="p-8">
-                  <h3 className="text-xl font-display font-semibold mb-2">Консультация</h3>
-                  <p className="text-muted-foreground mb-6">Первичный анализ</p>
-                  <div className="text-4xl font-display font-bold gradient-gold-text mb-6">
-                    Бесплатно
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {[
-                      "Анализ вашей ситуации",
-                      "Определение требований",
-                      "Оценка сроков",
-                      "Расчёт стоимости"
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="heroOutline" className="w-full" asChild>
-                    <a href="#contact-form">Записаться</a>
-                  </Button>
-                </CardContent>
-              </Card>
+          <AnimatedSection>
+            <section className="mb-24">
+              <h2 className="text-3xl font-display font-semibold text-center mb-12">
+                <span className="gradient-gold-text">Стоимость</span>
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <AnimatedSection delay={100} direction="right">
+                  <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-500 h-full">
+                    <CardContent className="p-8">
+                      <h3 className="text-xl font-display font-semibold mb-2">Консультация</h3>
+                      <p className="text-muted-foreground mb-6">Первичный анализ</p>
+                      <div className="text-4xl font-display font-bold gradient-gold-text mb-6">
+                        Бесплатно
+                      </div>
+                      <ul className="space-y-3 mb-8">
+                        {[
+                          "Анализ вашей ситуации",
+                          "Определение требований",
+                          "Оценка сроков",
+                          "Расчёт стоимости"
+                        ].map((item, i) => (
+                          <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      <Button variant="heroOutline" className="w-full" asChild>
+                        <a href="#contact-form">Записаться</a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </AnimatedSection>
 
-              <Card className="luxury-card border-primary/30 hover:glow-subtle transition-all duration-500 relative">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-primary text-primary-foreground">Под ключ</Badge>
-                </div>
-                <CardContent className="p-8">
-                  <h3 className="text-xl font-display font-semibold mb-2">Полное сопровождение</h3>
-                  <p className="text-muted-foreground mb-6">От заявки до лицензии</p>
-                  <div className="text-4xl font-display font-bold gradient-gold-text mb-6">
-                    от 50 000 ₽
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {[
-                      "Подготовка всех документов",
-                      "Разработка программ",
-                      "Подача и сопровождение",
-                      "Получение лицензии",
-                      "Консультации после"
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <CheckCircle2 className="w-4 h-4 text-primary" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button variant="hero" className="w-full" asChild>
-                    <a href="#contact-form">Заказать</a>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
+                <AnimatedSection delay={200} direction="left">
+                  <Card className="luxury-card border-primary/30 hover:glow-subtle transition-all duration-500 relative h-full">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground">Под ключ</Badge>
+                    </div>
+                    <CardContent className="p-8">
+                      <h3 className="text-xl font-display font-semibold mb-2">Полное сопровождение</h3>
+                      <p className="text-muted-foreground mb-6">От заявки до лицензии</p>
+                      <div className="text-4xl font-display font-bold gradient-gold-text mb-6">
+                        от 50 000 ₽
+                      </div>
+                      <ul className="space-y-3 mb-8">
+                        {[
+                          "Подготовка всех документов",
+                          "Разработка программ",
+                          "Подача и сопровождение",
+                          "Получение лицензии",
+                          "Консультации после"
+                        ].map((item, i) => (
+                          <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
+                            <CheckCircle2 className="w-4 h-4 text-primary" />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                      <Button variant="hero" className="w-full" asChild>
+                        <a href="#contact-form">Заказать</a>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </AnimatedSection>
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* FAQ */}
-          <section className="mb-24">
-            <h2 className="text-3xl font-display font-semibold text-center mb-12">
-              Частые <span className="gradient-gold-text">вопросы</span>
-            </h2>
-            
-            <div className="max-w-3xl mx-auto space-y-6">
-              {[
-                {
-                  q: "Кому нужна образовательная лицензия?",
-                  a: "Всем организациям, осуществляющим образовательную деятельность: учебным центрам, ДПО, онлайн-школам, автошколам и др."
-                },
-                {
-                  q: "Сколько времени занимает получение?",
-                  a: "Мы работаем быстро — подготовка документов занимает 10-15 рабочих дней. Общий срок зависит от скорости рассмотрения в Рособрнадзоре."
-                },
-                {
-                  q: "Какие документы нужны?",
-                  a: "Учредительные документы, правоустанавливающие на помещение, образовательные программы, сведения о педагогах и материально-техническом обеспечении."
-                },
-                {
-                  q: "Можно ли работать без лицензии?",
-                  a: "Можно, но без выдачи документов об образовании. Если вы планируете выдавать дипломы, сертификаты или удостоверения — лицензия обязательна."
-                }
-              ].map((faq, i) => (
-                <Card key={i} className="luxury-card border-0">
-                  <CardContent className="p-6">
-                    <h4 className="font-semibold mb-2">{faq.q}</h4>
-                    <p className="text-muted-foreground">{faq.a}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
+          <AnimatedSection>
+            <section className="mb-24">
+              <h2 className="text-3xl font-display font-semibold text-center mb-12">
+                Частые <span className="gradient-gold-text">вопросы</span>
+              </h2>
+              
+              <div className="max-w-3xl mx-auto space-y-6">
+                {[
+                  {
+                    q: "Кому нужна образовательная лицензия?",
+                    a: "Всем организациям, осуществляющим образовательную деятельность: учебным центрам, ДПО, онлайн-школам, автошколам и др."
+                  },
+                  {
+                    q: "Сколько времени занимает получение?",
+                    a: "Мы работаем быстро — подготовка документов занимает 10-15 рабочих дней. Общий срок зависит от скорости рассмотрения в Рособрнадзоре."
+                  },
+                  {
+                    q: "Какие документы нужны?",
+                    a: "Учредительные документы, правоустанавливающие на помещение, образовательные программы, сведения о педагогах и материально-техническом обеспечении."
+                  },
+                  {
+                    q: "Можно ли работать без лицензии?",
+                    a: "Можно, но без выдачи документов об образовании. Если вы планируете выдавать дипломы, сертификаты или удостоверения — лицензия обязательна."
+                  }
+                ].map((faq, i) => (
+                  <AnimatedSection key={i} delay={i * 100} direction="up">
+                    <Card className="luxury-card border-0 hover:glow-subtle transition-all duration-300">
+                      <CardContent className="p-6">
+                        <h4 className="font-semibold mb-2">{faq.q}</h4>
+                        <p className="text-muted-foreground">{faq.a}</p>
+                      </CardContent>
+                    </Card>
+                  </AnimatedSection>
+                ))}
+              </div>
+            </section>
+          </AnimatedSection>
 
           {/* Contact Form */}
-          <section id="contact-form" className="max-w-2xl mx-auto">
-            <Card className="luxury-card border-0">
-              <CardContent className="p-8 md:p-12">
-                <h2 className="text-2xl font-display font-semibold text-center mb-2">
-                  Получить <span className="gradient-gold-text">консультацию</span>
-                </h2>
+          <AnimatedSection direction="scale">
+            <section id="contact-form" className="max-w-2xl mx-auto">
+              <Card className="luxury-card border-0">
+                <CardContent className="p-8 md:p-12">
+                  <h2 className="text-2xl font-display font-semibold text-center mb-2">
+                    Получить <span className="gradient-gold-text">консультацию</span>
+                  </h2>
                 <p className="text-muted-foreground text-center mb-8">
                   Оставьте заявку и мы свяжемся с вами
                 </p>
@@ -458,9 +465,10 @@ const LicensingPage = () => {
                     Отправить заявку
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-          </section>
+                </CardContent>
+              </Card>
+            </section>
+          </AnimatedSection>
         </div>
       </main>
 
