@@ -14,6 +14,7 @@ const navLinks = [
     ]
   },
   { href: "/portfolio", label: "Портфолио" },
+  { href: "/about", label: "О нас" },
   { href: "/#contact", label: "Контакты" },
 ];
 
