@@ -9,6 +9,7 @@ import Portfolio from "./pages/Portfolio";
 import Frdo from "./pages/Frdo";
 import Licensing from "./pages/Licensing";
 import About from "./pages/About";
+import Templates from "./pages/Templates";
 import Landing from "./pages/services/Landing";
 import Corporate from "./pages/services/Corporate";
 import Ecommerce from "./pages/services/Ecommerce";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/frdo" element={<Frdo />} />
           <Route path="/licensing" element={<Licensing />} />
           <Route path="/about" element={<About />} />
+          <Route path="/templates" element={<Templates />} />
           <Route path="/services/landing" element={<Landing />} />
           <Route path="/services/corporate" element={<Corporate />} />
           <Route path="/services/ecommerce" element={<Ecommerce />} />

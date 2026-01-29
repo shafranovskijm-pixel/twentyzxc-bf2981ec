@@ -6,6 +6,7 @@ import { Menu, X, ChevronDown } from "lucide-react";
 const navLinks = [
   { href: "/#webdev", label: "Разработка" },
   { href: "/#advertising", label: "Реклама" },
+  { href: "/templates", label: "Шаблоны" },
   { 
     label: "Образовательным организациям",
     dropdown: [
