@@ -79,7 +79,7 @@ const Header = () => {
                         <Link
                           key={item.href}
                           to={item.href}
-                          className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                          className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                           onClick={() => setOpenDropdown(null)}
                         >
                           {item.label}
