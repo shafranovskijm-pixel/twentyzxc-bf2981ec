@@ -6,7 +6,6 @@ import { Menu, X, ChevronDown } from "lucide-react";
 const navLinks = [
   { href: "/#webdev", label: "Разработка" },
   { href: "/#advertising", label: "Реклама" },
-  { href: "/templates", label: "Шаблоны" },
   { 
     label: "Образовательным организациям",
     dropdown: [
@@ -69,7 +68,7 @@ const Header = () => {
                 >
                   <button
                     onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 relative line-reveal"
                   >
                     {link.label}
                     <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
@@ -81,7 +80,7 @@ const Header = () => {
                         <Link
                           key={item.href}
                           to={item.href}
-                          className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors relative line-reveal"
                           onClick={() => setOpenDropdown(null)}
                         >
                           {item.label}
