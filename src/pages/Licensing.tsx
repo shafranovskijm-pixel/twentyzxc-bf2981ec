@@ -44,17 +44,50 @@ const LicensingPage = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
+        {/* Glowing orbs */}
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 bg-primary/5 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '3s' }} />
+        
+        {/* Floating geometric shapes */}
         <div className="absolute top-1/4 right-10 w-32 h-32 border border-primary/10 rotate-45 animate-float" />
         <div className="absolute top-1/3 left-5 w-20 h-20 border border-primary/5 rotate-12 animate-float" style={{ animationDelay: '2s' }} />
         <div className="absolute bottom-1/4 right-1/4 w-16 h-16 border border-primary/10 -rotate-12 animate-float" style={{ animationDelay: '4s' }} />
+        <div className="absolute top-[60%] left-1/4 w-24 h-24 border border-primary/8 rotate-[30deg] animate-float" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-[15%] left-1/3 w-12 h-12 border border-primary/15 -rotate-[20deg] animate-float" style={{ animationDelay: '3s' }} />
+        
+        {/* Decorative lines */}
         <div className="absolute top-40 left-0 w-64 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         <div className="absolute bottom-60 right-0 w-48 h-[1px] bg-gradient-to-l from-transparent via-primary/20 to-transparent" />
+        <div className="absolute top-[70%] left-0 w-32 h-[1px] bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+        
+        {/* Dot grid pattern */}
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }} />
+        
+        {/* Diagonal lines SVG */}
+        <svg className="absolute top-20 right-20 w-40 h-40 text-primary/5" viewBox="0 0 100 100">
+          <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="0.5" />
+          <line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="0.5" />
+          <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="0.5" />
+        </svg>
+        
+        {/* Corner ornament */}
+        <svg className="absolute top-32 left-8 w-16 h-16 text-primary/20" viewBox="0 0 50 50">
+          <path d="M0 25 L25 0 L25 10 L10 25 L25 25 L25 50 L0 25" fill="none" stroke="currentColor" strokeWidth="0.5" />
+        </svg>
+        
+        {/* Small diamonds */}
+        <div className="absolute top-1/2 left-20 w-3 h-3 bg-primary/20 rotate-45" />
+        <div className="absolute top-[60%] right-32 w-2 h-2 bg-primary/15 rotate-45" />
+        <div className="absolute top-[80%] left-1/3 w-2 h-2 bg-primary/10 rotate-45" />
+        <div className="absolute top-[25%] right-1/4 w-2 h-2 bg-primary/15 rotate-45" />
+        
+        {/* Animated circles */}
+        <div className="absolute top-[40%] right-16 w-6 h-6 border border-primary/20 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
+        <div className="absolute bottom-[30%] left-16 w-4 h-4 border border-primary/15 rounded-full animate-ping" style={{ animationDuration: '4s', animationDelay: '1s' }} />
       </div>
 
       <Header />
@@ -70,8 +103,12 @@ const LicensingPage = () => {
               Для образовательных организаций
             </Badge>
             
-            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              Лицензирование <span className="gradient-gold-text">образовательной деятельности</span>
+            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 animate-fade-in">
+              Лицензирование{" "}
+              <span className="relative inline-block">
+                <span className="gradient-gold-text">образовательной деятельности</span>
+                <span className="shimmer absolute inset-0 gradient-gold-text" aria-hidden="true">образовательной деятельности</span>
+              </span>
             </h1>
             
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
@@ -128,9 +165,13 @@ const LicensingPage = () => {
                   { icon: Users, title: "Доверие клиентов", desc: "Повышение репутации" },
                   { icon: Scale, title: "Соответствие", desc: "Требованиям закона" },
                 ].map((item, i) => (
-                  <Card key={i} className="luxury-card border-0">
+                  <Card 
+                    key={i} 
+                    className="luxury-card border-0 hover:glow-subtle transition-all duration-500 animate-fade-in"
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  >
                     <CardContent className="p-6">
-                      <item.icon className="w-8 h-8 text-primary mb-3" />
+                      <item.icon className="w-8 h-8 text-primary mb-3 animate-pulse" style={{ animationDuration: '3s' }} />
                       <h4 className="font-semibold mb-1">{item.title}</h4>
                       <p className="text-sm text-muted-foreground">{item.desc}</p>
                     </CardContent>
@@ -176,14 +217,22 @@ const LicensingPage = () => {
                   ]
                 }
               ].map((service, i) => (
-                <Card key={i} className="luxury-card border-0 hover:glow-subtle transition-all duration-500">
+                <Card 
+                  key={i} 
+                  className="luxury-card border-0 hover:glow-subtle transition-all duration-500 group animate-fade-in"
+                  style={{ animationDelay: `${i * 200}ms` }}
+                >
                   <CardContent className="p-8">
-                    <h3 className="text-xl font-display font-semibold mb-6 gradient-gold-text">
+                    <h3 className="text-xl font-display font-semibold mb-6 gradient-gold-text group-hover:scale-105 transition-transform">
                       {service.title}
                     </h3>
                     <ul className="space-y-3">
                       {service.items.map((item, j) => (
-                        <li key={j} className="flex items-start gap-3 text-muted-foreground">
+                        <li 
+                          key={j} 
+                          className="flex items-start gap-3 text-muted-foreground animate-fade-in"
+                          style={{ animationDelay: `${i * 200 + j * 100}ms` }}
+                        >
                           <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                           <span>{item}</span>
                         </li>
@@ -209,10 +258,19 @@ const LicensingPage = () => {
                   { num: "03", title: "Подача", desc: "Подаём заявление и сопровождаем процесс рассмотрения" },
                   { num: "04", title: "Получение", desc: "Получаем лицензию и передаём вам с инструкциями" },
                 ].map((stage, i) => (
-                  <Card key={i} className="luxury-card border-0">
+                  <Card 
+                    key={i} 
+                    className="luxury-card border-0 hover:glow-subtle transition-all duration-500 hover:translate-x-2 animate-fade-in"
+                    style={{ animationDelay: `${i * 150}ms` }}
+                  >
                     <CardContent className="p-6 flex items-center gap-6">
-                      <div className="text-4xl font-display font-bold gradient-gold-text">
-                        {stage.num}
+                      <div className="relative">
+                        <div className="text-4xl font-display font-bold gradient-gold-text">
+                          {stage.num}
+                        </div>
+                        <div className="absolute inset-0 text-4xl font-display font-bold shimmer gradient-gold-text" aria-hidden="true">
+                          {stage.num}
+                        </div>
                       </div>
                       <div>
                         <h4 className="font-semibold text-lg mb-1">{stage.title}</h4>
