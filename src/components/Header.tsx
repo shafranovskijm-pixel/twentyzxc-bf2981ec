@@ -1,15 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard } from "lucide-react";
-import { useAuthContext } from "@/contexts/AuthContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Menu, X, ChevronDown } from "lucide-react";
 
 const navLinks = [
   { href: "/#webdev", label: "Разработка" },
@@ -30,8 +22,6 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { user, signOut, isAdmin } = useAuthContext();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -50,11 +40,6 @@ const Header = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
-  };
 
   return (
     <header 
@@ -115,38 +100,6 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3">
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    Аккаунт
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {isAdmin() && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">
-                        <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Админ-панель
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Выйти
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link to="/auth">Войти</Link>
-              </Button>
-            )}
-          </div>
-
           {/* Mobile menu button */}
           <button 
             className="md:hidden p-2 text-foreground"
@@ -204,27 +157,6 @@ const Header = () => {
                 )
               ))}
             </nav>
-            
-            <div className="mt-6 space-y-3">
-              {user ? (
-                <Button 
-                  variant="ghost" 
-                  className="w-full" 
-                  onClick={() => {
-                    handleSignOut();
-                    setIsMobileMenuOpen(false);
-                  }}
-                >
-                  Выйти
-                </Button>
-              ) : (
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
-                    Войти
-                  </Link>
-                </Button>
-              )}
-            </div>
           </div>
         )}
       </div>
