@@ -7,6 +7,7 @@ import { ScrollToHash } from "@/hooks/use-scroll-to-hash";
 import Index from "./pages/Index";
 import Portfolio from "./pages/Portfolio";
 import Frdo from "./pages/Frdo";
+import Licensing from "./pages/Licensing";
 import Landing from "./pages/services/Landing";
 import Corporate from "./pages/services/Corporate";
 import Ecommerce from "./pages/services/Ecommerce";
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/portfolio" element={<Portfolio />} />
           <Route path="/frdo" element={<Frdo />} />
+          <Route path="/licensing" element={<Licensing />} />
           <Route path="/services/landing" element={<Landing />} />
           <Route path="/services/corporate" element={<Corporate />} />
           <Route path="/services/ecommerce" element={<Ecommerce />} />
