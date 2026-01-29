@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navLinks = [
-  { href: "/services", label: "Каталог услуг" },
   { href: "/#webdev", label: "Разработка" },
   { href: "/#advertising", label: "Реклама" },
   { 
@@ -127,12 +126,6 @@ const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard">
-                      <LayoutDashboard className="h-4 w-4 mr-2" />
-                      Личный кабинет
-                    </Link>
-                  </DropdownMenuItem>
                   {isAdmin() && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">
@@ -141,7 +134,6 @@ const Header = () => {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Выйти
@@ -153,11 +145,6 @@ const Header = () => {
                 <Link to="/auth">Войти</Link>
               </Button>
             )}
-            <Button variant="hero" size="default" asChild>
-              <Link to={user ? "/dashboard/listings/new" : "/auth"}>
-                Разместить объявление
-              </Link>
-            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -220,23 +207,16 @@ const Header = () => {
             
             <div className="mt-6 space-y-3">
               {user ? (
-                <>
-                  <Button asChild variant="outline" className="w-full">
-                    <Link to="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                      Личный кабинет
-                    </Link>
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full" 
-                    onClick={() => {
-                      handleSignOut();
-                      setIsMobileMenuOpen(false);
-                    }}
-                  >
-                    Выйти
-                  </Button>
-                </>
+                <Button 
+                  variant="ghost" 
+                  className="w-full" 
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                >
+                  Выйти
+                </Button>
               ) : (
                 <Button asChild variant="outline" className="w-full">
                   <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
@@ -244,14 +224,6 @@ const Header = () => {
                   </Link>
                 </Button>
               )}
-              <Button variant="hero" size="lg" className="w-full" asChild>
-                <Link 
-                  to={user ? "/dashboard/listings/new" : "/auth"} 
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Разместить объявление
-                </Link>
-              </Button>
             </div>
           </div>
         )}
