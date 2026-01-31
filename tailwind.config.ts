@@ -97,6 +97,18 @@ export default {
           from: { backgroundPosition: "200% 0" },
           to: { backgroundPosition: "-200% 0" },
         },
+        "spark": {
+          "0%": { 
+            opacity: "1", 
+            transform: "translate(0, 0) scale(1)",
+            boxShadow: "0 0 6px 2px hsl(45 80% 55% / 0.8)"
+          },
+          "100%": { 
+            opacity: "0", 
+            transform: "translate(var(--tx), var(--ty)) scale(0)",
+            boxShadow: "0 0 0px 0px hsl(45 80% 55% / 0)"
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -105,6 +117,7 @@ export default {
         "fade-in-left": "fade-in-left 0.6s ease-out forwards",
         "scale-in": "scale-in 0.4s ease-out forwards",
         "shimmer": "shimmer 8s ease-in-out infinite",
+        "spark": "spark 1.2s ease-out forwards",
       },
     },
   },
