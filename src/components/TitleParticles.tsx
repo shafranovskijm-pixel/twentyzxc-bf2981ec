@@ -88,7 +88,7 @@ const TitleParticles = () => {
         startY,
         endX: endPos.x,
         endY: endPos.y,
-        delay: Math.random() * 6,
+        delay: Math.random() * 1.5,
         size: 2 + Math.random() * 4,
         opacity: 0.4 + Math.random() * 0.6,
       });
@@ -101,29 +101,29 @@ const TitleParticles = () => {
     // Initial generation
     setParticles(generateParticles());
     
-    // Start animation cycle
+    // Start animation cycle - quick 5 second loop
     const startCycle = () => {
       setPhase('flying-in');
       
-      // After particles arrive (max delay 6s + flight 10s = 16s), show them
+      // After particles arrive (max delay 1.5s + flight 3s = 4.5s), briefly hold
       setTimeout(() => {
         setPhase('visible');
-      }, 16000);
+      }, 4500);
       
-      // Hold visible for 3 seconds, then fade out
+      // Quick fade out after 0.5s hold
       setTimeout(() => {
         setPhase('fading-out');
-      }, 19000);
+      }, 5000);
       
-      // After fade out (4s), regenerate and restart
+      // After quick fade (1s), regenerate and restart
       setTimeout(() => {
         setParticles(generateParticles());
         setPhase('idle');
-        // Small delay before restarting
+        // Immediate restart
         setTimeout(() => {
           startCycle();
-        }, 500);
-      }, 23000);
+        }, 100);
+      }, 6000);
     };
 
     // Start first cycle after a small delay
@@ -154,8 +154,8 @@ const TitleParticles = () => {
             top: isFlying || isFading ? `${particle.endY}%` : `${particle.startY}%`,
             opacity: isFading ? 0 : (isFlying ? particle.opacity : 0),
             transition: isFading 
-              ? `all 4s ease-in ${particle.delay * 0.3}s`
-              : `all 10s cubic-bezier(0.23, 1, 0.32, 1) ${particle.delay}s`,
+              ? `all 0.8s ease-in ${particle.delay * 0.2}s`
+              : `all 3s cubic-bezier(0.23, 1, 0.32, 1) ${particle.delay}s`,
             transform: isFading ? 'scale(0)' : (isFlying ? 'scale(1)' : 'scale(0)'),
           }}
         />
@@ -166,7 +166,7 @@ const TitleParticles = () => {
         className="absolute inset-0 w-full h-full overflow-visible"
         style={{ 
           opacity: isFading ? 0 : (isFlying ? 1 : 0),
-          transition: isFading ? 'opacity 3s ease-in' : 'opacity 3s ease-out 5s'
+          transition: isFading ? 'opacity 0.6s ease-in' : 'opacity 1s ease-out 2s'
         }}
       >
         {/* Top left corner */}
@@ -178,7 +178,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isFading ? 50 : (isFlying ? 0 : 50),
-            transition: isFading ? 'stroke-dashoffset 3s ease-in' : 'stroke-dashoffset 6s ease-out 3s'
+            transition: isFading ? 'stroke-dashoffset 0.6s ease-in' : 'stroke-dashoffset 2s ease-out 1.5s'
           }}
         />
         {/* Top right corner */}
@@ -190,7 +190,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isFading ? 50 : (isFlying ? 0 : 50),
-            transition: isFading ? 'stroke-dashoffset 3s ease-in 0.2s' : 'stroke-dashoffset 6s ease-out 4s'
+            transition: isFading ? 'stroke-dashoffset 0.6s ease-in 0.1s' : 'stroke-dashoffset 2s ease-out 2s'
           }}
         />
         {/* Bottom left corner */}
@@ -202,7 +202,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isFading ? 50 : (isFlying ? 0 : 50),
-            transition: isFading ? 'stroke-dashoffset 3s ease-in 0.4s' : 'stroke-dashoffset 6s ease-out 5s'
+            transition: isFading ? 'stroke-dashoffset 0.6s ease-in 0.2s' : 'stroke-dashoffset 2s ease-out 2.5s'
           }}
         />
         {/* Bottom right corner */}
@@ -214,7 +214,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isFading ? 50 : (isFlying ? 0 : 50),
-            transition: isFading ? 'stroke-dashoffset 3s ease-in 0.6s' : 'stroke-dashoffset 6s ease-out 6s'
+            transition: isFading ? 'stroke-dashoffset 0.6s ease-in 0.3s' : 'stroke-dashoffset 2s ease-out 3s'
           }}
         />
         
@@ -235,7 +235,7 @@ const TitleParticles = () => {
           background: 'linear-gradient(90deg, transparent, hsl(45 80% 55% / 0.5), transparent)',
           opacity: isFading ? 0 : (isFlying ? 1 : 0),
           transform: isFading ? 'scaleX(0)' : (isFlying ? 'scaleX(1)' : 'scaleX(0)'),
-          transition: isFading ? 'all 3s ease-in' : 'all 6s ease-out 8s',
+          transition: isFading ? 'all 0.6s ease-in' : 'all 2s ease-out 3s',
         }}
       />
     </div>
