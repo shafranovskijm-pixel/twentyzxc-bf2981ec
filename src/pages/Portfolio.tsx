@@ -25,16 +25,18 @@ const projects: Project[] = [
     location: "Дальний Восток",
     description: "Персональный сайт эксперта по недвижимости с личным кабинетом клиента. ИИ-помощник для написания статей блога о недвижимости, статистика посещений, система сбора заявок и настройки сайта.",
     tags: ["web", "дизайн", "SEO", "AI", "CRM"],
-    url: "https://xn----7sbfldrqgb2aseye2d.xn--p1ai/",
+    url: "/projects/chmuleva",
     featured: true,
+    isInternal: true,
   },
   {
     title: "Lanmei — экспорт из Китая",
     description: "Комплексный брендинг для компании по закупкам и доставке товаров из Китая. Разработка логотипа и фирменного стиля, создание продающего сайта, настройка рекламных кампаний и ведение социальных сетей.",
     tags: ["web", "ads", "SEO", "SMM"],
     price: "30 000 ₽",
-    url: "https://lanmei.ru/",
+    url: "/projects/lanmei",
     featured: true,
+    isInternal: true,
   },
   {
     title: "ООО «ВАЙБ» — сайт + LMS",
@@ -242,18 +244,10 @@ const Portfolio = () => {
 };
 
 const FeaturedProjectCard = ({ project, index }: { project: Project; index: number }) => {
-  const [ref, isInView] = useInView<HTMLAnchorElement>({ threshold: 0.1 });
+  const [ref, isInView] = useInView<HTMLDivElement>({ threshold: 0.1 });
   
-  return (
-    <a 
-      ref={ref}
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`group block luxury-card p-8 rounded-sm transition-all duration-500 hover:glow-subtle
-        ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
-      style={{ transitionDelay: `${index * 150}ms` }}
-    >
+  const CardContent = (
+    <>
       <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-xl font-display font-semibold group-hover:text-primary transition-colors mb-1">
@@ -263,7 +257,11 @@ const FeaturedProjectCard = ({ project, index }: { project: Project; index: numb
             <p className="text-sm text-muted-foreground">{project.location}</p>
           )}
         </div>
-        <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        {project.isInternal ? (
+          <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+        ) : (
+          <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+        )}
       </div>
       
       <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -293,7 +291,29 @@ const FeaturedProjectCard = ({ project, index }: { project: Project; index: numb
           )}
         </div>
       )}
-    </a>
+    </>
+  );
+
+  const cardClassName = `group block luxury-card p-8 rounded-sm transition-all duration-500 hover:glow-subtle
+    ${isInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`;
+  
+  return (
+    <div ref={ref} style={{ transitionDelay: `${index * 150}ms` }}>
+      {project.isInternal ? (
+        <Link to={project.url} className={cardClassName}>
+          {CardContent}
+        </Link>
+      ) : (
+        <a 
+          href={project.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardClassName}
+        >
+          {CardContent}
+        </a>
+      )}
+    </div>
   );
 };
 
