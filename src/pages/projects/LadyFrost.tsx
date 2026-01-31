@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +15,8 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { Link } from "react-router-dom";
+
+const ShieldParticles = lazy(() => import("@/components/ShieldParticles"));
 
 const services = [
   {
@@ -98,45 +101,60 @@ const LadyFrost = () => {
           </Link>
 
           {/* Hero */}
-          <div className="max-w-4xl mb-20">
-            <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
-              Образование
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Учебный центр <span className="gradient-gold-text">«Lady Frost»</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-2">
-              Лицензирование и ФРДО
-            </p>
-            <p className="text-muted-foreground mb-6">
-              Самара
-            </p>
-            
-            <p className="text-muted-foreground mb-8 leading-relaxed max-w-2xl">
-              Добавление раздела «Сведения об образовательной организации» на существующий сайт, 
-              подготовка полного пакета документов для получения образовательной лицензии и 
-              настройка работы с реестром ФИС ФРДО.
-            </p>
+          <div className="grid lg:grid-cols-2 gap-12 mb-20">
+            <div className="max-w-xl">
+              <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
+                Образование
+              </Badge>
+              <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+                Учебный центр <span className="gradient-gold-text">«Lady Frost»</span>
+              </h1>
+              <p className="text-lg text-muted-foreground mb-2">
+                Лицензирование и ФРДО
+              </p>
+              <p className="text-muted-foreground mb-6">
+                Самара
+              </p>
+              
+              <p className="text-muted-foreground mb-8 leading-relaxed">
+                Добавление раздела «Сведения об образовательной организации» на существующий сайт, 
+                подготовка полного пакета документов для получения образовательной лицензии и 
+                настройка работы с реестром ФИС ФРДО.
+              </p>
 
-            <div className="flex flex-wrap gap-2 mb-8">
-              {["license", "support", "ФРДО"].map((tag) => (
-                <Badge key={tag} variant="outline" className="border-border">
-                  {tag}
-                </Badge>
-              ))}
+              <div className="flex flex-wrap gap-2 mb-8">
+                {["license", "support", "ФРДО"].map((tag) => (
+                  <Badge key={tag} variant="outline" className="border-border">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="luxury-card px-6 py-3 rounded-sm">
+                  <span className="text-sm text-muted-foreground mr-2">Стоимость:</span>
+                  <span className="text-xl font-display font-bold gradient-gold-text">50 000 ₽</span>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://lady-frost.ru/" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Открыть сайт
+                  </a>
+                </Button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 items-center">
-              <div className="luxury-card px-6 py-3 rounded-sm">
-                <span className="text-sm text-muted-foreground mr-2">Стоимость:</span>
-                <span className="text-xl font-display font-bold gradient-gold-text">50 000 ₽</span>
+            {/* 3D Shield Animation */}
+            <div className="hidden lg:flex items-center justify-center">
+              <div className="w-full h-[400px] relative">
+                <Suspense fallback={
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="w-32 h-32 border border-primary/20 rounded-full animate-pulse" />
+                  </div>
+                }>
+                  <ShieldParticles />
+                </Suspense>
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://lady-frost.ru/" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Открыть сайт
-                </a>
-              </Button>
             </div>
           </div>
 
