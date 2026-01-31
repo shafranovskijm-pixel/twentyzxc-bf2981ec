@@ -60,12 +60,12 @@ const Particles = () => {
     const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
     
     for (let i = 0; i < PARTICLE_COUNT; i++) {
-      // Random starting positions (scattered)
+      // Random starting positions (scattered) - start from right side
       const angle = Math.random() * Math.PI * 2;
-      const radius = 2 + Math.random() * 3;
-      positions[i * 3] = Math.cos(angle) * radius;
+      const radius = 1.5 + Math.random() * 2;
+      positions[i * 3] = Math.cos(angle) * radius + 1;
       positions[i * 3 + 1] = Math.sin(angle) * radius;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 1.5;
       
       // Random offset for floating effect
       randomOffsets[i * 3] = Math.random() * Math.PI * 2;
@@ -97,9 +97,9 @@ const Particles = () => {
     const geometry = meshRef.current.geometry;
     const positionAttr = geometry.attributes.position;
     
-    // Animation progress (0 to 1 over 3 seconds, then stay at 1)
-    const progress = Math.min(elapsed / 3, 1);
-    const eased = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+    // Animation progress (0 to 1 over 1 second, then stay at 1)
+    const progress = Math.min(elapsed / 1, 1);
+    const eased = 1 - Math.pow(1 - progress, 4); // Ease out quart - faster
     
     for (let i = 0; i < PARTICLE_COUNT; i++) {
       const i3 = i * 3;
@@ -157,12 +157,14 @@ const ShieldParticles = () => {
   return (
     <div className="w-full h-full min-h-[300px]">
       <Canvas
-        camera={{ position: [0, 0, 4], fov: 50 }}
+        camera={{ position: [0.5, 0, 4], fov: 45 }}
         style={{ background: 'transparent' }}
         gl={{ alpha: true, antialias: true }}
       >
         <ambientLight intensity={0.5} />
-        <Particles />
+        <group position={[0.5, 0, 0]}>
+          <Particles />
+        </group>
       </Canvas>
     </div>
   );
