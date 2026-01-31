@@ -1,4 +1,3 @@
-import { Suspense, lazy } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +14,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { Link } from "react-router-dom";
-
-const ShieldParticles = lazy(() => import("@/components/ShieldParticles"));
+import TitleParticles from "@/components/TitleParticles";
 
 const services = [
   {
@@ -101,14 +99,20 @@ const LadyFrost = () => {
           </Link>
 
           {/* Hero */}
-          <div className="grid lg:grid-cols-2 gap-12 mb-20">
-            <div className="max-w-xl">
+          <div className="mb-20">
+            <div className="max-w-4xl">
               <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
                 Образование
               </Badge>
-              <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-                Учебный центр <span className="gradient-gold-text">«Lady Frost»</span>
-              </h1>
+              
+              {/* Title with particles */}
+              <div className="relative inline-block mb-4">
+                <TitleParticles />
+                <h1 className="text-4xl md:text-5xl font-display font-bold relative z-10 py-4 px-2">
+                  Учебный центр <span className="gradient-gold-text">«Lady Frost»</span>
+                </h1>
+              </div>
+              
               <p className="text-lg text-muted-foreground mb-2">
                 Лицензирование и ФРДО
               </p>
@@ -116,7 +120,7 @@ const LadyFrost = () => {
                 Самара
               </p>
               
-              <p className="text-muted-foreground mb-8 leading-relaxed">
+              <p className="text-muted-foreground mb-8 leading-relaxed max-w-2xl">
                 Добавление раздела «Сведения об образовательной организации» на существующий сайт, 
                 подготовка полного пакета документов для получения образовательной лицензии и 
                 настройка работы с реестром ФИС ФРДО.
@@ -141,19 +145,6 @@ const LadyFrost = () => {
                     Открыть сайт
                   </a>
                 </Button>
-              </div>
-            </div>
-
-            {/* 3D Shield Animation */}
-            <div className="hidden lg:flex items-center justify-center">
-              <div className="w-full h-[400px] relative">
-                <Suspense fallback={
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-32 h-32 border border-primary/20 rounded-full animate-pulse" />
-                  </div>
-                }>
-                  <ShieldParticles />
-                </Suspense>
               </div>
             </div>
           </div>
