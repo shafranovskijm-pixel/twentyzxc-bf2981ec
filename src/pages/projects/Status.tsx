@@ -19,6 +19,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import statusScreenshot from "@/assets/projects/status-screenshot.png";
 
 const services = [
   {
@@ -153,6 +154,32 @@ const Status = () => {
                     Открыть сайт
                   </a>
                 </Button>
+              </div>
+            </div>
+          </AnimatedSection>
+
+          {/* Screenshot */}
+          <AnimatedSection className="mb-20" delay={100} direction="scale">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 rounded-lg blur-xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <div className="relative overflow-hidden rounded-sm border border-border">
+                <img 
+                  src={statusScreenshot} 
+                  alt="Сайт учебного центра Статус" 
+                  className="w-full h-auto"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                  <div>
+                    <p className="text-sm text-muted-foreground">uc-status38.ru</p>
+                  </div>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href="https://uc-status38.ru/" target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Открыть сайт
+                    </a>
+                  </Button>
+                </div>
               </div>
             </div>
           </AnimatedSection>
