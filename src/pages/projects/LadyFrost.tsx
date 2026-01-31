@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
+import TechCard from "@/components/TechCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -159,17 +160,12 @@ const LadyFrost = () => {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {services.map((service, i) => (
                 <AnimatedSection key={i} delay={150 + i * 100} direction="up">
-                  <div className="luxury-card p-6 rounded-sm group hover:border-primary/40 transition-colors h-full">
-                    <div className="w-12 h-12 rounded-sm border border-border group-hover:border-primary/40 flex items-center justify-center mb-4 transition-colors">
-                      <service.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                      {service.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {service.description}
-                    </p>
-                  </div>
+                  <TechCard
+                    icon={service.icon}
+                    title={service.title}
+                    description={service.description}
+                    index={i}
+                  />
                 </AnimatedSection>
               ))}
             </div>
