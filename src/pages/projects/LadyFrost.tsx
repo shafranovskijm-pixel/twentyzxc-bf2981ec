@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AnimatedSection from "@/components/AnimatedSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -99,7 +100,7 @@ const LadyFrost = () => {
           </Link>
 
           {/* Hero */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20">
             <div className="max-w-4xl">
               <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
                 Образование
@@ -147,60 +148,61 @@ const LadyFrost = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Services Grid */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100}>
             <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
               <span className="w-8 h-[1px] bg-primary" />
               Что было сделано
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {services.map((service, i) => (
-                <div 
-                  key={i} 
-                  className="luxury-card p-6 rounded-sm group hover:border-primary/40 transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-sm border border-border group-hover:border-primary/40 flex items-center justify-center mb-4 transition-colors">
-                    <service.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <AnimatedSection key={i} delay={150 + i * 100} direction="up">
+                  <div className="luxury-card p-6 rounded-sm group hover:border-primary/40 transition-colors h-full">
+                    <div className="w-12 h-12 rounded-sm border border-border group-hover:border-primary/40 flex items-center justify-center mb-4 transition-colors">
+                      <service.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {service.description}
+                    </p>
                   </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {service.description}
-                  </p>
-                </div>
+                </AnimatedSection>
               ))}
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Process */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100}>
             <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
               <span className="w-8 h-[1px] bg-primary" />
               Процесс работы
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {processSteps.map((item, i) => (
-                <div key={i} className="relative">
-                  <div className="luxury-card p-6 rounded-sm h-full">
-                    <div className="text-4xl font-display font-bold gradient-gold-text opacity-50 mb-4">
-                      {item.step}
+                <AnimatedSection key={i} delay={150 + i * 150} direction="left">
+                  <div className="relative">
+                    <div className="luxury-card p-6 rounded-sm h-full">
+                      <div className="text-4xl font-display font-bold gradient-gold-text opacity-50 mb-4">
+                        {item.step}
+                      </div>
+                      <h3 className="font-semibold mb-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
                     </div>
-                    <h3 className="font-semibold mb-2">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                    {i < processSteps.length - 1 && (
+                      <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-[1px] bg-border" />
+                    )}
                   </div>
-                  {i < processSteps.length - 1 && (
-                    <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-[1px] bg-border" />
-                  )}
-                </div>
+                </AnimatedSection>
               ))}
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Info Section */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100} direction="scale">
             <div className="luxury-card p-8 md:p-12 rounded-sm">
               <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div>
@@ -253,10 +255,10 @@ const LadyFrost = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* CTA */}
-          <div className="text-center">
+          <AnimatedSection className="text-center" delay={100} direction="up">
             <div className="luxury-card p-12 rounded-sm max-w-3xl mx-auto">
               <h3 className="text-2xl md:text-3xl font-display font-semibold mb-4">
                 Нужна <span className="gradient-gold-text">лицензия</span>?
@@ -275,7 +277,7 @@ const LadyFrost = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
         </div>
       </main>
 
