@@ -58,10 +58,11 @@ const projects: Project[] = [
   {
     title: "Учебный центр «Статус»",
     location: "Ангарск",
-    description: "Сайт, поддержка ФРДО, LMS под ключ (в разработке).",
-    tags: ["web", "LMS", "support"],
-    price: "24 000 ₽/год (ФРДО)",
-    url: "https://uc-status38.ru/",
+    description: "Комплексное сопровождение: сайт, ФРДО, LMS. Решение нестандартных задач: перенос домена, претензии к хостингу.",
+    tags: ["web", "LMS", "support", "ФРДО"],
+    price: "65 000 ₽/год",
+    url: "/projects/status",
+    isInternal: true,
   },
   {
     title: "PR Nutrition",
