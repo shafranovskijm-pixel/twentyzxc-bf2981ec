@@ -79,7 +79,7 @@ const WebDevSection = () => {
             <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
               {/* Left gate */}
               <div 
-                className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-card via-card to-card/95 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-x-full origin-left"
+                className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-card via-card to-card/95 transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-x-full origin-left"
                 style={{
                   boxShadow: 'inset -20px 0 40px -20px hsl(45 80% 55% / 0.1)',
                 }}
@@ -96,7 +96,7 @@ const WebDevSection = () => {
               
               {/* Right gate */}
               <div 
-                className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-card via-card to-card/95 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-full origin-right"
+                className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-card via-card to-card/95 transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-full origin-right"
                 style={{
                   boxShadow: 'inset 20px 0 40px -20px hsl(45 80% 55% / 0.1)',
                 }}
