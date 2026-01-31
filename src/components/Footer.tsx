@@ -39,65 +39,6 @@ const Footer = () => {
 
   return (
     <footer className="border-t border-border">
-      {/* FAQ Section */}
-      <div className="py-12 border-b border-border/50">
-        <div className="container px-4">
-          <div className="max-w-3xl mx-auto">
-            {/* Collapsible Header */}
-            <button 
-              onClick={() => setIsFaqExpanded(!isFaqExpanded)}
-              className="w-full text-center group cursor-pointer"
-            >
-              <div className="inline-flex items-center gap-4 mb-4">
-                <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/50" />
-                <HelpCircle className="w-5 h-5 text-primary" />
-                <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
-              </div>
-              <h2 className="text-2xl md:text-3xl font-display font-bold mb-3 group-hover:text-primary/90 transition-colors">
-                Частые <span className="gradient-gold-text">вопросы</span>
-              </h2>
-              <p className="text-muted-foreground text-sm mb-4">
-                Ответы на популярные вопросы о наших услугах
-              </p>
-              <ChevronDown 
-                className={`w-5 h-5 text-primary mx-auto transition-transform duration-300 ${isFaqExpanded ? 'rotate-180' : ''}`} 
-              />
-            </button>
-
-            {/* Collapsible Content */}
-            <div 
-              className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                isFaqExpanded ? 'max-h-[2000px] opacity-100 mt-8' : 'max-h-0 opacity-0 mt-0'
-              }`}
-            >
-              <Accordion type="single" collapsible className="space-y-3">
-                {faqs.map((faq, index) => (
-                  <AccordionItem
-                    key={index}
-                    value={`item-${index}`}
-                    className="bg-card/50 rounded-sm border border-border/30 px-5 data-[state=open]:border-primary/30 transition-all duration-300"
-                  >
-                    <AccordionTrigger className="text-left py-4 hover:no-underline group text-sm">
-                      <div className="flex items-start gap-3">
-                        <span className="text-primary/40 font-display font-bold group-hover:text-primary transition-colors">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <span className="font-medium group-hover:text-primary transition-colors">
-                          {faq.question}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-4 pl-9 text-muted-foreground text-sm leading-relaxed">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Footer Content */}
       <div className="py-16">
         <div className="container px-4">
@@ -153,6 +94,65 @@ const Footer = () => {
                 <span>© 2024 24ZXC. Все права защищены.</span>
               </div>
               <div>Премиум решения по всей России</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FAQ Section - at bottom */}
+      <div className="py-10 border-t border-border/50 bg-secondary/20">
+        <div className="container px-4">
+          <div className="max-w-3xl mx-auto">
+            {/* Collapsible Header */}
+            <button 
+              onClick={() => setIsFaqExpanded(!isFaqExpanded)}
+              className="w-full text-center group cursor-pointer"
+            >
+              <div className="inline-flex items-center gap-4 mb-3">
+                <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+              </div>
+              <h3 className="text-xl md:text-2xl font-display font-bold mb-2 group-hover:text-primary/90 transition-colors">
+                Частые <span className="gradient-gold-text">вопросы</span>
+              </h3>
+              <p className="text-muted-foreground text-xs mb-3">
+                Ответы на популярные вопросы о наших услугах
+              </p>
+              <ChevronDown 
+                className={`w-4 h-4 text-primary mx-auto transition-transform duration-300 ${isFaqExpanded ? 'rotate-180' : ''}`} 
+              />
+            </button>
+
+            {/* Collapsible Content */}
+            <div 
+              className={`overflow-hidden transition-all duration-500 ease-in-out ${
+                isFaqExpanded ? 'max-h-[2000px] opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'
+              }`}
+            >
+              <Accordion type="single" collapsible className="space-y-2">
+                {faqs.map((faq, index) => (
+                  <AccordionItem
+                    key={index}
+                    value={`item-${index}`}
+                    className="bg-card/50 rounded-sm border border-border/30 px-4 data-[state=open]:border-primary/30 transition-all duration-300"
+                  >
+                    <AccordionTrigger className="text-left py-3 hover:no-underline group text-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="text-primary/40 font-display font-bold text-xs group-hover:text-primary transition-colors">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="font-medium text-sm group-hover:text-primary transition-colors">
+                          {faq.question}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-3 pl-8 text-muted-foreground text-xs leading-relaxed">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
             </div>
           </div>
         </div>
