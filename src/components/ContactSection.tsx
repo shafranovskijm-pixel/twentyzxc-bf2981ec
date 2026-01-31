@@ -174,32 +174,6 @@ const ContactSection = () => {
             </p>
           </div>
 
-          {/* Contact cards - animated */}
-          <div 
-            className={`grid md:grid-cols-3 gap-6 mb-16 transition-all duration-700 delay-200 ${
-              animationStep >= 4 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-          >
-            <ContactCard 
-              icon={<Phone className="w-6 h-6" />}
-              title="Телефон"
-              value="+7 (914) 721-34-24"
-              href="tel:+79147213424"
-            />
-            <ContactCard 
-              icon={<Mail className="w-6 h-6" />}
-              title="Email"
-              value="shafranovskij.m@gmail.com"
-              href="mailto:shafranovskij.m@gmail.com"
-            />
-            <ContactCard 
-              icon={<Send className="w-6 h-6" />}
-              title="Telegram"
-              value="@zxc24support"
-              href="https://t.me/zxc24support"
-            />
-          </div>
-
           {/* Treasure Chest */}
           <div 
             className={`transition-all duration-700 delay-300 ${
