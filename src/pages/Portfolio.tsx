@@ -21,6 +21,16 @@ interface Project {
 
 const projects: Project[] = [
   {
+    title: "Учебный центр «Статус»",
+    location: "Ангарск",
+    description: "Комплексное сопровождение: сайт, ФРДО, LMS. Решение нестандартных задач: перенос домена, претензии к хостингу.",
+    tags: ["web", "LMS", "support", "ФРДО"],
+    price: "65 000 ₽/год",
+    url: "/projects/status",
+    featured: true,
+    isInternal: true,
+  },
+  {
     title: "Анна Чмулева — Риелтор",
     location: "Дальний Восток",
     description: "Персональный сайт эксперта по недвижимости с личным кабинетом клиента. ИИ-помощник для написания статей блога о недвижимости, статистика посещений, система сбора заявок и настройки сайта.",
@@ -35,16 +45,7 @@ const projects: Project[] = [
     tags: ["web", "ads", "SEO", "SMM"],
     price: "35 000 ₽/год",
     url: "/projects/lanmei",
-    featured: true,
     isInternal: true,
-  },
-  {
-    title: "База отдыха «Июль»",
-    location: "Приморский край",
-    description: "Создание и управление сайтом, Telegram, реклама, подбор персонала.",
-    tags: ["web", "ads", "SMM"],
-    price: "24 000 ₽/год",
-    url: "https://xn--h1abhbk1gm.xn--p1ai/",
   },
   {
     title: "Учебный центр «Lady Frost»",
@@ -53,15 +54,6 @@ const projects: Project[] = [
     tags: ["license", "support"],
     price: "50 000 ₽",
     url: "/projects/lady-frost",
-    isInternal: true,
-  },
-  {
-    title: "Учебный центр «Статус»",
-    location: "Ангарск",
-    description: "Комплексное сопровождение: сайт, ФРДО, LMS. Решение нестандартных задач: перенос домена, претензии к хостингу.",
-    tags: ["web", "LMS", "support", "ФРДО"],
-    price: "65 000 ₽/год",
-    url: "/projects/status",
     isInternal: true,
   },
   {
