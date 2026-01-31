@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond, Monitor, Building2, ShoppingBag, AppWindow } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Diamond } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const WebDevSection = () => {
@@ -175,7 +175,6 @@ const WebDevSection = () => {
                 price="от 15 000 ₽"
                 description="Продающие страницы с высокой конверсией"
                 href="/services/landing"
-                icon={Monitor}
                 number="01"
               />
               <ServiceCard 
@@ -183,7 +182,6 @@ const WebDevSection = () => {
                 price="от 50 000 ₽"
                 description="Многостраничные решения для бизнеса"
                 href="/services/corporate"
-                icon={Building2}
                 number="02"
               />
               <ServiceCard 
@@ -191,7 +189,6 @@ const WebDevSection = () => {
                 price="от 100 000 ₽"
                 description="E-commerce платформы любой сложности"
                 href="/services/ecommerce"
-                icon={ShoppingBag}
                 number="03"
               />
               <ServiceCard 
@@ -199,7 +196,6 @@ const WebDevSection = () => {
                 price="индивидуально"
                 description="SPA, PWA, сложные системы"
                 href="/services/webapp"
-                icon={AppWindow}
                 number="04"
               />
             </div>
@@ -227,14 +223,12 @@ const ServiceCard = ({
   price, 
   description, 
   href, 
-  icon: Icon,
   number 
 }: { 
   title: string; 
   price: string; 
   description: string; 
   href: string;
-  icon: React.ElementType;
   number: string;
 }) => (
   <Link 
@@ -260,13 +254,6 @@ const ServiceCard = ({
         backgroundSize: '20px 20px'
       }}
     />
-    
-    {/* Icon */}
-    <div className="relative z-10 mb-6">
-      <div className="w-14 h-14 rounded-sm border border-border/50 group-hover:border-primary/40 flex items-center justify-center transition-all duration-500 group-hover:bg-primary/5">
-        <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors duration-500" />
-      </div>
-    </div>
     
     <div className="relative z-10 flex items-start justify-between mb-4">
       <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
