@@ -2,9 +2,10 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck, Bot, BarChart3 } from "lucide-react";
+import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck, Bot, BarChart3, ArrowRight } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useInView } from "@/hooks/use-in-view";
+import { Link } from "react-router-dom";
 
 interface Project {
   title: string;
@@ -15,6 +16,7 @@ interface Project {
   priceAlt?: string;
   url: string;
   featured?: boolean;
+  isInternal?: boolean;
 }
 
 const projects: Project[] = [
@@ -70,10 +72,11 @@ const projects: Project[] = [
   {
     title: "Магазин «Flowrish»",
     location: "Уссурийск",
-    description: "Сайт с админ-панелью для учёта клиентов, сбора заявок и управления товарами. Мобильное приложение для сотрудников магазина.",
-    tags: ["web", "CRM", "ads"],
+    description: "Интернет-магазин с админ-панелью, CRM-системой и 7 праздничными темами с таймером автопереключения.",
+    tags: ["web", "CRM", "E-commerce"],
     price: "15 000 ₽/мес",
-    url: "https://flowrish.ru/",
+    url: "/projects/flowrish",
+    isInternal: true,
   },
   {
     title: "SpinRide — велосипеды и самокаты",
@@ -295,18 +298,10 @@ const FeaturedProjectCard = ({ project, index }: { project: Project; index: numb
 };
 
 const ProjectCard = ({ project, index }: { project: Project; index: number }) => {
-  const [ref, isInView] = useInView<HTMLAnchorElement>({ threshold: 0.1 });
+  const [ref, isInView] = useInView<HTMLDivElement>({ threshold: 0.1 });
   
-  return (
-    <a 
-      ref={ref}
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`group block luxury-card p-6 rounded-sm transition-all duration-500 hover:border-primary/40
-        ${isInView ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'}`}
-      style={{ transitionDelay: `${(index % 3) * 100}ms` }}
-    >
+  const CardContent = (
+    <>
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-semibold group-hover:text-primary transition-colors text-sm mb-0.5">
@@ -316,7 +311,11 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
             <p className="text-xs text-muted-foreground">{project.location}</p>
           )}
         </div>
-        <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+        {project.isInternal ? (
+          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all flex-shrink-0" />
+        ) : (
+          <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+        )}
       </div>
       
       <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
@@ -340,7 +339,29 @@ const ProjectCard = ({ project, index }: { project: Project; index: number }) =>
           {project.price}
         </div>
       )}
-    </a>
+    </>
+  );
+
+  const cardClassName = `group block luxury-card p-6 rounded-sm transition-all duration-500 hover:border-primary/40
+    ${isInView ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'}`;
+  
+  return (
+    <div ref={ref} style={{ transitionDelay: `${(index % 3) * 100}ms` }}>
+      {project.isInternal ? (
+        <Link to={project.url} className={cardClassName}>
+          {CardContent}
+        </Link>
+      ) : (
+        <a 
+          href={project.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cardClassName}
+        >
+          {CardContent}
+        </a>
+      )}
+    </div>
   );
 };
 
