@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <title>Flowrish - Цветочный магазин</title>
+    <meta name="description" content="Доставка свежих цветов и букетов. Заказывайте букеты с доставкой по городу!">
+    <meta name="author" content="Flowrish" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#f8b4c4" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Flowrish" />
+    <meta name="application-name" content="Flowrish" />
+    <meta name="msapplication-TileColor" content="#f8b4c4" />
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+    <link rel="shortcut icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Open Graph -->
+    
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/pwa-512x512.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    
+    <meta name="twitter:image" content="/pwa-512x512.png" />
+    <meta property="og:title" content="Flowrish - Цветочный магазин">
+  <meta name="twitter:title" content="Flowrish - Цветочный магазин">
+  <meta property="og:description" content="Доставка свежих цветов и букетов. Заказывайте букеты с доставкой по городу!">
+  <meta name="twitter:description" content="Доставка свежих цветов и букетов. Заказывайте букеты с доставкой по городу!">
+  <script type="module" crossorigin src="/assets/index-BE3Zq9bj.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BofPMR3L.css">
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script><script defer src="https://flowrish.ru/~flock.js" data-proxy-url="https://flowrish.ru/~api/analytics"></script></head>
+
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

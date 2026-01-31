@@ -14,6 +14,7 @@ import Landing from "./pages/services/Landing";
 import Corporate from "./pages/services/Corporate";
 import Ecommerce from "./pages/services/Ecommerce";
 import WebApp from "./pages/services/WebApp";
+import Flowrish from "./pages/projects/Flowrish";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/services/corporate" element={<Corporate />} />
           <Route path="/services/ecommerce" element={<Ecommerce />} />
           <Route path="/services/webapp" element={<WebApp />} />
+          <Route path="/projects/flowrish" element={<Flowrish />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
