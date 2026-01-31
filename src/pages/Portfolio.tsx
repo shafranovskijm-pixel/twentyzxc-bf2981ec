@@ -73,6 +73,13 @@ const projects: Project[] = [
     url: "https://uc-status38.ru/",
   },
   {
+    title: "PR Nutrition",
+    description: "Доработка сайта для лицензирования, раздел «Сведения об образовательной организации», версия для слабовидящих, ведение ФИС ФРДО.",
+    tags: ["web", "license", "support"],
+    url: "/projects/pr-nutrition",
+    isInternal: true,
+  },
+  {
     title: "Магазин «Flowrish»",
     location: "Уссурийск",
     description: "Интернет-магазин с админ-панелью, CRM-системой и 7 праздничными темами с таймером автопереключения.",
