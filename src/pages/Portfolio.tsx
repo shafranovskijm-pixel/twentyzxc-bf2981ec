@@ -61,7 +61,8 @@ const projects: Project[] = [
     description: "Раздел «Сведения об образовательной организации» на существующий сайт. Подготовка документов для лицензии, поддержка ФРДО.",
     tags: ["license", "support"],
     price: "50 000 ₽",
-    url: "https://lady-frost.ru/",
+    url: "/projects/lady-frost",
+    isInternal: true,
   },
   {
     title: "Учебный центр «Статус»",
