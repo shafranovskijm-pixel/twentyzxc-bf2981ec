@@ -74,12 +74,67 @@ const WebDevSection = () => {
           </div>
 
           {/* Syntagma feature */}
-          <div className="luxury-card rounded-sm p-12 mb-16 relative group transition-all duration-500">
-            <div className="absolute top-8 right-8 text-8xl font-display font-bold text-primary/5 group-hover:text-primary/10 transition-colors">
+          <div className="luxury-card rounded-sm p-12 mb-16 relative group transition-all duration-500 overflow-hidden">
+            {/* Animated gates */}
+            <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+              {/* Left gate */}
+              <div 
+                className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-card via-card to-card/95 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:-translate-x-full origin-left"
+                style={{
+                  boxShadow: 'inset -20px 0 40px -20px hsl(45 80% 55% / 0.1)',
+                }}
+              >
+                {/* Left gate ornament */}
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
+                  <div className="w-[1px] h-16 bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                  <Diamond className="w-4 h-4 text-primary/30" />
+                  <div className="w-[1px] h-16 bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                </div>
+                {/* Gate edge line */}
+                <div className="absolute right-0 top-0 w-[2px] h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
+              </div>
+              
+              {/* Right gate */}
+              <div 
+                className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-card via-card to-card/95 transition-transform duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-full origin-right"
+                style={{
+                  boxShadow: 'inset 20px 0 40px -20px hsl(45 80% 55% / 0.1)',
+                }}
+              >
+                {/* Right gate ornament */}
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
+                  <div className="w-[1px] h-16 bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                  <Diamond className="w-4 h-4 text-primary/30" />
+                  <div className="w-[1px] h-16 bg-gradient-to-b from-transparent via-primary/40 to-transparent" />
+                </div>
+                {/* Gate edge line */}
+                <div className="absolute left-0 top-0 w-[2px] h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
+              </div>
+              
+              {/* Center ornament (visible before opening) */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity duration-500 group-hover:opacity-0">
+                <div className="relative">
+                  <Diamond className="w-8 h-8 text-primary/50 animate-pulse" />
+                  <div className="absolute inset-0 w-8 h-8 bg-primary/20 blur-xl" />
+                </div>
+              </div>
+              
+              {/* Closed gates text */}
+              <div className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 group-hover:opacity-0">
+                <div className="text-center">
+                  <span className="text-xs tracking-[0.3em] uppercase text-primary/60 mb-2 block">Наведите курсор</span>
+                  <span className="text-2xl md:text-3xl font-display font-bold gradient-gold-text">Синтагма</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Background S - revealed content */}
+            <div className="absolute top-8 right-8 text-8xl font-display font-bold text-primary/5 group-hover:text-primary/10 transition-colors duration-700 delay-300">
               S
             </div>
             
-            <div className="relative z-10">
+            {/* Content (revealed when gates open) */}
+            <div className="relative z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-300">
               <span className="text-xs tracking-[0.3em] uppercase text-primary mb-4 block">Flagship Project</span>
               <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 relative inline-block">
                 <span className="gradient-gold-text">Синтагма</span>
