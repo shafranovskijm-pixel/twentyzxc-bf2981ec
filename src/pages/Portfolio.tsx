@@ -39,15 +39,6 @@ const projects: Project[] = [
     isInternal: true,
   },
   {
-    title: "ООО «ВАЙБ» — сайт + LMS",
-    location: "шафрановский.рф",
-    description: "Разработка сайта и образовательной платформы, лицензия под ключ, поддержка и контент курсов.",
-    tags: ["web", "LMS", "support", "license"],
-    price: "24 000 ₽/год",
-    priceAlt: "35 000 ₽ разово",
-    url: "https://xn--80aagyfetipo1a0c.xn--p1ai/",
-  },
-  {
     title: "База отдыха «Июль»",
     location: "Приморский край",
     description: "Создание и управление сайтом, Telegram, реклама, подбор персонала.",
