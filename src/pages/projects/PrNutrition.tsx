@@ -1,5 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import AnimatedSection from "@/components/AnimatedSection";
+import TitleParticles from "@/components/TitleParticles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
@@ -60,10 +62,22 @@ const PrNutrition = () => {
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[150px]" />
         <div className="absolute inset-0 opacity-[0.02]" style={{
           backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
           backgroundSize: '40px 40px'
         }} />
+        {/* Decorative corner lines */}
+        <svg className="absolute top-24 left-8 w-32 h-32 opacity-20" viewBox="0 0 100 100">
+          <path d="M 0 30 L 0 0 L 30 0" fill="none" stroke="hsl(45 80% 55%)" strokeWidth="1" />
+        </svg>
+        <svg className="absolute bottom-24 right-8 w-32 h-32 opacity-20" viewBox="0 0 100 100">
+          <path d="M 100 70 L 100 100 L 70 100" fill="none" stroke="hsl(45 80% 55%)" strokeWidth="1" />
+        </svg>
+        {/* Floating particles */}
+        <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-primary/40 rounded-full animate-pulse" />
+        <div className="absolute top-2/3 left-1/4 w-1.5 h-1.5 bg-primary/30 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-primary/50 rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <Header />
@@ -80,69 +94,76 @@ const PrNutrition = () => {
           </Link>
 
           {/* Hero */}
-          <div className="max-w-4xl mb-20">
-            <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
-              Образование
-            </Badge>
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              <span className="gradient-gold-text">PR Nutrition</span>
-            </h1>
-            <p className="text-lg text-muted-foreground mb-2">
-              Доработка сайта и лицензирование
-            </p>
-            
-            <p className="text-muted-foreground mb-8 leading-relaxed max-w-2xl">
-              Комплексная настройка и доработка действующего сайта для получения образовательной лицензии: 
-              создание раздела «Сведения об образовательной организации», версия для слабовидящих, 
-              подготовка документов и ведение реестра ФИС ФРДО.
-            </p>
+          <AnimatedSection className="mb-20">
+            <div className="max-w-4xl">
+              <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
+                Образование
+              </Badge>
+              
+              {/* Title with particles */}
+              <div className="relative inline-block mb-4">
+                <TitleParticles />
+                <h1 className="text-4xl md:text-5xl font-display font-bold relative z-10 py-4 px-2">
+                  <span className="gradient-gold-text">PR Nutrition</span>
+                </h1>
+              </div>
+              
+              <p className="text-lg text-muted-foreground mb-2">
+                Доработка сайта и лицензирование
+              </p>
+              
+              <p className="text-muted-foreground mb-8 leading-relaxed max-w-2xl">
+                Комплексная настройка и доработка действующего сайта для получения образовательной лицензии: 
+                создание раздела «Сведения об образовательной организации», версия для слабовидящих, 
+                подготовка документов и ведение реестра ФИС ФРДО.
+              </p>
 
-            <div className="flex flex-wrap gap-2 mb-8">
-              {["web", "license", "support", "ФРДО"].map((tag) => (
-                <Badge key={tag} variant="outline" className="border-border">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+              <div className="flex flex-wrap gap-2 mb-8">
+                {["web", "license", "support", "ФРДО"].map((tag) => (
+                  <Badge key={tag} variant="outline" className="border-border">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
 
-            <div className="flex flex-wrap gap-4 items-center">
-              <Button variant="ghost" size="sm" asChild>
-                <a href="https://pr-nutrition.ru/" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Открыть сайт
-                </a>
-              </Button>
+              <div className="flex flex-wrap gap-4 items-center">
+                <Button variant="ghost" size="sm" asChild>
+                  <a href="https://pr-nutrition.ru/" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Открыть сайт
+                  </a>
+                </Button>
+              </div>
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Services Grid */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100}>
             <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
               <span className="w-8 h-[1px] bg-primary" />
               Что было сделано
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {services.map((service, i) => (
-                <div 
-                  key={i} 
-                  className="luxury-card p-6 rounded-sm group hover:border-primary/40 transition-colors"
-                >
-                  <div className="w-12 h-12 rounded-sm border border-border group-hover:border-primary/40 flex items-center justify-center mb-4 transition-colors">
-                    <service.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <AnimatedSection key={i} delay={150 + i * 100} direction="up">
+                  <div className="luxury-card p-6 rounded-sm group hover:border-primary/40 transition-colors h-full">
+                    <div className="w-12 h-12 rounded-sm border border-border group-hover:border-primary/40 flex items-center justify-center mb-4 transition-colors">
+                      <service.icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {service.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {service.description}
+                    </p>
                   </div>
-                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
-                    {service.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {service.description}
-                  </p>
-                </div>
+                </AnimatedSection>
               ))}
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Requirements Section */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100} direction="scale">
             <div className="luxury-card p-8 md:p-12 rounded-sm">
               <div className="grid md:grid-cols-2 gap-8 items-start">
                 <div>
@@ -174,10 +195,10 @@ const PrNutrition = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* Accessibility Section */}
-          <div className="mb-20">
+          <AnimatedSection className="mb-20" delay={100} direction="left">
             <div className="luxury-card p-8 md:p-12 rounded-sm">
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
@@ -210,44 +231,46 @@ const PrNutrition = () => {
                     </li>
                   </ul>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg blur-xl" />
-                  <div className="relative bg-card border border-border rounded-sm p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Eye className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <div className="font-medium">Версия для слабовидящих</div>
-                        <div className="text-xs text-muted-foreground">ГОСТ Р 52872-2019</div>
-                      </div>
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <span className="text-muted-foreground">Размер шрифта</span>
-                        <span className="font-medium">A A A</span>
-                      </div>
-                      <div className="flex justify-between py-2 border-b border-border">
-                        <span className="text-muted-foreground">Цветовая схема</span>
-                        <div className="flex gap-1">
-                          <div className="w-5 h-5 rounded bg-background border border-border" />
-                          <div className="w-5 h-5 rounded bg-foreground" />
-                          <div className="w-5 h-5 rounded bg-primary" />
+                <AnimatedSection delay={300} direction="right">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg blur-xl" />
+                    <div className="relative bg-card border border-border rounded-sm p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                          <Eye className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Версия для слабовидящих</div>
+                          <div className="text-xs text-muted-foreground">ГОСТ Р 52872-2019</div>
                         </div>
                       </div>
-                      <div className="flex justify-between py-2">
-                        <span className="text-muted-foreground">Изображения</span>
-                        <span className="font-medium">Вкл / Выкл</span>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between py-2 border-b border-border">
+                          <span className="text-muted-foreground">Размер шрифта</span>
+                          <span className="font-medium">A A A</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-border">
+                          <span className="text-muted-foreground">Цветовая схема</span>
+                          <div className="flex gap-1">
+                            <div className="w-5 h-5 rounded bg-background border border-border" />
+                            <div className="w-5 h-5 rounded bg-foreground" />
+                            <div className="w-5 h-5 rounded bg-primary" />
+                          </div>
+                        </div>
+                        <div className="flex justify-between py-2">
+                          <span className="text-muted-foreground">Изображения</span>
+                          <span className="font-medium">Вкл / Выкл</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                </AnimatedSection>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
 
           {/* CTA */}
-          <div className="text-center">
+          <AnimatedSection className="text-center" delay={100} direction="up">
             <div className="luxury-card p-12 rounded-sm max-w-3xl mx-auto">
               <h3 className="text-2xl md:text-3xl font-display font-semibold mb-4">
                 Нужна <span className="gradient-gold-text">доработка сайта</span>?
@@ -266,7 +289,7 @@ const PrNutrition = () => {
                 </Button>
               </div>
             </div>
-          </div>
+          </AnimatedSection>
         </div>
       </main>
 
