@@ -20,6 +20,7 @@ import Lanmei from "./pages/projects/Lanmei";
 import LadyFrost from "./pages/projects/LadyFrost";
 import PrNutrition from "./pages/projects/PrNutrition";
 import Status from "./pages/projects/Status";
+import SpinRide from "./pages/projects/SpinRide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/projects/lady-frost" element={<LadyFrost />} />
           <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
           <Route path="/projects/status" element={<Status />} />
+          <Route path="/projects/spinride" element={<SpinRide />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

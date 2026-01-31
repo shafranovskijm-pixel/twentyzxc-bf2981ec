@@ -77,7 +77,8 @@ const projects: Project[] = [
     description: "Интернет-магазин с каталогом 800+ позиций, системой отзывов покупателей и сезонным дизайном зима/лето. Рекламные кампании в Яндекс Директ.",
     tags: ["web", "ads", "E-commerce", "SEO"],
     price: "20 000 ₽/год",
-    url: "https://spinride.ru/",
+    url: "/projects/spinride",
+    isInternal: true,
   },
   {
     title: "Учебный центр «ОНИКС»",
