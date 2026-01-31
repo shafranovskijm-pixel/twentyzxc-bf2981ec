@@ -74,8 +74,8 @@ const projects: Project[] = [
   },
   {
     title: "SpinRide — велосипеды и самокаты",
-    description: "Сайт и рекламные кампании.",
-    tags: ["web", "ads"],
+    description: "Интернет-магазин с каталогом 800+ позиций, системой отзывов покупателей и сезонным дизайном зима/лето. Рекламные кампании в Яндекс Директ.",
+    tags: ["web", "ads", "E-commerce", "SEO"],
     price: "20 000 ₽/год",
     url: "https://spinride.ru/",
   },
