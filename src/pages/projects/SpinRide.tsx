@@ -16,7 +16,9 @@ import {
   Package,
   CheckCircle2,
   Snowflake,
-  Sun
+  Sun,
+  Smartphone,
+  Camera
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -25,6 +27,16 @@ const features = [
     icon: Package,
     title: "Каталог 800+ позиций",
     description: "Полный ассортимент велосипедов и самокатов с детальными характеристиками, фото и ценами"
+  },
+  {
+    icon: Smartphone,
+    title: "PWA-приложение",
+    description: "Устанавливается на телефон как приложение, работает офлайн и отправляет уведомления"
+  },
+  {
+    icon: Camera,
+    title: "Загрузка фото с телефона",
+    description: "Менеджеры могут фотографировать товар на телефон и сразу загружать на сайт"
   },
   {
     icon: Star,
@@ -57,7 +69,7 @@ const highlights = [
   { label: "Товаров в каталоге", value: "800+" },
   { label: "Категорий товаров", value: "12" },
   { label: "Сезонных тем", value: "2" },
-  { label: "Рекламных кампаний", value: "5+" },
+  { label: "PWA-приложение", value: "✓" },
 ];
 
 const SpinRide = () => {
@@ -130,7 +142,7 @@ const SpinRide = () => {
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="luxury-card px-6 py-3 rounded-sm">
                   <span className="text-sm text-muted-foreground mr-2">Обслуживание:</span>
-                  <span className="text-xl font-display font-bold gradient-gold-text">20 000 ₽/год</span>
+                  <span className="text-xl font-display font-bold gradient-gold-text">10 000 ₽/мес</span>
                 </div>
                 <Button variant="ghost" size="sm" asChild>
                   <a href="https://spinride.ru/" target="_blank" rel="noopener noreferrer">
@@ -260,7 +272,7 @@ const SpinRide = () => {
                   </div>
                   <div className="flex justify-between items-center py-3">
                     <span className="text-sm font-medium">Итого</span>
-                    <span className="font-semibold text-primary">20 000 ₽/год</span>
+                    <span className="font-semibold text-primary">10 000 ₽/мес</span>
                   </div>
                 </div>
               </div>
