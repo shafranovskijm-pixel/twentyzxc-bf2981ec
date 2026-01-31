@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Diamond, Monitor, Building2, ShoppingBag, AppWindow } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const WebDevSection = () => {
@@ -157,31 +157,52 @@ const WebDevSection = () => {
           </div>
 
           {/* Services grid */}
-          <div className="grid md:grid-cols-2 gap-px bg-border">
-            <ServiceCard 
-              title="Лендинги"
-              price="от 15 000 ₽"
-              description="Продающие страницы с высокой конверсией"
-              href="/services/landing"
-            />
-            <ServiceCard 
-              title="Корпоративные сайты"
-              price="от 50 000 ₽"
-              description="Многостраничные решения для бизнеса"
-              href="/services/corporate"
-            />
-            <ServiceCard 
-              title="Интернет-магазины"
-              price="от 100 000 ₽"
-              description="E-commerce платформы любой сложности"
-              href="/services/ecommerce"
-            />
-            <ServiceCard 
-              title="Веб-приложения"
-              price="индивидуально"
-              description="SPA, PWA, сложные системы"
-              href="/services/webapp"
-            />
+          <div className="relative">
+            {/* Corner ornaments */}
+            <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-primary/30" />
+            <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-primary/30" />
+            <div className="absolute -bottom-4 -left-4 w-8 h-8 border-l-2 border-b-2 border-primary/30" />
+            <div className="absolute -bottom-4 -right-4 w-8 h-8 border-r-2 border-b-2 border-primary/30" />
+            
+            {/* Center cross ornament */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+              <Diamond className="w-4 h-4 text-primary/50" />
+            </div>
+            
+            <div className="grid md:grid-cols-2">
+              <ServiceCard 
+                title="Лендинги"
+                price="от 15 000 ₽"
+                description="Продающие страницы с высокой конверсией"
+                href="/services/landing"
+                icon={Monitor}
+                number="01"
+              />
+              <ServiceCard 
+                title="Корпоративные сайты"
+                price="от 50 000 ₽"
+                description="Многостраничные решения для бизнеса"
+                href="/services/corporate"
+                icon={Building2}
+                number="02"
+              />
+              <ServiceCard 
+                title="Интернет-магазины"
+                price="от 100 000 ₽"
+                description="E-commerce платформы любой сложности"
+                href="/services/ecommerce"
+                icon={ShoppingBag}
+                number="03"
+              />
+              <ServiceCard 
+                title="Веб-приложения"
+                price="индивидуально"
+                description="SPA, PWA, сложные системы"
+                href="/services/webapp"
+                icon={AppWindow}
+                number="04"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -201,16 +222,60 @@ const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode; title: stri
   </div>
 );
 
-const ServiceCard = ({ title, price, description, href }: { title: string; price: string; description: string; href: string }) => (
-  <Link to={href} className="bg-card p-10 group cursor-pointer hover:bg-secondary/50 transition-all duration-300 block">
-    <div className="flex items-start justify-between mb-4">
-      <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
-      <span className="text-primary text-sm font-medium">{price}</span>
+const ServiceCard = ({ 
+  title, 
+  price, 
+  description, 
+  href, 
+  icon: Icon,
+  number 
+}: { 
+  title: string; 
+  price: string; 
+  description: string; 
+  href: string;
+  icon: React.ElementType;
+  number: string;
+}) => (
+  <Link 
+    to={href} 
+    className="relative bg-card p-10 group cursor-pointer transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden"
+  >
+    {/* Background number */}
+    <div className="absolute top-4 right-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
+      {number}
     </div>
-    <p className="text-muted-foreground text-sm mb-6">{description}</p>
-    <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors">
+    
+    {/* Decorative corner lines */}
+    <div className="absolute top-0 left-0 w-12 h-[1px] bg-gradient-to-r from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="absolute top-0 left-0 w-[1px] h-12 bg-gradient-to-b from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="absolute bottom-0 right-0 w-12 h-[1px] bg-gradient-to-l from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    <div className="absolute bottom-0 right-0 w-[1px] h-12 bg-gradient-to-t from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    
+    {/* Background pattern */}
+    <div 
+      className="absolute inset-0 opacity-0 group-hover:opacity-[0.02] transition-opacity duration-500"
+      style={{
+        backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
+        backgroundSize: '20px 20px'
+      }}
+    />
+    
+    {/* Icon */}
+    <div className="relative z-10 mb-6">
+      <div className="w-14 h-14 rounded-sm border border-border/50 group-hover:border-primary/40 flex items-center justify-center transition-all duration-500 group-hover:bg-primary/5">
+        <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors duration-500" />
+      </div>
+    </div>
+    
+    <div className="relative z-10 flex items-start justify-between mb-4">
+      <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
+      <span className="text-primary text-sm font-medium shimmer">{price}</span>
+    </div>
+    <p className="relative z-10 text-muted-foreground text-sm mb-6">{description}</p>
+    <div className="relative z-10 flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors">
       <span>Подробнее</span>
-      <ArrowUpRight className="w-4 h-4" />
+      <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
     </div>
   </Link>
 );
