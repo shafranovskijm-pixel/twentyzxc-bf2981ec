@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Diamond, KeyRound } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const WebDevSection = () => {
@@ -176,6 +176,7 @@ const WebDevSection = () => {
                 description="Продающие страницы с высокой конверсией"
                 href="/services/landing"
                 number="01"
+                keyId="landing"
               />
               <ServiceCard 
                 title="Корпоративные сайты"
@@ -183,6 +184,7 @@ const WebDevSection = () => {
                 description="Многостраничные решения для бизнеса"
                 href="/services/corporate"
                 number="02"
+                keyId="corporate"
               />
               <ServiceCard 
                 title="Интернет-магазины"
@@ -190,6 +192,7 @@ const WebDevSection = () => {
                 description="E-commerce платформы любой сложности"
                 href="/services/ecommerce"
                 number="03"
+                keyId="ecommerce"
               />
               <ServiceCard 
                 title="Веб-приложения"
@@ -197,6 +200,7 @@ const WebDevSection = () => {
                 description="SPA, PWA, сложные системы"
                 href="/services/webapp"
                 number="04"
+                keyId="webapp"
               />
             </div>
           </div>
@@ -223,18 +227,17 @@ const ServiceCard = ({
   price, 
   description, 
   href, 
-  number 
+  number,
+  keyId
 }: { 
   title: string; 
   price: string; 
   description: string; 
   href: string;
   number: string;
+  keyId?: string;
 }) => (
-  <Link 
-    to={href} 
-    className="relative bg-card p-10 group cursor-pointer transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden"
-  >
+  <div className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden">
     {/* Background number */}
     <div className="absolute top-4 right-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
       {number}
@@ -260,11 +263,37 @@ const ServiceCard = ({
       <span className="text-primary text-sm font-medium shimmer">{price}</span>
     </div>
     <p className="relative z-10 text-muted-foreground text-sm mb-6">{description}</p>
-    <div className="relative z-10 flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors">
-      <span>Подробнее</span>
-      <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+    
+    <div className="relative z-10 flex items-center justify-between gap-4">
+      <Link 
+        to={href}
+        className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors"
+      >
+        <span>Подробнее</span>
+        <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+      </Link>
+      
+      {keyId && (
+        <a 
+          href={`#contact`}
+          onClick={(e) => {
+            e.preventDefault();
+            // Navigate to contact with key parameter
+            const contactSection = document.getElementById('contact');
+            if (contactSection) {
+              contactSection.scrollIntoView({ behavior: 'smooth' });
+              // Dispatch custom event with key info
+              window.dispatchEvent(new CustomEvent('selectKey', { detail: { keyId } }));
+            }
+          }}
+          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-sm border border-primary/30 text-primary hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100"
+        >
+          <KeyRound className="w-3 h-3" />
+          Взять ключ
+        </a>
+      )}
     </div>
-  </Link>
+  </div>
 );
 
 export default WebDevSection;
