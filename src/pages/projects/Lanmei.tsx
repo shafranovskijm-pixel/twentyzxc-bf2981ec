@@ -48,12 +48,6 @@ const services = [
   },
 ];
 
-const results = [
-  { value: "3x", label: "Рост трафика" },
-  { value: "150%", label: "Увеличение заявок" },
-  { value: "ТОП-5", label: "Позиции в Яндекс" },
-  { value: "30K", label: "Подписчиков в соцсетях" },
-];
 
 const Lanmei = () => {
   return (
@@ -134,29 +128,12 @@ const Lanmei = () => {
               </div>
 
               <div className="luxury-card p-6 rounded-sm">
-                <div className="text-sm text-muted-foreground mb-2">Стоимость проекта</div>
-                <div className="text-2xl font-display font-bold gradient-gold-text">30 000 ₽</div>
+                <div className="text-sm text-muted-foreground mb-2">Стоимость обслуживания</div>
+                <div className="text-2xl font-display font-bold gradient-gold-text">35 000 ₽/год</div>
               </div>
             </div>
           </div>
 
-          {/* Results */}
-          <div className="mb-20">
-            <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
-              <span className="w-8 h-[1px] bg-primary" />
-              Результаты работы
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {results.map((result, i) => (
-                <div key={i} className="luxury-card p-6 rounded-sm text-center group hover:border-primary/40 transition-colors">
-                  <div className="text-3xl font-display font-bold gradient-gold-text mb-2 group-hover:scale-110 transition-transform">
-                    {result.value}
-                  </div>
-                  <div className="text-sm text-muted-foreground">{result.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
 
           {/* Services Grid */}
           <div className="mb-20">
