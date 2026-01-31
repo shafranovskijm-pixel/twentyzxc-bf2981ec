@@ -19,27 +19,38 @@ const TitleParticles = () => {
   useEffect(() => {
     const generateParticles = () => {
       const newParticles: Particle[] = [];
-      const particleCount = 60;
+      const particleCount = 200;
 
       // Decoration positions around the title (relative to container)
-      const decorPositions = [
-        // Top line decorations
-        { x: 5, y: 0 }, { x: 15, y: -5 }, { x: 25, y: 2 }, { x: 35, y: -3 },
-        { x: 45, y: 1 }, { x: 55, y: -4 }, { x: 65, y: 0 }, { x: 75, y: -2 },
-        { x: 85, y: 3 }, { x: 95, y: -1 },
-        // Bottom decorations
-        { x: 10, y: 105 }, { x: 20, y: 108 }, { x: 30, y: 103 }, { x: 40, y: 110 },
-        { x: 50, y: 106 }, { x: 60, y: 102 }, { x: 70, y: 109 }, { x: 80, y: 104 },
-        { x: 90, y: 107 },
-        // Left side decorations
-        { x: -5, y: 20 }, { x: -8, y: 40 }, { x: -3, y: 60 }, { x: -6, y: 80 },
-        // Right side decorations  
-        { x: 102, y: 25 }, { x: 105, y: 45 }, { x: 103, y: 65 }, { x: 106, y: 85 },
-        // Corner flourishes
-        { x: -2, y: -2 }, { x: 102, y: -2 }, { x: -2, y: 102 }, { x: 102, y: 102 },
-        // Scattered around text
-        { x: 12, y: 50 }, { x: 88, y: 50 }, { x: 50, y: 25 }, { x: 50, y: 75 },
-      ];
+      const decorPositions: { x: number; y: number }[] = [];
+      
+      // Top line - more particles
+      for (let i = 0; i <= 100; i += 3) {
+        decorPositions.push({ x: i, y: -2 + Math.random() * 6 - 3 });
+      }
+      // Bottom line
+      for (let i = 0; i <= 100; i += 3) {
+        decorPositions.push({ x: i, y: 102 + Math.random() * 6 });
+      }
+      // Left side
+      for (let i = 0; i <= 100; i += 5) {
+        decorPositions.push({ x: -3 + Math.random() * 4 - 2, y: i });
+      }
+      // Right side
+      for (let i = 0; i <= 100; i += 5) {
+        decorPositions.push({ x: 103 + Math.random() * 4, y: i });
+      }
+      // Corner clusters
+      for (let i = 0; i < 8; i++) {
+        decorPositions.push({ x: -5 + Math.random() * 10, y: -5 + Math.random() * 10 });
+        decorPositions.push({ x: 95 + Math.random() * 10, y: -5 + Math.random() * 10 });
+        decorPositions.push({ x: -5 + Math.random() * 10, y: 95 + Math.random() * 10 });
+        decorPositions.push({ x: 95 + Math.random() * 10, y: 95 + Math.random() * 10 });
+      }
+      // Scattered sparkles around text
+      for (let i = 0; i < 30; i++) {
+        decorPositions.push({ x: 10 + Math.random() * 80, y: 20 + Math.random() * 60 });
+      }
 
       for (let i = 0; i < particleCount; i++) {
         // Random start position from edges
@@ -76,9 +87,9 @@ const TitleParticles = () => {
           startY,
           endX: endPos.x,
           endY: endPos.y,
-          delay: Math.random() * 0.8,
+          delay: Math.random() * 8,
           size: 2 + Math.random() * 4,
-          opacity: 0.5 + Math.random() * 0.5,
+          opacity: 0.4 + Math.random() * 0.6,
         });
       }
 
@@ -103,7 +114,7 @@ const TitleParticles = () => {
             left: isAnimating ? `${particle.endX}%` : `${particle.startX}%`,
             top: isAnimating ? `${particle.endY}%` : `${particle.startY}%`,
             opacity: isAnimating ? particle.opacity : 0,
-            transition: `all 1.2s cubic-bezier(0.23, 1, 0.32, 1) ${particle.delay}s`,
+            transition: `all 12s cubic-bezier(0.23, 1, 0.32, 1) ${particle.delay}s`,
             transform: isAnimating ? 'scale(1)' : 'scale(0)',
           }}
         />
@@ -114,7 +125,7 @@ const TitleParticles = () => {
         className="absolute inset-0 w-full h-full overflow-visible"
         style={{ 
           opacity: isAnimating ? 1 : 0,
-          transition: 'opacity 1s ease-out 0.5s'
+          transition: 'opacity 3s ease-out 5s'
         }}
       >
         {/* Top left corner */}
@@ -127,7 +138,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isAnimating ? 0 : 50,
-            transition: 'stroke-dashoffset 1.5s ease-out 0.3s'
+            transition: 'stroke-dashoffset 8s ease-out 3s'
           }}
         />
         {/* Top right corner */}
@@ -139,7 +150,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isAnimating ? 0 : 50,
-            transition: 'stroke-dashoffset 1.5s ease-out 0.4s'
+            transition: 'stroke-dashoffset 8s ease-out 4s'
           }}
         />
         {/* Bottom left corner */}
@@ -151,7 +162,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isAnimating ? 0 : 50,
-            transition: 'stroke-dashoffset 1.5s ease-out 0.5s'
+            transition: 'stroke-dashoffset 8s ease-out 5s'
           }}
         />
         {/* Bottom right corner */}
@@ -163,7 +174,7 @@ const TitleParticles = () => {
           style={{ 
             strokeDasharray: 50,
             strokeDashoffset: isAnimating ? 0 : 50,
-            transition: 'stroke-dashoffset 1.5s ease-out 0.6s'
+            transition: 'stroke-dashoffset 8s ease-out 6s'
           }}
         />
         
@@ -184,7 +195,7 @@ const TitleParticles = () => {
           background: 'linear-gradient(90deg, transparent, hsl(45 80% 55% / 0.5), transparent)',
           opacity: isAnimating ? 1 : 0,
           transform: isAnimating ? 'scaleX(1)' : 'scaleX(0)',
-          transition: 'all 1s ease-out 0.8s',
+          transition: 'all 8s ease-out 8s',
         }}
       />
     </div>
