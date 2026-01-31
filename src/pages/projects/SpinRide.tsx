@@ -91,6 +91,10 @@ const SpinRide = () => {
         <svg className="absolute bottom-24 right-8 w-32 h-32 opacity-20" viewBox="0 0 100 100">
           <path d="M 100 70 L 100 100 L 70 100" fill="none" stroke="hsl(45 80% 55%)" strokeWidth="1" />
         </svg>
+        {/* Floating particles */}
+        <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-primary/40 rounded-full animate-pulse" />
+        <div className="absolute top-2/3 left-1/4 w-1.5 h-1.5 bg-primary/30 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 right-1/3 w-1 h-1 bg-primary/50 rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
       <Header />
