@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Code2, Layers, Zap, ArrowUpRight, Diamond, KeyRound, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useInventory } from "@/contexts/InventoryContext";
+import { ServiceKey3D } from "@/components/game/ServiceKey3D";
 
 // Spark particle component
 const Spark = ({ delay, direction }: { delay: number; direction: 'left' | 'right' | 'up' | 'down' | 'random' }) => {
@@ -218,6 +220,7 @@ const WebDevSection = () => {
                 href="/services/landing"
                 number="01"
                 keyId="landing"
+                keyVariant="gold"
               />
               <ServiceCard 
                 title="Корпоративные сайты"
@@ -226,6 +229,7 @@ const WebDevSection = () => {
                 href="/services/corporate"
                 number="02"
                 keyId="corporate"
+                keyVariant="silver"
               />
               <ServiceCard 
                 title="Интернет-магазины"
@@ -234,6 +238,7 @@ const WebDevSection = () => {
                 href="/services/ecommerce"
                 number="03"
                 keyId="ecommerce"
+                keyVariant="bronze"
               />
               <ServiceCard 
                 title="Веб-приложения"
@@ -242,6 +247,7 @@ const WebDevSection = () => {
                 href="/services/webapp"
                 number="04"
                 keyId="webapp"
+                keyVariant="emerald"
               />
             </div>
           </div>
@@ -269,7 +275,8 @@ const ServiceCard = ({
   description, 
   href, 
   number,
-  keyId
+  keyId,
+  keyVariant = 'gold'
 }: { 
   title: string; 
   price: string; 
@@ -277,8 +284,10 @@ const ServiceCard = ({
   href: string;
   number: string;
   keyId?: string;
+  keyVariant?: 'gold' | 'silver' | 'bronze' | 'emerald';
 }) => {
   const { addKey, isKeyCollected } = useInventory();
+  const [isHovered, setIsHovered] = useState(false);
   const isCollected = keyId ? isKeyCollected(keyId) : false;
 
   const handleTakeKey = (e: React.MouseEvent) => {
@@ -299,9 +308,31 @@ const ServiceCard = ({
   };
 
   return (
-    <div className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden">
+    <div 
+      className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* 3D Key - clickable */}
+      {keyId && !isCollected && (
+        <button 
+          onClick={handleTakeKey}
+          className="absolute top-2 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
+        >
+          <ServiceKey3D variant={keyVariant} isHovered={isHovered} className="w-full h-full" />
+        </button>
+      )}
+      
+      {/* Collected badge */}
+      {keyId && isCollected && (
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 text-primary text-xs z-20">
+          <Check className="w-3 h-3" />
+          Собран
+        </div>
+      )}
+      
       {/* Background number */}
-      <div className="absolute top-4 right-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
+      <div className="absolute top-4 left-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
         {number}
       </div>
       
@@ -335,31 +366,6 @@ const ServiceCard = ({
           <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
         </Link>
         
-        {keyId && (
-          <button 
-            onClick={handleTakeKey}
-            disabled={isCollected}
-            className={`
-              flex items-center gap-2 text-xs px-3 py-1.5 rounded-sm border transition-all
-              ${isCollected 
-                ? 'border-primary/50 text-primary bg-primary/10 cursor-default' 
-                : 'border-primary/30 text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95'
-              }
-            `}
-          >
-            {isCollected ? (
-              <>
-                <Check className="w-3 h-3" />
-                Собран
-              </>
-            ) : (
-              <>
-                <KeyRound className="w-3 h-3" />
-                Взять ключ
-              </>
-            )}
-          </button>
-        )}
       </div>
     </div>
   );
