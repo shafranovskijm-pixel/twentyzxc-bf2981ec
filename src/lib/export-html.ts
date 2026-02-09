@@ -130,7 +130,7 @@ export function exportToHTML(title: string, blocks: PlaygroundBlock[], settings:
   const globalFont = settings.globalFontFamily || '';
   const fontLink = globalFont ? `<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(globalFont)}:wght@400;500;600;700&display=swap" rel="stylesheet">` : '';
 
-  const blocksHTML = blocks.map(b => renderBlockHTML(b, globalFont)).join('\n    ');
+  const blocksHTML = blocks.filter(b => !b.hidden).map(b => renderBlockHTML(b, globalFont)).join('\n    ');
 
   return `<!DOCTYPE html>
 <html lang="ru">

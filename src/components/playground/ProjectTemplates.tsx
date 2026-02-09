@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3, LayoutList, FileText, Share2, ChevronDown } from "lucide-react";
+import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3, LayoutList, FileText, Share2, ChevronDown, Home, Heart, CreditCard, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlaygroundBlock, BlockStyles } from "@/data/playground-effects";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -258,6 +258,66 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'card', content: '📈 Маркетинг\nSEO, контекстная реклама, аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
       { type: 'button', content: 'Связаться с нами', anchorId: 'contact', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } },
       { type: 'footer', content: '© 2026 DevStudio|hello@devstudio.ru|+7 (495) 000-00-00', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  },
+  {
+    id: 'real-estate',
+    name: 'Недвижимость',
+    description: 'Объект с галереей',
+    icon: <Home className="w-5 h-5" />,
+    blocks: [
+      { type: 'navbar', content: 'Объект|#object\nГалерея|#gallery\nЗаявка|#form', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'ЖК «Панорама»', anchorId: 'object', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '32px 16px 8px' } },
+      { type: 'text', content: 'Премиальные квартиры с видом на парк', animation: 'fade-in-up', styles: { ...ds, fontSize: '20px', textColor: '#d4a855', padding: '8px 16px 24px' } },
+      { type: 'gallery', content: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop\nhttps://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop\nhttps://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop', anchorId: 'gallery', animation: 'fade-in', styles: { ...ds, padding: '16px', borderRadius: '12px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
+      { type: 'heading', content: 'Характеристики', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '16px' } },
+      { type: 'columns', content: '📐 от 45 м²|Площадь квартир||🏢 25 этажей|Монолитный дом||🌳 Парк|В пешей доступности||🚗 Паркинг|Подземный', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } },
+      { type: 'counter', content: 'от 8.5 млн ₽|Стоимость', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '16px', fontSize: '20px' } },
+      { type: 'form', content: 'Запишитесь на просмотр|Имя|Телефон|Удобное время|Записаться', anchorId: 'form', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
+      { type: 'footer', content: '© 2026 ЖК Панорама|info@panorama.ru|+7 (495) 000-00-00', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  },
+  {
+    id: 'wedding',
+    name: 'Свадьба',
+    description: 'Приглашение с таймером',
+    icon: <Heart className="w-5 h-5" />,
+    blocks: [
+      { type: 'text', content: '💍', animation: 'scale-bounce', styles: { ...ds, fontSize: '48px', padding: '32px 16px 0' } },
+      { type: 'heading', content: 'Алексей & Мария', animation: 'blur-in', styles: { ...ds, fontSize: '52px', padding: '8px 16px' } },
+      { type: 'text', content: 'Приглашаем вас на нашу свадьбу', animation: 'fade-in-up', styles: { ...ds, fontSize: '20px', textColor: '#d4a855', padding: '4px 16px 16px' } },
+      { type: 'countdown', content: '2026-09-15T15:00:00|До свадьбы', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px', fontSize: '20px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '16px' } },
+      { type: 'heading', content: 'Программа дня', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '16px' } },
+      { type: 'accordion', content: '15:00 — Церемония|Ресторан «Усадьба», зал «Белый»\n16:00 — Фуршет|Встречаем гостей на открытой террасе\n17:00 — Банкет|Праздничный ужин и танцы\n21:00 — Вечерняя программа|Живая музыка и сюрпризы', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=400&fit=crop', animation: 'fade-in', hoverEffect: 'hover-scale', styles: { ...ds, padding: '16px', borderRadius: '16px' } },
+      { type: 'form', content: 'Подтвердите присутствие|Ваше имя|Телефон|Пожелания|Подтвердить|hide-message', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
+      { type: 'text', content: 'С любовью, Алексей & Мария ❤️', animation: 'fade-in', styles: { ...ds, fontSize: '14px', textColor: '#888888', padding: '24px 16px' } }
+    ]
+  },
+  {
+    id: 'saas-pricing',
+    name: 'SaaS / Тарифы',
+    description: 'Лендинг с ценами',
+    icon: <CreditCard className="w-5 h-5" />,
+    blocks: [
+      { type: 'navbar', content: 'Главная|#hero\nФичи|#features\nТарифы|#pricing\nFAQ|#faq', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'TaskFlow', anchorId: 'hero', animation: 'fade-in-up', styles: { ...ds, fontSize: '52px', padding: '32px 16px 4px' } },
+      { type: 'text', content: 'Управление задачами для продуктивных команд', animation: 'fade-in-up', styles: { ...ds, fontSize: '20px', textColor: '#888888', padding: '4px 16px 24px' } },
+      { type: 'button', content: 'Попробовать бесплатно', animation: 'scale-bounce', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'spacer', content: '', styles: { ...ds, padding: '16px' } },
+      { type: 'heading', content: 'Возможности', anchorId: 'features', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'icon-text', content: '📋|Канбан-доски|Визуальное управление задачами с drag & drop', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'icon-text', content: '⏱️|Трекинг времени|Встроенный таймер для каждой задачи', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'icon-text', content: '📊|Аналитика|Отчёты по продуктивности команды', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
+      { type: 'heading', content: 'Тарифы', anchorId: 'pricing', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'tabs', content: 'Free|✅ 3 проекта\n✅ 5 пользователей\n✅ Базовая аналитика\n\nБесплатно||Pro|✅ Безлимит проектов\n✅ 50 пользователей\n✅ Расширенная аналитика\n✅ Интеграции\n\n990₽/мес||Enterprise|✅ Всё из Pro\n✅ SSO авторизация\n✅ SLA 99.9%\n✅ Персональный менеджер\n\nПо запросу', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } },
+      { type: 'heading', content: 'Частые вопросы', anchorId: 'faq', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '24px 16px 8px' } },
+      { type: 'accordion', content: 'Есть ли бесплатный период?|Да, тариф Free доступен без ограничений по времени\nМожно ли перейти на другой тариф?|Да, вы можете сменить тариф в любой момент\nКакие способы оплаты?|Банковские карты, безналичный расчёт для юрлиц\nЕсть ли возврат денег?|Да, в течение 14 дней после оплаты', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } },
+      { type: 'button', content: 'Начать бесплатно', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'footer', content: '© 2026 TaskFlow|support@taskflow.io', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   }
 ];
@@ -813,6 +873,49 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
       { type: 'text', content: 'Подписывайтесь, чтобы быть в курсе новостей', animation: 'fade-in', styles: { ...ds, fontSize: '14px', textColor: '#888888', padding: '4px 16px 12px' } },
       { type: 'socials' as const, content: 'telegram|https://t.me/example\ninstagram|https://instagram.com/example\nvk|https://vk.com/example', animation: 'fade-in-up', styles: { ...ds, padding: '8px' } }
     ]
+  },
+  // === НОВЫЕ: АККОРДЕОН, ТАБЫ, КОМАНДА, КАК ЭТО РАБОТАЕТ ===
+  {
+    id: 'faq-accordion',
+    name: 'FAQ аккордеон',
+    description: 'Вопросы-ответы',
+    icon: <HelpCircle className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Часто задаваемые вопросы', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'accordion', content: 'Как оформить заказ?|Выберите услугу, заполните форму и мы свяжемся с вами в течение часа\nСколько стоит?|Стоимость зависит от объёма задач. Базовый пакет — от 30 000₽\nКакие сроки выполнения?|Средний срок — 2-4 недели в зависимости от сложности\nЕсть ли гарантия?|Да, мы предоставляем гарантию 12 месяцев на все работы\nКак происходит оплата?|50% предоплата, 50% после сдачи проекта', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'tabs-content',
+    name: 'Табы с контентом',
+    description: 'Переключаемые вкладки',
+    icon: <Layers className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Наши услуги', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'tabs', content: 'Дизайн|🎨 UI/UX дизайн, прототипирование, фирменный стиль и брендинг. Создаём уникальные визуальные решения.||Разработка|💻 Фронтенд и бэкенд разработка. React, TypeScript, Node.js. Современный стек технологий.||Маркетинг|📈 SEO продвижение, контекстная реклама, аналитика. Привлекаем целевых клиентов.', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'team-cards',
+    name: 'Карточки команды',
+    description: 'Фото + имена',
+    icon: <Users className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Наша команда', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'columns', content: '👨‍💻 Алексей|CEO & Founder||👩‍🎨 Мария|Lead Designer||🧑‍💻 Дмитрий|Senior Developer', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'how-it-works',
+    name: 'Как это работает',
+    description: '3 шага с иконками',
+    icon: <Zap className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Как это работает', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'icon-text', content: '1️⃣|Оставьте заявку|Заполните форму или напишите нам в мессенджер', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'icon-text', content: '2️⃣|Обсуждаем детали|Созвон, ТЗ, утверждение макетов и сроков', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'icon-text', content: '3️⃣|Получаете результат|Готовый проект с документацией и поддержкой', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+    ]
   }
 ];
 
@@ -863,6 +966,16 @@ const BLOCK_EXAMPLE_CATEGORIES: { name: string; icon: React.ReactNode; groups: S
       { name: 'Команда', ids: ['team-section', 'team-section-2', 'team-section-3'] },
       { name: 'Форма заявки', ids: ['form-example', 'form-example-2', 'form-example-3'] },
       { name: 'Соцсети', ids: ['socials-example', 'socials-example-2', 'socials-example-3'] },
+    ]
+  },
+  {
+    name: 'Новые блоки',
+    icon: <Sparkles className="w-4 h-4" />,
+    groups: [
+      { name: 'FAQ аккордеон', ids: ['faq-accordion'] },
+      { name: 'Табы с контентом', ids: ['tabs-content'] },
+      { name: 'Карточки команды', ids: ['team-cards'] },
+      { name: 'Как это работает', ids: ['how-it-works'] },
     ]
   }
 ];

@@ -245,6 +245,12 @@ export const usePlayground = () => {
     setSelectedBlockId(null);
   }, [setBlocksWithHistory]);
 
+  const toggleBlockHidden = useCallback((id: string) => {
+    setBlocksWithHistory(prev => prev.map(block =>
+      block.id === id ? { ...block, hidden: !block.hidden } : block
+    ));
+  }, [setBlocksWithHistory]);
+
   return {
     blocks,
     selectedBlock,
@@ -267,6 +273,7 @@ export const usePlayground = () => {
     addImageBlock,
     exportData,
     importData,
+    toggleBlockHidden,
     undo,
     redo,
     canUndo,

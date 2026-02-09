@@ -7,6 +7,7 @@ export interface PlaygroundBlock {
   animation?: string;
   hoverEffect?: string;
   buttonStyle?: 'filled' | 'outline' | 'gradient';
+  hidden?: boolean;
   styles: BlockStyles;
 }
 
@@ -31,6 +32,8 @@ export interface PlaygroundSettings {
   globalFontFamily?: string;
   bgDecoration?: BgDecoration;
   bgAnimation?: BgAnimation;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export interface AnimationEffect {

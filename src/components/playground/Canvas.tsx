@@ -640,8 +640,8 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </div>
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
-              {blocks.map(block => (
+            <SortableContext items={blocks.filter(b => !b.hidden).map(b => b.id)} strategy={verticalListSortingStrategy}>
+              {blocks.filter(b => !b.hidden).map(block => (
                 <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
                   <div className="relative group/block" id={block.anchorId || undefined}>
                     {renderBlockContent(block)}
