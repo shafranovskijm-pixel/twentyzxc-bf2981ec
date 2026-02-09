@@ -106,73 +106,62 @@ function Key3D({
 // Animated key inserting into lock
 function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | 'inserting' | 'turning' | 'done' }) {
   const groupRef = useRef<THREE.Group>(null);
-  const keyRef = useRef<THREE.Group>(null);
   
-  // Smooth animation values
-  const positionX = useRef(0);
-  const positionY = useRef(1.5);
-  const positionZ = useRef(2.5);
-  const rotationZ = useRef(0); // Key turn rotation
-  const wobble = useRef(0);
+  // Smooth animation values using refs for performance
+  const posY = useRef(1.5);
+  const posZ = useRef(2.5);
+  const turnAngle = useRef(0); // Clockwise turn only
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
     
     // Target values based on phase
-    let targetX = 0;
-    let targetY = 0.05; // Lock position
-    let targetZ = 0.8;
-    let targetRotZ = 0;
+    let targetY = 0.05;
+    let targetZ = 0.95;
+    let targetTurn = 0;
     
     switch (phase) {
       case 'approaching':
-        targetY = 0.4;
-        targetZ = 1.8;
-        wobble.current = Math.sin(state.clock.elapsedTime * 8) * 0.1;
+        targetY = 0.3;
+        targetZ = 1.6;
         break;
       case 'inserting':
         targetY = 0.05;
         targetZ = 0.95;
-        wobble.current *= 0.9; // Fade out wobble
         break;
       case 'turning':
         targetY = 0.05;
         targetZ = 0.95;
-        targetRotZ = Math.PI * 0.5; // 90 degree turn
-        wobble.current = 0;
+        targetTurn = -Math.PI * 0.5; // -90 degrees = clockwise when viewed from front
         break;
       case 'done':
         return;
     }
     
     // Smooth interpolation
-    const speed = phase === 'turning' ? 3 : 5;
-    positionX.current = THREE.MathUtils.lerp(positionX.current, targetX, delta * speed);
-    positionY.current = THREE.MathUtils.lerp(positionY.current, targetY, delta * speed);
-    positionZ.current = THREE.MathUtils.lerp(positionZ.current, targetZ, delta * speed);
-    rotationZ.current = THREE.MathUtils.lerp(rotationZ.current, targetRotZ, delta * 4);
+    const moveSpeed = 4;
+    const turnSpeed = 3;
     
-    // Apply transforms
-    groupRef.current.position.set(positionX.current, positionY.current, positionZ.current);
+    posY.current = THREE.MathUtils.lerp(posY.current, targetY, delta * moveSpeed);
+    posZ.current = THREE.MathUtils.lerp(posZ.current, targetZ, delta * moveSpeed);
+    turnAngle.current = THREE.MathUtils.lerp(turnAngle.current, targetTurn, delta * turnSpeed);
     
-    // Key faces forward (handle up), then rotates to turn the lock
-    // Initial: key pointing into lock (rotated so teeth face down)
-    groupRef.current.rotation.set(
-      Math.PI * 0.5 + wobble.current, // Tilt forward + wobble
-      0,
-      rotationZ.current // Turn rotation
-    );
+    // Position: center X, animated Y, animated Z
+    groupRef.current.position.set(0, posY.current, posZ.current);
+    
+    // Rotation: key points forward (blade into lock), only Z rotates for turning
+    // X = PI/2 makes the key horizontal pointing into the lock
+    // Z = turnAngle for clockwise rotation
+    groupRef.current.rotation.set(Math.PI * 0.5, 0, turnAngle.current);
   });
 
   if (phase === 'done') return null;
 
   return (
     <group ref={groupRef}>
-      <group ref={keyRef}>
-        <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.2} />
-      </group>
+      <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.2} />
       
-      {/* Glow effect that intensifies during turn */}
+      {/* Glow effect */}
       <pointLight 
         position={[0, 0, 0.1]} 
         color="#d4af37" 
@@ -180,7 +169,7 @@ function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | '
         distance={1.5} 
       />
       
-      {/* Sparkle trail during approach */}
+      {/* Sparkles during approach */}
       {phase === 'approaching' && (
         <Sparkles count={10} scale={0.5} size={2} speed={0.8} color="#ffd700" />
       )}
