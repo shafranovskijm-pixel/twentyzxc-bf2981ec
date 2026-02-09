@@ -317,7 +317,7 @@ const ServiceCard = ({
       {keyId && !isCollected && (
         <button 
           onClick={handleTakeKey}
-          className="absolute top-2 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
+          className="absolute top-14 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
         >
           <ServiceKey3D variant={keyVariant} isHovered={isHovered} className="w-full h-full" />
         </button>
