@@ -322,28 +322,62 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
       >
         {show360Mode ? (
           <>
-            {/* 360° Mode with real images */}
-            <div className="absolute inset-0">
-              {/* Show image based on rotation angle */}
-              {galleryImages360[product.id]?.map((img, i) => {
-                const angleRange = 360 / 4; // 90° per image
-                const normalizedRotation = ((rotation % 360) + 360) % 360;
-                const imageAngleStart = i * angleRange;
-                const imageAngleEnd = (i + 1) * angleRange;
-                const isVisible = normalizedRotation >= imageAngleStart && normalizedRotation < imageAngleEnd;
+            {/* 360° Mode with smooth CSS 3D rotation */}
+            <div 
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ perspective: "1000px" }}
+            >
+              {/* Main product image with 3D transform */}
+              <div
+                className="relative w-[85%] h-[85%]"
+                style={{
+                  transformStyle: "preserve-3d",
+                  transform: `rotateY(${rotation}deg)`,
+                  transition: isDragging ? "none" : "transform 0.1s ease-out",
+                }}
+              >
+                {/* Front face */}
+                <img 
+                  src={galleryImages[product.id]}
+                  alt={product.name}
+                  className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
+                  style={{
+                    backfaceVisibility: "hidden",
+                    filter: `brightness(${1 + Math.sin(rotation * Math.PI / 180) * 0.15})`,
+                  }}
+                />
                 
-                return (
-                  <img
-                    key={i}
-                    src={img}
-                    alt={`${product.name} - angle ${i + 1}`}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ${
-                      isVisible ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                );
-              })}
+                {/* Dynamic lighting overlay */}
+                <div 
+                  className="absolute inset-0 pointer-events-none rounded-lg"
+                  style={{
+                    background: `linear-gradient(${90 + rotation}deg, 
+                      transparent 0%, 
+                      rgba(255,255,255,${0.1 + Math.abs(Math.sin(rotation * Math.PI / 180)) * 0.15}) 50%, 
+                      transparent 100%)`,
+                  }}
+                />
+                
+                {/* Reflection/shine effect */}
+                <div 
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: `radial-gradient(ellipse at ${50 + Math.sin(rotation * Math.PI / 180) * 30}% 30%, 
+                      rgba(255,255,255,0.2) 0%, 
+                      transparent 50%)`,
+                  }}
+                />
+              </div>
             </div>
+            
+            {/* Subtle shadow beneath */}
+            <div 
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[60%] h-4 rounded-full blur-xl pointer-events-none"
+              style={{
+                background: "rgba(16,185,129,0.3)",
+                transform: `translateX(${Math.sin(rotation * Math.PI / 180) * 20}px) scaleX(${0.8 + Math.abs(Math.cos(rotation * Math.PI / 180)) * 0.4})`,
+              }}
+            />
             
             {/* Overlay gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
@@ -360,7 +394,7 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
 
             {/* Rotation angle */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-              <span className="text-xs text-white/80">{Math.round(Math.abs(rotation % 360))}°</span>
+              <span className="text-xs text-white/80">{Math.round(((rotation % 360) + 360) % 360)}°</span>
             </div>
 
             {/* Drag hint */}
@@ -383,7 +417,7 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
             {/* Close 360 button */}
             <button
               onClick={(e) => { e.stopPropagation(); setShow360Mode(false); setRotation(0); }}
-              className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+              className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-colors z-10"
             >
               <X className="w-4 h-4" />
             </button>
