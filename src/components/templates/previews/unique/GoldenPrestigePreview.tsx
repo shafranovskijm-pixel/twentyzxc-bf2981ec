@@ -5,6 +5,9 @@ import { ArrowRight, Play, Star, Crown, Diamond, Award, ChevronDown, Check, Phon
 import { motion } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard, VideoPlaceholder } from "../shared";
 import useEmblaCarousel from "embla-carousel-react";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface GoldenPrestigePreviewProps {
   template: Template;
@@ -235,15 +238,24 @@ export const GoldenPrestigePreview = ({ template }: GoldenPrestigePreviewProps) 
               <StaggerItem key={i}>
                 <TiltCard glowColor="rgba(245, 158, 11, 0.15)">
                   <motion.div 
-                    className="p-8 rounded-2xl bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 h-full"
+                    className="rounded-2xl bg-gradient-to-b from-amber-500/10 to-transparent border border-amber-500/20 hover:border-amber-500/40 transition-all duration-300 h-full overflow-hidden"
                     whileHover={{ y: -8 }}
                   >
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
-                      <service.icon className="w-8 h-8 text-stone-900" />
+                    <div className="aspect-[4/3] relative overflow-hidden">
+                      <ImageWithFallback 
+                        src={`${STORAGE_BASE}/golden-prestige/service-${i + 1}.png`}
+                        alt={service.title}
+                        aspectRatio="video"
+                      />
                     </div>
-                    <h3 className="text-2xl font-bold text-white mb-3">{service.title}</h3>
-                    <p className="text-white/50 mb-6">{service.desc}</p>
-                    <div className="text-amber-400 font-bold text-lg">{service.price}</div>
+                    <div className="p-8">
+                      <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
+                        <service.icon className="w-8 h-8 text-stone-900" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-3">{service.title}</h3>
+                      <p className="text-white/50 mb-6">{service.desc}</p>
+                      <div className="text-amber-400 font-bold text-lg">{service.price}</div>
+                    </div>
                   </motion.div>
                 </TiltCard>
               </StaggerItem>

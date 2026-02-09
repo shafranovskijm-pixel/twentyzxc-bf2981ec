@@ -13,6 +13,9 @@ import {
 import { CodeBlock } from "../shared/CodeBlock";
 import { PricingToggle, AnimatedPrice } from "../shared/PricingToggle";
 import { StatusIndicator, StatusCard, StatusBanner } from "../shared/StatusIndicator";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface TechHorizonPreviewProps {
   template: Template;

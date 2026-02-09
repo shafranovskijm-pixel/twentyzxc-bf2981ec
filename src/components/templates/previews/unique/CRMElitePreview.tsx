@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedCounter, ScrollReveal } from "../shared";
 import { Progress } from "@/components/ui/progress";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface CRMElitePreviewProps {
   template: Template;
@@ -147,7 +150,7 @@ export const CRMElitePreview = ({ template }: CRMElitePreviewProps) => {
                 className="flex items-center gap-3 cursor-pointer"
                 whileHover={{ scale: 1.02 }}
               >
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600" />
+                <ImageWithFallback src={`${STORAGE_BASE}/crm-elite/avatar-1.png`} alt="User avatar" className="w-10 h-10 rounded-full" />
                 <div className="hidden md:block text-left">
                   <div className="text-sm font-medium">Анна Волкова</div>
                   <div className="text-xs text-white/50">Sales Manager</div>
@@ -309,7 +312,7 @@ export const CRMElitePreview = ({ template }: CRMElitePreviewProps) => {
                     >
                       <td className="py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600" />
+                          <ImageWithFallback src={`${STORAGE_BASE}/crm-elite/avatar-${(i % 3) + 1}.png`} alt={lead.name} className="w-8 h-8 rounded-full" />
                           <span className="font-medium">{lead.name}</span>
                         </div>
                       </td>
