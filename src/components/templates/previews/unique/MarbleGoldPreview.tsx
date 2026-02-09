@@ -7,7 +7,20 @@ import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter } from "..
 import { ImageWithFallback, AvatarWithFallback } from "../../ImageWithFallback";
 import useEmblaCarousel from "embla-carousel-react";
 
-const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
+// Local images
+import portfolio1 from "@/assets/templates/marble-gold/portfolio-1.jpg";
+import portfolio2 from "@/assets/templates/marble-gold/portfolio-2.jpg";
+import portfolio3 from "@/assets/templates/marble-gold/portfolio-3.jpg";
+import portfolio4 from "@/assets/templates/marble-gold/portfolio-4.jpg";
+import portfolio5 from "@/assets/templates/marble-gold/portfolio-5.jpg";
+import portfolio6 from "@/assets/templates/marble-gold/portfolio-6.jpg";
+import team1 from "@/assets/templates/marble-gold/team-1.jpg";
+import team2 from "@/assets/templates/marble-gold/team-2.jpg";
+import team3 from "@/assets/templates/marble-gold/team-3.jpg";
+import team4 from "@/assets/templates/marble-gold/team-4.jpg";
+
+const portfolioImages = [portfolio1, portfolio2, portfolio3, portfolio4, portfolio5, portfolio6];
+const teamImages = [team1, team2, team3, team4];
 
 interface MarbleGoldPreviewProps {
   template: Template;
@@ -198,7 +211,7 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
                 >
                   <div className="aspect-[4/5] rounded-lg overflow-hidden border border-white/5 relative mb-4 group-hover:border-amber-500/30 transition-all">
                     <ImageWithFallback
-                      src={`${STORAGE_BASE}/marble-gold/portfolio-${i + 1}.png`}
+                      src={portfolioImages[i]}
                       alt={project.title}
                       className="w-full h-full"
                       aspectRatio="portrait"
@@ -233,7 +246,7 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
                 <motion.div className="text-center" whileHover={{ y: -8 }}>
                   <div className="w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden border border-amber-500/20">
                     <ImageWithFallback
-                      src={`${STORAGE_BASE}/marble-gold/team-${i + 1}.png`}
+                      src={teamImages[i]}
                       alt={member.name}
                       className="w-full h-full rounded-full"
                       aspectRatio="square"

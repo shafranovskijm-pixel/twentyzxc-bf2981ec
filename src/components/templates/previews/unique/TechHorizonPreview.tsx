@@ -15,7 +15,16 @@ import { PricingToggle, AnimatedPrice } from "../shared/PricingToggle";
 import { StatusIndicator, StatusCard, StatusBanner } from "../shared/StatusIndicator";
 import { ImageWithFallback } from "../../ImageWithFallback";
 
-const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
+// Local images
+import project1 from "@/assets/templates/tech-horizon/project-1.jpg";
+import project2 from "@/assets/templates/tech-horizon/project-2.jpg";
+import project3 from "@/assets/templates/tech-horizon/project-3.jpg";
+import team1 from "@/assets/templates/tech-horizon/team-1.jpg";
+import team2 from "@/assets/templates/tech-horizon/team-2.jpg";
+import team3 from "@/assets/templates/tech-horizon/team-3.jpg";
+
+export const projectImages = [project1, project2, project3];
+export const teamImages = [team1, team2, team3];
 
 interface TechHorizonPreviewProps {
   template: Template;
