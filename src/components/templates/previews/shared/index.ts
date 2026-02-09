@@ -21,5 +21,6 @@ export { StockBadge, StockProgress, UrgencyMessage } from "./StockBadge";
 export { SizeGuideModal, SizeGuideButton } from "./SizeGuideModal";
 export { ARBadge, ARQRCode } from "./ARBadge";
 export { Viewer360, Mini360Badge } from "./Viewer360";
+export { Product360Spin, Product360Badge } from "./Product360Spin";
 export { KeyboardShortcuts, Key, ShortcutHint } from "./KeyboardShortcuts";
 export { ActivityFeed, ActivityItem, LiveIndicator } from "./ActivityFeed";
