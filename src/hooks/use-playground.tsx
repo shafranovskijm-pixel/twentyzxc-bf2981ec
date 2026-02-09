@@ -110,6 +110,18 @@ export const usePlayground = () => {
     };
   }, [projectTitle, blocks, settings]);
 
+  const reorderBlocks = useCallback((activeId: string, overId: string) => {
+    setBlocks(prev => {
+      const oldIndex = prev.findIndex(b => b.id === activeId);
+      const newIndex = prev.findIndex(b => b.id === overId);
+      if (oldIndex === -1 || newIndex === -1) return prev;
+      const newBlocks = [...prev];
+      const [moved] = newBlocks.splice(oldIndex, 1);
+      newBlocks.splice(newIndex, 0, moved);
+      return newBlocks;
+    });
+  }, []);
+
   const importData = useCallback((data: { title: string; blocks: PlaygroundBlock[]; settings: PlaygroundSettings }) => {
     setProjectTitle(data.title);
     setBlocks(data.blocks);
@@ -134,6 +146,7 @@ export const usePlayground = () => {
     duplicateBlock,
     clearAll,
     loadTemplate,
+    reorderBlocks,
     exportData,
     importData
   };
