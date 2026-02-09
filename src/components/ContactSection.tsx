@@ -205,12 +205,11 @@ const ContactSection = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="luxury-card rounded-sm p-8 md:p-12 relative overflow-hidden"
+                  className="rounded-sm p-8 md:p-12 relative overflow-hidden"
                 >
-                  {/* Chest decoration */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent" />
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  {/* Chest decoration - subtle lines only */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                   
                   <div className="relative z-10">
                     <h3 className="text-2xl md:text-3xl font-display font-bold mb-4 text-center">
@@ -225,72 +224,20 @@ const ContactSection = () => {
                     {/* 3D Treasure Chest */}
                     <TreasureChest3D onOpen={handleChestOpen} isOpen={isChestOpen} />
                     
-                    {/* Quick keys for those without collected keys - 3D Gothic Keys */}
+                    {/* Quick service selection */}
                     {keys.length === 0 && (
                       <div className="mt-8">
                         <p className="text-sm text-muted-foreground text-center mb-6">
-                          Выберите ключ:
+                          Выберите услугу:
                         </p>
-                        <div className="flex justify-center gap-6 md:gap-10 max-w-3xl mx-auto">
-                          {Object.entries(serviceKeys).slice(0, 4).map(([key, { label }], index) => (
+                        <div className="flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
+                          {Object.entries(serviceKeys).slice(0, 4).map(([key, { label }]) => (
                             <button
                               key={key}
                               onClick={() => handleKeySelect(key)}
-                              className="group flex flex-col items-center gap-3 transition-all duration-500 hover:scale-110"
-                              style={{
-                                animation: `float ${2 + index * 0.3}s ease-in-out infinite`,
-                                animationDelay: `${index * 0.2}s`,
-                              }}
+                              className="group px-5 py-2.5 rounded-full bg-transparent hover:bg-primary/10 border border-primary/20 hover:border-primary/50 transition-all duration-300"
                             >
-                              {/* Gothic 3D Key */}
-                              <div className="relative w-12 h-20 md:w-16 md:h-24 transform-gpu perspective-1000">
-                                {/* Key glow */}
-                                <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full group-hover:bg-primary/50 transition-colors" />
-                                
-                                {/* Key bow (ornate top) */}
-                                <div 
-                                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-8 md:w-10 md:h-10 rounded-full border-4 group-hover:border-primary transition-colors"
-                                  style={{
-                                    borderColor: index === 0 ? '#d4af37' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#b87333',
-                                    background: `radial-gradient(circle at 30% 30%, ${index === 0 ? '#f4d03f' : index === 1 ? '#e8e8e8' : index === 2 ? '#daa520' : '#da8a67'} 0%, ${index === 0 ? '#8b6914' : index === 1 ? '#808080' : index === 2 ? '#8b4513' : '#654321'} 100%)`,
-                                    boxShadow: `0 0 20px ${index === 0 ? '#d4af3780' : index === 1 ? '#c0c0c080' : index === 2 ? '#cd7f3280' : '#b8733380'}, inset 0 2px 4px rgba(255,255,255,0.3)`,
-                                    transform: 'rotateX(15deg)',
-                                  }}
-                                >
-                                  {/* Gothic cross cutout */}
-                                  <div className="absolute inset-2 flex items-center justify-center">
-                                    <div 
-                                      className="w-1.5 h-4 rounded-sm"
-                                      style={{ background: index === 0 ? '#e74c3c' : index === 1 ? '#3498db' : index === 2 ? '#2ecc71' : '#9b59b6' }}
-                                    />
-                                  </div>
-                                </div>
-                                
-                                {/* Key shaft */}
-                                <div 
-                                  className="absolute top-7 md:top-9 left-1/2 -translate-x-1/2 w-2 h-8 md:h-10 rounded-sm"
-                                  style={{
-                                    background: `linear-gradient(90deg, ${index === 0 ? '#8b6914' : index === 1 ? '#808080' : index === 2 ? '#8b4513' : '#654321'} 0%, ${index === 0 ? '#d4af37' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#b87333'} 50%, ${index === 0 ? '#8b6914' : index === 1 ? '#808080' : index === 2 ? '#8b4513' : '#654321'} 100%)`,
-                                    boxShadow: `0 4px 8px rgba(0,0,0,0.5)`,
-                                  }}
-                                />
-                                
-                                {/* Key teeth (gothic style) */}
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 flex gap-0.5">
-                                  {[0.6, 1, 0.7, 0.9, 0.5].map((h, i) => (
-                                    <div
-                                      key={i}
-                                      className="w-1 rounded-t-sm"
-                                      style={{
-                                        height: `${h * 10}px`,
-                                        background: `linear-gradient(180deg, ${index === 0 ? '#d4af37' : index === 1 ? '#c0c0c0' : index === 2 ? '#cd7f32' : '#b87333'} 0%, ${index === 0 ? '#8b6914' : index === 1 ? '#606060' : index === 2 ? '#654321' : '#4a3728'} 100%)`,
-                                      }}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors font-medium">
+                              <span className="text-sm text-muted-foreground group-hover:text-primary transition-colors">
                                 {label}
                               </span>
                             </button>
