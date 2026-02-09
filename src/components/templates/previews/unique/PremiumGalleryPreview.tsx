@@ -247,7 +247,7 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans overflow-hidden">
       {/* Preload hero images for faster LCP */}
-      <ImagePreload src={heroImage} />
+      <ImagePreload src={heroPseudo3D} />
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-emerald-900/30">
