@@ -28,13 +28,18 @@ export const usePortfolioProjects = () => {
   return useQuery({
     queryKey: ["portfolio-projects"],
     queryFn: async () => {
+      console.log("Fetching portfolio projects...");
       const { data, error } = await (supabase as any)
         .from("portfolio_projects")
         .select("*")
         .order("sort_order", { ascending: true });
 
-      if (error) throw error;
-      return data as PortfolioProject[];
+      console.log("Portfolio projects result:", { data, error });
+      if (error) {
+        console.error("Portfolio projects error:", error);
+        throw error;
+      }
+      return (data || []) as PortfolioProject[];
     },
   });
 };
@@ -43,14 +48,19 @@ export const usePortfolioSettings = () => {
   return useQuery({
     queryKey: ["portfolio-settings"],
     queryFn: async () => {
+      console.log("Fetching portfolio settings...");
       const { data, error } = await (supabase as any)
         .from("portfolio_settings")
         .select("*")
         .eq("id", "main")
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      return data as PortfolioSettings;
+      console.log("Portfolio settings result:", { data, error });
+      if (error) {
+        console.error("Portfolio settings error:", error);
+        throw error;
+      }
+      return data as PortfolioSettings | null;
     },
   });
 };
