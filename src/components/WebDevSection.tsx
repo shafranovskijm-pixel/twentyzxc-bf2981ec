@@ -309,7 +309,7 @@ const ServiceCard = ({
 
   return (
     <div 
-      className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden"
+      className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
