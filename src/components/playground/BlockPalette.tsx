@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Type, AlignLeft, MousePointer, Image, Minus, Square, ArrowUpDown, List, Quote, Hash, Play, Menu, PanelBottom, Columns, Sparkles, Timer, LayoutGrid, Share2 } from "lucide-react";
+import { Type, AlignLeft, MousePointer, Image, Minus, Square, ArrowUpDown, List, Quote, Hash, Play, Menu, PanelBottom, Columns, Sparkles, Timer, LayoutGrid, Share2, FileText, ChevronsUpDown, PanelTop } from "lucide-react";
 import { BLOCK_TYPES } from "@/data/playground-effects";
 import { PlaygroundBlock } from "@/data/playground-effects";
 
@@ -22,6 +22,9 @@ const iconMap: Record<string, React.ReactNode> = {
   Timer: <Timer className="w-4 h-4" />,
   LayoutGrid: <LayoutGrid className="w-4 h-4" />,
   Share2: <Share2 className="w-4 h-4" />,
+  FileText: <FileText className="w-4 h-4" />,
+  ChevronsUpDown: <ChevronsUpDown className="w-4 h-4" />,
+  PanelTop: <PanelTop className="w-4 h-4" />,
 };
 
 interface BlockPaletteProps {

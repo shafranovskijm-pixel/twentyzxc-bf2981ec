@@ -342,6 +342,43 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       }
+      case 'accordion': {
+        const items = block.content.split('\n').filter(Boolean);
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "space-y-0")} style={style} onClick={onClick} {...animProps}>
+            {items.map((item, i) => {
+              const [q, a] = item.split('|');
+              return (
+                <div key={i} className="border-b border-border/30 py-3">
+                  <div className="font-medium flex items-center justify-between cursor-pointer">
+                    <span>{q}</span>
+                    <span className="text-xs opacity-50">▼</span>
+                  </div>
+                  <div className="text-sm opacity-70 mt-2">{a}</div>
+                </div>
+              );
+            })}
+          </motion.div>
+        );
+      }
+      case 'tabs': {
+        const tabs = block.content.split('||').filter(Boolean);
+        return wrapWithLink(
+          <motion.div className={baseClasses} style={style} onClick={onClick} {...animProps}>
+            <div className="flex gap-0 border-b border-border/30 mb-3">
+              {tabs.map((tab, i) => {
+                const [title] = tab.split('|');
+                return (
+                  <div key={i} className={cn("px-4 py-2 text-sm cursor-pointer", i === 0 ? "opacity-100 border-b-2 border-current" : "opacity-50")}>
+                    {title}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-sm">{tabs[0]?.split('|')[1] || ''}</div>
+          </motion.div>
+        );
+      }
       default:
         return null;
     }

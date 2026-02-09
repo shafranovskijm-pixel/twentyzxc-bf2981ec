@@ -1,6 +1,6 @@
 export interface PlaygroundBlock {
   id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials' | 'form';
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials' | 'form' | 'accordion' | 'tabs';
   content: string;
   link?: string;
   anchorId?: string;
@@ -106,6 +106,8 @@ export const BLOCK_TYPES = [
   { type: 'spacer' as const, name: 'Отступ', icon: 'ArrowUpDown', defaultContent: '' },
   { type: 'footer' as const, name: 'Футер', icon: 'PanelBottom', defaultContent: '© 2026 Компания. Все права защищены.|email@example.com|+7 (999) 123-45-67' },
   { type: 'form' as const, name: 'Форма заявки', icon: 'FileText', defaultContent: 'Оставьте заявку|Имя|Телефон или Email|Сообщение|Отправить' },
+  { type: 'accordion' as const, name: 'Аккордеон', icon: 'ChevronsUpDown', defaultContent: 'Что входит в услугу?|Полный комплекс работ по разработке и дизайну\nСколько стоит?|Стоимость зависит от объёма задач\nКакие сроки?|Средний срок выполнения — 2-4 недели' },
+  { type: 'tabs' as const, name: 'Табы', icon: 'PanelTop', defaultContent: 'О нас|Мы — команда профессионалов||Услуги|Разработка, дизайн, маркетинг||Контакты|Свяжитесь с нами любым удобным способом' },
 ];
 
 export const COLOR_PRESETS = [
