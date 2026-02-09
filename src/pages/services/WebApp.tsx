@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -78,7 +79,13 @@ const WebAppPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Веб-приложения — Разработка SPA и PWA | 24ZXC</title>
+        <meta name="description" content="Разработка веб-приложений: SPA, PWA, дашборды и CRM-системы. Современные технологии и высокая производительность." />
+        <link rel="canonical" href="https://24zxc.ru/services/webapp" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Glowing orbs */}
@@ -410,6 +417,7 @@ const WebAppPage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

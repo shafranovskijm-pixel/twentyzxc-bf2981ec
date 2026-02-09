@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -159,7 +160,13 @@ const Portfolio = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Портфолио — Наши проекты | 24ZXC</title>
+        <meta name="description" content="Портфолио веб-студии 24ZXC: сайты, интернет-магазины, веб-приложения и рекламные кампании. Смотрите наши лучшие работы." />
+        <link rel="canonical" href="https://24zxc.ru/portfolio" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
@@ -390,6 +397,7 @@ const Portfolio = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

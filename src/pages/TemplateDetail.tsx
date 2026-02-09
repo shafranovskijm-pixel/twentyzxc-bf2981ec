@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useParams, Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -57,7 +58,13 @@ const TemplateDetail = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Helmet>
+        <title>{`${template.name} — Шаблон сайта | 24ZXC`}</title>
+        <meta name="description" content={`Шаблон «${template.name}»: ${template.description}. Заказать разработку сайта по шаблону от 24ZXC.`} />
+        <link rel="canonical" href={`https://24zxc.ru/templates/${id}`} />
+      </Helmet>
+      <div className="min-h-screen bg-background">
       <Header />
       
       {/* Hero Section */}
@@ -348,6 +355,7 @@ const TemplateDetail = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

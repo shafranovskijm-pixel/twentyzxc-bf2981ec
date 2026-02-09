@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +96,13 @@ const CorporatePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Корпоративные сайты — Разработка под ключ | 24ZXC</title>
+        <meta name="description" content="Разработка корпоративных сайтов для бизнеса. Современный дизайн, CMS, интеграции и техническая поддержка." />
+        <link rel="canonical" href="https://24zxc.ru/services/corporate" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Glowing orbs */}
@@ -438,6 +445,7 @@ const CorporatePage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

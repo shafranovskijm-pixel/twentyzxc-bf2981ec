@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import WebDevSection from "@/components/WebDevSection";
@@ -8,7 +9,13 @@ import { FloatingParticles, GeometricShapes, GradientGlows, SectionDivider } fro
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background relative">
+    <>
+      <Helmet>
+        <title>24ZXC — Веб-разработка, реклама и услуги для бизнеса</title>
+        <meta name="description" content="Создаём современные сайты, настраиваем рекламу в Яндекс Директ и соцсетях. Полный спектр цифровых услуг для вашего бизнеса." />
+        <link rel="canonical" href="https://24zxc.ru/" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative">
       {/* Background decorations */}
       <GradientGlows />
       <GeometricShapes />
@@ -26,6 +33,7 @@ const Index = () => {
       </main>
       <Footer />
     </div>
+    </>
   );
 };
 

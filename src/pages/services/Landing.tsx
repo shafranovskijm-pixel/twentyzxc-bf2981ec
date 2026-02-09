@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -94,7 +95,13 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Разработка лендингов — Продающие страницы | 24ZXC</title>
+        <meta name="description" content="Создание лендинг-страниц с высокой конверсией. Адаптивный дизайн, SEO-оптимизация и быстрая загрузка." />
+        <link rel="canonical" href="https://24zxc.ru/services/landing" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Glowing orbs */}
@@ -430,6 +437,7 @@ const LandingPage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 
