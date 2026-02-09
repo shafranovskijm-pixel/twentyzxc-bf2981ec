@@ -6,10 +6,14 @@ export { CrystalVisionPreview } from './CrystalVisionPreview';
 // Corporate unique previews
 export { ExecutiveSuitePreview } from './ExecutiveSuitePreview';
 export { MarbleGoldPreview } from './MarbleGoldPreview';
+export { TechHorizonPreview } from './TechHorizonPreview';
 
 // E-commerce unique previews
 export { LuxeBoutiquePreview } from './LuxeBoutiquePreview';
+export { ArtisanMarketPreview } from './ArtisanMarketPreview';
+export { PremiumGalleryPreview } from './PremiumGalleryPreview';
 
 // WebApp unique previews
 export { DashboardProPreview } from './DashboardProPreview';
 export { CRMElitePreview } from './CRMElitePreview';
+export { PlatformXPreview } from './PlatformXPreview';

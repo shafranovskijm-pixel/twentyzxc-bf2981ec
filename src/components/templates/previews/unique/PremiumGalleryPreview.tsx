@@ -1,0 +1,429 @@
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Heart, ShoppingBag, Search, ChevronRight, ChevronLeft,
+  Star, Truck, Shield, Award, Video, Phone, X, MapPin,
+  Eye, Clock, Package, Sparkles, ArrowRight
+} from "lucide-react";
+import { Template } from "@/data/templates";
+import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
+import { ARBadge } from "../shared/ARBadge";
+import { Viewer360, Mini360Badge } from "../shared/Viewer360";
+import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
+import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
+
+interface PremiumGalleryPreviewProps {
+  template: Template;
+}
+
+export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) => {
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
+  const [show360, setShow360] = useState(false);
+  const [selectedCity, setSelectedCity] = useState("moscow");
+
+  const cities = [
+    { id: "moscow", name: "Москва", days: "1-2", price: 0 },
+    { id: "spb", name: "Санкт-Петербург", days: "2-3", price: 500 },
+    { id: "kazan", name: "Казань", days: "3-4", price: 800 },
+    { id: "other", name: "Другой город", days: "5-7", price: 1200 },
+  ];
+
+  const products = [
+    { id: "1", name: "Изумрудное ожерелье Aurora", price: 245000, category: "Украшения", ar: true, stock: 2 },
+    { id: "2", name: "Часы Prestige Gold", price: 890000, category: "Часы", ar: true, stock: 5 },
+    { id: "3", name: "Сумка Elegance Black", price: 156000, category: "Аксессуары", ar: false, stock: 8 },
+    { id: "4", name: "Кольцо Diamond Heart", price: 320000, category: "Украшения", ar: true, stock: 1 },
+    { id: "5", name: "Браслет Serpenti", price: 178000, category: "Украшения", ar: true, stock: 4 },
+    { id: "6", name: "Очки Aviator Platinum", price: 89000, category: "Аксессуары", ar: false, stock: 12 },
+  ];
+
+  const recommendations = [
+    { id: "r1", name: "Для вас", items: 3 },
+    { id: "r2", name: "Популярное", items: 8 },
+    { id: "r3", name: "Новинки", items: 5 },
+  ];
+
+  const recentlyViewed = products.slice(0, 4);
+
+  const selectedShipping = cities.find(c => c.id === selectedCity);
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-white font-sans overflow-hidden">
+      {/* Header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-emerald-900/30">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <span className="font-serif text-xl text-white">Premium Gallery</span>
+          </div>
+
+          <nav className="hidden md:flex items-center gap-8">
+            {["Коллекции", "Новинки", "Бренды", "Эксклюзив"].map((item) => (
+              <a key={item} href="#" className="text-sm text-zinc-400 hover:text-emerald-400 transition-colors">
+                {item}
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <button className="p-2 text-zinc-400 hover:text-white transition-colors">
+              <Search className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-zinc-400 hover:text-white transition-colors">
+              <Heart className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-zinc-400 hover:text-white transition-colors relative">
+              <ShoppingBag className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-xs flex items-center justify-center">
+                2
+              </span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero with Parallax */}
+      <section className="relative min-h-screen flex items-center justify-center pt-20">
+        {/* Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 via-zinc-950 to-teal-900/20" />
+          <motion.div
+            animate={{ y: [0, -20, 0] }}
+            transition={{ duration: 8, repeat: Infinity }}
+            className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px]"
+          />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 mb-6">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-emerald-400 text-sm">Новая коллекция 2025</span>
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-serif mb-6 leading-tight">
+              Роскошь в каждой
+              <span className="block text-emerald-400">детали</span>
+            </h1>
+
+            <p className="text-lg text-zinc-400 mb-8 max-w-md">
+              Эксклюзивные украшения и аксессуары от лучших мировых домов моды. 
+              Виртуальная примерка с AR-технологией.
+            </p>
+
+            <div className="flex flex-wrap gap-4">
+              <GradientButton className="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-4">
+                Смотреть коллекцию
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </GradientButton>
+              <button className="px-8 py-4 rounded-xl border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-colors flex items-center gap-2">
+                <Video className="w-5 h-5" />
+                Виртуальный тур
+              </button>
+            </div>
+          </motion.div>
+
+          {/* Hero product with 360 */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative"
+          >
+            {show360 ? (
+              <Viewer360 className="max-w-md mx-auto" />
+            ) : (
+              <div className="relative aspect-square max-w-md mx-auto">
+                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-900/30 to-teal-900/30 border border-emerald-500/20" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-48 h-48 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 blur-xl" />
+                  <Package className="absolute w-24 h-24 text-emerald-500/50" />
+                </div>
+                <Mini360Badge 
+                  onClick={() => setShow360(true)} 
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2"
+                />
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* AR Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <ARBadge variant="banner" />
+        </div>
+      </section>
+
+      {/* Virtual Showroom */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto">
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-5xl font-serif mb-4">
+                Виртуальный <span className="text-emerald-400">шоурум</span>
+              </h2>
+              <p className="text-zinc-400 max-w-2xl mx-auto">
+                Исследуйте коллекцию в галерейном формате с возможностью AR-примерки
+              </p>
+            </div>
+          </ScrollReveal>
+
+          {/* Products grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            {products.map((product, i) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -8 }}
+                onClick={() => setSelectedProduct(product.id)}
+                className="group cursor-pointer"
+              >
+                <div className="relative aspect-[3/4] rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-800 overflow-hidden mb-4">
+                  {/* Product placeholder */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Package className="w-16 h-16 text-zinc-700 group-hover:text-emerald-500/50 transition-colors" />
+                  </div>
+
+                  {/* AR badge */}
+                  {product.ar && (
+                    <div className="absolute top-4 left-4">
+                      <ARBadge variant="compact" />
+                    </div>
+                  )}
+
+                  {/* Stock badge */}
+                  {product.stock <= 3 && (
+                    <div className="absolute top-4 right-4">
+                      <StockBadge status={product.stock === 1 ? "last-items" : "low"} count={product.stock} />
+                    </div>
+                  )}
+
+                  {/* Hover overlay */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent flex items-end p-6"
+                  >
+                    <div className="flex gap-2 w-full">
+                      <button className="flex-1 py-3 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-colors">
+                        В корзину
+                      </button>
+                      <button className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center hover:bg-zinc-700 transition-colors">
+                        <Eye className="w-5 h-5 text-zinc-300" />
+                      </button>
+                    </div>
+                  </motion.div>
+                </div>
+
+                <div>
+                  <p className="text-xs text-emerald-400 mb-1">{product.category}</p>
+                  <h3 className="font-medium text-white mb-2 group-hover:text-emerald-400 transition-colors">
+                    {product.name}
+                  </h3>
+                  <p className="text-lg font-semibold text-white">
+                    {product.price.toLocaleString()} ₽
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Personalization */}
+      <section className="py-16 px-6 bg-zinc-900/50">
+        <div className="max-w-6xl mx-auto">
+          <ScrollReveal>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl font-serif mb-2">Рекомендации для вас</h2>
+                <p className="text-sm text-zinc-500">На основе ваших предпочтений</p>
+              </div>
+              <div className="flex gap-2">
+                {recommendations.map((rec) => (
+                  <button
+                    key={rec.id}
+                    className="px-4 py-2 rounded-full text-sm bg-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-700 transition-colors"
+                  >
+                    {rec.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            {products.slice(0, 4).map((product, i) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="flex-shrink-0 w-64"
+              >
+                <div className="aspect-square rounded-xl bg-zinc-800 mb-3" />
+                <p className="text-sm font-medium text-white">{product.name}</p>
+                <p className="text-sm text-emerald-400">{product.price.toLocaleString()} ₽</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Live Consultation */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            className="relative rounded-3xl bg-gradient-to-br from-emerald-900/50 to-teal-900/50 border border-emerald-500/20 p-12 text-center overflow-hidden"
+          >
+            {/* Background glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-emerald-500/20 rounded-full blur-[100px]" />
+
+            <div className="relative z-10">
+              <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-6">
+                <Video className="w-10 h-10 text-emerald-400" />
+              </div>
+
+              <h2 className="text-3xl font-serif mb-4">Персональная консультация</h2>
+              <p className="text-zinc-400 mb-8 max-w-md mx-auto">
+                Свяжитесь с нашим экспертом для индивидуального подбора украшений 
+                в режиме видеозвонка
+              </p>
+
+              <div className="flex flex-wrap gap-4 justify-center">
+                <button className="flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500 text-white font-medium hover:bg-emerald-400 transition-colors">
+                  <Video className="w-5 h-5" />
+                  Видеоконсультация
+                </button>
+                <button className="flex items-center gap-2 px-8 py-4 rounded-xl border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+                  <Phone className="w-5 h-5" />
+                  Заказать звонок
+                </button>
+              </div>
+
+              <p className="text-xs text-zinc-500 mt-6">
+                Время работы: 10:00 - 22:00 (МСК)
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Size Guide & Shipping */}
+      <section className="py-16 px-6 bg-zinc-900/50">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
+          {/* Size Guide */}
+          <div className="p-8 rounded-2xl bg-zinc-900 border border-zinc-800">
+            <h3 className="text-xl font-serif mb-4">Подбор размера</h3>
+            <p className="text-sm text-zinc-400 mb-6">
+              Воспользуйтесь нашим гидом для точного определения размера
+            </p>
+            <SizeGuideButton onClick={() => setShowSizeGuide(true)} />
+          </div>
+
+          {/* Shipping Calculator */}
+          <div className="p-8 rounded-2xl bg-zinc-900 border border-zinc-800">
+            <h3 className="text-xl font-serif mb-4">Расчёт доставки</h3>
+            <div className="space-y-3 mb-6">
+              {cities.map((city) => (
+                <button
+                  key={city.id}
+                  onClick={() => setSelectedCity(city.id)}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-colors ${
+                    selectedCity === city.id
+                      ? "border-emerald-500 bg-emerald-500/10"
+                      : "border-zinc-800 hover:border-zinc-700"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <MapPin className={`w-4 h-4 ${selectedCity === city.id ? "text-emerald-400" : "text-zinc-500"}`} />
+                    <span className="text-sm">{city.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">{city.price === 0 ? "Бесплатно" : `${city.price} ₽`}</p>
+                    <p className="text-xs text-zinc-500">{city.days} дней</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Recently Viewed */}
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-xl font-serif mb-6">Недавно просмотренные</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {recentlyViewed.map((product) => (
+              <div key={product.id} className="group">
+                <div className="aspect-square rounded-xl bg-zinc-900 border border-zinc-800 mb-2 group-hover:border-emerald-500/30 transition-colors" />
+                <p className="text-sm text-zinc-400 truncate">{product.name}</p>
+                <p className="text-sm text-emerald-400">{product.price.toLocaleString()} ₽</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-16 px-6 border-t border-zinc-800">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-6 h-6 text-emerald-400" />
+                <span className="font-serif text-xl">Premium Gallery</span>
+              </div>
+              <p className="text-sm text-zinc-500">
+                Эксклюзивные украшения и аксессуары от мировых брендов
+              </p>
+            </div>
+            {[
+              { title: "Каталог", links: ["Украшения", "Часы", "Аксессуары", "Новинки"] },
+              { title: "Сервис", links: ["Доставка", "Оплата", "Возврат", "Гарантия"] },
+              { title: "Компания", links: ["О нас", "Бутики", "Карьера", "Контакты"] },
+            ].map((col) => (
+              <div key={col.title}>
+                <h4 className="font-medium mb-4">{col.title}</h4>
+                <ul className="space-y-2">
+                  {col.links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-sm text-zinc-500 hover:text-emerald-400 transition-colors">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="pt-8 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-zinc-500">© 2025 Premium Gallery. Все права защищены.</p>
+            <div className="flex items-center gap-6">
+              {[Shield, Truck, Award].map((Icon, i) => (
+                <Icon key={i} className="w-5 h-5 text-zinc-600" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Size Guide Modal */}
+      <SizeGuideModal isOpen={showSizeGuide} onClose={() => setShowSizeGuide(false)} />
+    </div>
+  );
+};

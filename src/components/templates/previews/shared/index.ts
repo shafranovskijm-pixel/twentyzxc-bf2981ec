@@ -11,3 +11,15 @@ export { VideoPlaceholder } from "./VideoPlaceholder";
 export { ImageGallery } from "./ImageGallery";
 export { InstagramFeed } from "./InstagramFeed";
 export { AwardsBadges } from "./AwardsBadges";
+
+// New shared components
+export { CodeBlock, AnimatedCodeBlock } from "./CodeBlock";
+export { PricingToggle, AnimatedPrice } from "./PricingToggle";
+export { StatusIndicator, StatusCard, StatusBanner } from "./StatusIndicator";
+export { MapPlaceholder, ContactCard } from "./MapPlaceholder";
+export { StockBadge, StockProgress, UrgencyMessage } from "./StockBadge";
+export { SizeGuideModal, SizeGuideButton } from "./SizeGuideModal";
+export { ARBadge, ARQRCode } from "./ARBadge";
+export { Viewer360, Mini360Badge } from "./Viewer360";
+export { KeyboardShortcuts, Key, ShortcutHint } from "./KeyboardShortcuts";
+export { ActivityFeed, ActivityItem, LiveIndicator } from "./ActivityFeed";

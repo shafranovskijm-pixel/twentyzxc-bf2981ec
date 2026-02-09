@@ -8,9 +8,13 @@ import {
   CrystalVisionPreview,
   ExecutiveSuitePreview,
   MarbleGoldPreview,
+  TechHorizonPreview,
   LuxeBoutiquePreview,
+  ArtisanMarketPreview,
+  PremiumGalleryPreview,
   DashboardProPreview,
-  CRMElitePreview
+  CRMElitePreview,
+  PlatformXPreview
 } from "@/components/templates/previews/unique";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, ArrowLeft } from "lucide-react";
@@ -75,16 +79,24 @@ const TemplatePreview = () => {
         return <ExecutiveSuitePreview template={template} />;
       case "marble-gold":
         return <MarbleGoldPreview template={template} />;
+      case "tech-horizon":
+        return <TechHorizonPreview template={template} />;
       
       // E-commerce templates
       case "luxe-boutique":
         return <LuxeBoutiquePreview template={template} />;
+      case "artisan-market":
+        return <ArtisanMarketPreview template={template} />;
+      case "premium-gallery":
+        return <PremiumGalleryPreview template={template} />;
       
       // WebApp templates
       case "dashboard-pro":
         return <DashboardProPreview template={template} />;
       case "crm-elite":
         return <CRMElitePreview template={template} />;
+      case "platform-x":
+        return <PlatformXPreview template={template} />;
       
       // Fallback to category-based preview for templates without unique preview
       default:
