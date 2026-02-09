@@ -91,6 +91,52 @@ serve(async (req) => {
         Number(OWNER_CHAT_ID),
         `🔗 Привязка Telegram к проекту\n\n👤 ${name}${username}\n📂 Проект: <b>${project.title}</b> (${slug})\n🆔 Chat ID: <code>${chatId}</code>`
       );
+    } else if (text.startsWith("/unlink")) {
+      const slug = text.replace("/unlink", "").trim().toLowerCase();
+
+      if (!slug) {
+        // Отвязать все проекты этого пользователя
+        const { data: projects } = await supabase
+          .from("playground_projects")
+          .select("id, title")
+          .eq("telegram_chat_id", chatId);
+
+        if (!projects || projects.length === 0) {
+          await sendMessage(chatId, "ℹ️ У вас нет привязанных проектов.");
+          return new Response("OK", { status: 200 });
+        }
+
+        await supabase
+          .from("playground_projects")
+          .update({ telegram_chat_id: null } as any)
+          .eq("telegram_chat_id", chatId);
+
+        const titles = projects.map(p => `• ${p.title}`).join("\n");
+        await sendMessage(chatId, `✅ Telegram отвязан от всех проектов:\n${titles}\n\nВы больше не будете получать заявки.`);
+      } else {
+        const { data: project, error } = await supabase
+          .from("playground_projects")
+          .select("id, title, telegram_chat_id")
+          .eq("slug", slug)
+          .single();
+
+        if (error || !project) {
+          await sendMessage(chatId, `❌ Проект с slug <code>${slug}</code> не найден.`);
+          return new Response("OK", { status: 200 });
+        }
+
+        if (project.telegram_chat_id !== chatId) {
+          await sendMessage(chatId, `⚠️ Этот проект не привязан к вашему Telegram.`);
+          return new Response("OK", { status: 200 });
+        }
+
+        await supabase
+          .from("playground_projects")
+          .update({ telegram_chat_id: null } as any)
+          .eq("id", project.id);
+
+        await sendMessage(chatId, `✅ Telegram отвязан от проекта <b>${project.title}</b>.\n\nВы больше не будете получать заявки с этого сайта.`);
+      }
     } else {
       const name = [from.first_name, from.last_name].filter(Boolean).join(" ");
       const username = from.username ? ` (@${from.username})` : "";
