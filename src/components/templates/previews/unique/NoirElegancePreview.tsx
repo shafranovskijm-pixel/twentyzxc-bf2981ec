@@ -7,6 +7,7 @@ import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCo
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import useEmblaCarousel from "embla-carousel-react";
 import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImagePreload } from "../../ImagePreload";
 import noirHeroImage from "@/assets/templates/noir-elegance-hero.jpg";
 import noirProjectImage from "@/assets/templates/noir-elegance-project-1.jpg";
 
@@ -48,6 +49,9 @@ export const NoirElegancePreview = ({ template }: NoirElegancePreviewProps) => {
 
   return (
     <div className="min-h-screen bg-black text-white relative overflow-hidden">
+      {/* Preload hero image for faster LCP */}
+      <ImagePreload src={noirHeroImage} />
+      
       {/* Noise texture overlay */}
       <div 
         className="fixed inset-0 pointer-events-none opacity-[0.03]"

@@ -5,6 +5,7 @@ import { ArrowRight, Zap, Sparkles, Hexagon, Circle, Triangle, Play, Volume2, Vo
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard } from "../shared";
 import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImagePreload } from "../../ImagePreload";
 import crystalHeroImage from "@/assets/templates/crystal-vision-hero.jpg";
 import crystalProjectImage from "@/assets/templates/crystal-vision-project-1.jpg";
 
@@ -53,6 +54,9 @@ export const CrystalVisionPreview = ({ template }: CrystalVisionPreviewProps) =>
       ref={containerRef}
       className="min-h-screen bg-gradient-to-b from-slate-950 via-purple-950/20 to-slate-950 text-white relative overflow-hidden"
     >
+      {/* Preload hero image for faster LCP */}
+      <ImagePreload src={crystalHeroImage} />
+      
       {/* Custom cursor */}
       <motion.div
         className="fixed w-6 h-6 rounded-full pointer-events-none z-[100] mix-blend-difference hidden lg:block"

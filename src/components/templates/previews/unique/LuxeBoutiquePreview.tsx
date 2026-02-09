@@ -5,6 +5,7 @@ import { ShoppingBag, Heart, Search, ChevronRight, ArrowRight, Sparkles, Gift, T
 import { motion } from "framer-motion";
 import { ScrollReveal, StaggerContainer, StaggerItem, LiveChatWidget, InstagramFeed } from "../shared";
 import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
+import { ImagePreload } from "../../ImagePreload";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // Local images
@@ -44,6 +45,9 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-rose-50 text-gray-900 relative overflow-hidden">
+      {/* Preload hero image for faster LCP */}
+      <ImagePreload src={heroImg} />
+      
       {/* Subtle pattern */}
       <div className="fixed inset-0 opacity-30 pointer-events-none">
         <div 
