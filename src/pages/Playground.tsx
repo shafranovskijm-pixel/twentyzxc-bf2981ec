@@ -50,6 +50,7 @@ const Playground = () => {
     setSettings,
     addBlock,
     addBlocks,
+    addImageBlock,
     updateBlock,
     updateBlockStyles,
     deleteBlock,
@@ -340,6 +341,7 @@ const Playground = () => {
                     onReorder={reorderBlocks}
                     onDeleteBlock={deleteBlock}
                     onDuplicateBlock={duplicateBlock}
+                    onAddImageBlock={addImageBlock}
                   />
                 </div>
               </div>
@@ -386,6 +388,7 @@ const Playground = () => {
                   onReorder={reorderBlocks}
                   onDeleteBlock={deleteBlock}
                   onDuplicateBlock={duplicateBlock}
+                  onAddImageBlock={addImageBlock}
                 />
               </div>
             </div>
