@@ -52,13 +52,37 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
 
     const onClick = () => onSelectBlock(block.id);
 
-    switch (block.type) {
-      case 'heading':
-        return <motion.h2 className={cn(baseClasses, "font-bold")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.h2>;
-      case 'text':
-        return <motion.p className={baseClasses} style={style} onClick={onClick} {...animProps}>{block.content}</motion.p>;
-      case 'button':
+    const wrapWithLink = (element: React.ReactNode) => {
+      if (block.link) {
         return (
+          <a href={block.link} target="_blank" rel="noopener noreferrer" className="block" onClick={(e) => { e.preventDefault(); onClick(); }}>
+            {element}
+          </a>
+        );
+      }
+      return element;
+    };
+
+    switch (block.type) {
+      case 'navbar': {
+        const items = block.content.split('\n').filter(Boolean);
+        return wrapWithLink(
+          <motion.nav className={cn(baseClasses, "flex items-center justify-between flex-wrap gap-4")} style={{ ...style, textAlign: undefined }} onClick={onClick} {...animProps}>
+            <div className="font-bold text-lg" style={{ color: block.styles.textColor }}>☰</div>
+            <div className="flex items-center gap-6 flex-wrap">
+              {items.map((item, i) => (
+                <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>{item}</span>
+              ))}
+            </div>
+          </motion.nav>
+        );
+      }
+      case 'heading':
+        return wrapWithLink(<motion.h2 className={cn(baseClasses, "font-bold")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.h2>);
+      case 'text':
+        return wrapWithLink(<motion.p className={baseClasses} style={style} onClick={onClick} {...animProps}>{block.content}</motion.p>);
+      case 'button':
+        return wrapWithLink(
           <motion.div className={cn(baseClasses, "inline-block")} style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
             <button className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 transition-opacity" style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius }}>
               {block.content}
@@ -66,7 +90,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       case 'image':
-        return (
+        return wrapWithLink(
           <motion.div className={baseClasses} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
             <img src={block.content} alt="Изображение" className="max-w-full h-auto" style={{ borderRadius: block.styles.borderRadius }} />
           </motion.div>
@@ -78,10 +102,10 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       case 'card':
-        return <motion.div className={cn(baseClasses, "border border-border")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.div>;
+        return wrapWithLink(<motion.div className={cn(baseClasses, "border border-border")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.div>);
       case 'list': {
         const items = block.content.split('\n').filter(Boolean);
-        return (
+        return wrapWithLink(
           <motion.div className={baseClasses} style={style} onClick={onClick} {...animProps}>
             <ul className="list-disc list-inside space-y-1">
               {items.map((item, i) => <li key={i}>{item}</li>)}
@@ -91,7 +115,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       }
       case 'quote': {
         const [text, author] = block.content.split('|');
-        return (
+        return wrapWithLink(
           <motion.blockquote className={cn(baseClasses, "border-l-4 border-primary/60 italic")} style={style} onClick={onClick} {...animProps}>
             <p className="mb-2">«{text}»</p>
             {author && <footer className="text-sm opacity-70 not-italic">— {author}</footer>}
@@ -100,7 +124,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       }
       case 'counter': {
         const [value, label] = block.content.split('|');
-        return (
+        return wrapWithLink(
           <motion.div className={cn(baseClasses, "text-center")} style={style} onClick={onClick} {...animProps}>
             <div className="text-4xl font-bold mb-1" style={{ color: block.styles.textColor }}>{value}</div>
             {label && <div className="text-sm opacity-70">{label}</div>}
@@ -120,6 +144,21 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
               />
             </div>
           </motion.div>
+        );
+      }
+      case 'footer': {
+        const parts = block.content.split('|').filter(Boolean);
+        return wrapWithLink(
+          <motion.footer className={cn(baseClasses, "border-t border-border/30")} style={{ ...style, textAlign: undefined }} onClick={onClick} {...animProps}>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+              <span style={{ color: block.styles.textColor }}>{parts[0]}</span>
+              {parts.length > 1 && (
+                <div className="flex items-center gap-4 opacity-70">
+                  {parts.slice(1).map((p, i) => <span key={i}>{p}</span>)}
+                </div>
+              )}
+            </div>
+          </motion.footer>
         );
       }
       case 'spacer':

@@ -1,7 +1,8 @@
 export interface PlaygroundBlock {
   id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video';
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer';
   content: string;
+  link?: string;
   animation?: string;
   hoverEffect?: string;
   styles: BlockStyles;
@@ -75,6 +76,7 @@ export const HOVER_EFFECTS: HoverEffect[] = [
 ];
 
 export const BLOCK_TYPES = [
+  { type: 'navbar' as const, name: 'Меню', icon: 'Menu', defaultContent: 'Главная\nО нас\nУслуги\nКонтакты' },
   { type: 'heading' as const, name: 'Заголовок', icon: 'Type', defaultContent: 'Заголовок' },
   { type: 'text' as const, name: 'Текст', icon: 'AlignLeft', defaultContent: 'Текстовый блок с содержимым' },
   { type: 'button' as const, name: 'Кнопка', icon: 'MousePointer', defaultContent: 'Кнопка' },
@@ -86,6 +88,7 @@ export const BLOCK_TYPES = [
   { type: 'divider' as const, name: 'Разделитель', icon: 'Minus', defaultContent: '' },
   { type: 'card' as const, name: 'Карточка', icon: 'Square', defaultContent: 'Содержимое карточки' },
   { type: 'spacer' as const, name: 'Отступ', icon: 'ArrowUpDown', defaultContent: '' },
+  { type: 'footer' as const, name: 'Футер', icon: 'PanelBottom', defaultContent: '© 2026 Компания. Все права защищены.|email@example.com|+7 (999) 123-45-67' },
 ];
 
 export const COLOR_PRESETS = [

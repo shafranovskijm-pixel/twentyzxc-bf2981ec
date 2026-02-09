@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images } from "lucide-react";
+import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlaygroundBlock, BlockStyles } from "@/data/playground-effects";
 
@@ -168,6 +168,24 @@ export const PAGE_TEMPLATES: Template[] = [
 ];
 
 export const BLOCK_EXAMPLES: BlockExample[] = [
+  {
+    id: 'navbar-example',
+    name: 'Меню навигации',
+    description: 'Шапка с пунктами',
+    icon: <Menu className="w-4 h-4" />,
+    blocks: [
+      { type: 'navbar', content: 'Главная\nО нас\nУслуги\nПортфолио\nКонтакты', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'footer-example',
+    name: 'Футер',
+    description: 'Подвал сайта',
+    icon: <PanelBottom className="w-4 h-4" />,
+    blocks: [
+      { type: 'footer', content: '© 2026 Компания. Все права защищены.|hello@company.com|+7 (999) 123-45-67', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  },
   {
     id: 'stats-row',
     name: 'Статистика',
