@@ -106,16 +106,17 @@ function Key3D({
 // Animated key inserting into lock
 function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | 'inserting' | 'turning' | 'done' }) {
   const groupRef = useRef<THREE.Group>(null);
+  const keyMeshRef = useRef<THREE.Group>(null);
   
-  // Smooth animation values using refs for performance
+  // Position animation
   const posY = useRef(1.5);
   const posZ = useRef(2.5);
-  const turnAngle = useRef(0); // Clockwise turn only
+  // Separate turn rotation (around local axis of the key shaft)
+  const turnRotation = useRef(0);
 
   useFrame((state, delta) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || !keyMeshRef.current) return;
     
-    // Target values based on phase
     let targetY = 0.05;
     let targetZ = 0.95;
     let targetTurn = 0;
@@ -124,42 +125,46 @@ function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | '
       case 'approaching':
         targetY = 0.3;
         targetZ = 1.6;
+        targetTurn = 0;
         break;
       case 'inserting':
         targetY = 0.05;
         targetZ = 0.95;
+        targetTurn = 0;
         break;
       case 'turning':
+        // Position stays the same, only turn
         targetY = 0.05;
         targetZ = 0.95;
-        targetTurn = -Math.PI * 0.5; // -90 degrees = clockwise when viewed from front
+        targetTurn = Math.PI * 0.5; // 90 degrees clockwise
         break;
       case 'done':
         return;
     }
     
-    // Smooth interpolation
-    const moveSpeed = 4;
-    const turnSpeed = 3;
+    // Smooth movement
+    posY.current = THREE.MathUtils.lerp(posY.current, targetY, delta * 4);
+    posZ.current = THREE.MathUtils.lerp(posZ.current, targetZ, delta * 4);
+    turnRotation.current = THREE.MathUtils.lerp(turnRotation.current, targetTurn, delta * 3);
     
-    posY.current = THREE.MathUtils.lerp(posY.current, targetY, delta * moveSpeed);
-    posZ.current = THREE.MathUtils.lerp(posZ.current, targetZ, delta * moveSpeed);
-    turnAngle.current = THREE.MathUtils.lerp(turnAngle.current, targetTurn, delta * turnSpeed);
-    
-    // Position: center X, animated Y, animated Z
+    // Parent group handles position only
     groupRef.current.position.set(0, posY.current, posZ.current);
+    // Parent orientation: key tilted forward (blade points into lock)
+    groupRef.current.rotation.set(Math.PI * 0.5, 0, 0);
     
-    // Rotation: key points forward (blade into lock), only Z rotates for turning
-    // X = PI/2 makes the key horizontal pointing into the lock
-    // Z = turnAngle for clockwise rotation
-    groupRef.current.rotation.set(Math.PI * 0.5, 0, turnAngle.current);
+    // Child group handles ONLY the turn rotation around the key's shaft axis
+    // Rotating around Y in local space = rotating around the shaft
+    keyMeshRef.current.rotation.set(0, turnRotation.current, 0);
   });
 
   if (phase === 'done') return null;
 
   return (
     <group ref={groupRef}>
-      <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.2} />
+      {/* Inner group for turn rotation only */}
+      <group ref={keyMeshRef}>
+        <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.2} />
+      </group>
       
       {/* Glow effect */}
       <pointLight 
