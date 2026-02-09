@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
-  settings: { backgroundColor: string; backgroundPattern?: string; globalFontFamily?: string };
+  settings: { backgroundColor: string; backgroundPattern?: string; globalFontFamily?: string; bgDecoration?: string; bgAnimation?: string };
   selectedBlockId: string | null;
   onSelectBlock: (id: string | null) => void;
   onReorder: (activeId: string, overId: string) => void;
@@ -352,6 +352,9 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
     return base;
   };
 
+  const decorationClass = settings.bgDecoration || 'none';
+  const animationClass = settings.bgAnimation || 'none';
+
   return (
     <div
       className={cn(
@@ -364,6 +367,105 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
+      {/* Background decorations */}
+      {decorationClass === 'particles' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 rounded-full bg-primary/30 animate-pulse"
+              style={{
+                left: `${(i * 17 + 7) % 100}%`,
+                top: `${(i * 23 + 11) % 100}%`,
+                animationDelay: `${i * 0.3}s`,
+                animationDuration: `${2 + (i % 3)}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {decorationClass === 'glow' && (
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 rounded-full bg-primary/5 blur-[80px]" />
+          <div className="absolute bottom-1/4 right-1/4 w-1/3 h-1/3 rounded-full bg-primary/8 blur-[60px]" />
+        </div>
+      )}
+      {decorationClass === 'corner-lines' && (
+        <div className="absolute inset-0 pointer-events-none z-0">
+          <div className="absolute top-4 left-4 w-12 h-12 border-t border-l border-primary/30" />
+          <div className="absolute top-4 right-4 w-12 h-12 border-t border-r border-primary/30" />
+          <div className="absolute bottom-4 left-4 w-12 h-12 border-b border-l border-primary/30" />
+          <div className="absolute bottom-4 right-4 w-12 h-12 border-b border-r border-primary/30" />
+        </div>
+      )}
+      {decorationClass === 'vignette' && (
+        <div className="absolute inset-0 pointer-events-none z-0" style={{
+          background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%)'
+        }} />
+      )}
+      {decorationClass === 'noise' && (
+        <div className="absolute inset-0 pointer-events-none z-0 opacity-[0.03]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        }} />
+      )}
+
+      {/* Background animations */}
+      {animationClass === 'pulse-glow' && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0"
+          animate={{ opacity: [0, 0.15, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full m-auto w-3/4 h-3/4" />
+        </motion.div>
+      )}
+      {animationClass === 'float-particles' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-1.5 h-1.5 rounded-full bg-primary/20"
+              style={{ left: `${(i * 13 + 5) % 100}%` }}
+              animate={{
+                y: [0, -30, 0],
+                opacity: [0.2, 0.6, 0.2],
+              }}
+              transition={{
+                duration: 3 + (i % 3),
+                repeat: Infinity,
+                delay: i * 0.4,
+                ease: 'easeInOut',
+              }}
+              initial={{ top: `${(i * 19 + 15) % 80 + 10}%` }}
+            />
+          ))}
+        </div>
+      )}
+      {animationClass === 'gradient-shift' && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0 opacity-20"
+          animate={{
+            background: [
+              'radial-gradient(circle at 20% 20%, hsl(var(--primary)) 0%, transparent 50%)',
+              'radial-gradient(circle at 80% 80%, hsl(var(--primary)) 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 80%, hsl(var(--primary)) 0%, transparent 50%)',
+              'radial-gradient(circle at 20% 20%, hsl(var(--primary)) 0%, transparent 50%)',
+            ],
+          }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      )}
+      {animationClass === 'shimmer' && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-0"
+          style={{
+            background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 55%, transparent 60%)',
+            backgroundSize: '200% 100%',
+          }}
+          animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+        />
+      )}
       {/* Drop / upload overlay */}
       {(isDragOver || isUploading) && (
         <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">

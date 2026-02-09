@@ -22,10 +22,15 @@ export interface BlockStyles {
   gradientText?: string;
 }
 
+export type BgDecoration = 'none' | 'particles' | 'glow' | 'corner-lines' | 'vignette' | 'noise';
+export type BgAnimation = 'none' | 'pulse-glow' | 'float-particles' | 'gradient-shift' | 'shimmer';
+
 export interface PlaygroundSettings {
   backgroundColor: string;
   backgroundPattern?: string;
   globalFontFamily?: string;
+  bgDecoration?: BgDecoration;
+  bgAnimation?: BgAnimation;
 }
 
 export interface AnimationEffect {

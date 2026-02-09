@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
+import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -221,6 +222,7 @@ const Playground = () => {
                     <ProjectTemplates onSelectTemplate={handleSelectTemplate} onAddBlocks={addBlocks} />
                     <BlockPalette onAddBlock={addBlock} />
                     <CanvasSettings settings={settings} onSettingsChange={setSettings} />
+                    <FontSettings settings={settings} onSettingsChange={setSettings} />
                   </div>
                 </SheetContent>
               </Sheet>
@@ -313,15 +315,27 @@ const Playground = () => {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="settings" className="border-b-0">
+                  <AccordionItem value="settings" className="border-border">
                     <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
                       <span className="flex items-center gap-2">
-                        <Settings className="w-4 h-4" />
-                        Настройки холста
+                        <Paintbrush className="w-4 h-4" />
+                        Настройки фона
                       </span>
                     </AccordionTrigger>
                     <AccordionContent>
                       <CanvasSettings settings={settings} onSettingsChange={setSettings} />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="font" className="border-b-0">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <Type className="w-4 h-4" />
+                        Шрифт
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <FontSettings settings={settings} onSettingsChange={setSettings} />
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
