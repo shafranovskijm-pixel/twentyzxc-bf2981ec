@@ -122,17 +122,6 @@ const Templates = () => {
       <section className="pb-8 sticky top-20 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="container px-4">
           <div className="flex flex-wrap gap-2 justify-center">
-            <button
-              onClick={() => setActiveCategory("all")}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-sm text-sm font-medium transition-all ${
-                activeCategory === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              Все
-            </button>
             {categories.map((category) => (
               <button
                 key={category.id}
