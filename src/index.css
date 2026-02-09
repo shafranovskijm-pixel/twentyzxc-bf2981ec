@@ -102,6 +102,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    color: hsl(45 80% 65%); /* fallback for unsupported browsers */
   }
 
   .border-gold {
