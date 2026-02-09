@@ -96,7 +96,35 @@ const TimelineSection = () => {
   
   return (
     <section className="py-24 relative overflow-hidden">
+      {/* Background layers */}
       <div className="absolute inset-0 bg-secondary/20" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(45_80%_55%/0.08),transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(45_80%_55%/0.06),transparent_50%)]" />
+      
+      {/* Dot grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}
+      />
+      
+      {/* Floating geometric elements */}
+      <div className="absolute top-20 left-[10%] w-24 h-24 border border-primary/10 rotate-45 animate-float opacity-30" />
+      <div className="absolute top-1/3 right-[5%] w-16 h-16 border border-primary/15 rotate-12 animate-float opacity-20" style={{ animationDelay: '2s' }} />
+      <div className="absolute bottom-1/4 left-[15%] w-20 h-20 border border-primary/10 -rotate-12 animate-float opacity-25" style={{ animationDelay: '4s' }} />
+      <div className="absolute bottom-20 right-[15%] w-12 h-12 border border-primary/20 rotate-[30deg] animate-float opacity-20" style={{ animationDelay: '3s' }} />
+      
+      {/* Corner accents */}
+      <div className="absolute top-0 left-0 w-32 h-32">
+        <div className="absolute top-8 left-8 w-16 h-px bg-gradient-to-r from-primary/30 to-transparent" />
+        <div className="absolute top-8 left-8 w-px h-16 bg-gradient-to-b from-primary/30 to-transparent" />
+      </div>
+      <div className="absolute bottom-0 right-0 w-32 h-32">
+        <div className="absolute bottom-8 right-8 w-16 h-px bg-gradient-to-l from-primary/30 to-transparent" />
+        <div className="absolute bottom-8 right-8 w-px h-16 bg-gradient-to-t from-primary/30 to-transparent" />
+      </div>
       
       <div className="container px-4 relative z-10">
         {/* Header */}
