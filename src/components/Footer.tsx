@@ -1,6 +1,19 @@
-import { Mail, Phone, Send, Diamond } from "lucide-react";
+import { Mail, Phone, Send, Diamond, Copy, ExternalLink } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Footer = () => {
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Скопировано!",
+      description: `${label} скопирован в буфер обмена`,
+    });
+  };
+
   return (
     <footer className="border-t border-border">
       {/* Main Footer Content */}
@@ -18,9 +31,101 @@ const Footer = () => {
                   Премиальные цифровые решения для бизнеса. Веб-разработка, реклама и полный спектр услуг.
                 </p>
                 <div className="flex gap-3">
-                  <SocialLink href="https://t.me/Aliencorso" icon={<Send className="w-4 h-4" />} />
-                  <SocialLink href="mailto:24@24zxc.ru" icon={<Mail className="w-4 h-4" />} />
-                  <SocialLink href="tel:+79147213424" icon={<Phone className="w-4 h-4" />} />
+                  {/* Telegram */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-4" side="top">
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-primary">Telegram</div>
+                        <div className="flex items-center justify-between gap-2 p-2 rounded bg-secondary/50">
+                          <span className="text-sm">@Aliencorso</span>
+                          <button 
+                            onClick={() => copyToClipboard("@Aliencorso", "Telegram")}
+                            className="p-1 hover:text-primary transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <Button 
+                          variant="hero" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => window.open("https://t.me/Aliencorso", "_blank")}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Открыть Telegram
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Email */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                        <Mail className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-4" side="top">
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-primary">Email</div>
+                        <div className="flex items-center justify-between gap-2 p-2 rounded bg-secondary/50">
+                          <span className="text-sm">24@24zxc.ru</span>
+                          <button 
+                            onClick={() => copyToClipboard("24@24zxc.ru", "Email")}
+                            className="p-1 hover:text-primary transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <Button 
+                          variant="hero" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => window.location.href = "mailto:24@24zxc.ru"}
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Написать письмо
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Phone */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                        <Phone className="w-4 h-4" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-4" side="top">
+                      <div className="space-y-3">
+                        <div className="text-sm font-medium text-primary">Телефон</div>
+                        <div className="flex items-center justify-between gap-2 p-2 rounded bg-secondary/50">
+                          <span className="text-sm">+7 914 721-34-24</span>
+                          <button 
+                            onClick={() => copyToClipboard("+79147213424", "Телефон")}
+                            className="p-1 hover:text-primary transition-colors"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <Button 
+                          variant="hero" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => window.location.href = "tel:+79147213424"}
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          Позвонить
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
@@ -65,14 +170,5 @@ const Footer = () => {
     </footer>
   );
 };
-
-const SocialLink = ({ href, icon }: { href: string; icon: React.ReactNode }) => (
-  <a 
-    href={href} 
-    className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all"
-  >
-    {icon}
-  </a>
-);
 
 export default Footer;
