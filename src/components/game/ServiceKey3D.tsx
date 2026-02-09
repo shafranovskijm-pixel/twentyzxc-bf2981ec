@@ -179,10 +179,11 @@ export const ServiceKey3D = ({ variant, isHovered, className = '' }: ServiceKey3
         camera={{ position: [0, 0, 4], fov: 35 }}
         style={{ background: 'transparent' }}
       >
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[5, 5, 5]} intensity={1} />
-        <directionalLight position={[-3, -3, 2]} intensity={0.3} />
-        <pointLight position={[0, 2, 3]} intensity={0.5} color="#ffd700" />
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[5, 5, 5]} intensity={1.2} />
+        <directionalLight position={[-3, -3, 2]} intensity={0.5} />
+        <pointLight position={[0, 2, 3]} intensity={0.8} color="#ffd700" />
+        <pointLight position={[0, -1, 2]} intensity={0.4} color="#ffffff" />
         <KeyModel variant={variant} isHovered={isHovered} />
       </Canvas>
     </div>
