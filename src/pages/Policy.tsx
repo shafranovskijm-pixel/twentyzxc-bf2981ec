@@ -63,8 +63,8 @@ const Policy = () => {
       icon: Mail,
       title: "Контакты",
       content: `По вопросам политики конфиденциальности:
-        • Email: privacy@24zxc.ru
-        • Telegram: @zxc24support
+        • Email: 24@24zxc.ru
+        • Telegram: @Aliencorso
         
         Мы ответим на ваш запрос в течение 30 дней.`
     }
