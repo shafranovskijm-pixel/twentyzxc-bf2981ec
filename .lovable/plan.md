@@ -1,133 +1,169 @@
 
+## План: Оптимизация загрузки изображений и добавление недостающих
 
-## План: Создание качественного консистентного 3D визуала
+### Анализ текущей ситуации
 
-### Проблема
-AI-генератор создаёт каждое изображение независимо — нет "памяти" о том, как выглядело ожерелье на предыдущем кадре. Результат: 24 разных ожерелья вместо одного, повёрнутого на 24 угла.
+Изучив кодовую базу, я обнаружил следующие проблемы:
 
-### Варианты решения
+**1. Шаблоны с отсутствующими изображениями (используют placeholder-градиенты):**
+- `GoldenPrestigePreview` — изображения сервисов (`service-1.png`, `service-2.png`, `service-3.png`)
+- `ExecutiveSuitePreview` — изображения команды (`team-1.png` до `team-4.png`) 
+- `TechHorizonPreview` — изображения проектов и команды
+- `LuxeBoutiquePreview` — изображения товаров (`product-1.png` до `product-6.png`)
+- `ArtisanMarketPreview` — изображения товаров и аватары мастеров
+- `MarbleGoldPreview` — изображения портфолио (`portfolio-1.png` до `portfolio-6.png`) и команды (`team-1.png` до `team-4.png`)
 
-#### Вариант 1: Использовать ОДНО качественное изображение с CSS/WebGL эффектами (Рекомендуется)
+**2. Проблемы с загрузкой:**
+- Изображения загружаются без `loading="lazy"` в некоторых местах
+- Нет предзагрузки критических изображений (hero)
+- Отсутствует оптимизация размеров для разных viewport
+- Компонент `ImageWithFallback` уже существует, но не везде используется
 
-Вместо попытки "сшить" несогласованные кадры — использовать одно идеальное изображение и применить к нему программные эффекты вращения:
-
-```text
-Было:                              Станет:
-[img1] → [img2] → [img3]           [img] + CSS 3D transform
-(разные ожерелья)                  (одно ожерелье, программное вращение)
+**3. Существующие локальные изображения:**
+```
+src/assets/templates/
+├── premium-gallery/          # 28+ изображений
+│   ├── hero.jpg, hero-pseudo3d.jpg
+│   ├── gallery-1.jpg до gallery-6.jpg
+│   └── spin/ (24 кадра)
+├── crystal-vision-hero.jpg
+├── crystal-vision-project-1.jpg  
+├── noir-elegance-hero.jpg
+└── noir-elegance-project-1.jpg
 ```
 
-**Реализация:**
-- 3D-перспектива через CSS `transform: perspective() rotateY()`
-- Динамическое освещение через градиенты
-- Эффект глубины через тени и блики
-- Работает с одним изображением, выглядит как 3D
-
-**Плюсы:** Консистентность 100%, нет "дёргания" между кадрами
-**Минусы:** Не настоящее 3D, только иллюзия вращения
-
 ---
 
-#### Вариант 2: Генерация через Gemini Image с консистентным промптом
+### План реализации
 
-Использовать AI для генерации всех кадров **в одном запросе**, описывая точно один и тот же объект:
+#### Этап 1: Улучшение компонента ImageWithFallback
 
-```text
-Промпт-стратегия:
-"An emerald necklace with exactly 7 emerald stones on a silver chain, 
- on a black velvet display stand, studio lighting, rotation angle: X°"
+Добавить:
+- Поддержку `srcSet` для responsive изображений
+- Приоритетную загрузку (`fetchpriority="high"`) для hero-изображений
+- `decoding="async"` для неблокирующей декодировки
+- Blur-up эффект при загрузке (low-quality placeholder)
+- Intersection Observer для отложенной загрузки вне viewport
 
-Генерировать все 24 кадра с одним seed/style reference
+```typescript
+// Новые пропсы для ImageWithFallback
+interface ImageWithFallbackProps {
+  priority?: boolean;      // Для hero-изображений
+  blur?: boolean;          // Blur-up эффект
+  sizes?: string;          // Для responsive
+}
 ```
 
-**Проблема:** Даже с идентичным промптом AI будет генерировать вариации. Без специальных инструментов (ControlNet, reference images) полная консистентность недостижима.
+---
+
+#### Этап 2: Генерация недостающих изображений
+
+Использовать AI-генерацию через Edge Function для создания:
+
+| Шаблон | Изображения | Тематика |
+|--------|-------------|----------|
+| GoldenPrestige | 3 сервисных | VIP-консьерж, премиум-сервис, элитные услуги |
+| ExecutiveSuite | 4 команды | Бизнес-портреты руководителей |
+| TechHorizon | 3 проекта + 3 команды | Технические проекты, разработчики |
+| LuxeBoutique | 6 товаров | Платья, пальто, сумки, украшения |
+| ArtisanMarket | 6 товаров + 3 мастера | Керамика, изделия ручной работы |
+| MarbleGold | 6 портфолио + 4 команды | Люксовые интерьеры, дизайнеры |
+
+**Всего: ~35 изображений**
 
 ---
 
-#### Вариант 3: Готовая 3D модель или фотограмметрия
+#### Этап 3: Оптимизация существующих изображений
 
-Для реального продакшена ювелирные бренды используют:
-- **3D моделирование** (Blender, Cinema 4D) — создание точной 3D модели с рендером всех ракурсов
-- **Фотограмметрия** — съёмка реального изделия на вращающемся столе с 24-36 фото
+**3.1. Критические (hero) изображения:**
+```typescript
+// Предзагрузка в <head> через react-helmet-async
+<link rel="preload" as="image" href={heroImage} fetchpriority="high" />
+```
 
-**Это единственный способ получить 100% идеальный результат.**
+**3.2. Галерея Premium Gallery:**
+- Использовать ленивую загрузку для изображений вне viewport
+- Добавить skeleton при загрузке (уже есть в ImageWithFallback)
+
+**3.3. Карточки товаров/проектов:**
+- Использовать `sizes` атрибут для responsive
+- Загружать только видимые в viewport
 
 ---
 
-### Рекомендуемое решение для демо
+#### Этап 4: Рефакторинг шаблонов
 
-Поскольку это демо-шаблон, и реальных фотографий/3D-моделей нет:
+Заменить все прямые `<img>` теги на `<ImageWithFallback>`:
 
-**Комбинированный подход:**
-1. Генерируем **ОДНО** высококачественное изображение ожерелья в Gemini
-2. Применяем **WebGL-эффект псевдо-3D** с perspective transform
-3. Добавляем динамическое освещение и отражения
-4. Результат — плавное "вращение" без скачков между кадрами
+```typescript
+// Было
+<img src={url} className="..." />
+
+// Станет
+<ImageWithFallback 
+  src={url} 
+  alt="Описание"
+  priority={isHero}
+  aspectRatio="video"
+/>
+```
+
+---
+
+### Файлы для изменения
+
+1. `src/components/templates/ImageWithFallback.tsx` — расширение функционала
+2. `src/components/templates/previews/unique/*.tsx` — 10+ файлов шаблонов
+3. `supabase/functions/generate-template-images/index.ts` — Edge Function для генерации
+4. Создание новых изображений в storage
 
 ---
 
 ### Техническая реализация
 
-**Новый компонент: `ProductPseudo3D.tsx`**
-
+**Улучшенный ImageWithFallback:**
 ```typescript
-// Псевдо-3D вращение одного изображения
-function ProductPseudo3D({ imageUrl }) {
-  const [rotation, setRotation] = useState(0);
-  
+export const ImageWithFallback = ({
+  src,
+  alt,
+  priority = false,
+  blur = true,
+  sizes = "(max-width: 768px) 100vw, 50vw",
+  aspectRatio = "video",
+  ...props
+}: ImageWithFallbackProps) => {
   return (
-    <div style={{ perspective: "1000px" }}>
-      <div style={{ 
-        transform: `rotateY(${rotation}deg)`,
-        transformStyle: "preserve-3d"
-      }}>
-        <img src={imageUrl} />
-        
-        {/* Динамическое освещение */}
-        <div style={{
-          background: `linear-gradient(
-            ${90 + rotation}deg, 
-            transparent, 
-            rgba(255,255,255,${0.2 * Math.abs(Math.sin(rotation * Math.PI / 180))}), 
-            transparent
-          )`
-        }} />
-        
-        {/* Отражение */}
-        <div style={{
-          transform: "scaleY(-1)",
-          opacity: 0.3,
-          maskImage: "linear-gradient(to bottom, black, transparent)"
-        }}>
-          <img src={imageUrl} />
-        </div>
-      </div>
+    <div className={cn("relative overflow-hidden", aspectRatioClasses[aspectRatio])}>
+      {/* Skeleton при загрузке */}
+      {isLoading && <Skeleton className="absolute inset-0" />}
+      
+      {/* Blur placeholder */}
+      {blur && isLoading && (
+        <div className="absolute inset-0 backdrop-blur-xl bg-muted/50" />
+      )}
+      
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchpriority={priority ? "high" : "auto"}
+        sizes={sizes}
+        onLoad={() => setIsLoading(false)}
+        onError={() => setHasError(true)}
+        className={cn("w-full h-full object-cover", isLoading && "opacity-0")}
+      />
     </div>
   );
-}
+};
 ```
 
-### Шаги реализации
-
-1. **Сгенерировать одно высококачественное изображение** ожерелья в идеальном ракурсе (фронтальный вид)
-
-2. **Создать компонент `ProductPseudo3D`** с:
-   - CSS 3D transforms (perspective, rotateY)
-   - Динамические блики при вращении
-   - Отражение под изделием
-   - Инерция движения
-
-3. **Заменить `Product360Spin`** в Hero секции на новый компонент
-
-4. **Добавить интерактивность:**
-   - Drag для ручного вращения
-   - Автовращение
-   - Zoom
+---
 
 ### Ожидаемый результат
 
-- Плавное вращение без "дёргания"
-- Консистентный внешний вид товара
-- Профессиональный вид для демо
-- Работает на мобильных устройствах
-
+1. **Ускорение загрузки** — hero-изображения загружаются приоритетно
+2. **Экономия трафика** — ленивая загрузка для изображений вне viewport  
+3. **Улучшенный UX** — плавный blur-up эффект вместо резкого появления
+4. **Консистентность** — все шаблоны имеют реальные изображения вместо градиентных заглушек
+5. **Responsive** — оптимальные размеры для разных устройств
