@@ -5,7 +5,7 @@ import { ArrowRight, Play, Star, Crown, Diamond, Award, ChevronDown, Check, Phon
 import { motion } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard, VideoPlaceholder } from "../shared";
 import useEmblaCarousel from "embla-carousel-react";
-import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
 
 // Local images
 import service1 from "@/assets/templates/golden-prestige/service-1.jpg";
@@ -251,6 +251,7 @@ export const GoldenPrestigePreview = ({ template }: GoldenPrestigePreviewProps) 
                         src={serviceImages[i]}
                         alt={service.title}
                         aspectRatio="video"
+                        sizes={imageSizes.card}
                       />
                     </div>
                     <div className="p-8">
