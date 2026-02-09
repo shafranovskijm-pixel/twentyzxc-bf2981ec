@@ -460,6 +460,7 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
   return (
     <div className="flex flex-col items-center gap-6">
       <div
+        id="chest-drop-zone"
         className={`relative w-full max-w-md aspect-square rounded-lg transition-all duration-300 ${
           isDragOver ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105' : ''
         }`}
