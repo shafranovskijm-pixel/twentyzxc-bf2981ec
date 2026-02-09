@@ -2,3 +2,9 @@ project_id = "veedztdijmscebgadzyx"
 
 [functions.generate-template-images]
 verify_jwt = false
+
+[functions.telegram-bot-webhook]
+verify_jwt = false
+
+[functions.send-bot-message]
+verify_jwt = false

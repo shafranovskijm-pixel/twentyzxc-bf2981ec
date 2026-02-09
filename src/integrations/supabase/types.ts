@@ -310,6 +310,36 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_bot_users: {
+        Row: {
+          chat_id: number
+          created_at: string | null
+          first_name: string | null
+          id: string
+          is_active: boolean | null
+          last_name: string | null
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string | null
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_name?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
