@@ -136,12 +136,23 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
   };
 
   const getBackgroundStyle = () => {
-    const base: React.CSSProperties = { backgroundColor: settings.backgroundColor };
-    if (settings.backgroundPattern === 'dots') {
+    const isGradient = settings.backgroundColor.startsWith('linear-gradient');
+    const base: React.CSSProperties = isGradient
+      ? { background: settings.backgroundColor }
+      : { backgroundColor: settings.backgroundColor };
+
+    const pattern = settings.backgroundPattern || 'none';
+    if (pattern === 'dots') {
       return { ...base, backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`, backgroundSize: '20px 20px' };
     }
-    if (settings.backgroundPattern === 'grid') {
+    if (pattern === 'grid') {
       return { ...base, backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`, backgroundSize: '20px 20px' };
+    }
+    if (pattern === 'diagonal') {
+      return { ...base, backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.03) 10px, rgba(255,255,255,0.03) 11px)` };
+    }
+    if (pattern === 'cross') {
+      return { ...base, backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px), radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px)`, backgroundSize: '20px 20px', backgroundPosition: '0 0, 10px 10px' };
     }
     return base;
   };
