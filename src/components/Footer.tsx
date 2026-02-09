@@ -1,42 +1,6 @@
-import { useState } from "react";
-import { Mail, Phone, Send, Diamond, HelpCircle, ChevronDown } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-
-const faqs = [
-  {
-    question: "Сколько стоит разработка сайта?",
-    answer: "Стоимость зависит от типа проекта. Лендинг — от 30 000 ₽, корпоративный сайт — от 50 000 ₽, интернет-магазин — от 80 000 ₽. Точную стоимость рассчитаем после обсуждения задачи."
-  },
-  {
-    question: "Какие сроки разработки?",
-    answer: "Лендинг — 5-7 дней, корпоративный сайт — 2-3 недели, интернет-магазин — от 1 месяца. Сроки зависят от сложности проекта и оперативности согласования."
-  },
-  {
-    question: "Что входит в стоимость?",
-    answer: "Дизайн, адаптивная вёрстка, базовая SEO-оптимизация, подключение аналитики, обучение работе с сайтом и 30 дней бесплатной поддержки после запуска."
-  },
-  {
-    question: "Работаете ли вы по договору?",
-    answer: "Да, мы работаем официально как ИП. Заключаем договор, выставляем счёт и предоставляем закрывающие документы. Возможна оплата в рассрочку."
-  },
-  {
-    question: "Можете ли доработать существующий сайт?",
-    answer: "Да, берёмся за доработку и поддержку действующих сайтов. Проведём аудит, предложим улучшения и реализуем необходимый функционал."
-  },
-  {
-    question: "Что такое ФРДО и зачем он нужен?",
-    answer: "ФИС ФРДО — федеральный реестр документов об образовании. Все лицензированные учебные центры обязаны вносить туда данные о выданных дипломах и удостоверениях. Мы помогаем с настройкой и ведением реестра."
-  },
-];
+import { Mail, Phone, Send, Diamond } from "lucide-react";
 
 const Footer = () => {
-  const [isFaqExpanded, setIsFaqExpanded] = useState(false);
-
   return (
     <footer className="border-t border-border">
       {/* Main Footer Content */}
@@ -94,65 +58,6 @@ const Footer = () => {
                 <span>© 2024 24ZXC. Все права защищены.</span>
               </div>
               <div>Премиум решения по всей России</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ Section - at bottom */}
-      <div className="py-10 border-t border-border/50 bg-secondary/20">
-        <div className="container px-4">
-          <div className="max-w-3xl mx-auto">
-            {/* Collapsible Header */}
-            <button 
-              onClick={() => setIsFaqExpanded(!isFaqExpanded)}
-              className="w-full text-center group cursor-pointer"
-            >
-              <div className="inline-flex items-center gap-4 mb-3">
-                <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
-                <HelpCircle className="w-4 h-4 text-primary" />
-                <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
-              </div>
-              <h3 className="text-xl md:text-2xl font-display font-bold mb-2 group-hover:text-primary/90 transition-colors">
-                Частые <span className="gradient-gold-text">вопросы</span>
-              </h3>
-              <p className="text-muted-foreground text-xs mb-3">
-                Ответы на популярные вопросы о наших услугах
-              </p>
-              <ChevronDown 
-                className={`w-4 h-4 text-primary mx-auto transition-transform duration-300 ${isFaqExpanded ? 'rotate-180' : ''}`} 
-              />
-            </button>
-
-            {/* Collapsible Content */}
-            <div 
-              className={`overflow-hidden transition-all duration-500 ease-in-out ${
-                isFaqExpanded ? 'max-h-[2000px] opacity-100 mt-6' : 'max-h-0 opacity-0 mt-0'
-              }`}
-            >
-              <Accordion type="single" collapsible className="space-y-2">
-                {faqs.map((faq, index) => (
-                  <AccordionItem
-                    key={index}
-                    value={`item-${index}`}
-                    className="bg-card/50 rounded-sm border border-border/30 px-4 data-[state=open]:border-primary/30 transition-all duration-300"
-                  >
-                    <AccordionTrigger className="text-left py-3 hover:no-underline group text-sm">
-                      <div className="flex items-start gap-3">
-                        <span className="text-primary/40 font-display font-bold text-xs group-hover:text-primary transition-colors">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <span className="font-medium text-sm group-hover:text-primary transition-colors">
-                          {faq.question}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-3 pl-8 text-muted-foreground text-xs leading-relaxed">
-                      {faq.answer}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
             </div>
           </div>
         </div>

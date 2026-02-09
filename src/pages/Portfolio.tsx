@@ -2,11 +2,43 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck, Bot, BarChart3, ArrowRight } from "lucide-react";
+import { ExternalLink, Globe, Megaphone, GraduationCap, Headphones, FileCheck, Bot, BarChart3, ArrowRight, HelpCircle } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useInView } from "@/hooks/use-in-view";
 import { Link } from "react-router-dom";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
+const faqs = [
+  {
+    question: "Сколько стоит разработка сайта?",
+    answer: "Стоимость зависит от типа проекта. Лендинг — от 30 000 ₽, корпоративный сайт — от 50 000 ₽, интернет-магазин — от 80 000 ₽. Точную стоимость рассчитаем после обсуждения задачи."
+  },
+  {
+    question: "Какие сроки разработки?",
+    answer: "Лендинг — 5-7 дней, корпоративный сайт — 2-3 недели, интернет-магазин — от 1 месяца. Сроки зависят от сложности проекта и оперативности согласования."
+  },
+  {
+    question: "Что входит в стоимость?",
+    answer: "Дизайн, адаптивная вёрстка, базовая SEO-оптимизация, подключение аналитики, обучение работе с сайтом и 30 дней бесплатной поддержки после запуска."
+  },
+  {
+    question: "Работаете ли вы по договору?",
+    answer: "Да, мы работаем официально как ИП. Заключаем договор, выставляем счёт и предоставляем закрывающие документы. Возможна оплата в рассрочку."
+  },
+  {
+    question: "Можете ли доработать существующий сайт?",
+    answer: "Да, берёмся за доработку и поддержку действующих сайтов. Проведём аудит, предложим улучшения и реализуем необходимый функционал."
+  },
+  {
+    question: "Что такое ФРДО и зачем он нужен?",
+    answer: "ФИС ФРДО — федеральный реестр документов об образовании. Все лицензированные учебные центры обязаны вносить туда данные о выданных дипломах и удостоверениях. Мы помогаем с настройкой и ведением реестра."
+  },
+];
 interface Project {
   title: string;
   location?: string;
@@ -214,8 +246,51 @@ const Portfolio = () => {
             </div>
           </div>
 
+          {/* FAQ Section */}
+          <div className="mt-24 mb-16">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-4 mb-3">
+                <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary/50" />
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary/50" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-display font-bold mb-2">
+                Частые <span className="gradient-gold-text">вопросы</span>
+              </h2>
+              <p className="text-muted-foreground text-sm">
+                Ответы на популярные вопросы о наших услугах
+              </p>
+            </div>
+            
+            <div className="max-w-3xl mx-auto">
+              <Accordion type="single" collapsible className="space-y-3">
+                {faqs.map((faq, index) => (
+                  <AccordionItem
+                    key={index}
+                    value={`item-${index}`}
+                    className="bg-card/50 rounded-sm border border-border/30 px-5 data-[state=open]:border-primary/30 transition-all duration-300"
+                  >
+                    <AccordionTrigger className="text-left py-4 hover:no-underline group">
+                      <div className="flex items-start gap-3">
+                        <span className="text-primary/40 font-display font-bold text-sm group-hover:text-primary transition-colors">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span className="font-medium group-hover:text-primary transition-colors">
+                          {faq.question}
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-4 pl-9 text-muted-foreground leading-relaxed">
+                      {faq.answer}
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </div>
+          </div>
+
           {/* CTA */}
-          <div className="mt-24 text-center">
+          <div className="text-center">
             <div className="luxury-card p-12 rounded-sm max-w-3xl mx-auto">
               <h3 className="text-2xl md:text-3xl font-display font-semibold mb-4">
                 Хотите стать <span className="gradient-gold-text">следующим</span>?
