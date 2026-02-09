@@ -7,7 +7,7 @@ import { SortableBlock } from "./SortableBlock";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
-  settings: { backgroundColor: string; backgroundPattern?: string };
+  settings: { backgroundColor: string; backgroundPattern?: string; globalFontFamily?: string };
   selectedBlockId: string | null;
   onSelectBlock: (id: string | null) => void;
   onReorder: (activeId: string, overId: string) => void;
@@ -48,7 +48,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       fontSize: block.styles.fontSize,
       borderRadius: block.styles.borderRadius,
       textAlign: block.styles.textAlign as React.CSSProperties['textAlign'],
-      fontFamily: block.styles.fontFamily || undefined
+      fontFamily: block.styles.fontFamily || settings.globalFontFamily || undefined
     };
 
     const onClick = () => onSelectBlock(block.id);

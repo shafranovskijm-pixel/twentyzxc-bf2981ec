@@ -21,6 +21,7 @@ export interface BlockStyles {
 export interface PlaygroundSettings {
   backgroundColor: string;
   backgroundPattern?: string;
+  globalFontFamily?: string;
 }
 
 export interface AnimationEffect {
