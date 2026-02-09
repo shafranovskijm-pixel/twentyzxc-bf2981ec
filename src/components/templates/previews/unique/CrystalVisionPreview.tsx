@@ -5,6 +5,8 @@ import { ArrowRight, Zap, Sparkles, Hexagon, Circle, Triangle, Play, Volume2, Vo
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard } from "../shared";
 import { ImageWithFallback } from "../../ImageWithFallback";
+import crystalHeroImage from "@/assets/templates/crystal-vision-hero.jpg";
+import crystalProjectImage from "@/assets/templates/crystal-vision-project-1.jpg";
 
 const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
@@ -186,63 +188,96 @@ export const CrystalVisionPreview = ({ template }: CrystalVisionPreviewProps) =>
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center relative pt-20">
-        <div className="container mx-auto px-6 text-center">
-          <ScrollReveal>
-            <motion.div 
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-8"
-              animate={{ boxShadow: ["0 0 20px rgba(168,85,247,0.2)", "0 0 40px rgba(168,85,247,0.4)", "0 0 20px rgba(168,85,247,0.2)"] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Star className="w-4 h-4 text-purple-400" />
-              <span className="text-sm text-purple-400">Футуристичный дизайн нового поколения</span>
-            </motion.div>
-          </ScrollReveal>
+        {/* Hero Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={crystalHeroImage} 
+            alt="Crystal Vision Hero" 
+            className="w-full h-full object-cover opacity-30"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-purple-950/50 to-slate-950" />
+        </div>
 
-          <ScrollReveal delay={0.2}>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8">
-              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-                <TypewriterText 
-                  texts={["Будущее", "Технологии", "Инновации"]} 
-                  typingSpeed={100}
-                  deletingSpeed={50}
-                  pauseDuration={2500}
-                />
-              </span>
-              <br />
-              <span className="text-white/90">уже здесь</span>
-            </h1>
-          </ScrollReveal>
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="text-center lg:text-left">
+              <ScrollReveal>
+                <motion.div 
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 mb-8"
+                  animate={{ boxShadow: ["0 0 20px rgba(168,85,247,0.2)", "0 0 40px rgba(168,85,247,0.4)", "0 0 20px rgba(168,85,247,0.2)"] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Star className="w-4 h-4 text-purple-400" />
+                  <span className="text-sm text-purple-400">Футуристичный дизайн нового поколения</span>
+                </motion.div>
+              </ScrollReveal>
 
-          <ScrollReveal delay={0.4}>
-            <p className="text-xl text-white/50 max-w-2xl mx-auto mb-12">
-              Погрузитесь в мир интерактивных технологий с неоновыми акцентами и захватывающими визуальными эффектами
-            </p>
-          </ScrollReveal>
-
-          <ScrollReveal delay={0.6}>
-            <div className="flex flex-wrap justify-center gap-4">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white border-0 px-8 py-6 text-lg relative overflow-hidden group">
-                  <span className="relative z-10 flex items-center">
-                    Исследовать
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ScrollReveal delay={0.2}>
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold mb-8">
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+                    <TypewriterText 
+                      texts={["Будущее", "Технологии", "Инновации"]} 
+                      typingSpeed={100}
+                      deletingSpeed={50}
+                      pauseDuration={2500}
+                    />
                   </span>
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500"
-                    initial={{ x: "-100%" }}
-                    whileHover={{ x: 0 }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </Button>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" variant="outline" className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-lg">
-                  <Play className="w-5 h-5 mr-2" />
-                  Демо
-                </Button>
-              </motion.div>
+                  <br />
+                  <span className="text-white/90">уже здесь</span>
+                </h1>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.4}>
+                <p className="text-xl text-white/50 max-w-2xl mx-auto lg:mx-0 mb-12">
+                  Погрузитесь в мир интерактивных технологий с неоновыми акцентами и захватывающими визуальными эффектами
+                </p>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.6}>
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white border-0 px-8 py-6 text-lg relative overflow-hidden group">
+                      <span className="relative z-10 flex items-center">
+                        Исследовать
+                        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                      <motion.div 
+                        className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: 0 }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button size="lg" variant="outline" className="border-purple-500/30 text-white hover:bg-purple-500/10 px-8 py-6 text-lg">
+                      <Play className="w-5 h-5 mr-2" />
+                      Демо
+                    </Button>
+                  </motion.div>
+                </div>
+              </ScrollReveal>
             </div>
-          </ScrollReveal>
+
+            {/* Crystal Project Image */}
+            <ScrollReveal delay={0.4} direction="right">
+              <motion.div 
+                className="relative hidden lg:block"
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="absolute -inset-4 bg-gradient-to-r from-purple-500/30 to-cyan-500/30 blur-xl rounded-3xl" />
+                <div className="relative aspect-square rounded-2xl overflow-hidden border border-purple-500/30">
+                  <img 
+                    src={crystalProjectImage} 
+                    alt="Crystal Vision Project" 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
+                </div>
+              </motion.div>
+            </ScrollReveal>
+          </div>
 
           {/* Tech stack floating badges */}
           <ScrollReveal delay={0.8}>
@@ -265,7 +300,7 @@ export const CrystalVisionPreview = ({ template }: CrystalVisionPreviewProps) =>
 
         {/* Scroll indicator */}
         <motion.div 
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
