@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { 
-  Star, Heart, MessageCircle, ShoppingBag, Search, 
-  ChevronRight, Award, Shield, Truck, Users, Package,
+  Star, Heart, ShoppingBag, Search, 
+  ChevronRight, Award, Truck, Users, Package, Shield,
   TrendingUp, Camera, Check, MapPin
 } from "lucide-react";
 import { Template } from "@/data/templates";
-import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, GradientButton, LiveChatWidget } from "../shared";
+import { ScrollReveal, AnimatedCounter, GradientButton, LiveChatWidget } from "../shared";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
 
 interface ArtisanMarketPreviewProps {
   template: Template;
@@ -226,8 +229,14 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
                 className="bg-white rounded-2xl p-6 border border-orange-100 hover:shadow-xl hover:shadow-orange-500/10 transition-all"
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-200 to-amber-200 flex items-center justify-center text-2xl">
-                    👩‍🎨
+                  <div className="w-16 h-16 rounded-full overflow-hidden">
+                    <ImageWithFallback
+                      src={`${STORAGE_BASE}/artisan-market/artisan-${i + 1}.png`}
+                      alt={artisan.name}
+                      className="w-full h-full rounded-full"
+                      aspectRatio="square"
+                      fallbackGradient="from-orange-200 to-amber-200"
+                    />
                   </div>
                   <div>
                     <h3 className="font-semibold text-zinc-800">{artisan.name}</h3>
@@ -275,11 +284,14 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
                 transition={{ delay: i * 0.05 }}
                 className="group"
               >
-                <div className="relative aspect-square rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 mb-3 overflow-hidden">
-                  {/* Placeholder pattern */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Package className="w-16 h-16 text-orange-200" />
-                  </div>
+                <div className="relative aspect-square rounded-2xl overflow-hidden mb-3">
+                  <ImageWithFallback
+                    src={`${STORAGE_BASE}/artisan-market/product-${i + 1}.png`}
+                    alt={product.name}
+                    className="w-full h-full"
+                    aspectRatio="square"
+                    fallbackGradient="from-orange-100 to-amber-100"
+                  />
                   
                   {/* Handmade badge */}
                   {product.handmade && (
