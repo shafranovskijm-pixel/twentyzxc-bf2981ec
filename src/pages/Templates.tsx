@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye, Star } from "lucide-react";
+import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye } from "lucide-react";
 import { TiltCard } from "@/components/templates/previews/shared/TiltCard";
 import { Link } from "react-router-dom";
 import { categories, type Template, type Category, getAllTemplates, getPopularTemplates } from "@/data/templates";
@@ -309,18 +309,6 @@ const TemplateCard = ({ template }: TemplateCardProps) => {
               </span>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-0.5">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i}
-                    className={`w-3 h-3 ${i < Math.floor(template.rating) ? "text-primary fill-primary" : "text-muted"}`}
-                  />
-                ))}
-              </div>
-              <span className="text-xs text-muted-foreground">{template.rating} ({template.ordersCount})</span>
-            </div>
 
             <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
               {template.description}
