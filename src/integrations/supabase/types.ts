@@ -115,6 +115,33 @@ export type Database = {
           },
         ]
       }
+      playground_feedback: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          user_avatar: string | null
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          user_avatar?: string | null
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          user_avatar?: string | null
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: []
+      }
       playground_projects: {
         Row: {
           author_name: string | null

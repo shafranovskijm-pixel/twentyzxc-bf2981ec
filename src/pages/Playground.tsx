@@ -10,12 +10,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlayground } from "@/hooks/use-playground";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { BlockPalette } from "@/components/playground/BlockPalette";
 import { Canvas } from "@/components/playground/Canvas";
 import { BlockEditor } from "@/components/playground/BlockEditor";
 import { ProjectTemplates } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
+import { FeedbackSection } from "@/components/playground/FeedbackSection";
 import { CanvasSettings } from "@/components/playground/CanvasSettings";
 import { SaveDialog } from "@/components/playground/SaveDialog";
 import { COLOR_PRESETS } from "@/data/playground-effects";
@@ -29,6 +31,7 @@ import {
 
 const Playground = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAdminAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -353,8 +356,11 @@ const Playground = () => {
 
         {/* Gallery Section */}
         <div id="gallery">
-          <PublishedProjectsGallery />
+          <PublishedProjectsGallery isAdmin={isAdmin} />
         </div>
+
+        {/* Feedback Section */}
+        <FeedbackSection isAdmin={isAdmin} />
 
         <Footer />
       </div>
