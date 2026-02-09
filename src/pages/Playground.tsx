@@ -145,6 +145,7 @@ const Playground = () => {
       <Helmet>
         <title>Конструктор сайтов — Создай бесплатно | 24ZXC</title>
         <meta name="description" content="Бесплатный конструктор веб-страниц. Создавайте уникальные дизайны с анимациями и эффектами. Лучшие работы опубликуем на 24zxc.ru" />
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Raleway:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Merriweather:wght@400;700&family=Lora:wght@400;500;700&family=Nunito:wght@400;600;700&family=PT+Sans:wght@400;700&family=Rubik:wght@400;500;700&family=Comfortaa:wght@400;500;700&family=Caveat:wght@400;700&family=Pacifico&family=Bebas+Neue&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
