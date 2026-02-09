@@ -380,29 +380,29 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
               className="absolute inset-0 w-full h-full object-cover"
             />
 
-            {/* AR badge */}
+            {/* AR badge - bottom left */}
             {product.ar && (
-              <div className="absolute top-4 left-4">
+              <div className="absolute bottom-4 left-4 z-10">
                 <ARBadge variant="compact" />
               </div>
             )}
 
-            {/* Stock badge */}
+            {/* Stock badge - top left */}
             {product.stock <= 3 && (
-              <div className="absolute top-4 right-4">
+              <div className="absolute top-4 left-4 z-10">
                 <StockBadge status={product.stock === 1 ? "last-items" : "low"} count={product.stock} />
               </div>
             )}
 
-            {/* 360° badge button - always visible */}
+            {/* 360° badge button - top right, always visible */}
             <button
               onClick={(e) => { e.stopPropagation(); setShow360Mode(true); }}
-              className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/30 text-white text-sm font-medium hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
+              className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/30 text-white text-sm font-medium hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
             >
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-4 h-4 rounded-full border-2 border-dashed border-emerald-400"
+                className="w-4 h-4 rounded-full border-2 border-dashed border-white"
               />
               360°
             </button>
