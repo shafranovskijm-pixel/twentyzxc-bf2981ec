@@ -126,7 +126,7 @@ const projects: Project[] = [
     description: "Создание и управление сайтом, Яндекс Директ, SEO. Топ позиции в Уссурийске.",
     tags: ["web", "ads", "SEO"],
     price: "20 000 ₽/год",
-    url: "https://xn--80adjfbdjdcnhpifgi3a.xn--p1ai/",
+    url: "https://двериуссурийск.рф/",
   },
 ];
 
