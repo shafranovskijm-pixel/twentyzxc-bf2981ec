@@ -317,7 +317,7 @@ const ServiceCard = ({
       {keyId && !isCollected && (
         <button 
           onClick={handleTakeKey}
-          className="absolute bottom-8 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
+          className="absolute bottom-2 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
         >
           {/* Glow effect behind the key */}
           <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
