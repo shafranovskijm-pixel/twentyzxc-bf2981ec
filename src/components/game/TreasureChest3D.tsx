@@ -593,9 +593,9 @@ export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () 
               : 'bg-gradient-radial from-primary/10 via-transparent to-transparent opacity-50'
         }`} />
         
-        {/* Pulsing glow ring when hovered */}
+        {/* Glow effect like keys when hovered */}
         {isHovered && !isOpen && unlockPhase === 'idle' && (
-          <div className="absolute inset-4 rounded-lg border-2 border-primary/30 animate-pulse" />
+          <div className="absolute inset-0 rounded-lg bg-primary/20 blur-xl animate-pulse pointer-events-none" />
         )}
         
         {/* Opening glow burst */}
