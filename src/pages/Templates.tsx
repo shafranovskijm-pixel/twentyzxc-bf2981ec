@@ -29,7 +29,7 @@ const getCategoryIcon = (iconName: string) => {
 type SortOption = "popular" | "price-asc" | "price-desc" | "rating" | "new";
 
 const Templates = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeCategory, setActiveCategory] = useState<string>("landing");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("popular");
   const [showFilters, setShowFilters] = useState(false);
@@ -233,12 +233,6 @@ const TemplateCard = ({ template }: TemplateCardProps) => (
       <div className={`aspect-[4/3] bg-gradient-to-br ${template.gradient} relative overflow-hidden`}>
         {/* Badges */}
         <div className="absolute top-4 left-4 flex gap-2 z-10">
-          {template.popular && (
-            <span className="px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-sm flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" />
-              Популярный
-            </span>
-          )}
           {template.isNew && (
             <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-sm flex items-center gap-1">
               <Sparkles className="w-3 h-3" />
