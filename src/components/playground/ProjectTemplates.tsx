@@ -816,31 +816,54 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
   }
 ];
 
-const BLOCK_EXAMPLE_CATEGORIES: { name: string; icon: React.ReactNode; ids: string[] }[] = [
+type SubGroup = { name: string; ids: string[] };
+const BLOCK_EXAMPLE_CATEGORIES: { name: string; icon: React.ReactNode; groups: SubGroup[] }[] = [
   {
     name: 'Структура сайта',
     icon: <LayoutList className="w-4 h-4" />,
-    ids: ['navbar-example', 'navbar-example-2', 'navbar-example-3', 'footer-example', 'footer-example-2', 'footer-example-3', 'three-steps', 'three-steps-2', 'three-steps-3']
+    groups: [
+      { name: 'Меню навигации', ids: ['navbar-example', 'navbar-example-2', 'navbar-example-3'] },
+      { name: 'Футер', ids: ['footer-example', 'footer-example-2', 'footer-example-3'] },
+      { name: 'Колонки "3 шага"', ids: ['three-steps', 'three-steps-2', 'three-steps-3'] },
+    ]
   },
   {
     name: 'Контент',
     icon: <Type className="w-4 h-4" />,
-    ids: ['hero-title', 'hero-title-2', 'hero-title-3', 'features-list', 'features-list-2', 'features-list-3', 'faq-card', 'faq-card-2', 'faq-card-3', 'youtube-video', 'youtube-video-2', 'youtube-video-3']
+    groups: [
+      { name: 'Герой-заголовок', ids: ['hero-title', 'hero-title-2', 'hero-title-3'] },
+      { name: 'Преимущества', ids: ['features-list', 'features-list-2', 'features-list-3'] },
+      { name: 'FAQ карточка', ids: ['faq-card', 'faq-card-2', 'faq-card-3'] },
+      { name: 'YouTube видео', ids: ['youtube-video', 'youtube-video-2', 'youtube-video-3'] },
+    ]
   },
   {
     name: 'Статистика и акции',
     icon: <BarChart3 className="w-4 h-4" />,
-    ids: ['stats-row', 'stats-row-2', 'stats-row-3', 'promo-timer', 'promo-timer-2', 'promo-timer-3', 'testimonial', 'testimonial-2', 'testimonial-3']
+    groups: [
+      { name: 'Статистика', ids: ['stats-row', 'stats-row-2', 'stats-row-3'] },
+      { name: 'Таймер акции', ids: ['promo-timer', 'promo-timer-2', 'promo-timer-3'] },
+      { name: 'Отзыв клиента', ids: ['testimonial', 'testimonial-2', 'testimonial-3'] },
+    ]
   },
   {
     name: 'Визуал и галереи',
     icon: <Images className="w-4 h-4" />,
-    ids: ['gallery-two', 'gallery-two-2', 'gallery-two-3', 'gallery-six', 'gallery-six-2', 'gallery-six-3', 'cta-section', 'cta-section-2', 'cta-section-3']
+    groups: [
+      { name: 'Галерея 2 фото', ids: ['gallery-two', 'gallery-two-2', 'gallery-two-3'] },
+      { name: 'Галерея 6 фото', ids: ['gallery-six', 'gallery-six-2', 'gallery-six-3'] },
+      { name: 'CTA секция', ids: ['cta-section', 'cta-section-2', 'cta-section-3'] },
+    ]
   },
   {
     name: 'Бизнес',
     icon: <DollarSign className="w-4 h-4" />,
-    ids: ['pricing-card', 'pricing-card-2', 'pricing-card-3', 'team-section', 'team-section-2', 'team-section-3', 'form-example', 'form-example-2', 'form-example-3', 'socials-example', 'socials-example-2', 'socials-example-3']
+    groups: [
+      { name: 'Ценовая карточка', ids: ['pricing-card', 'pricing-card-2', 'pricing-card-3'] },
+      { name: 'Команда', ids: ['team-section', 'team-section-2', 'team-section-3'] },
+      { name: 'Форма заявки', ids: ['form-example', 'form-example-2', 'form-example-3'] },
+      { name: 'Соцсети', ids: ['socials-example', 'socials-example-2', 'socials-example-3'] },
+    ]
   }
 ];
 
@@ -892,26 +915,37 @@ export const BlockExamplesList = ({ onAddBlocks }: BlockExamplesListProps) => (
           </span>
         </AccordionTrigger>
         <AccordionContent className="pb-2 pt-0">
-          <div className="grid grid-cols-2 gap-1.5">
-            {cat.ids.map((id) => {
-              const example = examplesMap.get(id);
-              if (!example) return null;
-              return (
-                <Button
-                  key={example.id}
-                  variant="outline"
-                  className="w-full h-auto py-2 px-2 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
-                  onClick={() => onAddBlocks(example.blocks)}
-                >
-                  <span className="text-primary">{example.icon}</span>
-                  <span className="text-[11px] font-medium">{example.name}</span>
-                  <span className="text-[9px] text-muted-foreground leading-tight">
-                    {example.description}
-                  </span>
-                </Button>
-              );
-            })}
-          </div>
+          <Accordion type="multiple" className="space-y-0 pl-2">
+            {cat.groups.map((group) => (
+              <AccordionItem key={group.name} value={group.name} className="border-b-0">
+                <AccordionTrigger className="py-1.5 px-1 text-[11px] font-medium hover:no-underline gap-2 text-muted-foreground hover:text-foreground [&[data-state=open]>svg]:rotate-180">
+                  {group.name}
+                </AccordionTrigger>
+                <AccordionContent className="pb-1.5 pt-0">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {group.ids.map((id) => {
+                      const example = examplesMap.get(id);
+                      if (!example) return null;
+                      return (
+                        <Button
+                          key={example.id}
+                          variant="outline"
+                          className="w-full h-auto py-2 px-2 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
+                          onClick={() => onAddBlocks(example.blocks)}
+                        >
+                          <span className="text-primary">{example.icon}</span>
+                          <span className="text-[11px] font-medium">{example.name}</span>
+                          <span className="text-[9px] text-muted-foreground leading-tight">
+                            {example.description}
+                          </span>
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </AccordionContent>
       </AccordionItem>
     ))}
