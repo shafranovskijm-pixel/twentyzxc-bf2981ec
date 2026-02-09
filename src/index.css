@@ -98,11 +98,16 @@
   }
 
   .gradient-gold-text {
-    background: var(--gradient-gold-text);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    color: hsl(45 80% 65%); /* fallback for unsupported browsers */
+    color: hsl(45 80% 65%); /* fallback color - always visible */
+  }
+  
+  @supports (-webkit-background-clip: text) or (background-clip: text) {
+    .gradient-gold-text {
+      background: var(--gradient-gold-text);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
   }
 
   .border-gold {
