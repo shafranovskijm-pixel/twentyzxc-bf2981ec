@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   return (
@@ -51,13 +52,17 @@ const HeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <Button variant="hero" size="xl">
-              <Sparkles className="w-5 h-5" />
-              Начать проект
+            <Button variant="hero" size="xl" asChild>
+              <a href="#contact">
+                <Sparkles className="w-5 h-5" />
+                Начать проект
+              </a>
             </Button>
-            <Button variant="heroOutline" size="xl">
-              Портфолио
-              <ArrowRight className="w-5 h-5" />
+            <Button variant="heroOutline" size="xl" asChild>
+              <Link to="/portfolio">
+                Портфолио
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </Button>
           </div>
         </div>
