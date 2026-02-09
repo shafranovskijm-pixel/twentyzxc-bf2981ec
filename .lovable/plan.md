@@ -1,69 +1,96 @@
 
 
-# Улучшенные шаблоны, примеры блоков и новые возможности конструктора
+# Интеграция Telegram бота @zxc_ru_bot
 
-## 1. Новые шаблоны страниц (4 штуки)
+## Архитектура
 
-Добавить 4 новых профессиональных шаблона к существующим 8:
+Бот будет работать через webhook: Telegram отправляет обновления на наш backend, а мы обрабатываем их и отвечаем пользователю.
 
-- **Фитнес-клуб** -- героический заголовок с таймером обратного отсчёта, расписание занятий, счётчики (500+ клиентов, 20 тренеров), CTA "Записаться"
-- **Онлайн-курс** -- лендинг курса с программой, отзывом студента, колонками с модулями, кнопкой "Начать обучение"
-- **Фотограф** -- минималистичная галерея с 6 фото, цитата, соцсети, контактная кнопка
-- **IT-агентство** -- технологичный стиль с навбаром, метриками, карточками услуг, колонками "Дизайн/Разработка/Маркетинг"
+```text
+Пользователь нажимает /start
+        |
+        v
+Telegram API --webhook--> Edge Function (telegram-bot-webhook)
+        |
+        v
+  Сохраняем chat_id в таблицу telegram_bot_users
+        |
+        v
+  Отправляем приветственное сообщение пользователю
+  + уведомляем владельца (TELEGRAM_CHAT_ID) о новом подписчике
+```
 
-## 2. Новые примеры блоков (5 штук)
+## Что будет сделано
 
-Добавить к существующим 10 примерам:
+### 1. Сохранить токен бота
+Новый секрет `ZXC_BOT_TOKEN` с переданным токеном (отдельно от существующего `TELEGRAM_BOT_TOKEN`, который используется для форм обратной связи).
 
-- **Ценовая карточка** -- карточка с заголовком тарифа, ценой, списком включённого и кнопкой
-- **Команда** -- 3 иконки+текст с членами команды (CEO, CTO, Designer)
-- **Таймер акции** -- таймер обратного отсчёта + заголовок "Скидка заканчивается"
-- **Галерея 6 фото** -- блок gallery с 6 изображениями
-- **Колонки "3 шага"** -- три колонки "Шаг 1/2/3" с описаниями процесса
+### 2. Таблица `telegram_bot_users`
+Хранит всех пользователей, нажавших /start:
+- `id` (uuid)
+- `chat_id` (bigint, уникальный) -- Telegram chat ID
+- `username` (text) -- @username если есть
+- `first_name`, `last_name` (text)
+- `created_at` (timestamp)
+- `is_active` (boolean, default true) -- для /stop
 
-## 3. Улучшения конструктора
+RLS: публичный SELECT/INSERT (webhook работает без авторизации), UPDATE только для edge function.
 
-### 3.1 Быстрая смена цветовой схемы (Color Themes)
-Добавить в "Настройки холста" выпадающий список готовых цветовых тем, которые применяют фон + паттерн одним кликом:
-- Тёмный минимализм (#0a0a0a, dots)
-- Ночное небо (#0f172a, cross)
-- Тёплый уголь (#1c1917, grid)
-- Глубокий космос (#020617, diagonal)
-- Градиент золото-чёрный (linear-gradient)
+### 3. Edge Function `telegram-bot-webhook`
+Обрабатывает входящие сообщения от Telegram:
+- `/start` -- сохраняет пользователя в БД, отправляет приветствие, уведомляет владельца
+- `/stop` -- помечает `is_active = false`
+- Любое другое сообщение -- пересылает владельцу с указанием chat_id отправителя
 
-### 3.2 Копирование стилей блока (Copy/Paste Styles)
-Две новые кнопки в BlockEditor:
-- "Копировать стиль" -- сохраняет стили текущего блока в state
-- "Вставить стиль" -- применяет скопированные стили к выбранному блоку
-Позволяет быстро выровнять стили между блоками без ручной настройки каждого.
+JWT отключен (Telegram шлёт запросы напрямую). Защита через секретный путь webhook.
 
-### 3.3 Быстрые пресеты размеров шрифта
-Вместо ручного ввода "48px" -- набор кнопок-чипов:
-- XS (12px), S (14px), M (16px), L (20px), XL (28px), 2XL (36px), 3XL (48px), 4XL (64px)
+### 4. Регистрация webhook
+После деплоя edge function -- вызов Telegram API `setWebhook` для привязки URL.
+
+### 5. Edge Function `send-bot-message`
+Позволяет отправлять сообщения пользователям бота:
+- Принимает `chat_id` и `text`
+- Отправляет через Telegram Bot API
+- Можно вызывать из админки или других edge functions
 
 ---
 
 ## Техническая часть
 
-### Файлы для изменения
+### Новые файлы
+- `supabase/functions/telegram-bot-webhook/index.ts` -- обработка webhook
+- `supabase/functions/send-bot-message/index.ts` -- отправка сообщений пользователям
 
-**`src/components/playground/ProjectTemplates.tsx`**
-- Добавить 4 новых объекта в массив `PAGE_TEMPLATES`
-- Добавить 5 новых объектов в массив `BLOCK_EXAMPLES`
-- Добавить недостающие иконки из lucide-react (Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3)
+### Миграция SQL
+```sql
+CREATE TABLE telegram_bot_users (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id bigint UNIQUE NOT NULL,
+  username text,
+  first_name text,
+  last_name text,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+-- RLS policies for webhook access
+```
 
-**`src/components/playground/CanvasSettings.tsx`**
-- Добавить секцию "Быстрая тема" с 5 пресетами цветовых схем
-- Каждый пресет -- кнопка с превью цвета, по клику устанавливает backgroundColor + backgroundPattern
+### Секреты
+- `ZXC_BOT_TOKEN` -- токен бота @zxc_ru_bot
 
-**`src/components/playground/BlockEditor.tsx`**
-- Добавить кнопки "Копировать стиль" / "Вставить стиль" в панель действий
-- Заменить текстовое поле "Размер шрифта" на ряд кнопок-чипов с пресетами (XS-4XL) + поле для кастомного значения
+### Конфигурация (config.toml)
+```toml
+[functions.telegram-bot-webhook]
+verify_jwt = false
 
-**`src/pages/Playground.tsx`**
-- Добавить state для `copiedStyles` (хранение скопированных стилей)
-- Передать `copiedStyles` / `onCopyStyles` / `onPasteStyles` в BlockEditor
+[functions.send-bot-message]
+verify_jwt = false
+```
 
-**`src/hooks/use-playground.tsx`**
-- Добавить `copyStyles` и `pasteStyles` функции (или обойтись локальным state в Playground.tsx)
+### Регистрация webhook
+После деплоя вызываем:
+```
+POST https://api.telegram.org/bot<TOKEN>/setWebhook
+body: { url: "https://veedztdijmscebgadzyx.supabase.co/functions/v1/telegram-bot-webhook" }
+```
 
