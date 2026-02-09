@@ -216,6 +216,24 @@ export const usePlayground = () => {
     setBlocksWithHistory(prev => [...prev, ...blocksWithIds]);
   }, [setBlocksWithHistory]);
 
+  const addImageBlock = useCallback((imageUrl: string) => {
+    const newBlock: PlaygroundBlock = {
+      id: generateId(),
+      type: 'image',
+      content: imageUrl,
+      styles: {
+        backgroundColor: 'transparent',
+        textColor: '#ffffff',
+        padding: '8px',
+        fontSize: '16px',
+        borderRadius: '12px',
+        textAlign: 'center'
+      }
+    };
+    setBlocksWithHistory(prev => [...prev, newBlock]);
+    setSelectedBlockId(newBlock.id);
+  }, [setBlocksWithHistory]);
+
   const exportData = useCallback(() => {
     return { title: projectTitle, blocks, settings };
   }, [projectTitle, blocks, settings]);
@@ -246,6 +264,7 @@ export const usePlayground = () => {
     loadTemplate,
     reorderBlocks,
     addBlocks,
+    addImageBlock,
     exportData,
     importData,
     undo,

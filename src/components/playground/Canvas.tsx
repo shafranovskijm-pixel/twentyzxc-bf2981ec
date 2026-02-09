@@ -1,10 +1,11 @@
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { PlaygroundBlock, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
 import { SortableBlock } from "./SortableBlock";
-import { Trash2, Copy } from "lucide-react";
+import { Trash2, Copy, ImagePlus } from "lucide-react";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
@@ -14,9 +15,12 @@ interface CanvasProps {
   onReorder: (activeId: string, overId: string) => void;
   onDeleteBlock?: (id: string) => void;
   onDuplicateBlock?: (id: string) => void;
+  onAddImageBlock?: (imageUrl: string) => void;
 }
 
-export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder, onDeleteBlock, onDuplicateBlock }: CanvasProps) => {
+export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder, onDeleteBlock, onDuplicateBlock, onAddImageBlock }: CanvasProps) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -27,6 +31,34 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       onReorder(String(active.id), String(over.id));
     }
   };
+
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (!onAddImageBlock) return;
+
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+
+    imageFiles.forEach(file => {
+      const url = URL.createObjectURL(file);
+      onAddImageBlock(url);
+    });
+  }, [onAddImageBlock]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
 
   const getAnimationProps = (animationId?: string) => {
     if (!animationId) return {};
@@ -291,10 +323,25 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
 
   return (
     <div
-      className="min-h-[500px] rounded-lg border border-border overflow-hidden"
+      className={cn(
+        "min-h-[500px] rounded-lg border overflow-hidden relative transition-colors duration-200",
+        isDragOver ? "border-primary border-2" : "border-border"
+      )}
       style={getBackgroundStyle()}
       onClick={(e) => { if (e.target === e.currentTarget) onSelectBlock(null); }}
+      onDrop={handleFileDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
     >
+      {/* Drop overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
+          <div className="flex flex-col items-center gap-3 text-primary">
+            <ImagePlus className="w-12 h-12" />
+            <span className="text-lg font-medium">Перетащите изображения сюда</span>
+          </div>
+        </div>
+      )}
       <div className="p-6 space-y-4">
         {blocks.length === 0 ? (
           <div className="flex items-center justify-center min-h-[400px] text-muted-foreground">
@@ -302,6 +349,8 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
               Добавьте блоки из панели слева
               <br />
               <span className="text-sm opacity-60">Перетаскивайте блоки для изменения порядка</span>
+              <br />
+              <span className="text-sm opacity-60">или перетащите изображения прямо сюда</span>
             </p>
           </div>
         ) : (
