@@ -7,6 +7,8 @@ import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCo
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import useEmblaCarousel from "embla-carousel-react";
 import { ImageWithFallback } from "../../ImageWithFallback";
+import noirHeroImage from "@/assets/templates/noir-elegance-hero.jpg";
+import noirProjectImage from "@/assets/templates/noir-elegance-project-1.jpg";
 
 const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
@@ -131,69 +133,101 @@ export const NoirElegancePreview = ({ template }: NoirElegancePreviewProps) => {
 
       {/* Hero Section */}
       <section className="min-h-screen flex items-center justify-center relative pt-20">
-        <div className="container mx-auto px-8">
-          <div className="max-w-4xl">
-            <motion.div
-              className="text-amber-500 text-sm tracking-[0.5em] uppercase mb-8"
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.8 }}
-            >
-              Студия дизайна
-            </motion.div>
-            
-            <motion.h1 
-              className="text-5xl md:text-7xl lg:text-8xl font-extralight leading-[0.9] mb-8"
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-            >
-              <TypewriterText 
-                texts={["Элегантность", "Минимализм", "Совершенство"]} 
-                typingSpeed={100}
-                deletingSpeed={50}
-                pauseDuration={3000}
-              />
-              <br />
-              <span className="text-white/30">в деталях</span>
-            </motion.h1>
+        {/* Hero Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src={noirHeroImage} 
+            alt="Noir Elegance Hero" 
+            className="w-full h-full object-cover opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent" />
+        </div>
 
-            <motion.p 
-              className="text-lg text-white/40 max-w-xl mb-12 font-light"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-            >
-              Создаём визуальные решения, которые говорят громче слов. 
-              Каждый пиксель продуман до совершенства.
-            </motion.p>
-
-            <motion.div
-              className="flex items-center gap-8"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1.2 }}
-            >
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-amber-500 hover:text-black rounded-none px-8 py-6 text-sm tracking-widest uppercase transition-all duration-500"
+        <div className="container mx-auto px-8 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="max-w-xl">
+              <motion.div
+                className="text-amber-500 text-sm tracking-[0.5em] uppercase mb-8"
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
               >
-                Начать проект
-                <ArrowRight className="ml-3 w-4 h-4" />
-              </Button>
-              <button className="flex items-center gap-3 text-white/40 hover:text-white transition-colors group">
-                <div className="w-12 h-12 border border-white/20 group-hover:border-amber-500 rounded-full flex items-center justify-center transition-colors">
-                  <Play className="w-4 h-4 ml-0.5" />
-                </div>
-                <span className="text-sm tracking-widest uppercase">Showreel</span>
-              </button>
+                Студия дизайна
+              </motion.div>
+              
+              <motion.h1 
+                className="text-5xl md:text-7xl lg:text-8xl font-extralight leading-[0.9] mb-8"
+                initial={{ opacity: 0, y: 100 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+              >
+                <TypewriterText 
+                  texts={["Элегантность", "Минимализм", "Совершенство"]} 
+                  typingSpeed={100}
+                  deletingSpeed={50}
+                  pauseDuration={3000}
+                />
+                <br />
+                <span className="text-white/30">в деталях</span>
+              </motion.h1>
+
+              <motion.p 
+                className="text-lg text-white/40 max-w-xl mb-12 font-light"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+              >
+                Создаём визуальные решения, которые говорят громче слов. 
+                Каждый пиксель продуман до совершенства.
+              </motion.p>
+
+              <motion.div
+                className="flex items-center gap-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2 }}
+              >
+                <Button 
+                  size="lg" 
+                  className="bg-white text-black hover:bg-amber-500 hover:text-black rounded-none px-8 py-6 text-sm tracking-widest uppercase transition-all duration-500"
+                >
+                  Начать проект
+                  <ArrowRight className="ml-3 w-4 h-4" />
+                </Button>
+                <button className="flex items-center gap-3 text-white/40 hover:text-white transition-colors group">
+                  <div className="w-12 h-12 border border-white/20 group-hover:border-amber-500 rounded-full flex items-center justify-center transition-colors">
+                    <Play className="w-4 h-4 ml-0.5" />
+                  </div>
+                  <span className="text-sm tracking-widest uppercase">Showreel</span>
+                </button>
+              </motion.div>
+            </div>
+
+            {/* Project showcase image */}
+            <motion.div 
+              className="hidden lg:block relative"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
+            >
+              <div className="aspect-square rounded-sm overflow-hidden border border-white/10">
+                <img 
+                  src={noirProjectImage} 
+                  alt="Featured Project" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="absolute -bottom-4 -left-4 p-4 bg-black border border-white/10">
+                <div className="text-amber-500 text-xs tracking-widest uppercase">Проект</div>
+                <div className="text-white font-light">Identity Design</div>
+              </div>
             </motion.div>
           </div>
         </div>
 
         {/* Scroll indicator */}
         <motion.div 
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 z-10"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
@@ -202,7 +236,7 @@ export const NoirElegancePreview = ({ template }: NoirElegancePreviewProps) => {
         </motion.div>
 
         {/* Side decoration */}
-        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-6">
+        <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center gap-6 z-10">
           <div className="w-px h-24 bg-gradient-to-b from-transparent via-amber-500 to-transparent" />
           <span className="text-xs tracking-widest uppercase text-white/30 rotate-90 whitespace-nowrap">Est. 2024</span>
           <div className="w-px h-24 bg-gradient-to-b from-transparent via-white/20 to-transparent" />
