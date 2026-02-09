@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,11 @@ const Playground = () => {
     clearAll,
     loadTemplate,
     reorderBlocks,
-    exportData
+    exportData,
+    undo,
+    redo,
+    canUndo,
+    canRedo
   } = usePlayground();
 
   const generateSlug = () => {
@@ -160,6 +164,12 @@ const Playground = () => {
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
+                <Button variant="outline" size="icon" onClick={undo} disabled={!canUndo} title="Отменить (Ctrl+Z)">
+                  <Undo2 className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={redo} disabled={!canRedo} title="Повторить (Ctrl+Shift+Z)">
+                  <Redo2 className="w-4 h-4" />
+                </Button>
                 <Button variant="outline" onClick={clearAll}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Сбросить
