@@ -394,10 +394,10 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
               </div>
             )}
 
-            {/* 360° badge button */}
+            {/* 360° badge button - always visible */}
             <button
               onClick={(e) => { e.stopPropagation(); setShow360Mode(true); }}
-              className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white text-xs font-medium hover:bg-black/80 transition-colors opacity-0 group-hover:opacity-100"
+              className="absolute bottom-4 right-4 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/30 text-white text-sm font-medium hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
             >
               <motion.div
                 animate={{ rotate: 360 }}
