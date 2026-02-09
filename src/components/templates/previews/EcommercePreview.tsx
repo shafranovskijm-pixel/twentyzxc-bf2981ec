@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Template } from "@/data/templates";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Search, Heart, User, Star, ChevronRight, Filter, X, Plus, Minus, Trash2, Check, Clock, Truck, Shield, RefreshCcw, ChevronLeft } from "lucide-react";
+import { ShoppingBag, Search, Heart, User, Star, ChevronRight, Filter, X, Plus, Minus, Trash2, Check, Clock, Truck, Shield, RefreshCcw, ChevronLeft, Gift, Percent, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedCounter, ScrollReveal, StaggerContainer, StaggerItem, TiltCard } from "./shared";
+import { AnimatedCounter, ScrollReveal, StaggerContainer, StaggerItem, TiltCard, LiveChatWidget } from "./shared";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import useEmblaCarousel from "embla-carousel-react";
@@ -573,6 +573,37 @@ export const EcommercePreview = ({ template }: EcommercePreviewProps) => {
         </div>
       </footer>
 
+      {/* Newsletter Popup */}
+      <motion.div
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 3 }}
+        className="fixed bottom-24 left-6 w-80 bg-zinc-900 border border-white/10 rounded-2xl p-6 z-40 hidden lg:block"
+      >
+        <button className="absolute top-2 right-2 text-white/40 hover:text-white">
+          <X className="w-4 h-4" />
+        </button>
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`w-10 h-10 rounded-full ${template.accentColor} flex items-center justify-center`}>
+            <Percent className="w-5 h-5 text-black" />
+          </div>
+          <div>
+            <div className="text-white font-medium">Скидка 10%</div>
+            <div className="text-white/50 text-sm">на первый заказ</div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <input 
+            type="email" 
+            placeholder="Ваш email" 
+            className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-white text-sm placeholder:text-white/40 focus:border-white/30 outline-none"
+          />
+          <button className={`px-4 py-2 rounded-lg ${template.accentColor} text-black`}>
+            <Mail className="w-4 h-4" />
+          </button>
+        </div>
+      </motion.div>
+
       {/* Search Overlay */}
       <AnimatePresence>
         {searchOpen && (
@@ -612,6 +643,9 @@ export const EcommercePreview = ({ template }: EcommercePreviewProps) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Live Chat */}
+      <LiveChatWidget accentColor={template.accentColor} />
     </div>
   );
 };

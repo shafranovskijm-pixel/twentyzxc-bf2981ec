@@ -1,12 +1,20 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye } from "lucide-react";
+import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye, Search, SlidersHorizontal, Star, TrendingUp, X } from "lucide-react";
 import { Link } from "react-router-dom";
-import { categories, type Template, type Category } from "@/data/templates";
+import { categories, type Template, type Category, getAllTemplates, getPopularTemplates } from "@/data/templates";
+import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const getCategoryIcon = (iconName: string) => {
   switch (iconName) {
@@ -18,10 +26,72 @@ const getCategoryIcon = (iconName: string) => {
   }
 };
 
-const Templates = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("landing");
+type SortOption = "popular" | "price-asc" | "price-desc" | "rating" | "new";
 
-  const currentCategory = categories.find(c => c.id === activeCategory);
+const Templates = () => {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [showFilters, setShowFilters] = useState(false);
+
+  const allTemplates = getAllTemplates();
+  const popularTemplates = getPopularTemplates(6);
+
+  // Filter and sort templates
+  const filteredTemplates = useMemo(() => {
+    let templates = activeCategory === "all" 
+      ? allTemplates 
+      : categories.find(c => c.id === activeCategory)?.templates || [];
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      templates = templates.filter(t => 
+        t.name.toLowerCase().includes(query) ||
+        t.description.toLowerCase().includes(query) ||
+        t.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "popular":
+        templates = [...templates].sort((a, b) => b.ordersCount - a.ordersCount);
+        break;
+      case "price-asc":
+        templates = [...templates].sort((a, b) => {
+          const priceA = parseInt(a.price.replace(/\D/g, ""));
+          const priceB = parseInt(b.price.replace(/\D/g, ""));
+          return priceA - priceB;
+        });
+        break;
+      case "price-desc":
+        templates = [...templates].sort((a, b) => {
+          const priceA = parseInt(a.price.replace(/\D/g, ""));
+          const priceB = parseInt(b.price.replace(/\D/g, ""));
+          return priceB - priceA;
+        });
+        break;
+      case "rating":
+        templates = [...templates].sort((a, b) => b.rating - a.rating);
+        break;
+      case "new":
+        templates = [...templates].filter(t => t.isNew);
+        break;
+    }
+
+    return templates;
+  }, [activeCategory, searchQuery, sortBy, allTemplates]);
+
+  const currentCategory = activeCategory === "all" ? null : categories.find(c => c.id === activeCategory);
+
+  const sortLabels: Record<SortOption, string> = {
+    "popular": "По популярности",
+    "price-asc": "Сначала дешевле",
+    "price-desc": "Сначала дороже",
+    "rating": "По рейтингу",
+    "new": "Только новинки"
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -41,53 +111,141 @@ const Templates = () => {
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
               Каталог <span className="gradient-gold-text">шаблонов</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
               Премиальные шаблоны сайтов класса люкс. Современный дизайн, продуманная UX и безупречное качество кода
             </p>
+
+            {/* Search Bar */}
+            <div className="max-w-md mx-auto relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Поиск шаблонов..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-10 h-12 rounded-sm bg-secondary/50 border-border"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </AnimatedSection>
         </div>
       </section>
 
-      {/* Category Tabs */}
+      {/* Category Tabs + Filters */}
       <section className="pb-8 sticky top-20 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="container px-4">
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((category) => (
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Categories */}
+            <div className="flex flex-wrap gap-2">
               <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-sm text-sm font-medium transition-all ${
-                  activeCategory === category.id
+                onClick={() => setActiveCategory("all")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-sm text-sm font-medium transition-all ${
+                  activeCategory === "all"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
                 }`}
               >
-                {getCategoryIcon(category.icon)}
-                {category.name}
+                <Sparkles className="w-4 h-4" />
+                Все
               </button>
-            ))}
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-sm text-sm font-medium transition-all ${
+                    activeCategory === category.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  {getCategoryIcon(category.icon)}
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Sort */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {sortLabels[sortBy]}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {(Object.keys(sortLabels) as SortOption[]).map((option) => (
+                  <DropdownMenuItem
+                    key={option}
+                    onClick={() => setSortBy(option)}
+                    className={sortBy === option ? "bg-secondary" : ""}
+                  >
+                    {sortLabels[option]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </section>
+
+      {/* Results count */}
+      <section className="py-4">
+        <div className="container px-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              Найдено шаблонов: <span className="text-foreground font-medium">{filteredTemplates.length}</span>
+              {searchQuery && <span> по запросу "{searchQuery}"</span>}
+            </p>
+            {searchQuery && (
+              <Button variant="ghost" size="sm" onClick={() => setSearchQuery("")}>
+                Сбросить поиск
+              </Button>
+            )}
           </div>
         </div>
       </section>
 
       {/* Templates Grid */}
-      <section className="py-16">
+      <section className="py-8 pb-20">
         <div className="container px-4">
           {currentCategory && (
-            <>
-              <AnimatedSection className="text-center mb-12">
-                <h2 className="text-2xl md:text-3xl font-display font-bold mb-3">{currentCategory.name}</h2>
-                <p className="text-muted-foreground">{currentCategory.description}</p>
-              </AnimatedSection>
+            <AnimatedSection className="text-center mb-12">
+              <h2 className="text-2xl md:text-3xl font-display font-bold mb-3">{currentCategory.name}</h2>
+              <p className="text-muted-foreground">{currentCategory.description}</p>
+            </AnimatedSection>
+          )}
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {currentCategory.templates.map((template, index) => (
-                  <AnimatedSection key={template.id} delay={index * 0.1}>
+          {filteredTemplates.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-muted-foreground mb-4">Шаблоны не найдены</div>
+              <Button variant="outline" onClick={() => { setSearchQuery(""); setActiveCategory("all"); }}>
+                Сбросить фильтры
+              </Button>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <AnimatePresence mode="popLayout">
+                {filteredTemplates.map((template, index) => (
+                  <motion.div
+                    key={template.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
                     <TemplateCard template={template} />
-                  </AnimatedSection>
+                  </motion.div>
                 ))}
-              </div>
-            </>
+              </AnimatePresence>
+            </div>
           )}
         </div>
       </section>
@@ -128,6 +286,22 @@ const TemplateCard = ({ template }: TemplateCardProps) => (
     <div className="luxury-card rounded-sm overflow-hidden">
       {/* Preview Area */}
       <div className={`aspect-[4/3] bg-gradient-to-br ${template.gradient} relative overflow-hidden`}>
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex gap-2 z-10">
+          {template.popular && (
+            <span className="px-2 py-1 bg-primary text-primary-foreground text-xs font-medium rounded-sm flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" />
+              Популярный
+            </span>
+          )}
+          {template.isNew && (
+            <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-sm flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              Новинка
+            </span>
+          )}
+        </div>
+
         {/* Decorative elements to simulate a website */}
         <div className="absolute inset-4 border border-white/10 rounded-sm">
           {/* Header bar */}
@@ -166,13 +340,26 @@ const TemplateCard = ({ template }: TemplateCardProps) => (
 
       {/* Info */}
       <div className="p-6">
-        <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex items-start justify-between gap-4 mb-2">
           <h3 className="text-lg font-display font-semibold group-hover:text-primary transition-colors">
             {template.name}
           </h3>
           <span className="text-primary font-semibold text-sm whitespace-nowrap shimmer">
             {template.price}
           </span>
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-0.5">
+            {[...Array(5)].map((_, i) => (
+              <Star 
+                key={i}
+                className={`w-3 h-3 ${i < Math.floor(template.rating) ? "text-primary fill-primary" : "text-muted"}`}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-muted-foreground">{template.rating} ({template.ordersCount})</span>
         </div>
 
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">

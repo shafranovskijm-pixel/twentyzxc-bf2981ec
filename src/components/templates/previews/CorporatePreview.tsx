@@ -3,7 +3,7 @@ import { Template } from "@/data/templates";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Building2, Users, Globe, Award, ChevronRight, Mail, Phone, MapPin, Briefcase, Target, TrendingUp, Calendar, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedCounter, PreviewParticles, ScrollReveal, StaggerContainer, StaggerItem, TiltCard } from "./shared";
+import { AnimatedCounter, PreviewParticles, ScrollReveal, StaggerContainer, StaggerItem, TiltCard, LogoCarousel, VideoPlaceholder } from "./shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect, useCallback } from "react";
@@ -480,6 +480,39 @@ export const CorporatePreview = ({ template }: CorporatePreviewProps) => {
                   </Button>
                 </form>
               </div>
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section className="py-16 border-y border-white/10">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-8">
+              <h3 className="text-white/50 text-sm uppercase tracking-widest">Наши партнёры</h3>
+            </div>
+          </ScrollReveal>
+          <LogoCarousel accentColor={accentClass.split("-")[0]} />
+        </div>
+      </section>
+
+      {/* Video Section */}
+      <section className="py-24 relative">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <div className="text-white/40 uppercase tracking-widest text-sm mb-2">О компании</div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white">Узнайте больше о нас</h2>
+            </div>
+          </ScrollReveal>
+          <div className="max-w-4xl mx-auto">
+            <ScrollReveal delay={0.2}>
+              <VideoPlaceholder 
+                accentColor={template.accentColor} 
+                title="Презентация компании"
+                duration="3:45"
+              />
             </ScrollReveal>
           </div>
         </div>

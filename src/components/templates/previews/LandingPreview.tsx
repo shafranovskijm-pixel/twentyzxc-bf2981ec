@@ -11,7 +11,11 @@ import {
   TypewriterText, 
   ScrollReveal, 
   StaggerContainer, 
-  StaggerItem 
+  StaggerItem,
+  LogoCarousel,
+  LiveChatWidget,
+  InstagramFeed,
+  AwardsBadges
 } from "./shared";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import useEmblaCarousel from "embla-carousel-react";
@@ -491,6 +495,42 @@ export const LandingPreview = ({ template }: LandingPreviewProps) => {
         </div>
       </section>
 
+      {/* Partners Logo Carousel */}
+      <section className="py-16 border-y border-white/10">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-8">
+              <h3 className="text-white/50 text-sm uppercase tracking-widest">Нам доверяют</h3>
+            </div>
+          </ScrollReveal>
+          <LogoCarousel accentColor={accentClass.split("-")[0]} />
+        </div>
+      </section>
+
+      {/* Awards Section */}
+      <section className="py-24 relative">
+        <div className="container mx-auto px-6">
+          <ScrollReveal>
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Награды и признание</h2>
+              <p className="text-white/50">Нас отмечают ведущие платформы индустрии</p>
+            </div>
+          </ScrollReveal>
+          <AwardsBadges accentColor={accentClass.split("-")[0]} />
+        </div>
+      </section>
+
+      {/* Instagram Feed */}
+      <section className="py-24 bg-white/5 border-y border-white/10">
+        <div className="container mx-auto px-6">
+          <div className="max-w-xl mx-auto">
+            <ScrollReveal>
+              <InstagramFeed accentColor={template.accentColor} />
+            </ScrollReveal>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 border-t border-white/10">
         <div className="container mx-auto px-6">
@@ -510,6 +550,9 @@ export const LandingPreview = ({ template }: LandingPreviewProps) => {
           </div>
         </div>
       </footer>
+
+      {/* Live Chat Widget */}
+      <LiveChatWidget accentColor={template.accentColor} />
     </div>
   );
 };
