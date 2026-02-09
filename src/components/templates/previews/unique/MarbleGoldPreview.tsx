@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Template } from "@/data/templates";
 import { Button } from "@/components/ui/button";
-import { Building2, Award, Diamond, Crown, ArrowRight, Quote, Check, Phone, Mail, MapPin, Camera, Users, Star, ChevronRight } from "lucide-react";
+import { Diamond, ArrowRight, Quote, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard, ImageGallery } from "../shared";
+import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter } from "../shared";
+import { ImageWithFallback, AvatarWithFallback } from "../../ImageWithFallback";
 import useEmblaCarousel from "embla-carousel-react";
-import { useEffect } from "react";
+
+const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
 
 interface MarbleGoldPreviewProps {
   template: Template;
@@ -194,7 +196,14 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
                   className="group cursor-pointer"
                   whileHover={{ y: -8 }}
                 >
-                  <div className="aspect-[4/5] rounded-lg bg-gradient-to-br from-stone-800 to-stone-900 border border-white/5 relative overflow-hidden mb-4 group-hover:border-amber-500/30 transition-all">
+                  <div className="aspect-[4/5] rounded-lg overflow-hidden border border-white/5 relative mb-4 group-hover:border-amber-500/30 transition-all">
+                    <ImageWithFallback
+                      src={`${STORAGE_BASE}/marble-gold/portfolio-${i + 1}.png`}
+                      alt={project.title}
+                      className="w-full h-full"
+                      aspectRatio="portrait"
+                      fallbackGradient="from-stone-800 to-stone-900"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-full group-hover:translate-y-0 transition-transform">
                       <div className="text-amber-400 text-xs uppercase tracking-widest mb-2">{project.category}</div>
@@ -222,7 +231,15 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
             {team.map((member, i) => (
               <StaggerItem key={i}>
                 <motion.div className="text-center" whileHover={{ y: -8 }}>
-                  <div className="aspect-square rounded-full bg-gradient-to-br from-stone-800 to-stone-900 border border-amber-500/20 mb-6 mx-auto w-48 h-48" />
+                  <div className="w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden border border-amber-500/20">
+                    <ImageWithFallback
+                      src={`${STORAGE_BASE}/marble-gold/team-${i + 1}.png`}
+                      alt={member.name}
+                      className="w-full h-full rounded-full"
+                      aspectRatio="square"
+                      fallbackGradient="from-stone-800 to-stone-900"
+                    />
+                  </div>
                   <h4 className="text-lg font-light mb-1">{member.name}</h4>
                   <p className="text-amber-400 text-sm mb-1">{member.role}</p>
                   <p className="text-white/40 text-xs">{member.exp} опыта</p>

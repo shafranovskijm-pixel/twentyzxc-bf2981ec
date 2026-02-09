@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Template } from "@/data/templates";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Heart, Search, Star, ChevronRight, ArrowRight, Sparkles, Gift, Truck, RefreshCcw, CreditCard } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard, LiveChatWidget, InstagramFeed } from "../shared";
+import { ShoppingBag, Heart, Search, ChevronRight, ArrowRight, Sparkles, Gift, Truck, RefreshCcw, CreditCard } from "lucide-react";
+import { motion } from "framer-motion";
+import { ScrollReveal, StaggerContainer, StaggerItem, LiveChatWidget, InstagramFeed } from "../shared";
+import { ImageWithFallback } from "../../ImageWithFallback";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+
+const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
 
 interface LuxeBoutiquePreviewProps {
   template: Template;
@@ -173,15 +176,14 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
 
             <ScrollReveal direction="right" delay={0.4}>
               <div className="relative">
-                <div className="aspect-[3/4] rounded-2xl bg-gradient-to-br from-rose-100 to-rose-200 overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center text-rose-300">
-                    <div className="text-center">
-                      <div className="w-32 h-32 rounded-full border-2 border-rose-300 flex items-center justify-center mb-4 mx-auto">
-                        <Sparkles className="w-16 h-16" />
-                      </div>
-                      <p className="text-lg font-light">Fashion Preview</p>
-                    </div>
-                  </div>
+                <div className="aspect-[3/4] rounded-2xl overflow-hidden">
+                  <ImageWithFallback
+                    src={`${STORAGE_BASE}/luxe-boutique/hero.png`}
+                    alt="Fashion Preview"
+                    className="w-full h-full"
+                    aspectRatio="portrait"
+                    fallbackGradient="from-rose-100 to-rose-200"
+                  />
                 </div>
                 {/* Floating badge */}
                 <motion.div 
@@ -243,7 +245,7 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
                   className="group cursor-pointer"
                   whileHover={{ y: -8 }}
                 >
-                  <div className="aspect-[3/4] rounded-lg bg-gradient-to-br from-rose-50 to-white border border-rose-100 relative overflow-hidden mb-4 group-hover:shadow-xl transition-all">
+                  <div className="aspect-[3/4] rounded-lg overflow-hidden border border-rose-100 relative mb-4 group-hover:shadow-xl transition-all">
                     {product.badge && (
                       <div className="absolute top-4 left-4 px-3 py-1 bg-rose-500 text-white text-xs rounded-full z-10">
                         {product.badge}
@@ -260,6 +262,14 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
                     >
                       <Heart className={`w-5 h-5 ${wishlist.includes(product.id) ? "fill-rose-500 text-rose-500" : "text-gray-400"}`} />
                     </motion.button>
+                    
+                    <ImageWithFallback
+                      src={`${STORAGE_BASE}/luxe-boutique/product-${i + 1}.png`}
+                      alt={product.name}
+                      className="w-full h-full"
+                      aspectRatio="portrait"
+                      fallbackGradient="from-rose-50 to-white"
+                    />
                     
                     {/* Quick add button */}
                     <motion.div 
