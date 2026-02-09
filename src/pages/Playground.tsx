@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2 } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const Playground = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+  const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
 
   const {
     blocks,
@@ -307,14 +308,51 @@ const Playground = () => {
               </div>
 
               {/* Canvas */}
-              <div className="min-h-[600px]">
-                <Canvas
-                  blocks={blocks}
-                  settings={settings}
-                  selectedBlockId={selectedBlockId}
-                  onSelectBlock={setSelectedBlockId}
-                  onReorder={reorderBlocks}
-                />
+              <div className="min-h-[600px] flex flex-col items-center">
+                {/* Device switcher */}
+                <div className="flex items-center gap-1 mb-4 p-1 rounded-lg border border-border bg-secondary/20">
+                  <Button
+                    variant={deviceMode === 'desktop' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setDeviceMode('desktop')}
+                    title="Desktop"
+                  >
+                    <Monitor className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline text-xs">Desktop</span>
+                  </Button>
+                  <Button
+                    variant={deviceMode === 'tablet' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setDeviceMode('tablet')}
+                    title="Tablet"
+                  >
+                    <Tablet className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline text-xs">Tablet</span>
+                  </Button>
+                  <Button
+                    variant={deviceMode === 'mobile' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setDeviceMode('mobile')}
+                    title="Mobile"
+                  >
+                    <Smartphone className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline text-xs">Mobile</span>
+                  </Button>
+                </div>
+                <div
+                  className="w-full transition-all duration-300"
+                  style={{
+                    maxWidth: deviceMode === 'mobile' ? '375px' : deviceMode === 'tablet' ? '768px' : '100%'
+                  }}
+                >
+                  <Canvas
+                    blocks={blocks}
+                    settings={settings}
+                    selectedBlockId={selectedBlockId}
+                    onSelectBlock={setSelectedBlockId}
+                    onReorder={reorderBlocks}
+                  />
+                </div>
               </div>
 
               {/* Right sidebar - Block Editor */}
