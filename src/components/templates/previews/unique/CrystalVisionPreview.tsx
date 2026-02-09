@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Zap, Sparkles, Hexagon, Circle, Triangle, Play, Volume2, VolumeX, ChevronDown, Star } from "lucide-react";
 import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter, TiltCard } from "../shared";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface CrystalVisionPreviewProps {
   template: Template;

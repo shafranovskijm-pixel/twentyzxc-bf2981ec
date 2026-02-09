@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter } from "../shared";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import useEmblaCarousel from "embla-carousel-react";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface NoirElegancePreviewProps {
   template: Template;

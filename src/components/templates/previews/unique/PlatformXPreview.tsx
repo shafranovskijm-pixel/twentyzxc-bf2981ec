@@ -9,6 +9,9 @@ import {
 import { Template } from "@/data/templates";
 import { ScrollReveal, AnimatedCounter, GradientButton, TypewriterText, LogoCarousel } from "../shared";
 import { PricingToggle, AnimatedPrice } from "../shared/PricingToggle";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface PlatformXPreviewProps {
   template: Template;

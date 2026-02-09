@@ -11,6 +11,9 @@ import { ARBadge } from "../shared/ARBadge";
 import { Viewer360, Mini360Badge } from "../shared/Viewer360";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface PremiumGalleryPreviewProps {
   template: Template;
@@ -190,10 +193,13 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
                 className="group cursor-pointer"
               >
                 <div className="relative aspect-[3/4] rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-800 overflow-hidden mb-4">
-                  {/* Product placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Package className="w-16 h-16 text-zinc-700 group-hover:text-emerald-500/50 transition-colors" />
-                  </div>
+                  {/* Product image */}
+                  <ImageWithFallback 
+                    src={`${STORAGE_BASE}/premium-gallery/gallery-${product.id}.png`}
+                    alt={product.name}
+                    aspectRatio="portrait"
+                    className="absolute inset-0"
+                  />
 
                   {/* AR badge */}
                   {product.ar && (

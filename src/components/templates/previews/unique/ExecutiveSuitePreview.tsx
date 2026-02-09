@@ -5,6 +5,9 @@ import { ArrowRight, Building2, Users, Globe, Award, ChevronRight, Mail, Phone, 
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedCounter, ScrollReveal, StaggerContainer, StaggerItem, TiltCard, VideoPlaceholder } from "../shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageWithFallback } from "../../ImageWithFallback";
+
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
 interface ExecutiveSuitePreviewProps {
   template: Template;
@@ -290,6 +293,11 @@ export const ExecutiveSuitePreview = ({ template }: ExecutiveSuitePreviewProps) 
                   whileHover={{ y: -8 }}
                 >
                   <div className="aspect-[3/4] rounded-2xl bg-slate-800/50 border border-white/10 relative overflow-hidden mb-4 group-hover:border-blue-500/30 transition-colors">
+                    <ImageWithFallback 
+                      src={`${STORAGE_BASE}/executive-suite/team-${i + 1}.png`}
+                      alt={member.name}
+                      aspectRatio="portrait"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6">
                       <h4 className="font-bold text-white text-lg">{member.name}</h4>
