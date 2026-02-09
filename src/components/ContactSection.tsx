@@ -154,17 +154,6 @@ const ContactSection = () => {
     <section id="contact" ref={sectionRef} className="py-32 relative overflow-hidden bg-secondary/30">
       <div className="container relative z-10 px-4">
         <div className="max-w-5xl mx-auto">
-          {/* Section header */}
-          <div 
-            className={`text-center mb-16 transition-all duration-700 ${
-              animationStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-          >
-            <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              Начнём
-              <span className="gradient-gold-text"> сотрудничество</span>
-            </h2>
-          </div>
 
           {/* Treasure Chest & Form */}
           <div 
