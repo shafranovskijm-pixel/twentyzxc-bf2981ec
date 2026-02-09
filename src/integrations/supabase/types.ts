@@ -115,6 +115,54 @@ export type Database = {
           },
         ]
       }
+      portfolio_projects: {
+        Row: {
+          created_at: string
+          description: string
+          featured: boolean
+          id: string
+          is_internal: boolean
+          location: string | null
+          price: string | null
+          price_alt: string | null
+          sort_order: number
+          tags: string[]
+          title: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          featured?: boolean
+          id?: string
+          is_internal?: boolean
+          location?: string | null
+          price?: string | null
+          price_alt?: string | null
+          sort_order?: number
+          tags?: string[]
+          title: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          featured?: boolean
+          id?: string
+          is_internal?: boolean
+          location?: string | null
+          price?: string | null
+          price_alt?: string | null
+          sort_order?: number
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
