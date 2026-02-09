@@ -17,6 +17,13 @@ export interface PortfolioProject {
   updated_at: string;
 }
 
+export interface PortfolioSettings {
+  id: string;
+  featured_title: string;
+  all_title: string;
+  updated_at: string;
+}
+
 export const usePortfolioProjects = () => {
   return useQuery({
     queryKey: ["portfolio-projects"],
@@ -28,6 +35,43 @@ export const usePortfolioProjects = () => {
 
       if (error) throw error;
       return data as PortfolioProject[];
+    },
+  });
+};
+
+export const usePortfolioSettings = () => {
+  return useQuery({
+    queryKey: ["portfolio-settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("portfolio_settings")
+        .select("*")
+        .eq("id", "main")
+        .single();
+
+      if (error) throw error;
+      return data as PortfolioSettings;
+    },
+  });
+};
+
+export const useUpdateSettings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (updates: Partial<PortfolioSettings>) => {
+      const { data, error } = await supabase
+        .from("portfolio_settings")
+        .update(updates)
+        .eq("id", "main")
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio-settings"] });
     },
   });
 };
@@ -46,6 +90,28 @@ export const useUpdateProject = () => {
 
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio-projects"] });
+    },
+  });
+};
+
+export const useReorderProjects = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (projects: { id: string; sort_order: number }[]) => {
+      const promises = projects.map(({ id, sort_order }) =>
+        supabase
+          .from("portfolio_projects")
+          .update({ sort_order })
+          .eq("id", id)
+      );
+      
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) throw errors[0].error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["portfolio-projects"] });

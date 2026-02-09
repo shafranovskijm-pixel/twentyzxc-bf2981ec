@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +11,35 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { usePortfolioProjects, useUpdateProject, useCreateProject, useDeleteProject } from "@/hooks/use-portfolio-projects";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  usePortfolioProjects,
+  usePortfolioSettings,
+  useUpdateProject,
+  useUpdateSettings,
+  useCreateProject,
+  useDeleteProject,
+  useReorderProjects,
+} from "@/hooks/use-portfolio-projects";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { AdminLoginDialog } from "@/components/portfolio/AdminLoginDialog";
 import { AddProjectDialog } from "@/components/portfolio/AddProjectDialog";
-import { EditableProjectCard } from "@/components/portfolio/EditableProjectCard";
+import { SortableProjectCard } from "@/components/portfolio/SortableProjectCard";
+import { EditableSectionTitle } from "@/components/portfolio/EditableSectionTitle";
 import { toast } from "sonner";
 
 const faqs = [
@@ -46,10 +71,34 @@ const faqs = [
 
 const Portfolio = () => {
   const { data: projects, isLoading, error } = usePortfolioProjects();
+  const { data: settings } = usePortfolioSettings();
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const updateProject = useUpdateProject();
+  const updateSettings = useUpdateSettings();
   const createProject = useCreateProject();
   const deleteProject = useDeleteProject();
+  const reorderProjects = useReorderProjects();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const featuredProjects = useMemo(
+    () => projects?.filter(p => p.featured) || [],
+    [projects]
+  );
+  
+  const regularProjects = useMemo(
+    () => projects?.filter(p => !p.featured) || [],
+    [projects]
+  );
 
   const handleUpdate = (updates: Parameters<typeof updateProject.mutate>[0]) => {
     updateProject.mutate(updates, {
@@ -72,8 +121,42 @@ const Portfolio = () => {
     });
   };
 
-  const featuredProjects = projects?.filter(p => p.featured) || [];
-  const regularProjects = projects?.filter(p => !p.featured) || [];
+  const handleSettingsUpdate = (field: "featured_title" | "all_title", value: string) => {
+    updateSettings.mutate(
+      { [field]: value },
+      {
+        onSuccess: () => toast.success("Заголовок обновлён"),
+        onError: () => toast.error("Ошибка при сохранении"),
+      }
+    );
+  };
+
+  const handleDragEnd = (event: DragEndEvent, isFeatured: boolean) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+
+    const projectsList = isFeatured ? featuredProjects : regularProjects;
+    const oldIndex = projectsList.findIndex(p => p.id === active.id);
+    const newIndex = projectsList.findIndex(p => p.id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    // Calculate new sort orders
+    const reorderedProjects = [...projectsList];
+    const [moved] = reorderedProjects.splice(oldIndex, 1);
+    reorderedProjects.splice(newIndex, 0, moved);
+
+    const updates = reorderedProjects.map((project, index) => ({
+      id: project.id,
+      sort_order: isFeatured ? index : index + 100, // Offset regular projects
+    }));
+
+    reorderProjects.mutate(updates, {
+      onSuccess: () => toast.success("Порядок обновлён"),
+      onError: () => toast.error("Ошибка при сортировке"),
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -173,47 +256,73 @@ const Portfolio = () => {
               {/* Featured Projects */}
               {featuredProjects.length > 0 && (
                 <div className="mb-16">
-                  <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
-                    <span className="w-8 h-[1px] bg-primary" />
-                    Избранные проекты
-                  </h2>
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {featuredProjects.map((project, i) => (
-                      <EditableProjectCard
-                        key={project.id}
-                        project={project}
-                        index={i}
-                        isAdmin={isAdmin}
-                        isFeatured
-                        onUpdate={handleUpdate}
-                        onDelete={handleDelete}
-                        isUpdating={updateProject.isPending}
-                      />
-                    ))}
-                  </div>
+                  <EditableSectionTitle
+                    title={settings?.featured_title || "Избранные проекты"}
+                    isAdmin={isAdmin}
+                    onSave={(value) => handleSettingsUpdate("featured_title", value)}
+                    isUpdating={updateSettings.isPending}
+                  />
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleDragEnd(e, true)}
+                  >
+                    <SortableContext
+                      items={featuredProjects.map(p => p.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className="grid md:grid-cols-2 gap-8">
+                        {featuredProjects.map((project, i) => (
+                          <SortableProjectCard
+                            key={project.id}
+                            project={project}
+                            index={i}
+                            isAdmin={isAdmin}
+                            isFeatured
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            isUpdating={updateProject.isPending}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               )}
 
               {/* All Projects Grid */}
               {regularProjects.length > 0 && (
                 <div>
-                  <h2 className="text-2xl font-display font-semibold mb-8 flex items-center gap-3">
-                    <span className="w-8 h-[1px] bg-primary" />
-                    Все проекты
-                  </h2>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {regularProjects.map((project, i) => (
-                      <EditableProjectCard
-                        key={project.id}
-                        project={project}
-                        index={i}
-                        isAdmin={isAdmin}
-                        onUpdate={handleUpdate}
-                        onDelete={handleDelete}
-                        isUpdating={updateProject.isPending}
-                      />
-                    ))}
-                  </div>
+                  <EditableSectionTitle
+                    title={settings?.all_title || "Все проекты"}
+                    isAdmin={isAdmin}
+                    onSave={(value) => handleSettingsUpdate("all_title", value)}
+                    isUpdating={updateSettings.isPending}
+                  />
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={(e) => handleDragEnd(e, false)}
+                  >
+                    <SortableContext
+                      items={regularProjects.map(p => p.id)}
+                      strategy={rectSortingStrategy}
+                    >
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {regularProjects.map((project, i) => (
+                          <SortableProjectCard
+                            key={project.id}
+                            project={project}
+                            index={i}
+                            isAdmin={isAdmin}
+                            onUpdate={handleUpdate}
+                            onDelete={handleDelete}
+                            isUpdating={updateProject.isPending}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
                 </div>
               )}
             </>
