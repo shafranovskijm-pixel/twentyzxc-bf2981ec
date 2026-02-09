@@ -1,4 +1,4 @@
-import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link } from "lucide-react";
 import { PlaygroundBlock, ANIMATION_EFFECTS, HOVER_EFFECTS, COLOR_PRESETS } from "@/data/playground-effects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,25 +49,41 @@ export const BlockEditor = ({
              block.type === 'quote' ? 'Цитата | Автор' :
              block.type === 'counter' ? 'Число | Подпись' :
              block.type === 'video' ? 'Ссылка для embed (YouTube/Vimeo)' :
+             block.type === 'navbar' ? 'Пункты меню (по одному на строку)' :
+             block.type === 'footer' ? 'Копирайт | Email | Телефон' :
              'Содержимое'}
           </Label>
-          {block.type === 'text' || block.type === 'card' || block.type === 'list' ? (
+          {block.type === 'text' || block.type === 'card' || block.type === 'list' || block.type === 'navbar' ? (
             <Textarea
               value={block.content}
               onChange={(e) => onUpdate({ content: e.target.value })}
               className="bg-secondary/50 border-border"
-              rows={block.type === 'list' ? 5 : 3}
+              rows={block.type === 'list' || block.type === 'navbar' ? 5 : 3}
             />
           ) : (
             <Input
               value={block.content}
               onChange={(e) => onUpdate({ content: e.target.value })}
               className="bg-secondary/50 border-border"
-              placeholder={block.type === 'video' ? 'https://www.youtube.com/embed/...' : ''}
+              placeholder={block.type === 'video' ? 'https://www.youtube.com/embed/...' : block.type === 'footer' ? '© 2026 Компания|email@test.com|+7...' : ''}
             />
           )}
         </div>
       )}
+
+      {/* Link */}
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5">
+          <Link className="w-3.5 h-3.5" />
+          Ссылка
+        </Label>
+        <Input
+          value={block.link || ''}
+          onChange={(e) => onUpdate({ link: e.target.value || undefined })}
+          className="bg-secondary/50 border-border"
+          placeholder="https://example.com"
+        />
+      </div>
 
       {/* Animation */}
       <div className="space-y-2">
