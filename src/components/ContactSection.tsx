@@ -236,7 +236,7 @@ const ContactSection = () => {
                             <button
                               key={key}
                               onClick={() => handleKeySelect(key)}
-                              className="group p-4 rounded-sm border border-border hover:border-primary/50 bg-card hover:bg-primary/5 transition-all duration-300"
+                              className="group p-4 rounded-sm border border-border/50 hover:border-primary/50 bg-transparent hover:bg-primary/5 transition-all duration-300"
                             >
                               <KeyRound className="w-5 h-5 text-primary/50 group-hover:text-primary mx-auto mb-2 transition-colors group-hover:rotate-12" />
                               <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors block">
@@ -244,15 +244,6 @@ const ContactSection = () => {
                               </span>
                             </button>
                           ))}
-                        </div>
-                        
-                        <div className="mt-6 text-center">
-                          <button
-                            onClick={() => setIsChestOpen(true)}
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                          >
-                            или открыть без ключа →
-                          </button>
                         </div>
                       </div>
                     )}

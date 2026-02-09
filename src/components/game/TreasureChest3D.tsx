@@ -512,11 +512,7 @@ export function TreasureChest3D({ onOpen, isOpen: controlledIsOpen }: TreasureCh
       {/* Drop zone indicator */}
       <div
         id="chest-drop-zone"
-        className={`absolute inset-0 rounded-lg transition-all duration-300 ${
-          keys.length > 0 && !isOpen && unlockPhase === 'idle'
-            ? 'border-2 border-dashed border-primary/30 hover:border-primary/50'
-            : ''
-        }`}
+        className="absolute inset-0 rounded-lg transition-all duration-300"
       >
         {keys.length > 0 && !isOpen && unlockPhase === 'idle' && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-card/80 backdrop-blur-sm rounded-full border border-primary/30 z-10">
