@@ -12,6 +12,7 @@ import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
 
 // Import gallery images
+import heroImage from "@/assets/templates/premium-gallery/hero.jpg";
 import gallery1 from "@/assets/templates/premium-gallery/gallery-1.jpg";
 import gallery2 from "@/assets/templates/premium-gallery/gallery-2.jpg";
 import gallery3 from "@/assets/templates/premium-gallery/gallery-3.jpg";
@@ -111,44 +112,27 @@ const Product360Viewer = ({ rotation, setRotation, isDragging, setIsDragging }: 
         onTouchEnd={handleTouchEnd}
         className="relative aspect-square rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-emerald-500/20 overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
-        {/* Background glow */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-teal-900/20" />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 3, repeat: Infinity }}
+        {/* Hero jewelry image */}
+        <img 
+          src={heroImage} 
+          alt="Luxury jewelry collection" 
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ 
+            transform: `perspective(800px) rotateY(${rotation * 0.3}deg) scale(${1 + Math.abs(Math.sin(rotation * Math.PI / 180)) * 0.05})`,
+            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+          }}
         />
-
-        {/* 3D rotating product representation */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            style={{ rotateY: rotation }}
-            className="relative w-48 h-48"
-          >
-            {/* Jewelry box / product placeholder */}
-            <div 
-              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-2xl"
-              style={{ 
-                transform: `perspective(500px) rotateY(${rotation}deg)`,
-                transformStyle: 'preserve-3d'
-              }}
-            >
-              {/* Front face */}
-              <div className="absolute inset-0 rounded-2xl border border-emerald-400/30 flex items-center justify-center">
-                <Sparkles className="w-16 h-16 text-emerald-200/60" />
-              </div>
-              {/* Shine effect */}
-              <motion.div 
-                className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/20 to-transparent"
-                animate={{ 
-                  opacity: [0.2, 0.5, 0.2],
-                  x: [-100, 100]
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
-          </motion.div>
-        </div>
+        
+        {/* Overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+        
+        {/* Shine effect */}
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"
+          style={{
+            transform: `translateX(${rotation % 360}px)`,
+          }}
+        />
 
         {/* Drag hint */}
         <AnimatePresence>
