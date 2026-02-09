@@ -14,7 +14,8 @@ import {
   Sparkles,
   Zap,
   Shield,
-  Headphones
+  Headphones,
+  Eye
 } from "lucide-react";
 import { getTemplateById, getCategoryByTemplateId } from "@/data/templates";
 
@@ -113,16 +114,18 @@ const TemplateDetail = () => {
               </div>
 
               <div className="flex flex-wrap gap-4">
-                <Link to="/#contact">
+                <Link to={`/templates/${template.id}/preview`}>
                   <Button variant="hero" size="lg">
+                    <Eye className="w-4 h-4" />
+                    Смотреть демо
+                  </Button>
+                </Link>
+                <Link to="/#contact">
+                  <Button variant="heroOutline" size="lg">
                     Заказать шаблон
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
-                <Button variant="heroOutline" size="lg" onClick={() => navigate(-1)}>
-                  <ArrowLeft className="w-4 h-4" />
-                  Назад
-                </Button>
               </div>
             </AnimatedSection>
 
