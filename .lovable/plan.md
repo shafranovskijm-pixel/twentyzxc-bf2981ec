@@ -1,270 +1,181 @@
 
-# План реализации: Отзывы и Конструктор "Веб-разработчик"
+# План улучшения конструктора "Веб-разработчик"
 
-## Обзор задачи
+## Текущее состояние
 
-Замена раздела "Услуги" в футере на два новых раздела:
-1. **Отзывы** - страница с авторизацией через Google для оставления отзывов
-2. **Игра "Веб-разработчик"** - интерактивный конструктор с эффектами и анимациями
+Конструктор уже имеет:
+- 7 типов блоков (заголовок, текст, кнопка, изображение, разделитель, карточка, отступ)
+- 17 анимаций появления и 5 hover-эффектов
+- Настройки цветов, размеров, отступов
+- Сохранение проектов по уникальным ссылкам `/p/:slug`
 
 ---
 
-## Часть 1: Страница Отзывов (`/reviews`)
+## Часть 1: Новые функции конструктора
 
-### 1.1. Настройка Google OAuth
+### 1.1. Drag & Drop сортировка блоков
+Использовать уже установленный `@dnd-kit` для перетаскивания блоков прямо на холсте вместо кнопок "вверх/вниз".
 
-Используем Lovable Cloud для авторизации через Google:
-- Настройка социальной авторизации через `configure-social-auth` tool
-- Генерация модуля `@lovable.dev/cloud-auth-js`
+### 1.2. Готовые шаблоны страниц
+Добавить кнопку "Начать с шаблона" с предустановленными вариантами:
+- **Визитка** — заголовок, описание, контактная кнопка
+- **Лендинг** — герой-секция, особенности, CTA
+- **Портфолио** — галерея карточек с анимациями
+- **Промо-страница** — яркий дизайн с акцентами
 
-### 1.2. Создание таблицы отзывов
+### 1.3. Новые типы блоков
+| Блок | Описание |
+|------|----------|
+| **Список** | Маркированный/нумерованный список |
+| **Иконка** | Выбор из набора Lucide иконок |
+| **Цитата** | Стилизованная цитата с автором |
+| **Счётчик** | Анимированное число (для статистики) |
+| **Видео** | Embed YouTube/Vimeo |
+| **Колонки** | 2-3 колонки для макета |
 
-```sql
-CREATE TABLE reviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  user_name TEXT NOT NULL,
-  user_avatar TEXT,
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  is_approved BOOLEAN DEFAULT true
-);
+### 1.4. Градиентные фоны
+Добавить предустановленные градиенты:
+- Золотой premium градиент
+- Тёмный subtle gradient
+- Неоновый gradient
+- Возможность задать свой через CSS
 
--- RLS политики
-ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+### 1.5. Предпросмотр на разных устройствах
+Кнопки переключения: Desktop / Tablet / Mobile (ширина холста меняется)
 
--- Все могут читать одобренные отзывы
-CREATE POLICY "Anyone can read approved reviews"
-  ON reviews FOR SELECT
-  USING (is_approved = true);
+---
 
--- Авторизованные пользователи могут создавать отзывы
-CREATE POLICY "Authenticated users can insert reviews"
-  ON reviews FOR INSERT
-  TO authenticated
-  WITH CHECK (auth.uid() = user_id);
+## Часть 2: Галерея опубликованных сайтов
 
--- Пользователи могут удалять свои отзывы
-CREATE POLICY "Users can delete own reviews"
-  ON reviews FOR DELETE
-  TO authenticated
-  USING (auth.uid() = user_id);
-```
-
-### 1.3. Структура страницы Reviews
+### 2.1. Структура
+Под основным конструктором добавить секцию:
 
 ```text
-+-----------------------------------------------------------+
-|                      HEADER                               |
-+-----------------------------------------------------------+
-|                                                           |
-|              ★ ОТЗЫВЫ НАШИХ КЛИЕНТОВ ★                   |
-|                                                           |
-|  [Кнопка: Войти через Google] (если не авторизован)       |
-|  [Форма отзыва] (если авторизован)                        |
-|                                                           |
-|  +-------+  +-------+  +-------+                          |
-|  | Отзыв |  | Отзыв |  | Отзыв |  ... (masonry grid)      |
-|  +-------+  +-------+  +-------+                          |
-|                                                           |
-+-----------------------------------------------------------+
-|                      FOOTER                               |
-+-----------------------------------------------------------+
++----------------------------------------------------------+
+|                                                          |
+|     СДЕЛАЙ СВОЙ САЙТ — ОПУБЛИКУЕМ БЕСПЛАТНО             |
+|                                                          |
+|     Создай уникальный дизайн в нашем конструкторе        |
+|     и получи бесплатную публикацию на 24zxc.ru           |
+|                                                          |
+|              [ Начать создание ]                         |
+|                                                          |
++----------------------------------------------------------+
+|                                                          |
+|                 САЙТЫ ПОЛЬЗОВАТЕЛЕЙ                      |
+|                                                          |
+|   +--------+   +--------+   +--------+   +--------+     |
+|   | Проект |   | Проект |   | Проект |   | Проект |     |
+|   | Preview|   | Preview|   | Preview|   | Preview|     |
+|   +--------+   +--------+   +--------+   +--------+     |
+|                                                          |
+|                   [ Показать ещё ]                       |
+|                                                          |
++----------------------------------------------------------+
 ```
 
-### 1.4. Компоненты
-
-| Файл | Описание |
-|------|----------|
-| `src/pages/Reviews.tsx` | Основная страница |
-| `src/components/reviews/ReviewCard.tsx` | Карточка отзыва |
-| `src/components/reviews/ReviewForm.tsx` | Форма добавления |
-| `src/components/reviews/GoogleAuthButton.tsx` | Кнопка входа через Google |
-| `src/components/reviews/StarRating.tsx` | Компонент рейтинга (1-5 звёзд) |
-
----
-
-## Часть 2: Игра "Веб-разработчик" (`/playground`)
-
-### 2.1. Концепция
-
-Интерактивный конструктор где пользователи могут:
-- Добавлять/удалять блоки
-- Выбирать эффекты и анимации
-- Настраивать цвета и фоны
-- Сохранять результат на уникальную страницу
-
-### 2.2. Таблица для сохранённых проектов
+### 2.2. Обновление базы данных
+Добавить флаг `is_featured` для отображения в галерее:
 
 ```sql
-CREATE TABLE playground_projects (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  slug TEXT UNIQUE NOT NULL,
-  title TEXT NOT NULL,
-  blocks JSONB NOT NULL DEFAULT '[]',
-  settings JSONB NOT NULL DEFAULT '{}',
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Публичный доступ для чтения
-ALTER TABLE playground_projects ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can read projects"
-  ON playground_projects FOR SELECT
-  USING (true);
-
-CREATE POLICY "Anyone can insert projects"
-  ON playground_projects FOR INSERT
-  WITH CHECK (true);
+ALTER TABLE playground_projects 
+ADD COLUMN is_featured BOOLEAN DEFAULT false,
+ADD COLUMN preview_image TEXT,
+ADD COLUMN author_name TEXT;
 ```
 
-### 2.3. Доступные эффекты и анимации
+### 2.3. Компонент галереи проектов
+Новый компонент `PublishedProjectsGallery.tsx`:
+- Отображает избранные проекты (is_featured = true)
+- Показывает превью, название, автора
+- Ссылка на `/p/:slug`
 
-| Категория | Эффекты |
-|-----------|---------|
-| **Fade** | fade-in, fade-out, fade-in-left, fade-in-right |
-| **Scale** | scale-in, scale-out, pulse, bounce |
-| **Slide** | slide-up, slide-down, slide-left, slide-right |
-| **Rotate** | rotate-in, rotate-slow, spin |
-| **Hover** | hover-scale, hover-glow, hover-lift, tilt-3d |
-| **Particles** | floating-particles, sparkle, shimmer |
-| **Glow** | glow-gold, glow-subtle, neon-glow |
-| **Parallax** | parallax-slow, parallax-fast |
+---
 
-### 2.4. Структура страницы Playground
+## Часть 3: Добавление в Header
+
+### 3.1. Новый пункт меню
+Добавить в `navLinks`:
+
+```tsx
+{ href: "/playground", label: "Конструктор сайтов" }
+```
+
+Разместить после "Шаблоны" для логической связи.
+
+### 3.2. Обновлённая структура Header
 
 ```text
-+-----------------------------------------------------------+
-|  [Название проекта]  [Сохранить]  [Поделиться]  [Сбросить] |
-+-----------------------------------------------------------+
-|                    |                                       |
-|   ПАНЕЛЬ БЛОКОВ    |         CANVAS (Preview)             |
-|                    |                                       |
-|   [+ Заголовок]    |   +-------------------------------+  |
-|   [+ Текст]        |   |                               |  |
-|   [+ Кнопка]       |   |      Добавленные блоки        |  |
-|   [+ Изображение]  |   |      с эффектами              |  |
-|   [+ Разделитель]  |   |                               |  |
-|   [+ Карточка]     |   +-------------------------------+  |
-|                    |                                       |
-+--------------------+---------------------------------------+
-|                                                           |
-|  ПАНЕЛЬ НАСТРОЕК ВЫБРАННОГО БЛОКА                         |
-|  [Анимация: dropdown]  [Цвет: picker]  [Размер: slider]   |
-|  [Фон: picker]  [Отступы: inputs]  [Удалить]              |
-|                                                           |
-+-----------------------------------------------------------+
-```
-
-### 2.5. Компоненты конструктора
-
-| Файл | Описание |
-|------|----------|
-| `src/pages/Playground.tsx` | Основная страница конструктора |
-| `src/pages/PlaygroundView.tsx` | Страница просмотра сохранённого проекта |
-| `src/components/playground/BlockPalette.tsx` | Панель доступных блоков |
-| `src/components/playground/Canvas.tsx` | Область предпросмотра |
-| `src/components/playground/BlockEditor.tsx` | Редактор свойств блока |
-| `src/components/playground/EffectSelector.tsx` | Выбор эффекта/анимации |
-| `src/components/playground/ColorPicker.tsx` | Выбор цвета |
-| `src/components/playground/AnimationPreview.tsx` | Превью анимации |
-| `src/hooks/use-playground.tsx` | Хук управления состоянием |
-| `src/data/playground-effects.ts` | Каталог эффектов с описаниями |
-
-### 2.6. Типы данных
-
-```typescript
-interface PlaygroundBlock {
-  id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card';
-  content: string;
-  animation?: AnimationEffect;
-  hoverEffect?: HoverEffect;
-  styles: BlockStyles;
-}
-
-interface BlockStyles {
-  backgroundColor?: string;
-  textColor?: string;
-  padding?: string;
-  fontSize?: string;
-  borderRadius?: string;
-}
-
-interface AnimationEffect {
-  name: string;
-  description: string;
-  duration?: number;
-  delay?: number;
-}
+Logo | Образовательным▼ | Шаблоны | Конструктор сайтов | Портфолио | О нас | Контакты
 ```
 
 ---
 
-## Часть 3: Обновление Footer
+## Часть 4: Улучшение UX
 
-Замена раздела "Услуги":
+### 4.1. Онбординг для новых пользователей
+При первом входе — подсказки:
+1. "Добавьте блок из панели слева"
+2. "Нажмите на блок для редактирования"
+3. "Сохраните проект для получения ссылки"
 
-```tsx
-// До
-<h4>Услуги</h4>
-<li>Веб-разработка</li>
-<li>Реклама</li>
-<li>Каталог услуг</li>
-<li>Синтагма</li>
+### 4.2. История изменений (Undo/Redo)
+Кнопки отмены/повтора последнего действия.
 
-// После
-<h4>Сообщество</h4>
-<li><Link to="/reviews">Отзывы</Link></li>
-<li><Link to="/playground">Игра "Веб-разработчик"</Link></li>
-<li><Link to="/templates">Каталог шаблонов</Link></li>
-<li><a href="#">Синтагма</a></li>
-```
+### 4.3. Копирование стилей
+Кнопка "Скопировать стили" -> "Вставить стили" между блоками.
+
+### 4.4. Быстрые пресеты стилей
+Готовые комбинации:
+- **Minimal** — белый текст, прозрачный фон
+- **Accent** — золотой текст, тёмный фон
+- **Glow** — свечение + hover-эффект
 
 ---
 
-## Часть 4: Маршрутизация
+## Часть 5: Технические изменения
 
-Добавление в `App.tsx`:
+### 5.1. Файлы для создания/изменения
 
-```tsx
-import Reviews from "./pages/Reviews";
-import Playground from "./pages/Playground";
-import PlaygroundView from "./pages/PlaygroundView";
+| Файл | Изменения |
+|------|-----------|
+| `src/components/Header.tsx` | Добавить ссылку "Конструктор сайтов" |
+| `src/pages/Playground.tsx` | Добавить галерею проектов внизу + CTA блок |
+| `src/components/playground/PublishedProjectsGallery.tsx` | Новый компонент |
+| `src/components/playground/ProjectTemplates.tsx` | Шаблоны страниц |
+| `src/components/playground/DeviceSwitcher.tsx` | Переключатель устройств |
+| `src/data/playground-effects.ts` | Новые типы блоков + градиенты |
+| `src/hooks/use-playground.tsx` | Undo/Redo функционал |
+| База данных | Миграция для новых полей |
 
-<Route path="/reviews" element={<Reviews />} />
-<Route path="/playground" element={<Playground />} />
-<Route path="/p/:slug" element={<PlaygroundView />} />
+### 5.2. Миграция базы данных
+
+```sql
+ALTER TABLE playground_projects 
+ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS preview_image TEXT,
+ADD COLUMN IF NOT EXISTS author_name TEXT DEFAULT 'Аноним';
 ```
 
 ---
 
 ## Порядок реализации
 
-1. **Настройка Google OAuth** через Lovable Cloud
-2. **Миграция базы данных** - создание таблиц `reviews` и `playground_projects`
-3. **Страница отзывов** - компоненты авторизации, форма, список
-4. **Конструктор** - блоки, эффекты, canvas, сохранение
-5. **Обновление Footer** - новые ссылки
-6. **Тестирование** - проверка потоков авторизации и сохранения
+1. **Header** — добавить ссылку "Конструктор сайтов"
+2. **CTA блок** — текст "Сделай свой сайт — опубликуем бесплатно"
+3. **Миграция БД** — добавить поля для галереи
+4. **Галерея проектов** — компонент отображения
+5. **Готовые шаблоны** — предустановки страниц
+6. **Новые блоки** — список, цитата, счётчик
+7. **Переключатель устройств** — responsive preview
+8. **Undo/Redo** — история изменений
 
 ---
 
-## Технические детали
+## Приоритетные улучшения (MVP)
 
-### Зависимости
-- `@dnd-kit` - уже установлен для drag-and-drop блоков
-- `framer-motion` - уже установлен для анимаций
-- `@lovable.dev/cloud-auth-js` - будет установлен для Google OAuth
-
-### Стилизация
-- Использование существующей дизайн-системы (`luxury-card`, `gradient-gold-text`)
-- Декоративные элементы как на других страницах (`FloatingParticles`, `GeometricShapes`)
-- Анимации из `tailwind.config.ts` и `index.css`
-
-### Безопасность
-- RLS политики для защиты данных
-- Google OAuth через Lovable Cloud (управляемое решение)
-- Валидация контента отзывов
+Для быстрого релиза реализуем:
+1. Ссылка в Header "Конструктор сайтов"
+2. CTA блок с текстом о бесплатной публикации
+3. Галерея опубликованных проектов
+4. Готовые шаблоны страниц (3-4 варианта)
