@@ -15,6 +15,7 @@ import Licensing from "./pages/Licensing";
 import About from "./pages/About";
 import Templates from "./pages/Templates";
 import TemplateDetail from "./pages/TemplateDetail";
+import TemplatePreview from "./pages/TemplatePreview";
 import Landing from "./pages/services/Landing";
 import Corporate from "./pages/services/Corporate";
 import Ecommerce from "./pages/services/Ecommerce";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/templates/:id" element={<TemplateDetail />} />
+              <Route path="/templates/:id/preview" element={<TemplatePreview />} />
               <Route path="/services/landing" element={<Landing />} />
               <Route path="/services/corporate" element={<Corporate />} />
               <Route path="/services/ecommerce" element={<Ecommerce />} />
