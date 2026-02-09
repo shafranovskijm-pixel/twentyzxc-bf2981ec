@@ -204,6 +204,14 @@ export const usePlayground = () => {
     setSelectedBlockId(null);
   }, [setBlocksWithHistory]);
 
+  const addBlocks = useCallback((newBlocks: Omit<PlaygroundBlock, 'id'>[]) => {
+    const blocksWithIds = newBlocks.map(block => ({
+      ...block,
+      id: generateId()
+    }));
+    setBlocksWithHistory(prev => [...prev, ...blocksWithIds]);
+  }, [setBlocksWithHistory]);
+
   const exportData = useCallback(() => {
     return { title: projectTitle, blocks, settings };
   }, [projectTitle, blocks, settings]);
@@ -233,6 +241,7 @@ export const usePlayground = () => {
     clearAll,
     loadTemplate,
     reorderBlocks,
+    addBlocks,
     exportData,
     importData,
     undo,
