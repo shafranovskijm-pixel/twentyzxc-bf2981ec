@@ -118,7 +118,7 @@ const projects: Project[] = [
     description: "Сайт, реклама, поддержка ФРДО.",
     tags: ["web", "ads", "support"],
     price: "24 000 ₽/год (ФРДО)",
-    url: "https://xn----7sbfldrqgb2aseye2d.xn--p1ai/",
+    url: "https://учеба-оникс.рф/",
   },
   {
     title: "Магазин «Алфавит дверей»",
