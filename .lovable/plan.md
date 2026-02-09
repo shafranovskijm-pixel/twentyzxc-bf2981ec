@@ -1,118 +1,66 @@
 
 
-# Галерея проектов с админ-управлением и форум обратной связи
+# Улучшение навигации и закрепление холста в конструкторе
 
-## 1. Галерея всех проектов внизу страницы /playground
+## Проблема
+Сейчас редактор расположен внутри обычной страницы с прокруткой. Когда пользователь скроллит вниз (к галерее/форуму), левая панель и холст уезжают вверх. Левая панель перегружена: шаблоны + блоки + настройки -- всё в одном столбце, и до низа сложно добраться.
 
-Сейчас `PublishedProjectsGallery` показывает только проекты с `is_featured = true`. Изменим на показ **всех** проектов, а для админа добавим кнопку удаления.
+## Решение
 
-### Что изменится:
-- **Убрать фильтр `is_featured`** -- показывать все сохранённые проекты
-- **Добавить админ-кнопку удаления** на каждой карточке (красный крестик с подтверждением)
-- **Добавить RLS-политику DELETE** для admin на таблицу `playground_projects` (сейчас удаление заблокировано)
-- **Добавить RLS-политику UPDATE** для admin (для управления `is_featured`)
-- Использовать существующий хук `useAdminAuth` для проверки роли
+### 1. Закрепить рабочую область редактора
+Область редактора (левая панель + холст + правая панель) получает фиксированную высоту `calc(100vh - toolbar)` и собственную прокрутку. Холст прокручивается внутри своего контейнера, а не вместе со всей страницей. Это значит, что:
+- Тулбар (название, кнопки сохранить/отменить) всегда виден сверху
+- Левая панель прокручивается отдельно
+- Холст прокручивается отдельно
+- Правая панель (редактор блока) прокручивается отдельно
+- Секции "Галерея" и "Форум" находятся ниже, за пределами редактора, к ним можно прокрутить всю страницу
 
-### Файлы:
-- `src/components/playground/PublishedProjectsGallery.tsx` -- добавить проп isAdmin, кнопку удаления, убрать фильтр по featured
-- `src/pages/Playground.tsx` -- подключить `useAdminAuth`, передать isAdmin в галерею
-- **Миграция БД** -- добавить DELETE и UPDATE политики для admin на `playground_projects`
+### 2. Свернуть левую панель в аккордеон
+Вместо длинного списка всего подряд -- 3 аккордеон-секции:
+- **Шаблоны страниц** (8 шаблонов) -- свёрнуто по умолчанию
+- **Добавить блок** (блоки + примеры) -- развёрнуто по умолчанию
+- **Настройки холста** (цвет, паттерн, шрифт) -- свёрнуто по умолчанию
 
----
+Это сократит длину левой панели в 2-3 раза.
 
-## 2. Форум предложений (Feedback)
-
-Новая секция под галереей проектов -- "Предложения и идеи". Пользователи входят через **Google** и оставляют предложения по улучшению конструктора.
-
-### Структура:
-- Новая таблица `playground_feedback` (id, user_id, user_name, user_avatar, content, created_at, status)
-- Google-авторизация через `lovable.auth.signInWithOAuth("google")`
-- Форма: текстовое поле + кнопка "Отправить"
-- Список предложений с аватаром автора и датой
-- Админ может удалять предложения
-
-### Файлы:
-- **Миграция БД** -- создать таблицу `playground_feedback` с RLS
-- `src/components/playground/FeedbackSection.tsx` -- новый компонент с формой и списком
-- `src/pages/Playground.tsx` -- добавить секцию под галереей
-
----
-
-## 3. Доступные способы авторизации
-
-На данный момент поддерживаются:
-- **Google** -- полностью работает, уже настроено
-- **Apple** -- поддерживается, но не настроено
-
-Других OAuth-провайдеров (GitHub, Discord, Facebook и т.д.) платформа пока не поддерживает.
+### 3. Переключатель устройств в тулбар
+Сейчас переключатель Desktop/Tablet/Mobile находится над холстом и занимает место. Перенесём его в верхний тулбар рядом с кнопками.
 
 ---
 
 ## Техническая часть
 
-### Миграция БД
+### Изменения в `src/pages/Playground.tsx`
+- Убрать `sticky top-24` с сайдбаров
+- Сделать основную область редактора с фиксированной высотой: `h-[calc(100vh-theme_height)]` и `overflow-hidden`
+- Каждая колонка (левая, центр, правая) получает `overflow-y-auto` для независимой прокрутки
+- Перенести device switcher из центральной колонки в тулбар
+- Обернуть содержимое левой панели в компонент `Accordion` из shadcn/ui с тремя секциями
 
-```sql
--- Разрешить админам удалять проекты из playground
-CREATE POLICY "Admins can delete playground projects"
-ON public.playground_projects FOR DELETE
-TO authenticated
-USING (has_role(auth.uid(), 'admin'));
+### Структура layout после изменений
 
--- Разрешить админам обновлять проекты
-CREATE POLICY "Admins can update playground projects"
-ON public.playground_projects FOR UPDATE
-TO authenticated
-USING (has_role(auth.uid(), 'admin'));
-
--- Таблица предложений
-CREATE TABLE public.playground_feedback (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  user_name text NOT NULL,
-  user_avatar text,
-  content text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.playground_feedback ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can read feedback"
-ON public.playground_feedback FOR SELECT
-TO authenticated
-USING (true);
-
-CREATE POLICY "Authenticated users can insert feedback"
-ON public.playground_feedback FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own feedback"
-ON public.playground_feedback FOR DELETE
-TO authenticated
-USING (auth.uid() = user_id);
-
-CREATE POLICY "Admins can delete any feedback"
-ON public.playground_feedback FOR DELETE
-TO authenticated
-USING (has_role(auth.uid(), 'admin'));
+```text
++--------------------------------------------------+
+| Header (сайт)                                     |
++--------------------------------------------------+
+| PlaygroundCTA                                      |
++--------------------------------------------------+
+| Toolbar: [Title] [Undo][Redo][Device][Save][...]  |
++--------------------------------------------------+
+| Left (scroll) | Canvas (scroll)   | Right (scroll)|
+| [v] Шаблоны   | +----------------+| Редактор      |
+| [^] Блоки     | |                || блока         |
+|   [grid]      | |   Canvas       ||               |
+| [v] Настройки | |                ||               |
+|               | +----------------+|               |
++--------------------------------------------------+
+| Gallery                                            |
+| Feedback                                           |
+| Footer                                             |
++--------------------------------------------------+
 ```
 
-### Изменения в файлах
+### Файлы для изменения
+- **`src/pages/Playground.tsx`** -- основные изменения layout: фиксированная высота рабочей области, аккордеон в левой панели, device switcher в тулбаре, независимая прокрутка колонок
+- Никакие другие файлы менять не нужно -- `BlockPalette`, `Canvas`, `BlockEditor`, `ProjectTemplates`, `CanvasSettings` остаются без изменений, просто оборачиваются в аккордеон-секции на уровне страницы
 
-1. **`src/components/playground/PublishedProjectsGallery.tsx`**
-   - Убрать `.eq("is_featured", true)` -- показывать все проекты
-   - Принимать проп `isAdmin: boolean`
-   - Добавить кнопку удаления с AlertDialog на каждой карточке (видна только админу)
-   - Функция `handleDelete` -- удаление из `playground_projects`
-
-2. **`src/components/playground/FeedbackSection.tsx`** (новый файл)
-   - Google-авторизация через `lovable.auth.signInWithOAuth("google")`
-   - Форма ввода предложения
-   - Список предложений с аватарами
-   - Кнопка удаления для автора и админа
-
-3. **`src/pages/Playground.tsx`**
-   - Импортировать `useAdminAuth`
-   - Передать `isAdmin` в `PublishedProjectsGallery`
-   - Добавить `FeedbackSection` после галереи
