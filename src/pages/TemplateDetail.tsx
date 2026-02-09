@@ -16,10 +16,8 @@ import {
   Shield,
   Headphones,
   Eye,
-  Star,
   Play,
-  TrendingUp,
-  Users
+  TrendingUp
 } from "lucide-react";
 import { getTemplateById, getCategoryByTemplateId } from "@/data/templates";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -113,22 +111,6 @@ const TemplateDetail = () => {
                 {template.name}
               </h1>
 
-              {/* Rating & Orders */}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-4 h-4 ${i < Math.floor(template.rating) ? "text-primary fill-primary" : "text-muted"}`} 
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-muted-foreground">{template.rating}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{template.ordersCount} заказов</span>
-                </div>
-              </div>
 
               <div className="flex flex-wrap gap-2 mb-6">
                 {template.tags.map((tag) => (
