@@ -1,19 +1,200 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, ShoppingBag, Search, ChevronRight, ChevronLeft,
   Star, Truck, Shield, Award, Video, Phone, X, MapPin,
-  Eye, Clock, Package, Sparkles, ArrowRight
+  Eye, Clock, Package, Sparkles, ArrowRight, RotateCcw, ZoomIn, ZoomOut, Maximize2
 } from "lucide-react";
 import { Template } from "@/data/templates";
 import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
 import { ARBadge } from "../shared/ARBadge";
-import { Viewer360, Mini360Badge } from "../shared/Viewer360";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
 import { ImageWithFallback } from "../../ImageWithFallback";
 
 const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
+
+// 360° Product Viewer Component
+interface Product360ViewerProps {
+  rotation: number;
+  setRotation: (val: number) => void;
+  isDragging: boolean;
+  setIsDragging: (val: boolean) => void;
+}
+
+const Product360Viewer = ({ rotation, setRotation, isDragging, setIsDragging }: Product360ViewerProps) => {
+  const startXRef = useRef(0);
+  const [isAutoRotating, setIsAutoRotating] = useState(false);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setIsAutoRotating(false);
+    startXRef.current = e.clientX;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const delta = e.clientX - startXRef.current;
+    if (Math.abs(delta) > 5) {
+      setRotation((rotation + delta * 0.5) % 360);
+      startXRef.current = e.clientX;
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setIsAutoRotating(false);
+    startXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const delta = e.touches[0].clientX - startXRef.current;
+    if (Math.abs(delta) > 5) {
+      setRotation((rotation + delta * 0.5) % 360);
+      startXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  return (
+    <div className="relative max-w-md mx-auto">
+      {/* 360° Badge */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          className="w-5 h-5 rounded-full border-2 border-dashed border-white/60"
+        />
+        <span className="text-sm font-medium text-white">360°</span>
+      </div>
+
+      {/* Main viewer area */}
+      <div
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="relative aspect-square rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-emerald-500/20 overflow-hidden cursor-grab active:cursor-grabbing select-none"
+      >
+        {/* Background glow */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-teal-900/20" />
+        <motion.div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        />
+
+        {/* 3D rotating product representation */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <motion.div
+            style={{ rotateY: rotation }}
+            className="relative w-48 h-48"
+          >
+            {/* Jewelry box / product placeholder */}
+            <div 
+              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-2xl"
+              style={{ 
+                transform: `perspective(500px) rotateY(${rotation}deg)`,
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              {/* Front face */}
+              <div className="absolute inset-0 rounded-2xl border border-emerald-400/30 flex items-center justify-center">
+                <Sparkles className="w-16 h-16 text-emerald-200/60" />
+              </div>
+              {/* Shine effect */}
+              <motion.div 
+                className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-transparent via-white/20 to-transparent"
+                animate={{ 
+                  opacity: [0.2, 0.5, 0.2],
+                  x: [-100, 100]
+                }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Drag hint */}
+        <AnimatePresence>
+          {!isDragging && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            >
+              <motion.div
+                animate={{ x: [-20, 20, -20] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm"
+              >
+                <span className="text-sm text-white/70">← Перетащите для вращения →</span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Rotation indicator */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm">
+          <RotateCcw className="w-4 h-4 text-white/60" />
+          <span className="text-sm text-white/80">{Math.round(Math.abs(rotation % 360))}°</span>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-center gap-2 mt-4">
+        <button
+          onClick={() => setIsAutoRotating(!isAutoRotating)}
+          className={`p-2 rounded-lg transition-colors ${
+            isAutoRotating 
+              ? "bg-emerald-500 text-white" 
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+          }`}
+        >
+          <RotateCcw className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+          <ZoomOut className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+          <ZoomIn className="w-5 h-5" />
+        </button>
+        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
+          <Maximize2 className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* Frame indicator dots */}
+      <div className="flex justify-center gap-1 mt-3">
+        {[0, 1, 2, 3].map((i) => {
+          const isActive = Math.floor((rotation % 360) / 90) === i || 
+                          (rotation < 0 && Math.floor((360 + (rotation % 360)) / 90) === i);
+          return (
+            <button
+              key={i}
+              onClick={() => setRotation(i * 90)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                isActive ? "bg-emerald-500 w-4" : "bg-zinc-700 hover:bg-zinc-600"
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 interface PremiumGalleryPreviewProps {
   template: Template;
@@ -22,8 +203,9 @@ interface PremiumGalleryPreviewProps {
 export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) => {
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
-  const [show360, setShow360] = useState(false);
   const [selectedCity, setSelectedCity] = useState("moscow");
+  const [heroRotation, setHeroRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const cities = [
     { id: "moscow", name: "Москва", days: "1-2", price: 0 },
@@ -133,28 +315,19 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
             </div>
           </motion.div>
 
-          {/* Hero product with 360 */}
+          {/* Hero product with 360° rotation */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            {show360 ? (
-              <Viewer360 className="max-w-md mx-auto" />
-            ) : (
-              <div className="relative aspect-square max-w-md mx-auto">
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-emerald-900/30 to-teal-900/30 border border-emerald-500/20" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-48 h-48 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 blur-xl" />
-                  <Package className="absolute w-24 h-24 text-emerald-500/50" />
-                </div>
-                <Mini360Badge 
-                  onClick={() => setShow360(true)} 
-                  className="absolute bottom-4 left-1/2 -translate-x-1/2"
-                />
-              </div>
-            )}
+            <Product360Viewer 
+              rotation={heroRotation}
+              setRotation={setHeroRotation}
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+            />
           </motion.div>
         </div>
       </section>
