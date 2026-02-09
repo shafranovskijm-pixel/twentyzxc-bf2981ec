@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { BlockPalette } from "@/components/playground/BlockPalette";
 import { Canvas } from "@/components/playground/Canvas";
 import { BlockEditor } from "@/components/playground/BlockEditor";
-import { ProjectTemplates } from "@/components/playground/ProjectTemplates";
+import { ProjectTemplates, PageTemplatesList, BlockExamplesList } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
 import { FeedbackSection } from "@/components/playground/FeedbackSection";
@@ -273,11 +273,23 @@ const Playground = () => {
                     <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
                       <span className="flex items-center gap-2">
                         <Layout className="w-4 h-4" />
-                        Шаблоны страниц
+                        Готовые шаблоны
                       </span>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <ProjectTemplates onSelectTemplate={handleSelectTemplate} onAddBlocks={addBlocks} />
+                      <PageTemplatesList onSelectTemplate={handleSelectTemplate} />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="examples" className="border-border">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <Puzzle className="w-4 h-4" />
+                        Примеры блоков
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <BlockExamplesList onAddBlocks={addBlocks} />
                     </AccordionContent>
                   </AccordionItem>
 
