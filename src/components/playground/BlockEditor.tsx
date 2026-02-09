@@ -1,10 +1,22 @@
-import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link } from "lucide-react";
-import { PlaygroundBlock, ANIMATION_EFFECTS, HOVER_EFFECTS, COLOR_PRESETS } from "@/data/playground-effects";
+import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link, Clipboard, ClipboardPaste } from "lucide-react";
+import { PlaygroundBlock, ANIMATION_EFFECTS, HOVER_EFFECTS, COLOR_PRESETS, BlockStyles } from "@/data/playground-effects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+
+const FONT_SIZE_PRESETS = [
+  { label: 'XS', value: '12px' },
+  { label: 'S', value: '14px' },
+  { label: 'M', value: '16px' },
+  { label: 'L', value: '20px' },
+  { label: 'XL', value: '28px' },
+  { label: '2XL', value: '36px' },
+  { label: '3XL', value: '48px' },
+  { label: '4XL', value: '64px' },
+];
 
 interface BlockEditorProps {
   block: PlaygroundBlock;
@@ -13,6 +25,9 @@ interface BlockEditorProps {
   onDelete: () => void;
   onDuplicate: () => void;
   onMove: (direction: 'up' | 'down') => void;
+  copiedStyles: BlockStyles | null;
+  onCopyStyles: () => void;
+  onPasteStyles: () => void;
 }
 
 export const BlockEditor = ({
@@ -21,12 +36,15 @@ export const BlockEditor = ({
   onUpdateStyles,
   onDelete,
   onDuplicate,
-  onMove
+  onMove,
+  copiedStyles,
+  onCopyStyles,
+  onPasteStyles
 }: BlockEditorProps) => {
   return (
     <div className="space-y-6">
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="icon" onClick={() => onMove('up')}>
           <ChevronUp className="w-4 h-4" />
         </Button>
@@ -35,6 +53,12 @@ export const BlockEditor = ({
         </Button>
         <Button variant="outline" size="icon" onClick={onDuplicate}>
           <Copy className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="icon" onClick={onCopyStyles} title="Копировать стиль">
+          <Clipboard className="w-4 h-4" />
+        </Button>
+        <Button variant="outline" size="icon" onClick={onPasteStyles} disabled={!copiedStyles} title="Вставить стиль">
+          <ClipboardPaste className="w-4 h-4" />
         </Button>
         <Button variant="destructive" size="icon" onClick={onDelete}>
           <Trash2 className="w-4 h-4" />
@@ -302,11 +326,24 @@ export const BlockEditor = ({
       {/* Font Size */}
       <div className="space-y-2">
         <Label>Размер шрифта</Label>
+        <div className="flex gap-1 flex-wrap">
+          {FONT_SIZE_PRESETS.map((preset) => (
+            <Button
+              key={preset.value}
+              size="sm"
+              variant={block.styles.fontSize === preset.value ? 'default' : 'outline'}
+              onClick={() => onUpdateStyles({ fontSize: preset.value })}
+              className="text-[10px] h-7 px-2 min-w-0"
+            >
+              {preset.label}
+            </Button>
+          ))}
+        </div>
         <Input
           value={block.styles.fontSize || '16px'}
           onChange={(e) => onUpdateStyles({ fontSize: e.target.value })}
-          className="bg-secondary/50 border-border"
-          placeholder="16px"
+          className="bg-secondary/50 border-border text-xs h-8"
+          placeholder="Свой размер, напр. 24px"
         />
       </div>
 

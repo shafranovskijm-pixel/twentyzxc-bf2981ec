@@ -59,6 +59,37 @@ export const CanvasSettings = ({ settings, onSettingsChange }: CanvasSettingsPro
         Настройки холста
       </h3>
 
+      {/* Quick Color Themes */}
+      <div className="space-y-2">
+        <Label className="text-xs">Быстрая тема</Label>
+        <div className="grid grid-cols-1 gap-1.5">
+          {[
+            { name: 'Тёмный минимализм', bg: '#0a0a0a', pattern: 'dots' },
+            { name: 'Ночное небо', bg: '#0f172a', pattern: 'cross' },
+            { name: 'Тёплый уголь', bg: '#1c1917', pattern: 'grid' },
+            { name: 'Глубокий космос', bg: '#020617', pattern: 'diagonal' },
+            { name: 'Золото-чёрный', bg: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a0a 50%, #2a1f0a 100%)', pattern: 'dots' },
+          ].map((theme) => (
+            <button
+              key={theme.name}
+              onClick={() => onSettingsChange({ ...settings, backgroundColor: theme.bg, backgroundPattern: theme.pattern })}
+              className={cn(
+                "flex items-center gap-2 px-2.5 py-1.5 rounded border text-xs text-left hover:border-primary/50 transition-colors",
+                settings.backgroundColor === theme.bg && (settings.backgroundPattern || 'none') === theme.pattern
+                  ? "border-primary bg-primary/10"
+                  : "border-border"
+              )}
+            >
+              <span
+                className="w-5 h-5 rounded shrink-0 border border-border/50"
+                style={{ background: theme.bg }}
+              />
+              {theme.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Solid colors */}
       <div className="space-y-2">
         <Label className="text-xs">Цвет фона</Label>

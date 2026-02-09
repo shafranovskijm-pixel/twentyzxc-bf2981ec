@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom } from "lucide-react";
+import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlaygroundBlock, BlockStyles } from "@/data/playground-effects";
 
@@ -173,6 +173,92 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'footer', content: '© 2026 CloudSync|support@cloudsync.io|+7 (800) 123-45-67', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   }
+  ,{
+    id: 'fitness',
+    name: 'Фитнес-клуб',
+    description: 'Зал с расписанием и CTA',
+    icon: <Dumbbell className="w-5 h-5" />,
+    blocks: [
+      { type: 'navbar', content: 'Главная|#hero\nРасписание|#schedule\nО нас|#about', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: '💪 POWER GYM', anchorId: 'hero', animation: 'scale-bounce', styles: { ...ds, fontSize: '56px', padding: '48px 16px 8px' } },
+      { type: 'text', content: 'Тренируйся с лучшими. Результат гарантирован.', animation: 'fade-in-up', styles: { ...ds, fontSize: '20px', textColor: '#888888', padding: '8px 16px 24px' } },
+      { type: 'button', content: 'Записаться на тренировку', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'spacer', content: '', styles: { ...ds, padding: '24px' } },
+      { type: 'counter', content: '500+|Клиентов', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '20|Тренеров', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '15|Программ', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
+      { type: 'heading', content: 'Расписание', anchorId: 'schedule', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'list', content: '🏋️ Силовая тренировка — Пн, Ср, Пт 10:00\n🧘 Йога — Вт, Чт 18:00\n🥊 Бокс — Пн, Ср 19:00\n🏃 Кардио — Каждый день 8:00\n💃 Танцы — Сб 12:00', animation: 'fade-in-up', styles: { ...ds, padding: '16px 32px', textAlign: 'left', backgroundColor: '#1a1a1a', borderRadius: '12px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&h=400&fit=crop', anchorId: 'about', animation: 'fade-in', hoverEffect: 'hover-scale', styles: { ...ds, padding: '16px', borderRadius: '16px' } },
+      { type: 'footer', content: '© 2026 Power Gym|gym@mail.com|+7 (999) 888-77-66', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  },
+  {
+    id: 'online-course',
+    name: 'Онлайн-курс',
+    description: 'Лендинг обучения',
+    icon: <BookOpen className="w-5 h-5" />,
+    blocks: [
+      { type: 'navbar', content: 'Программа|#program\nОтзывы|#reviews\nЗаписаться|#cta', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'text', content: '🎓 ОНЛАЙН-КУРС', animation: 'fade-in', styles: { ...ds, fontSize: '14px', textColor: '#d4a855', padding: '32px 16px 8px' } },
+      { type: 'heading', content: 'Веб-разработка с нуля', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '8px 16px' } },
+      { type: 'text', content: 'За 3 месяца вы освоите HTML, CSS, JavaScript и React', animation: 'fade-in-up', styles: { ...ds, fontSize: '18px', textColor: '#888888', padding: '8px 16px 24px' } },
+      { type: 'button', content: 'Начать обучение', animation: 'scale-bounce', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
+      { type: 'heading', content: 'Программа курса', anchorId: 'program', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'card', content: '📘 Модуль 1: Основы HTML и CSS\nСемантическая вёрстка, Flexbox, Grid, анимации', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'card', content: '⚡ Модуль 2: JavaScript\nПеременные, функции, DOM, события, async/await', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'card', content: '⚛️ Модуль 3: React\nКомпоненты, хуки, роутинг, API-интеграция', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'quote', content: 'Этот курс изменил мою жизнь! Через 4 месяца я нашёл работу Junior-разработчиком.|Андрей С., выпускник', anchorId: 'reviews', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px 32px' } },
+      { type: 'counter', content: '1200+|Выпускников', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '94%|Трудоустройство', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'button', content: 'Записаться на курс — 29 900₽', anchorId: 'cta', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'footer', content: '© 2026 WebSchool|info@webschool.ru', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  },
+  {
+    id: 'photographer',
+    name: 'Фотограф',
+    description: 'Минималистичное портфолио',
+    icon: <Camera className="w-5 h-5" />,
+    blocks: [
+      { type: 'heading', content: 'Анна Волкова', animation: 'blur-in', styles: { ...ds, fontSize: '48px', padding: '32px 16px 4px' } },
+      { type: 'text', content: 'Фотограф • Москва', animation: 'fade-in-up', styles: { ...ds, fontSize: '18px', textColor: '#d4a855', padding: '4px 16px 24px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=600&h=400&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&h=400&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'quote', content: 'Фотография — это искусство замечать.|Эллиот Эрвитт', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '32px' } },
+      { type: 'text', content: 'Instagram • Telegram • VK', animation: 'fade-in', styles: { ...ds, fontSize: '14px', textColor: '#888888', padding: '8px 16px' } },
+      { type: 'button', content: 'Забронировать съёмку', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } }
+    ]
+  },
+  {
+    id: 'it-agency',
+    name: 'IT-агентство',
+    description: 'Технологичный лендинг',
+    icon: <Code2 className="w-5 h-5" />,
+    blocks: [
+      { type: 'navbar', content: 'Услуги|#services\nМетрики|#metrics\nКонтакт|#contact', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: '{ DevStudio }', animation: 'fade-in-up', styles: { ...ds, fontSize: '52px', padding: '32px 16px 4px' } },
+      { type: 'text', content: 'Полный цикл разработки: от идеи до продакшена', animation: 'fade-in-up', styles: { ...ds, fontSize: '20px', textColor: '#888888', padding: '4px 16px 24px' } },
+      { type: 'button', content: 'Обсудить проект', animation: 'scale-bounce', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'spacer', content: '', styles: { ...ds, padding: '16px' } },
+      { type: 'counter', content: '200+|Проектов', anchorId: 'metrics', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '50+|Клиентов', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '8 лет|На рынке', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
+      { type: 'heading', content: 'Наши услуги', anchorId: 'services', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'card', content: '🎨 Дизайн\nUI/UX дизайн, брендинг, прототипирование', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'card', content: '💻 Разработка\nФронтенд, бэкенд, мобильные приложения', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'card', content: '📈 Маркетинг\nSEO, контекстная реклама, аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
+      { type: 'button', content: 'Связаться с нами', anchorId: 'contact', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } },
+      { type: 'footer', content: '© 2026 DevStudio|hello@devstudio.ru|+7 (495) 000-00-00', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
+    ]
+  }
 ];
 
 export const BLOCK_EXAMPLES: BlockExample[] = [
@@ -270,6 +356,67 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     blocks: [
       { type: 'image', content: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '8px', borderRadius: '12px' } },
       { type: 'image', content: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, padding: '8px', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'pricing-card',
+    name: 'Ценовая карточка',
+    description: 'Тариф с ценой',
+    icon: <DollarSign className="w-4 h-4" />,
+    blocks: [
+      { type: 'card', content: '⭐ Премиум\n\n4 990₽ / мес\n\n✅ Безлимитные проекты\n✅ Приоритетная поддержка\n✅ Индивидуальный дизайн\n✅ SEO-оптимизация\n✅ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '32px 24px', textAlign: 'center', borderRadius: '16px' } },
+      { type: 'button', content: 'Выбрать тариф', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '12px' } }
+    ]
+  },
+  {
+    id: 'team-section',
+    name: 'Команда',
+    description: '3 члена команды',
+    icon: <Users className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Наша команда', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'card', content: '👤 Алексей Иванов\nCEO & Основатель', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'card', content: '👤 Мария Петрова\nCTO & Архитектор', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
+      { type: 'card', content: '👤 Дмитрий Козлов\nLead Designer', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'promo-timer',
+    name: 'Таймер акции',
+    description: 'Обратный отсчёт',
+    icon: <Zap className="w-4 h-4" />,
+    blocks: [
+      { type: 'text', content: '🔥 АКЦИЯ', animation: 'pulse', styles: { ...ds, fontSize: '14px', textColor: '#d4a855', padding: '16px 16px 4px' } },
+      { type: 'heading', content: 'Скидка заканчивается', animation: 'scale-bounce', styles: { ...ds, fontSize: '36px', padding: '4px 16px' } },
+      { type: 'counter', content: '23:59:59|До конца акции', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, fontSize: '24px', padding: '16px' } },
+      { type: 'button', content: 'Успеть купить', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } }
+    ]
+  },
+  {
+    id: 'gallery-six',
+    name: 'Галерея 6 фото',
+    description: 'Мини-портфолио',
+    icon: <Images className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Галерея', animation: 'fade-in-up', styles: { ...ds, fontSize: '28px', padding: '16px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=400&h=300&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=300&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=300&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1433086966358-54859d0ed716?w=400&h=300&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&h=300&fit=crop', animation: 'fade-in-right', hoverEffect: 'hover-scale', styles: { ...ds, padding: '4px', borderRadius: '8px' } }
+    ]
+  },
+  {
+    id: 'three-steps',
+    name: 'Колонки "3 шага"',
+    description: 'Процесс из 3 шагов',
+    icon: <Columns3 className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Как мы работаем', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'card', content: '01\nОбсуждение\nВыясняем ваши цели, задачи и пожелания', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
+      { type: 'card', content: '02\nРазработка\nСоздаём дизайн и программируем решение', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
+      { type: 'card', content: '03\nЗапуск\nТестируем, запускаем и обеспечиваем поддержку', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
     ]
   }
 ];
