@@ -29,6 +29,9 @@ import LadyFrost from "./pages/projects/LadyFrost";
 import PrNutrition from "./pages/projects/PrNutrition";
 import Status from "./pages/projects/Status";
 import SpinRide from "./pages/projects/SpinRide";
+import Reviews from "./pages/Reviews";
+import Playground from "./pages/Playground";
+import PlaygroundView from "./pages/PlaygroundView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +69,9 @@ const App = () => (
                 <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
                 <Route path="/projects/status" element={<Status />} />
                 <Route path="/projects/spinride" element={<SpinRide />} />
+                <Route path="/reviews" element={<Reviews />} />
+                <Route path="/playground" element={<Playground />} />
+                <Route path="/p/:slug" element={<PlaygroundView />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
