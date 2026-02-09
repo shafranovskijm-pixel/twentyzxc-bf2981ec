@@ -1,3 +1,4 @@
+// Portfolio projects data hooks
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,17 +24,15 @@ export interface PortfolioSettings {
   all_title: string;
   updated_at: string;
 }
+interface FetchOptions {
+  select?: string;
+  order?: { column: string; ascending?: boolean };
+  eq?: { column: string; value: string };
+  single?: boolean;
+}
 
 // Helper to make requests to tables not in generated types
-const fetchFromTable = async <T>(
-  table: string,
-  options?: {
-    select?: string;
-    order?: { column: string; ascending?: boolean };
-    eq?: { column: string; value: string };
-    single?: boolean;
-  }
-): Promise<T> => {
+async function fetchFromTable<T>(table: string, options?: FetchOptions): Promise<T> {
   const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}`;
   const params = new URLSearchParams();
   
@@ -65,14 +64,14 @@ const fetchFromTable = async <T>(
   }
   
   return response.json();
-};
+}
 
-const mutateTable = async (
+async function mutateTable(
   table: string,
   method: "POST" | "PATCH" | "DELETE",
   data?: Record<string, unknown>,
   eq?: { column: string; value: string }
-): Promise<unknown> => {
+): Promise<unknown> {
   let url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/${table}`;
   
   if (eq) {
@@ -102,17 +101,15 @@ const mutateTable = async (
   
   if (method === "DELETE") return null;
   return response.json();
-};
+}
 
 export const usePortfolioProjects = () => {
   return useQuery({
     queryKey: ["portfolio-projects"],
     queryFn: async () => {
-      console.log("Fetching portfolio projects via REST...");
       const data = await fetchFromTable<PortfolioProject[]>("portfolio_projects", {
         order: { column: "sort_order", ascending: true },
       });
-      console.log("Portfolio projects loaded:", data?.length);
       return data || [];
     },
   });
@@ -122,16 +119,13 @@ export const usePortfolioSettings = () => {
   return useQuery({
     queryKey: ["portfolio-settings"],
     queryFn: async () => {
-      console.log("Fetching portfolio settings via REST...");
       try {
         const data = await fetchFromTable<PortfolioSettings>("portfolio_settings", {
           eq: { column: "id", value: "main" },
           single: true,
         });
-        console.log("Portfolio settings loaded:", data);
         return data;
       } catch {
-        console.log("No settings found, using defaults");
         return null;
       }
     },
