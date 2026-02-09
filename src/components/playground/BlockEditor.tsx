@@ -169,11 +169,45 @@ export const BlockEditor = ({
           <Link className="w-3.5 h-3.5" />
           Ссылка
         </Label>
+        {block.type === 'button' && (
+          <div className="flex gap-1.5 flex-wrap">
+            {[
+              { label: 'Telegram', prefix: 'https://t.me/', placeholder: 'username' },
+              { label: 'WhatsApp', prefix: 'https://wa.me/', placeholder: '79001234567' },
+              { label: 'Звонок', prefix: 'tel:', placeholder: '+79001234567' },
+              { label: 'Email', prefix: 'mailto:', placeholder: 'you@mail.com' },
+            ].map((preset) => {
+              const isActive = block.link?.startsWith(preset.prefix);
+              return (
+                <Button
+                  key={preset.prefix}
+                  size="sm"
+                  variant={isActive ? 'default' : 'outline'}
+                  className="text-xs h-7 px-2.5"
+                  onClick={() => {
+                    if (isActive) return;
+                    onUpdate({ link: preset.prefix });
+                  }}
+                >
+                  {preset.label}
+                </Button>
+              );
+            })}
+          </div>
+        )}
         <Input
           value={block.link || ''}
           onChange={(e) => onUpdate({ link: e.target.value || undefined })}
           className="bg-secondary/50 border-border"
-          placeholder="https://example.com"
+          placeholder={
+            block.type === 'button'
+              ? block.link?.startsWith('https://t.me/') ? 'https://t.me/username'
+              : block.link?.startsWith('https://wa.me/') ? 'https://wa.me/79001234567'
+              : block.link?.startsWith('tel:') ? 'tel:+79001234567'
+              : block.link?.startsWith('mailto:') ? 'mailto:you@mail.com'
+              : 'https://example.com'
+              : 'https://example.com'
+          }
         />
       </div>
 
