@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3 } from "lucide-react";
+import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3, LayoutList, FileText, Share2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlaygroundBlock, BlockStyles } from "@/data/playground-effects";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface Template {
   id: string;
@@ -418,6 +419,52 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
       { type: 'card', content: '02\nРазработка\nСоздаём дизайн и программируем решение', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
       { type: 'card', content: '03\nЗапуск\nТестируем, запускаем и обеспечиваем поддержку', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
     ]
+  },
+  {
+    id: 'form-example',
+    name: 'Форма заявки',
+    description: 'Имя + контакт + кнопка',
+    icon: <FileText className="w-4 h-4" />,
+    blocks: [
+      { type: 'form' as const, content: 'Оставьте заявку|Имя|Телефон или Email|Сообщение|Отправить', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
+    ]
+  },
+  {
+    id: 'socials-example',
+    name: 'Соцсети',
+    description: 'Ссылки на соцсети',
+    icon: <Share2 className="w-4 h-4" />,
+    blocks: [
+      { type: 'socials' as const, content: 'telegram|https://t.me/example\ninstagram|https://instagram.com/example\nvk|https://vk.com/example', animation: 'fade-in-up', styles: { ...ds, padding: '16px' } }
+    ]
+  }
+];
+
+const BLOCK_EXAMPLE_CATEGORIES: { name: string; icon: React.ReactNode; ids: string[] }[] = [
+  {
+    name: 'Структура сайта',
+    icon: <LayoutList className="w-4 h-4" />,
+    ids: ['navbar-example', 'footer-example', 'three-steps']
+  },
+  {
+    name: 'Контент',
+    icon: <Type className="w-4 h-4" />,
+    ids: ['hero-title', 'features-list', 'faq-card', 'youtube-video']
+  },
+  {
+    name: 'Статистика и акции',
+    icon: <BarChart3 className="w-4 h-4" />,
+    ids: ['stats-row', 'promo-timer', 'testimonial']
+  },
+  {
+    name: 'Визуал и галереи',
+    icon: <Images className="w-4 h-4" />,
+    ids: ['gallery-two', 'gallery-six', 'cta-section']
+  },
+  {
+    name: 'Бизнес',
+    icon: <DollarSign className="w-4 h-4" />,
+    ids: ['pricing-card', 'team-section', 'form-example', 'socials-example']
   }
 ];
 
@@ -456,29 +503,43 @@ interface BlockExamplesListProps {
   onAddBlocks: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
 }
 
+const examplesMap = new Map(BLOCK_EXAMPLES.map(e => [e.id, e]));
+
 export const BlockExamplesList = ({ onAddBlocks }: BlockExamplesListProps) => (
-  <div className="grid grid-cols-2 gap-2">
-    {BLOCK_EXAMPLES.map((example, index) => (
-      <motion.div
-        key={example.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.03 }}
-      >
-        <Button
-          variant="outline"
-          className="w-full h-auto py-2.5 px-2.5 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
-          onClick={() => onAddBlocks(example.blocks)}
-        >
-          <span className="text-primary">{example.icon}</span>
-          <span className="text-[11px] font-medium">{example.name}</span>
-          <span className="text-[10px] text-muted-foreground leading-tight">
-            {example.description}
+  <Accordion type="multiple" className="space-y-0">
+    {BLOCK_EXAMPLE_CATEGORIES.map((cat) => (
+      <AccordionItem key={cat.name} value={cat.name} className="border-b-0">
+        <AccordionTrigger className="py-2 px-1 text-xs font-medium hover:no-underline gap-2 [&[data-state=open]>svg]:rotate-180">
+          <span className="flex items-center gap-2">
+            <span className="text-primary">{cat.icon}</span>
+            {cat.name}
           </span>
-        </Button>
-      </motion.div>
+        </AccordionTrigger>
+        <AccordionContent className="pb-2 pt-0">
+          <div className="grid grid-cols-2 gap-1.5">
+            {cat.ids.map((id) => {
+              const example = examplesMap.get(id);
+              if (!example) return null;
+              return (
+                <Button
+                  key={example.id}
+                  variant="outline"
+                  className="w-full h-auto py-2 px-2 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
+                  onClick={() => onAddBlocks(example.blocks)}
+                >
+                  <span className="text-primary">{example.icon}</span>
+                  <span className="text-[11px] font-medium">{example.name}</span>
+                  <span className="text-[9px] text-muted-foreground leading-tight">
+                    {example.description}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
     ))}
-  </div>
+  </Accordion>
 );
 
 /* Legacy combined component for backward compatibility */
