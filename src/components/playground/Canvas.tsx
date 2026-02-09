@@ -325,6 +325,23 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       }
+      case 'form': {
+        const parts = block.content.split('|');
+        const [title, namePh, contactPh, messagePh, btnText] = parts;
+        return (
+          <motion.div className={cn(baseClasses, "border border-border/30")} style={style} onClick={onClick} {...animProps}>
+            <div className="font-semibold mb-3" style={{ color: block.styles.textColor }}>{title || 'Оставьте заявку'}</div>
+            <div className="space-y-2">
+              <div className="h-9 rounded bg-secondary/30 border border-border/20 px-3 flex items-center text-sm text-muted-foreground">{namePh || 'Имя'}</div>
+              <div className="h-9 rounded bg-secondary/30 border border-border/20 px-3 flex items-center text-sm text-muted-foreground">{contactPh || 'Телефон или Email'}</div>
+              <div className="h-16 rounded bg-secondary/30 border border-border/20 px-3 pt-2 text-sm text-muted-foreground">{messagePh || 'Сообщение'}</div>
+              <div className="pt-1">
+                <div className="bg-primary text-primary-foreground text-center py-2 rounded text-sm font-medium">{btnText || 'Отправить'}</div>
+              </div>
+            </div>
+          </motion.div>
+        );
+      }
       default:
         return null;
     }

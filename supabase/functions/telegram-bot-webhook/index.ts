@@ -33,7 +33,6 @@ serve(async (req) => {
     };
 
     if (text === "/start") {
-      // Upsert user
       await supabase.from("telegram_bot_users").upsert(
         {
           chat_id: chatId,
@@ -45,9 +44,8 @@ serve(async (req) => {
         { onConflict: "chat_id" }
       );
 
-      await sendMessage(chatId, "👋 Привет! Вы подписались на уведомления от <b>ZXC.ru</b>.\n\nНапишите /stop чтобы отписаться.");
+      await sendMessage(chatId, "👋 Привет! Вы подписались на уведомления от <b>ZXC.ru</b>.\n\nЧтобы привязать ваш сайт из конструктора, отправьте:\n<code>/link ваш-slug</code>\n\nНапишите /stop чтобы отписаться.");
 
-      // Notify owner
       const name = [from.first_name, from.last_name].filter(Boolean).join(" ");
       const username = from.username ? ` (@${from.username})` : "";
       await sendMessage(
@@ -61,8 +59,39 @@ serve(async (req) => {
         .eq("chat_id", chatId);
 
       await sendMessage(chatId, "👋 Вы отписались от уведомлений. Напишите /start чтобы подписаться снова.");
+    } else if (text.startsWith("/link ")) {
+      const slug = text.replace("/link ", "").trim().toLowerCase();
+
+      if (!slug) {
+        await sendMessage(chatId, "❌ Укажите slug проекта.\nПример: <code>/link my-site</code>");
+        return new Response("OK", { status: 200 });
+      }
+
+      const { data: project, error } = await supabase
+        .from("playground_projects")
+        .select("id, title, telegram_chat_id")
+        .eq("slug", slug)
+        .single();
+
+      if (error || !project) {
+        await sendMessage(chatId, `❌ Проект с slug <code>${slug}</code> не найден.\nПроверьте slug и попробуйте снова.`);
+        return new Response("OK", { status: 200 });
+      }
+
+      await supabase
+        .from("playground_projects")
+        .update({ telegram_chat_id: chatId } as any)
+        .eq("id", project.id);
+
+      await sendMessage(chatId, `✅ Telegram привязан к проекту <b>${project.title}</b>!\n\nТеперь вы будете получать заявки с вашего сайта.`);
+
+      const name = [from.first_name, from.last_name].filter(Boolean).join(" ");
+      const username = from.username ? ` (@${from.username})` : "";
+      await sendMessage(
+        Number(OWNER_CHAT_ID),
+        `🔗 Привязка Telegram к проекту\n\n👤 ${name}${username}\n📂 Проект: <b>${project.title}</b> (${slug})\n🆔 Chat ID: <code>${chatId}</code>`
+      );
     } else {
-      // Forward message to owner
       const name = [from.first_name, from.last_name].filter(Boolean).join(" ");
       const username = from.username ? ` (@${from.username})` : "";
       await sendMessage(

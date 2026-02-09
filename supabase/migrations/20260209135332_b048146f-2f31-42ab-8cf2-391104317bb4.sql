@@ -1,0 +1,1 @@
+ALTER TABLE public.playground_projects ADD COLUMN telegram_chat_id bigint;
