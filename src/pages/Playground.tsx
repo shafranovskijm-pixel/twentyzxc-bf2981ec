@@ -177,7 +177,7 @@ const Playground = () => {
                   </Button>
                 </div>
 
-                <TelegramConnectButton />
+                <TelegramConnectButton slug={savedSlug || undefined} />
                 <Button variant="outline" onClick={clearAll}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Сбросить

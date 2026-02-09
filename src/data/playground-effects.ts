@@ -1,6 +1,6 @@
 export interface PlaygroundBlock {
   id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials';
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials' | 'form';
   content: string;
   link?: string;
   anchorId?: string;
@@ -105,6 +105,7 @@ export const BLOCK_TYPES = [
   { type: 'card' as const, name: 'Карточка', icon: 'Square', defaultContent: 'Содержимое карточки' },
   { type: 'spacer' as const, name: 'Отступ', icon: 'ArrowUpDown', defaultContent: '' },
   { type: 'footer' as const, name: 'Футер', icon: 'PanelBottom', defaultContent: '© 2026 Компания. Все права защищены.|email@example.com|+7 (999) 123-45-67' },
+  { type: 'form' as const, name: 'Форма заявки', icon: 'FileText', defaultContent: 'Оставьте заявку|Имя|Телефон или Email|Сообщение|Отправить' },
 ];
 
 export const COLOR_PRESETS = [

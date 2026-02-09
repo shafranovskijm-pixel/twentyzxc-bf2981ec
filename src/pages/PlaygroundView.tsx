@@ -5,15 +5,88 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { PlaygroundBlock, PlaygroundSettings, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Send, CheckCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ProjectData {
   title: string;
   blocks: PlaygroundBlock[];
   settings: PlaygroundSettings;
 }
+const FormBlock = ({ block, slug, style, mp }: { block: PlaygroundBlock; slug: string; style: React.CSSProperties; mp: any }) => {
+  const [formData, setFormData] = useState({ name: '', contact: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
 
-const PlaygroundView = () => {
+  const parts = block.content.split('|');
+  const [title, namePh, contactPh, messagePh, btnText] = parts;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.contact) return;
+    setSending(true);
+    try {
+      const { error } = await supabase.functions.invoke('playground-form-submit', {
+        body: { slug, name: formData.name, contact: formData.contact, message: formData.message },
+      });
+      if (error) throw error;
+      setSent(true);
+      toast.success('Заявка отправлена!');
+    } catch {
+      toast.error('Ошибка отправки');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (sent) {
+    return (
+      <motion.div className={cn("text-center", block.hoverEffect)} style={style} {...mp}>
+        <CheckCircle className="w-10 h-10 mx-auto mb-2 text-green-500" />
+        <p className="font-semibold">Спасибо!</p>
+        <p className="text-sm opacity-70">Ваша заявка отправлена</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div className={cn("border border-border/30", block.hoverEffect)} style={style} {...mp}>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="font-semibold mb-3" style={{ color: block.styles.textColor }}>{title || 'Оставьте заявку'}</div>
+        <input
+          className="w-full h-10 rounded-md border border-border/40 bg-background/50 px-3 text-sm"
+          placeholder={namePh || 'Имя'}
+          value={formData.name}
+          onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+          required
+        />
+        <input
+          className="w-full h-10 rounded-md border border-border/40 bg-background/50 px-3 text-sm"
+          placeholder={contactPh || 'Телефон или Email'}
+          value={formData.contact}
+          onChange={(e) => setFormData(p => ({ ...p, contact: e.target.value }))}
+          required
+        />
+        <textarea
+          className="w-full h-20 rounded-md border border-border/40 bg-background/50 px-3 py-2 text-sm resize-none"
+          placeholder={messagePh || 'Сообщение'}
+          value={formData.message}
+          onChange={(e) => setFormData(p => ({ ...p, message: e.target.value }))}
+        />
+        <button
+          type="submit"
+          disabled={sending}
+          className="w-full bg-primary text-primary-foreground py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          {btnText || 'Отправить'}
+        </button>
+      </form>
+    </motion.div>
+  );
+};
+
+
   const { slug } = useParams();
   const [project, setProject] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -253,6 +326,8 @@ const PlaygroundView = () => {
         return wrapWithLink(block, <motion.div key={block.id} className={cn("border border-border", block.hoverEffect)} style={style} {...mp}>{block.content}</motion.div>);
       case 'spacer':
         return <motion.div key={block.id} style={{ padding: block.styles.padding }} {...mp} />;
+      case 'form':
+        return <FormBlock key={block.id} block={block} slug={slug || ''} style={style} mp={mp} />;
       default:
         return null;
     }

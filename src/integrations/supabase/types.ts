@@ -152,6 +152,7 @@ export type Database = {
           preview_image: string | null
           settings: Json
           slug: string
+          telegram_chat_id: number | null
           title: string
           updated_at: string
         }
@@ -164,6 +165,7 @@ export type Database = {
           preview_image?: string | null
           settings?: Json
           slug: string
+          telegram_chat_id?: number | null
           title: string
           updated_at?: string
         }
@@ -176,6 +178,7 @@ export type Database = {
           preview_image?: string | null
           settings?: Json
           slug?: string
+          telegram_chat_id?: number | null
           title?: string
           updated_at?: string
         }
