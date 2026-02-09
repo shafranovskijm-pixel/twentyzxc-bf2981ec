@@ -14,13 +14,16 @@ import {
   GraduationCap,
   Send,
   Scale,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { sendToTelegram } from "@/lib/telegram";
 
 const FrdoPage = () => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -29,13 +32,50 @@ const FrdoPage = () => {
     message: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Заявка отправлена",
-      description: "Мы свяжемся с вами в ближайшее время",
-    });
-    setFormData({ name: "", phone: "", email: "", organization: "", message: "" });
+    
+    if (!formData.name.trim() || !formData.phone.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Заполните обязательные поля",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await sendToTelegram({
+        type: 'contact',
+        service: 'Выгрузка в ФИС ФРДО',
+        name: formData.name,
+        email: formData.email || 'не указан',
+        phone: formData.phone,
+        company: formData.organization,
+        message: formData.message
+      });
+
+      if (result.success) {
+        toast({
+          title: "Заявка отправлена",
+          description: "Мы свяжемся с вами в ближайшее время",
+        });
+        setFormData({ name: "", phone: "", email: "", organization: "", message: "" });
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        title: "Ошибка отправки",
+        description: "Попробуйте ещё раз или свяжитесь с нами напрямую",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -425,9 +465,13 @@ const FrdoPage = () => {
                     />
                   </div>
                   
-                  <Button type="submit" variant="hero" size="lg" className="w-full">
-                    <Send className="w-4 h-4 mr-2" />
-                    Отправить заявку
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4 mr-2" />
+                    )}
+                    {isSubmitting ? "Отправка..." : "Отправить заявку"}
                   </Button>
                 </form>
               </CardContent>
