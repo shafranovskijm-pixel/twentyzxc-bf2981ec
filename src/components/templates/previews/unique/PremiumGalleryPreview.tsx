@@ -10,7 +10,7 @@ import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
 import { ARBadge } from "../shared/ARBadge";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
-import { Product360Spin } from "../shared/Product360Spin";
+import { ProductPseudo3D } from "../shared/ProductPseudo3D";
 
 // Lazy load the 3D viewer for better performance
 const Product3DViewer = lazy(() => import("../shared/Product3DViewer"));
@@ -45,39 +45,8 @@ import gallery6Angle2 from "@/assets/templates/premium-gallery/gallery-6-angle-2
 import gallery6Angle3 from "@/assets/templates/premium-gallery/gallery-6-angle-3.jpg";
 import gallery6Angle4 from "@/assets/templates/premium-gallery/gallery-6-angle-4.jpg";
 
-// Import 24-frame hero spin sequence
-import heroSpin00 from "@/assets/templates/premium-gallery/spin/hero-spin-00.jpg";
-import heroSpin01 from "@/assets/templates/premium-gallery/spin/hero-spin-01.jpg";
-import heroSpin02 from "@/assets/templates/premium-gallery/spin/hero-spin-02.jpg";
-import heroSpin03 from "@/assets/templates/premium-gallery/spin/hero-spin-03.jpg";
-import heroSpin04 from "@/assets/templates/premium-gallery/spin/hero-spin-04.jpg";
-import heroSpin05 from "@/assets/templates/premium-gallery/spin/hero-spin-05.jpg";
-import heroSpin06 from "@/assets/templates/premium-gallery/spin/hero-spin-06.jpg";
-import heroSpin07 from "@/assets/templates/premium-gallery/spin/hero-spin-07.jpg";
-import heroSpin08 from "@/assets/templates/premium-gallery/spin/hero-spin-08.jpg";
-import heroSpin09 from "@/assets/templates/premium-gallery/spin/hero-spin-09.jpg";
-import heroSpin10 from "@/assets/templates/premium-gallery/spin/hero-spin-10.jpg";
-import heroSpin11 from "@/assets/templates/premium-gallery/spin/hero-spin-11.jpg";
-import heroSpin12 from "@/assets/templates/premium-gallery/spin/hero-spin-12.jpg";
-import heroSpin13 from "@/assets/templates/premium-gallery/spin/hero-spin-13.jpg";
-import heroSpin14 from "@/assets/templates/premium-gallery/spin/hero-spin-14.jpg";
-import heroSpin15 from "@/assets/templates/premium-gallery/spin/hero-spin-15.jpg";
-import heroSpin16 from "@/assets/templates/premium-gallery/spin/hero-spin-16.jpg";
-import heroSpin17 from "@/assets/templates/premium-gallery/spin/hero-spin-17.jpg";
-import heroSpin18 from "@/assets/templates/premium-gallery/spin/hero-spin-18.jpg";
-import heroSpin19 from "@/assets/templates/premium-gallery/spin/hero-spin-19.jpg";
-import heroSpin20 from "@/assets/templates/premium-gallery/spin/hero-spin-20.jpg";
-import heroSpin21 from "@/assets/templates/premium-gallery/spin/hero-spin-21.jpg";
-import heroSpin22 from "@/assets/templates/premium-gallery/spin/hero-spin-22.jpg";
-import heroSpin23 from "@/assets/templates/premium-gallery/spin/hero-spin-23.jpg";
-
-// 24-frame spin sequence for smooth 360° rotation
-const heroSpinSequence = [
-  heroSpin00, heroSpin01, heroSpin02, heroSpin03, heroSpin04, heroSpin05,
-  heroSpin06, heroSpin07, heroSpin08, heroSpin09, heroSpin10, heroSpin11,
-  heroSpin12, heroSpin13, heroSpin14, heroSpin15, heroSpin16, heroSpin17,
-  heroSpin18, heroSpin19, heroSpin20, heroSpin21, heroSpin22, heroSpin23,
-];
+// Import hero image for pseudo-3D viewer
+import heroPseudo3D from "@/assets/templates/premium-gallery/hero-pseudo3d.jpg";
 
 // Hero images for 360° (4 views) - legacy
 const heroImages360 = [heroImage, heroAngle2, heroAngle3, heroAngle4];
@@ -111,16 +80,16 @@ interface Product {
   stock: number;
 }
 
-// 360° Product Viewer Component - using new 24-frame spin viewer
-interface Product360ViewerProps {
+// 360° Product Viewer Component - using pseudo-3D for consistent visuals
+interface ProductPseudo3DViewerProps {
   onClose?: () => void;
 }
 
-const Product360Viewer = ({ onClose }: Product360ViewerProps) => {
+const ProductPseudo3DViewer = ({ onClose }: ProductPseudo3DViewerProps) => {
   return (
     <div className="relative max-w-md mx-auto">
-      <Product360Spin 
-        images={heroSpinSequence}
+      <ProductPseudo3D 
+        imageUrl={heroPseudo3D}
         autoPlay={true}
         onClose={onClose}
         className="aspect-square rounded-3xl"
@@ -363,7 +332,7 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            <Product360Viewer />
+            <ProductPseudo3DViewer />
           </motion.div>
         </div>
       </section>
