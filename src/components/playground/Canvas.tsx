@@ -79,6 +79,49 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         );
       case 'card':
         return <motion.div className={cn(baseClasses, "border border-border")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.div>;
+      case 'list': {
+        const items = block.content.split('\n').filter(Boolean);
+        return (
+          <motion.div className={baseClasses} style={style} onClick={onClick} {...animProps}>
+            <ul className="list-disc list-inside space-y-1">
+              {items.map((item, i) => <li key={i}>{item}</li>)}
+            </ul>
+          </motion.div>
+        );
+      }
+      case 'quote': {
+        const [text, author] = block.content.split('|');
+        return (
+          <motion.blockquote className={cn(baseClasses, "border-l-4 border-primary/60 italic")} style={style} onClick={onClick} {...animProps}>
+            <p className="mb-2">«{text}»</p>
+            {author && <footer className="text-sm opacity-70 not-italic">— {author}</footer>}
+          </motion.blockquote>
+        );
+      }
+      case 'counter': {
+        const [value, label] = block.content.split('|');
+        return (
+          <motion.div className={cn(baseClasses, "text-center")} style={style} onClick={onClick} {...animProps}>
+            <div className="text-4xl font-bold mb-1" style={{ color: block.styles.textColor }}>{value}</div>
+            {label && <div className="text-sm opacity-70">{label}</div>}
+          </motion.div>
+        );
+      }
+      case 'video': {
+        const src = block.content;
+        return (
+          <motion.div className={baseClasses} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
+            <div className="relative w-full" style={{ paddingBottom: '56.25%', borderRadius: block.styles.borderRadius, overflow: 'hidden' }}>
+              <iframe
+                src={src}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </motion.div>
+        );
+      }
       case 'spacer':
         return (
           <motion.div className={cn(baseClasses, "min-h-[40px]")} style={{ padding: block.styles.padding }} onClick={onClick} {...animProps}>

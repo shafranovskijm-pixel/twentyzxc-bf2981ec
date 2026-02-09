@@ -44,19 +44,26 @@ export const BlockEditor = ({
       {/* Content */}
       {block.type !== 'divider' && block.type !== 'spacer' && (
         <div className="space-y-2">
-          <Label>Содержимое</Label>
-          {block.type === 'text' || block.type === 'card' ? (
+          <Label>
+            {block.type === 'list' ? 'Пункты (по одному на строку)' :
+             block.type === 'quote' ? 'Цитата | Автор' :
+             block.type === 'counter' ? 'Число | Подпись' :
+             block.type === 'video' ? 'Ссылка для embed (YouTube/Vimeo)' :
+             'Содержимое'}
+          </Label>
+          {block.type === 'text' || block.type === 'card' || block.type === 'list' ? (
             <Textarea
               value={block.content}
               onChange={(e) => onUpdate({ content: e.target.value })}
               className="bg-secondary/50 border-border"
-              rows={3}
+              rows={block.type === 'list' ? 5 : 3}
             />
           ) : (
             <Input
               value={block.content}
               onChange={(e) => onUpdate({ content: e.target.value })}
               className="bg-secondary/50 border-border"
+              placeholder={block.type === 'video' ? 'https://www.youtube.com/embed/...' : ''}
             />
           )}
         </div>
