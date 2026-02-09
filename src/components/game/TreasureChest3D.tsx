@@ -438,13 +438,20 @@ function ChestModel({
 }
 
 // Main component
-export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen: boolean }) {
+export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () => void; isOpen: boolean; onLockedClick?: () => void }) {
   const { keys, activeKeyForChest, setActiveKeyForChest, removeKey } = useInventory();
   const [isDragOver, setIsDragOver] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [unlockPhase, setUnlockPhase] = useState<'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done'>('idle');
   const [usedKeyId, setUsedKeyId] = useState<string | null>(null);
   const unlockStartedRef = useRef(false);
+
+  // Handle click on locked chest
+  const handleLockedChestClick = () => {
+    if (!isOpen && unlockPhase === 'idle' && keys.length === 0 && onLockedClick) {
+      onLockedClick();
+    }
+  };
 
   // Handle key drop
   const handleDrop = (e: React.DragEvent) => {
@@ -517,6 +524,7 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
         onDragLeave={handleDragLeave}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handleLockedChestClick}
       >
         {/* Ambient glow */}
         <div className={`absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent rounded-lg transition-opacity duration-500 ${

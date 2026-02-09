@@ -100,6 +100,19 @@ const ContactSection = () => {
     setChestUnlocked(true);
   };
 
+  const handleLockedChestClick = () => {
+    // Scroll to webdev section with keys
+    const webdevSection = document.getElementById('webdev');
+    if (webdevSection) {
+      webdevSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    // Show toast hint
+    toast({
+      title: "Возьмите ключ! 🔑",
+      description: "Нажмите на ключ в карточке услуги, чтобы забрать его",
+    });
+  };
+
   const handleKeySelect = (keyId: string) => {
     setSelectedKey(keyId);
     setFormData(prev => ({
@@ -203,7 +216,7 @@ const ContactSection = () => {
                     </p>
                     
                     {/* 3D Treasure Chest */}
-                    <TreasureChest3D onOpen={handleChestOpen} isOpen={isChestOpen} />
+                    <TreasureChest3D onOpen={handleChestOpen} isOpen={isChestOpen} onLockedClick={handleLockedChestClick} />
                     
                   </div>
                 </motion.div>
