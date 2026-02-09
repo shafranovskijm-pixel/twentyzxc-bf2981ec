@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle } from "lucide-react";
 import Header from "@/components/Header";
@@ -12,6 +12,7 @@ import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { BlockPalette } from "@/components/playground/BlockPalette";
 import { Canvas } from "@/components/playground/Canvas";
 import { BlockEditor } from "@/components/playground/BlockEditor";
+import { BlockStyles } from "@/data/playground-effects";
 import { ProjectTemplates, PageTemplatesList, BlockExamplesList } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
@@ -36,6 +37,7 @@ const Playground = () => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isPreview, setIsPreview] = useState(false);
+  const [copiedStyles, setCopiedStyles] = useState<BlockStyles | null>(null);
 
   const {
     blocks,
@@ -240,6 +242,9 @@ const Playground = () => {
                         onDelete={() => deleteBlock(selectedBlock.id)}
                         onDuplicate={() => duplicateBlock(selectedBlock.id)}
                         onMove={(dir) => moveBlock(selectedBlock.id, dir)}
+                        copiedStyles={copiedStyles}
+                        onCopyStyles={() => setCopiedStyles({ ...selectedBlock.styles })}
+                        onPasteStyles={() => copiedStyles && updateBlockStyles(selectedBlock.id, copiedStyles)}
                       />
                     ) : (
                       <p className="text-muted-foreground text-center py-8">
@@ -353,6 +358,9 @@ const Playground = () => {
                     onDelete={() => deleteBlock(selectedBlock.id)}
                     onDuplicate={() => duplicateBlock(selectedBlock.id)}
                     onMove={(dir) => moveBlock(selectedBlock.id, dir)}
+                    copiedStyles={copiedStyles}
+                    onCopyStyles={() => setCopiedStyles({ ...selectedBlock.styles })}
+                    onPasteStyles={() => copiedStyles && updateBlockStyles(selectedBlock.id, copiedStyles)}
                   />
                 ) : (
                   <p className="text-muted-foreground text-center py-8">
