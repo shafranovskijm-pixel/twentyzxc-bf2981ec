@@ -13,6 +13,9 @@ import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
 
 // Import gallery images
 import heroImage from "@/assets/templates/premium-gallery/hero.jpg";
+import heroAngle2 from "@/assets/templates/premium-gallery/hero-angle-2.jpg";
+import heroAngle3 from "@/assets/templates/premium-gallery/hero-angle-3.jpg";
+import heroAngle4 from "@/assets/templates/premium-gallery/hero-angle-4.jpg";
 import gallery1 from "@/assets/templates/premium-gallery/gallery-1.jpg";
 import gallery1Angle2 from "@/assets/templates/premium-gallery/gallery-1-angle-2.jpg";
 import gallery1Angle3 from "@/assets/templates/premium-gallery/gallery-1-angle-3.jpg";
@@ -37,6 +40,9 @@ import gallery6 from "@/assets/templates/premium-gallery/gallery-6.jpg";
 import gallery6Angle2 from "@/assets/templates/premium-gallery/gallery-6-angle-2.jpg";
 import gallery6Angle3 from "@/assets/templates/premium-gallery/gallery-6-angle-3.jpg";
 import gallery6Angle4 from "@/assets/templates/premium-gallery/gallery-6-angle-4.jpg";
+
+// Hero images for 360° (4 views)
+const heroImages360 = [heroImage, heroAngle2, heroAngle3, heroAngle4];
 
 // Gallery images with 360° angles (4 views per product)
 const galleryImages360: Record<string, string[]> = {
@@ -140,19 +146,30 @@ const Product360Viewer = ({ rotation, setRotation, isDragging, setIsDragging }: 
         onTouchEnd={handleTouchEnd}
         className="relative aspect-square rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-emerald-500/20 overflow-hidden cursor-grab active:cursor-grabbing select-none"
       >
-        {/* Hero jewelry image */}
-        <img 
-          src={heroImage} 
-          alt="Luxury jewelry collection" 
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ 
-            transform: `perspective(800px) rotateY(${rotation * 0.3}deg) scale(${1 + Math.abs(Math.sin(rotation * Math.PI / 180)) * 0.05})`,
-            transition: isDragging ? 'none' : 'transform 0.1s ease-out'
-          }}
-        />
+        {/* Hero jewelry images - 360° rotation with real images */}
+        <div className="absolute inset-0">
+          {heroImages360.map((img, i) => {
+            const angleRange = 360 / 4; // 90° per image
+            const normalizedRotation = ((rotation % 360) + 360) % 360;
+            const imageAngleStart = i * angleRange;
+            const imageAngleEnd = (i + 1) * angleRange;
+            const isVisible = normalizedRotation >= imageAngleStart && normalizedRotation < imageAngleEnd;
+            
+            return (
+              <img
+                key={i}
+                src={img}
+                alt={`Luxury jewelry collection - angle ${i + 1}`}
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ${
+                  isVisible ? "opacity-100" : "opacity-0"
+                }`}
+              />
+            );
+          })}
+        </div>
         
         {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
         
         {/* Shine effect */}
         <motion.div 
