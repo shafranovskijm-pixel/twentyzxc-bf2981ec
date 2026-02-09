@@ -106,47 +106,84 @@ function Key3D({
 // Animated key inserting into lock
 function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | 'inserting' | 'turning' | 'done' }) {
   const groupRef = useRef<THREE.Group>(null);
-  const [keyRotation, setKeyRotation] = useState(0);
-  const [keyPosition, setKeyPosition] = useState<[number, number, number]>([0, 2, 2]);
-  const targetRotation = useRef(0);
-  const targetPosition = useRef<[number, number, number]>([0, 2, 2]);
-
-  useEffect(() => {
-    switch (phase) {
-      case 'approaching':
-        targetPosition.current = [0, 0.3, 1.2];
-        targetRotation.current = 0;
-        break;
-      case 'inserting':
-        targetPosition.current = [0, 0.1, 0.7];
-        targetRotation.current = 0;
-        break;
-      case 'turning':
-        targetPosition.current = [0, 0.1, 0.7];
-        targetRotation.current = Math.PI / 2;
-        break;
-      case 'done':
-        targetPosition.current = [0, 0.1, 0.7];
-        targetRotation.current = Math.PI / 2;
-        break;
-    }
-  }, [phase]);
+  const keyRef = useRef<THREE.Group>(null);
+  
+  // Smooth animation values
+  const positionX = useRef(0);
+  const positionY = useRef(1.5);
+  const positionZ = useRef(2.5);
+  const rotationZ = useRef(0); // Key turn rotation
+  const wobble = useRef(0);
 
   useFrame((state, delta) => {
-    setKeyPosition(prev => [
-      THREE.MathUtils.lerp(prev[0], targetPosition.current[0], delta * 3),
-      THREE.MathUtils.lerp(prev[1], targetPosition.current[1], delta * 3),
-      THREE.MathUtils.lerp(prev[2], targetPosition.current[2], delta * 3),
-    ]);
-    setKeyRotation(prev => THREE.MathUtils.lerp(prev, targetRotation.current, delta * 4));
+    if (!groupRef.current) return;
+    
+    // Target values based on phase
+    let targetX = 0;
+    let targetY = 0.05; // Lock position
+    let targetZ = 0.8;
+    let targetRotZ = 0;
+    
+    switch (phase) {
+      case 'approaching':
+        targetY = 0.4;
+        targetZ = 1.8;
+        wobble.current = Math.sin(state.clock.elapsedTime * 8) * 0.1;
+        break;
+      case 'inserting':
+        targetY = 0.05;
+        targetZ = 0.95;
+        wobble.current *= 0.9; // Fade out wobble
+        break;
+      case 'turning':
+        targetY = 0.05;
+        targetZ = 0.95;
+        targetRotZ = Math.PI * 0.5; // 90 degree turn
+        wobble.current = 0;
+        break;
+      case 'done':
+        return;
+    }
+    
+    // Smooth interpolation
+    const speed = phase === 'turning' ? 3 : 5;
+    positionX.current = THREE.MathUtils.lerp(positionX.current, targetX, delta * speed);
+    positionY.current = THREE.MathUtils.lerp(positionY.current, targetY, delta * speed);
+    positionZ.current = THREE.MathUtils.lerp(positionZ.current, targetZ, delta * speed);
+    rotationZ.current = THREE.MathUtils.lerp(rotationZ.current, targetRotZ, delta * 4);
+    
+    // Apply transforms
+    groupRef.current.position.set(positionX.current, positionY.current, positionZ.current);
+    
+    // Key faces forward (handle up), then rotates to turn the lock
+    // Initial: key pointing into lock (rotated so teeth face down)
+    groupRef.current.rotation.set(
+      Math.PI * 0.5 + wobble.current, // Tilt forward + wobble
+      0,
+      rotationZ.current // Turn rotation
+    );
   });
 
   if (phase === 'done') return null;
 
   return (
-    <group ref={groupRef} position={keyPosition} rotation={[Math.PI / 2, 0, keyRotation]}>
-      <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.5} />
-      <pointLight position={[0, 0, 0.2]} color="#d4af37" intensity={2} distance={1} />
+    <group ref={groupRef}>
+      <group ref={keyRef}>
+        <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.2} />
+      </group>
+      
+      {/* Glow effect that intensifies during turn */}
+      <pointLight 
+        position={[0, 0, 0.1]} 
+        color="#d4af37" 
+        intensity={phase === 'turning' ? 4 : 2} 
+        distance={1.5} 
+      />
+      
+      {/* Sparkle trail during approach */}
+      {phase === 'approaching' && (
+        <Sparkles count={10} scale={0.5} size={2} speed={0.8} color="#ffd700" />
+      )}
     </group>
   );
 }
@@ -425,7 +462,7 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
     }
   };
 
-  // Start unlock animation sequence
+  // Start unlock animation sequence with better timings
   const triggerUnlock = (keyId: string) => {
     if (unlockStartedRef.current) return;
     unlockStartedRef.current = true;
@@ -433,17 +470,21 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
     setUsedKeyId(keyId);
     setUnlockPhase('approaching');
     
-    setTimeout(() => setUnlockPhase('inserting'), 800);
-    setTimeout(() => setUnlockPhase('turning'), 1600);
+    // Approach: key flies toward lock (1s)
+    setTimeout(() => setUnlockPhase('inserting'), 1000);
+    // Insert: key slides into keyhole (0.8s)
+    setTimeout(() => setUnlockPhase('turning'), 1800);
+    // Turn: key rotates 90 degrees (1.2s)
     setTimeout(() => {
       setUnlockPhase('opening');
       removeKey(keyId);
       onOpen();
-    }, 2400);
+    }, 3000);
+    // Done: cleanup
     setTimeout(() => {
       setUnlockPhase('done');
       unlockStartedRef.current = false;
-    }, 3200);
+    }, 3800);
   };
 
   // Handle click from inventory
