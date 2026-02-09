@@ -7,7 +7,13 @@ import { AnimatedCounter, ScrollReveal, StaggerContainer, StaggerItem, TiltCard,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ImageWithFallback } from "../../ImageWithFallback";
 
-const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
+// Local images
+import team1 from "@/assets/templates/executive-suite/team-1.jpg";
+import team2 from "@/assets/templates/executive-suite/team-2.jpg";
+import team3 from "@/assets/templates/executive-suite/team-3.jpg";
+import team4 from "@/assets/templates/executive-suite/team-4.jpg";
+
+const teamImages = [team1, team2, team3, team4];
 
 interface ExecutiveSuitePreviewProps {
   template: Template;
@@ -294,7 +300,7 @@ export const ExecutiveSuitePreview = ({ template }: ExecutiveSuitePreviewProps) 
                 >
                   <div className="aspect-[3/4] rounded-2xl bg-slate-800/50 border border-white/10 relative overflow-hidden mb-4 group-hover:border-blue-500/30 transition-colors">
                     <ImageWithFallback 
-                      src={`${STORAGE_BASE}/executive-suite/team-${i + 1}.png`}
+                      src={teamImages[i]}
                       alt={member.name}
                       aspectRatio="portrait"
                     />

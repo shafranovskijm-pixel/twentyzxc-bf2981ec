@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
@@ -11,6 +11,12 @@ interface ImageWithFallbackProps {
   aspectRatio?: "square" | "video" | "portrait" | "wide";
   fallbackGradient?: string;
   showSkeleton?: boolean;
+  /** Priority loading for hero/above-fold images */
+  priority?: boolean;
+  /** Responsive sizes attribute */
+  sizes?: string;
+  /** Enable blur-up effect during loading */
+  blur?: boolean;
 }
 
 const aspectRatioClasses = {
@@ -28,16 +34,42 @@ export const ImageWithFallback = ({
   aspectRatio = "video",
   fallbackGradient = "from-muted/50 to-muted",
   showSkeleton = true,
+  priority = false,
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+  blur = true,
 }: ImageWithFallbackProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | undefined>(src);
+  const [isInView, setIsInView] = useState(priority);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setImageSrc(src);
     setIsLoading(true);
     setHasError(false);
   }, [src]);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (priority || !containerRef.current) {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "50px", threshold: 0.01 }
+    );
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [priority]);
 
   const handleLoad = () => {
     setIsLoading(false);
@@ -52,6 +84,7 @@ export const ImageWithFallback = ({
   if (!imageSrc || hasError) {
     return (
       <div
+        ref={containerRef}
         className={cn(
           "w-full bg-gradient-to-br rounded-lg overflow-hidden",
           fallbackGradient,
@@ -67,27 +100,40 @@ export const ImageWithFallback = ({
   }
 
   return (
-    <div className={cn("relative overflow-hidden rounded-lg", aspectRatioClasses[aspectRatio], className)}>
+    <div 
+      ref={containerRef}
+      className={cn("relative overflow-hidden rounded-lg", aspectRatioClasses[aspectRatio], className)}
+    >
       {/* Loading skeleton */}
       {isLoading && showSkeleton && (
         <Skeleton className="absolute inset-0 w-full h-full" />
       )}
       
+      {/* Blur placeholder effect */}
+      {blur && isLoading && (
+        <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/60 backdrop-blur-sm" />
+      )}
+      
       {/* Actual image with fade-in */}
-      <motion.img
-        src={imageSrc}
-        alt={alt}
-        className={cn(
-          "w-full h-full object-cover",
-          isLoading && "opacity-0"
-        )}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isLoading ? 0 : 1 }}
-        transition={{ duration: 0.3 }}
-        onLoad={handleLoad}
-        onError={handleError}
-        loading="lazy"
-      />
+      {isInView && (
+        <motion.img
+          src={imageSrc}
+          alt={alt}
+          className={cn(
+            "w-full h-full object-cover",
+            isLoading && "opacity-0"
+          )}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: isLoading ? 0 : 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          onLoad={handleLoad}
+          onError={handleError}
+          loading={priority ? "eager" : "lazy"}
+          decoding={priority ? "sync" : "async"}
+          sizes={sizes}
+          {...(priority && { fetchPriority: "high" as const })}
+        />
+      )}
     </div>
   );
 };
