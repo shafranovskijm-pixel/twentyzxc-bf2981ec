@@ -1,14 +1,39 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getTemplateById, getCategoryByTemplateId } from "@/data/templates";
 import { LandingPreview, CorporatePreview, EcommercePreview, WebAppPreview } from "@/components/templates/previews";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, ArrowLeft } from "lucide-react";
+import { DeviceSwitcher, DeviceType, getDeviceWidth } from "@/components/templates/previews/shared";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 const TemplatePreview = () => {
   const { id } = useParams<{ id: string }>();
+  const [device, setDevice] = useState<DeviceType>("desktop");
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   const template = id ? getTemplateById(id) : undefined;
   const category = id ? getCategoryByTemplateId(id) : undefined;
+
+  // Handle fullscreen
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   if (!template || !category) {
     return (
@@ -39,10 +64,28 @@ const TemplatePreview = () => {
     }
   };
 
+  const deviceWidth = getDeviceWidth(device);
+
   return (
-    <div className="relative">
+    <div className="min-h-screen bg-zinc-950 relative">
+      {/* Background pattern */}
+      <div className="fixed inset-0 opacity-30 pointer-events-none">
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+      </div>
+
       {/* Floating toolbar */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl">
+      <motion.div 
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-4 py-2 rounded-full bg-black/80 backdrop-blur-xl border border-white/20 shadow-2xl"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+      >
         <Link to={`/templates/${template.id}`}>
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/10 gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -59,6 +102,14 @@ const TemplatePreview = () => {
         
         <div className="h-6 w-px bg-white/20" />
         
+        <DeviceSwitcher
+          currentDevice={device}
+          onDeviceChange={setDevice}
+          onFullscreen={toggleFullscreen}
+        />
+        
+        <div className="h-6 w-px bg-white/20" />
+        
         <Link to="/#contact">
           <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
             <span className="hidden sm:inline">Заказать</span>
@@ -71,10 +122,59 @@ const TemplatePreview = () => {
             <X className="w-4 h-4" />
           </Button>
         </Link>
-      </div>
+      </motion.div>
+
+      {/* Device indicator */}
+      <AnimatePresence mode="wait">
+        {device !== "desktop" && (
+          <motion.div
+            key={device}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 text-white/60 text-xs"
+          >
+            {device === "tablet" ? "768px — iPad / Tablet" : "375px — iPhone / Mobile"}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Preview content */}
-      {renderPreview()}
+      <div className="flex justify-center items-start min-h-screen pt-20 pb-16">
+        <motion.div
+          className={cn(
+            "transition-all duration-500 ease-out origin-top",
+            device !== "desktop" && "rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+          )}
+          style={{ 
+            width: deviceWidth,
+            maxWidth: "100%",
+          }}
+          animate={{
+            scale: device === "desktop" ? 1 : 0.95,
+          }}
+        >
+          {/* Device frame for mobile/tablet */}
+          {device !== "desktop" && (
+            <div className="bg-black h-6 flex items-center justify-center rounded-t-3xl border-b border-white/10">
+              <div className="w-20 h-1 bg-white/20 rounded-full" />
+            </div>
+          )}
+          
+          <div className={cn(
+            device !== "desktop" && "bg-zinc-900"
+          )}>
+            {renderPreview()}
+          </div>
+          
+          {/* Device bottom bar */}
+          {device !== "desktop" && (
+            <div className="bg-black h-5 flex items-center justify-center rounded-b-3xl border-t border-white/10">
+              <div className="w-24 h-1 bg-white/20 rounded-full" />
+            </div>
+          )}
+        </motion.div>
+      </div>
     </div>
   );
 };
