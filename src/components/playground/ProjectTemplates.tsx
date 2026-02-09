@@ -35,12 +35,14 @@ export const PAGE_TEMPLATES: Template[] = [
     description: 'Личная страница с контактами',
     icon: <Briefcase className="w-5 h-5" />,
     blocks: [
-      { type: 'heading', content: 'Иван Иванов', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '32px 16px 8px' } },
+      { type: 'navbar', content: 'Главная|#hero\nОбо мне|#about\nКонтакт|#contact', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'Иван Иванов', anchorId: 'hero', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '32px 16px 8px' } },
       { type: 'text', content: 'Веб-разработчик & Дизайнер', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, fontSize: '20px', textColor: '#d4a855', padding: '8px 16px' } },
       { type: 'divider', content: '', animation: 'fade-in', styles: { ...ds, padding: '24px 16px' } },
-      { type: 'text', content: 'Создаю современные веб-сайты и приложения с фокусом на пользовательский опыт и производительность.', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#888888', padding: '8px 48px' } },
+      { type: 'text', content: 'Создаю современные веб-сайты и приложения с фокусом на пользовательский опыт и производительность.', anchorId: 'about', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#888888', padding: '8px 48px' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px' } },
-      { type: 'button', content: 'Связаться', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } }
+      { type: 'button', content: 'Связаться', anchorId: 'contact', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } },
+      { type: 'footer', content: '© 2026 Иван Иванов|ivan@mail.com|+7 (999) 000-00-00', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   },
   {
@@ -49,14 +51,16 @@ export const PAGE_TEMPLATES: Template[] = [
     description: 'Продающая страница продукта',
     icon: <Rocket className="w-5 h-5" />,
     blocks: [
-      { type: 'heading', content: 'Ваш идеальный продукт', animation: 'fade-in-up', styles: { ...ds, fontSize: '56px', padding: '48px 16px 16px' } },
+      { type: 'navbar', content: 'Главная|#hero\nПреимущества|#features\nО продукте|#product', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'Ваш идеальный продукт', anchorId: 'hero', animation: 'fade-in-up', styles: { ...ds, fontSize: '56px', padding: '48px 16px 16px' } },
       { type: 'text', content: 'Инновационное решение для современного бизнеса', animation: 'fade-in-up', styles: { ...ds, fontSize: '24px', textColor: '#888888', padding: '8px 16px 24px' } },
       { type: 'button', content: 'Попробовать бесплатно', animation: 'scale-bounce', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px', fontSize: '18px' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '32px' } },
-      { type: 'image', content: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=400&fit=crop', animation: 'fade-in', hoverEffect: 'hover-scale', styles: { ...ds, padding: '16px', borderRadius: '16px' } },
+      { type: 'image', content: 'https://images.unsplash.com/photo-1551434678-e076c223a692?w=800&h=400&fit=crop', anchorId: 'product', animation: 'fade-in', hoverEffect: 'hover-scale', styles: { ...ds, padding: '16px', borderRadius: '16px' } },
       { type: 'divider', content: '', styles: { ...ds, padding: '32px 16px' } },
-      { type: 'heading', content: 'Почему выбирают нас', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'card', content: '✨ Быстрый старт за 5 минут\n🔒 Безопасность данных\n📱 Работает на любых устройствах', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left' } }
+      { type: 'heading', content: 'Почему выбирают нас', anchorId: 'features', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'card', content: '✨ Быстрый старт за 5 минут\n🔒 Безопасность данных\n📱 Работает на любых устройствах', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left' } },
+      { type: 'footer', content: '© 2026 Продукт. Все права защищены.|hello@product.com', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   },
   {
@@ -65,12 +69,15 @@ export const PAGE_TEMPLATES: Template[] = [
     description: 'Галерея работ с анимациями',
     icon: <Image className="w-5 h-5" />,
     blocks: [
-      { type: 'heading', content: 'Мои работы', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '32px 16px 8px' } },
+      { type: 'navbar', content: 'Работы|#works\nКонтакт|#contact', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'Мои работы', anchorId: 'works', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '32px 16px 8px' } },
       { type: 'text', content: 'Избранные проекты и кейсы', animation: 'fade-in', styles: { ...ds, fontSize: '18px', textColor: '#888888', padding: '8px 16px 32px' } },
       { type: 'image', content: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '8px', borderRadius: '12px' } },
       { type: 'card', content: 'Корпоративный сайт\nРедизайн и разработка', animation: 'fade-in-right', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px', textAlign: 'left' } },
       { type: 'image', content: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, padding: '8px', borderRadius: '12px' } },
-      { type: 'card', content: 'E-commerce платформа\nМагазин с интеграцией оплаты', animation: 'fade-in-right', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px', textAlign: 'left' } }
+      { type: 'card', content: 'E-commerce платформа\nМагазин с интеграцией оплаты', animation: 'fade-in-right', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px', textAlign: 'left' } },
+      { type: 'button', content: 'Написать мне', anchorId: 'contact', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '16px' } },
+      { type: 'footer', content: '© 2026 Портфолио|portfolio@mail.com', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   },
   {
@@ -150,19 +157,21 @@ export const PAGE_TEMPLATES: Template[] = [
     description: 'Презентация с метриками',
     icon: <TrendingUp className="w-5 h-5" />,
     blocks: [
-      { type: 'heading', content: 'CloudSync', animation: 'fade-in-up', styles: { ...ds, fontSize: '52px', padding: '32px 16px 4px' } },
+      { type: 'navbar', content: 'Главная|#hero\nМетрики|#metrics\nВозможности|#features\nОтзывы|#reviews', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '0px' } },
+      { type: 'heading', content: 'CloudSync', anchorId: 'hero', animation: 'fade-in-up', styles: { ...ds, fontSize: '52px', padding: '32px 16px 4px' } },
       { type: 'text', content: 'Синхронизация данных нового поколения', animation: 'fade-in-up', styles: { ...ds, fontSize: '22px', textColor: '#888888', padding: '4px 16px 24px' } },
       { type: 'button', content: 'Начать бесплатно', animation: 'scale-bounce', hoverEffect: 'hover-lift', styles: { ...ds, fontSize: '18px', padding: '16px' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px' } },
-      { type: 'counter', content: '50K+|Пользователей', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
+      { type: 'counter', content: '50K+|Пользователей', anchorId: 'metrics', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
       { type: 'counter', content: '99.9%|Uptime', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
       { type: 'counter', content: '3x|Быстрее аналогов', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '12px' } },
       { type: 'divider', content: '', styles: { ...ds, padding: '24px 16px' } },
-      { type: 'heading', content: 'Возможности', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
+      { type: 'heading', content: 'Возможности', anchorId: 'features', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '16px' } },
       { type: 'card', content: '🚀 Мгновенная синхронизация\nДанные обновляются в реальном времени на всех устройствах', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
       { type: 'card', content: '🔒 Шифрование E2E\nВаши данные защищены военным уровнем шифрования', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } },
       { type: 'image', content: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop', animation: 'fade-in', hoverEffect: 'hover-scale', styles: { ...ds, padding: '16px', borderRadius: '16px' } },
-      { type: 'quote', content: 'CloudSync изменил то, как наша команда работает с данными.|CEO TechVentures', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px 32px' } }
+      { type: 'quote', content: 'CloudSync изменил то, как наша команда работает с данными.|CEO TechVentures', anchorId: 'reviews', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px 32px' } },
+      { type: 'footer', content: '© 2026 CloudSync|support@cloudsync.io|+7 (800) 123-45-67', animation: 'fade-in', styles: { ...ds, backgroundColor: '#111111', padding: '24px', borderRadius: '0px' } }
     ]
   }
 ];
@@ -174,7 +183,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Шапка с пунктами',
     icon: <Menu className="w-4 h-4" />,
     blocks: [
-      { type: 'navbar', content: 'Главная\nО нас\nУслуги\nПортфолио\nКонтакты', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '12px' } }
+      { type: 'navbar', content: 'Главная|#hero\nО нас|#about\nУслуги|#services\nПортфолио|#portfolio\nКонтакты|#contacts', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '12px' } }
     ]
   },
   {
