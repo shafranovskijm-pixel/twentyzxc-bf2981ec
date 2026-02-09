@@ -1,219 +1,243 @@
 
-
-# План: Максимальное улучшение демо-превью шаблонов
+# План: Максимальное улучшение шаблонов и превью
 
 ## Обзор текущего состояния
 
-Сейчас превью шаблонов содержат базовую структуру с минимальными интерактивными элементами. Улучшим их до уровня полноценных интерактивных демо-сайтов с:
-- Продвинутыми анимациями появления
-- Particle-эффектами и декоративными элементами
-- Hover-эффектами и микроанимациями
-- Интерактивными элементами (табы, модалки, счётчики)
-- Мобильной адаптацией с переключателем устройств
+Текущие превью шаблонов уже содержат богатую функциональность, но есть много возможностей для улучшения контента, уникализации каждого шаблона и добавления новых интерактивных элементов.
 
 ---
 
-## 1. Улучшение базового превью-контейнера
+## 1. Уникальные превью для каждого шаблона
 
-### TemplatePreview.tsx
-- Переключатель устройств (Desktop / Tablet / Mobile)
-- Полноэкранный режим просмотра
-- Индикатор адаптивности
-- Floating частицы на фоне
+Сейчас все шаблоны одной категории используют одинаковое превью. Создадим уникальные вариации:
 
----
+### Landing Templates
+| Шаблон | Уникальный стиль |
+|--------|------------------|
+| **Noir Elegance** | Чёрно-белая палитра, минимализм, большие пробелы, утончённые линии |
+| **Golden Prestige** | Золотые градиенты, видео-фон placeholder, калькулятор стоимости |
+| **Crystal Vision** | Неоновые акценты, кастомный cursor glow эффект, звуковые hover-эффекты (визуальные индикаторы) |
 
-## 2. Landing Preview — Noir Elegance / Golden Prestige / Crystal Vision
+### Corporate Templates
+| Шаблон | Уникальный стиль |
+|--------|------------------|
+| **Executive Suite** | Строгий синий, официальный стиль, графики доверия |
+| **Marble & Gold** | Текстуры мрамора, роскошные анимации, галерея с lightbox |
+| **Tech Horizon** | Градиенты cyan/teal, интерактивное демо продукта, code-подсветка |
 
-### Новые секции и эффекты:
-- **Hero**: Анимированный gradient background с движением, particle-система, typing-эффект в заголовке
-- **Floating cursor**: Кастомный анимированный курсор (для Crystal Vision)
-- **Video placeholder**: Mock видео-секция с play-кнопкой и hover-эффектом
-- **Testimonials carousel**: Автоматическая карусель отзывов
-- **Pricing cards**: 3D-tilt эффект при наведении
-- **FAQ accordion**: Работающие аккордеоны
-- **Animated counters**: Счётчики с анимацией при скролле (500+ проектов и т.д.)
-- **Contact form**: Интерактивная форма с валидацией
-- **Smooth scroll**: Плавная навигация по секциям
-- **Parallax images**: Параллакс-эффект на изображениях
-- **Reveal animations**: Появление элементов при скролле
+### E-commerce Templates
+| Шаблон | Уникальный стиль |
+|--------|------------------|
+| **Luxe Boutique** | Fashion-стиль, розовые акценты, модный look |
+| **Artisan Market** | Тёплые тона, handmade эстетика, категории мастеров |
+| **Premium Gallery** | Галерейный формат, 360° просмотр mock, AR-badge |
 
----
-
-## 3. Corporate Preview — Executive Suite / Marble & Gold / Tech Horizon
-
-### Новые секции и эффекты:
-- **Mega menu**: Hover-меню с подкатегориями
-- **Team grid**: Карточки команды с flip-эффектом
-- **Company timeline**: Интерактивная временная шкала истории
-- **Services tabs**: Работающие табы услуг
-- **Client logos carousel**: Бесконечная карусель логотипов клиентов
-- **Case studies grid**: Hover-эффект с overlay и reveal текста
-- **News/Blog section**: Grid статей с hover-анимацией
-- **Office locations map**: Placeholder карты с маркерами
-- **Animated charts**: SVG-графики в about-секции
-- **Footer mega**: Расширенный футер с колонками
+### WebApp Templates
+| Шаблон | Уникальный стиль |
+|--------|------------------|
+| **Dashboard Pro** | Синий акцент, аналитика, виджеты статистики |
+| **CRM Elite** | Фиолетовый акцент, воронка продаж, лиды |
+| **Platform X** | Градиент, pricing table, biiling интерфейс |
 
 ---
 
-## 4. E-commerce Preview — Luxe Boutique / Artisan Market / Premium Gallery
+## 2. Новые секции контента для превью
 
-### Новые секции и эффекты:
-- **Product quick view modal**: Модальное окно при клике на товар
-- **Cart drawer**: Slide-in корзина справа
-- **Wishlist hearts**: Анимированные сердечки с пульсацией
-- **Product filters sidebar**: Работающие чекбоксы фильтров
-- **Size/Color selectors**: Интерактивные кнопки выбора
-- **Image zoom**: Hover-увеличение изображения товара
-- **Product carousel**: Slider с точками навигации
-- **Trust badges**: Анимированные иконки гарантий
-- **Reviews with stars**: Интерактивный рейтинг
+### Для всех Landing:
+- **Партнёры/Клиенты**: Бесконечная карусель логотипов (mock)
+- **Portfolio/Cases**: 3-6 кейсов с hover-эффектами
+- **Blog preview**: 3 последних статьи
+- **Instagram feed**: Сетка 6 фото с hover
+- **Awards section**: Награды и сертификаты
+- **Live chat widget**: Floating кнопка чата
+
+### Для Corporate:
+- **Вакансии**: Список открытых позиций
+- **Офисы на карте**: Placeholder карты с маркерами
+- **Годовой отчёт**: Скачиваемый PDF mock
+- **ESG секция**: Устойчивое развитие
+- **Партнёрства**: Логотипы партнёров
+
+### Для E-commerce:
 - **Recently viewed**: Секция просмотренных товаров
-- **Promo banner**: Countdown таймер акции
-- **Search overlay**: Полноэкранный поиск
+- **Размерная сетка modal**: Таблица размеров
+- **Delivery calculator**: Расчёт доставки
+- **Loyalty program**: Бонусная программа
+- **Gift cards**: Подарочные сертификаты
+- **Live stock indicator**: "Осталось 3 шт"
+
+### Для WebApp:
+- **Onboarding flow**: Пошаговый туториал
+- **Settings page**: Настройки профиля
+- **Integrations grid**: Список интеграций
+- **Activity feed**: Лента активности
+- **Help center**: Центр помощи
+- **Keyboard shortcuts modal**: Горячие клавиши
 
 ---
 
-## 5. Web App Preview — Dashboard Pro / CRM Elite / Platform X
+## 3. Улучшения страницы деталей шаблона (TemplateDetail.tsx)
 
-### Новые секции и эффекты:
-- **Live chart animations**: Recharts с анимацией данных
-- **Draggable widgets**: Подвижные карточки (mock)
-- **Notification dropdown**: Popup уведомлений
-- **User dropdown menu**: Меню профиля
-- **Data table sorting**: Сортировка колонок таблицы
-- **Progress bars**: Анимированные прогресс-бары
-- **Kanban preview**: Доска задач с колонками
-- **Calendar widget**: Мини-календарь с выделенными датами
-- **Sparkline charts**: Мини-графики в карточках
-- **Theme switcher**: Переключатель светлой/тёмной темы (mock)
-- **Breadcrumbs**: Навигационные хлебные крошки
-- **Command palette**: Ctrl+K поиск (mock overlay)
+### Новые секции:
+- **Галерея скриншотов**: Слайдер реальных секций превью
+- **Видео-обзор**: Placeholder с Play кнопкой
+- **Сравнение "До/После"**: Slider comparison
+- **Process timeline**: Этапы разработки
+- **Отзывы клиентов**: Карусель отзывов
+- **Похожие шаблоны**: Рекомендации из той же категории
+- **FAQ по шаблону**: Частые вопросы
 
----
-
-## 6. Общие улучшения для всех превью
-
-### Анимации:
-- Framer Motion для входных анимаций секций
-- Stagger-эффект для списков
-- Scale/rotate при hover на карточках
-- Shimmer-эффект на loading-элементах
-- Gradient animation на кнопках
-
-### Декоративные элементы:
-- Floating particles (из существующего компонента)
-- Gradient glows (из существующего компонента)
-- Geometric shapes
-- Noise texture overlay
-- Grid pattern background
-
-### Интерактивность:
-- Working tabs с контентом
-- Collapsible sections
-- Modal dialogs
-- Toast notifications (показ при действиях)
-- Tooltip на иконках
+### Улучшение Hero:
+- Интерактивный 3D превью с TiltCard
+- Animated badge "Популярный" или "Новинка"
+- Floating elements декор
 
 ---
 
-## Технические детали
+## 4. Улучшения каталога шаблонов (Templates.tsx)
+
+### Новые элементы:
+- **Фильтры**: По цене, сроку, популярности
+- **Сортировка**: По цене, дате, рейтингу
+- **Быстрый просмотр**: Hover preview
+- **Сравнение шаблонов**: Checkbox для сравнения
+- **Поиск**: Поиск по названию и тегам
+
+---
+
+## 5. Новые shared-компоненты
+
+```text
+src/components/templates/previews/shared/
+├── LogoCarousel.tsx          // Бесконечная карусель логотипов
+├── LiveChatWidget.tsx        // Плавающий виджет чата
+├── ImageGallery.tsx          // Lightbox галерея
+├── ComparisonSlider.tsx      // До/После слайдер
+├── VideoPlaceholder.tsx      // Mock видео с Play
+├── MapPlaceholder.tsx        // Placeholder карты
+├── StockIndicator.tsx        // Индикатор остатка товара
+├── SizeGuideModal.tsx        // Модалка размеров
+├── OnboardingFlow.tsx        // Пошаговый туториал
+└── KeyboardShortcuts.tsx     // Модалка горячих клавиш
+```
+
+---
+
+## 6. Технические улучшения
+
+### Производительность:
+- Lazy loading для heavy-компонентов
+- Мемоизация тяжёлых вычислений
+- Intersection Observer для анимаций
+
+### Accessibility:
+- Aria-labels для интерактивных элементов
+- Keyboard navigation для модалок
+- Focus states для всех кнопок
+
+### Responsive:
+- Улучшенная мобильная адаптация
+- Touch-friendly элементы
+- Swipe-жесты для каруселей
+
+---
+
+## 7. План изменений файлов
 
 ### Новые файлы:
-```text
-src/components/templates/previews/
-├── shared/
-│   ├── PreviewParticles.tsx
-│   ├── AnimatedCounter.tsx
-│   ├── PreviewModal.tsx
-│   ├── DeviceSwitcher.tsx
-│   ├── ParallaxImage.tsx
-│   └── GradientBackground.tsx
-├── sections/
-│   ├── HeroAnimated.tsx
-│   ├── TestimonialsCarousel.tsx
-│   ├── PricingCards.tsx
-│   ├── FAQAccordion.tsx
-│   └── ContactFormPreview.tsx
-├── LandingPreview.tsx (расширенный)
-├── CorporatePreview.tsx (расширенный)
-├── EcommercePreview.tsx (расширенный)
-└── WebAppPreview.tsx (расширенный)
-```
+1. `src/components/templates/previews/shared/LogoCarousel.tsx`
+2. `src/components/templates/previews/shared/LiveChatWidget.tsx`
+3. `src/components/templates/previews/shared/ImageGallery.tsx`
+4. `src/components/templates/previews/shared/VideoPlaceholder.tsx`
+5. `src/components/templates/previews/unique/NoirElegancePreview.tsx`
+6. `src/components/templates/previews/unique/GoldenPrestigePreview.tsx`
+7. `src/components/templates/previews/unique/CrystalVisionPreview.tsx`
+(и т.д. для каждого шаблона)
 
 ### Изменяемые файлы:
-- `src/pages/TemplatePreview.tsx` — добавление DeviceSwitcher
-- `src/components/templates/previews/LandingPreview.tsx` — полная переработка
-- `src/components/templates/previews/CorporatePreview.tsx` — полная переработка
-- `src/components/templates/previews/EcommercePreview.tsx` — полная переработка
-- `src/components/templates/previews/WebAppPreview.tsx` — полная переработка
-
-### Используемые технологии:
-- Framer Motion (уже установлен)
-- Embla Carousel (уже установлен)
-- Recharts (уже установлен)
-- Radix UI Accordion/Tabs/Dialog (уже установлены)
+1. `src/data/templates.ts` — добавление дополнительного контента (отзывы, FAQ, скриншоты)
+2. `src/pages/TemplateDetail.tsx` — новые секции галереи, отзывов, FAQ
+3. `src/pages/Templates.tsx` — фильтры, поиск, сортировка
+4. `src/pages/TemplatePreview.tsx` — выбор уникального превью по id шаблона
+5. `src/components/templates/previews/LandingPreview.tsx` — новые секции контента
+6. `src/components/templates/previews/CorporatePreview.tsx` — новые секции контента
+7. `src/components/templates/previews/EcommercePreview.tsx` — новые секции контента
+8. `src/components/templates/previews/WebAppPreview.tsx` — новые секции контента
+9. `src/components/templates/previews/shared/index.ts` — экспорт новых компонентов
 
 ---
 
-## Визуальная схема улучшений
+## 8. Визуальная схема улучшений
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│  FLOATING TOOLBAR                                           │
-│  ← Назад │ Template Name │ [Desktop] [Tablet] [Mobile] │ ✕ │
-└─────────────────────────────────────────────────────────────┘
-     │
-     ▼
-┌─────────────────────────────────────────────────────────────┐
-│ ░░░░░ PARTICLES ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│                    TEMPLATE DETAIL PAGE                      │
+├─────────────────────────────────────────────────────────────┤
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ HERO with Gradient Animation                            │ │
-│ │ ╔═══════════════════════════════════════════════════╗   │ │
-│ │ ║  Animated typing: "Создаём будущее_"              ║   │ │
-│ │ ║  Particle burst on CTA click                      ║   │ │
-│ │ ╚═══════════════════════════════════════════════════╝   │ │
+│ │ HERO с 3D TiltCard Preview                              │ │
+│ │ + Animated badges + Floating particles                  │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ STATS with Animated Counters                            │ │
-│ │ [ 500+ ]  [ 98% ]  [ 15 ]  [ 24/7 ]                     │ │
+│ │ SCREENSHOT GALLERY                                       │ │
+│ │ [ Hero ] [ Features ] [ Pricing ] [ Contact ]           │ │
+│ │ Clickable lightbox с zoom                               │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ FEATURES with 3D Tilt Cards                             │ │
-│ │ ┌───────┐ ┌───────┐ ┌───────┐                           │ │
-│ │ │ HOVER │ │ TILT  │ │ GLOW  │                           │ │
-│ │ └───────┘ └───────┘ └───────┘                           │ │
+│ │ VIDEO OVERVIEW (placeholder)                             │ │
+│ │              ▶ 2:30 обзор шаблона                       │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ TESTIMONIALS Carousel                                    │ │
-│ │ ← "Отличная работа!" ● ○ ○ →                            │ │
+│ │ FEATURES + TECH STACK (existing, enhanced)              │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ PRICING with Hover Effects                               │ │
-│ │ ┌─────┐ ┌─────────┐ ┌─────┐                             │ │
-│ │ │Basic│ │ PRO ★   │ │Enter│                             │ │
-│ │ └─────┘ └─────────┘ └─────┘                             │ │
+│ │ PROCESS TIMELINE                                         │ │
+│ │ Бриф → Дизайн → Разработка → Тестирование → Запуск     │ │
 │ └─────────────────────────────────────────────────────────┘ │
 │ ┌─────────────────────────────────────────────────────────┐ │
-│ │ FAQ Accordion (working)                                  │ │
-│ │ ▼ Вопрос 1                                              │ │
-│ │   Ответ на вопрос...                                    │ │
-│ │ ► Вопрос 2                                              │ │
-│ │ ► Вопрос 3                                              │ │
+│ │ REVIEWS CAROUSEL                                         │ │
+│ │ "Отличный шаблон!" ● ○ ○ ○                              │ │
 │ └─────────────────────────────────────────────────────────┘ │
-│ ░░░░░ GRADIENT GLOWS ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ FAQ ACCORDION                                            │ │
+│ │ ▼ Как долго делается? → 7-14 дней                       │ │
+│ │ ► Что входит в стоимость?                               │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ SIMILAR TEMPLATES                                        │ │
+│ │ [ Template 1 ] [ Template 2 ] [ Template 3 ]            │ │
+│ └─────────────────────────────────────────────────────────┘ │
+│ ┌─────────────────────────────────────────────────────────┐ │
+│ │ CTA Section (existing)                                   │ │
+│ └─────────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 9. Приоритеты реализации
+
+### Высокий приоритет:
+1. Обогащение данных в `templates.ts` (отзывы, FAQ, скриншоты)
+2. Новые секции на странице деталей шаблона
+3. Уникальные элементы для каждого превью
+
+### Средний приоритет:
+4. Новые shared-компоненты (LogoCarousel, LiveChat, Gallery)
+5. Фильтрация и поиск в каталоге
+6. Дополнительный контент в превью
+
+### Низкий приоритет:
+7. Полностью уникальные превью для каждого шаблона
+8. A/B comparison slider
+9. Интеграция с формой заказа
 
 ---
 
 ## Ожидаемый результат
 
-После реализации каждое демо будет выглядеть как полноценный работающий сайт с:
-- 10+ интерактивных элементов
-- Плавными анимациями при скролле
-- Hover-эффектами на всех кликабельных элементах
-- Работающими UI-компонентами (табы, аккордеоны, модалки)
-- Адаптивным переключателем устройств
-- Премиальным визуальным оформлением с particle-эффектами и градиентами
-
+После реализации:
+- Каждый шаблон будет иметь уникальный характер и стиль
+- Страницы деталей станут информативнее с галереей, отзывами и FAQ
+- Превью будут содержать 15-20 интерактивных секций
+- Каталог получит фильтрацию и поиск
+- Общее количество контента увеличится в 2-3 раза
