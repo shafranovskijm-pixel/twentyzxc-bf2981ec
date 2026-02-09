@@ -1,169 +1,270 @@
 
-## План: Оптимизация загрузки изображений и добавление недостающих
+# План реализации: Отзывы и Конструктор "Веб-разработчик"
 
-### Анализ текущей ситуации
+## Обзор задачи
 
-Изучив кодовую базу, я обнаружил следующие проблемы:
-
-**1. Шаблоны с отсутствующими изображениями (используют placeholder-градиенты):**
-- `GoldenPrestigePreview` — изображения сервисов (`service-1.png`, `service-2.png`, `service-3.png`)
-- `ExecutiveSuitePreview` — изображения команды (`team-1.png` до `team-4.png`) 
-- `TechHorizonPreview` — изображения проектов и команды
-- `LuxeBoutiquePreview` — изображения товаров (`product-1.png` до `product-6.png`)
-- `ArtisanMarketPreview` — изображения товаров и аватары мастеров
-- `MarbleGoldPreview` — изображения портфолио (`portfolio-1.png` до `portfolio-6.png`) и команды (`team-1.png` до `team-4.png`)
-
-**2. Проблемы с загрузкой:**
-- Изображения загружаются без `loading="lazy"` в некоторых местах
-- Нет предзагрузки критических изображений (hero)
-- Отсутствует оптимизация размеров для разных viewport
-- Компонент `ImageWithFallback` уже существует, но не везде используется
-
-**3. Существующие локальные изображения:**
-```
-src/assets/templates/
-├── premium-gallery/          # 28+ изображений
-│   ├── hero.jpg, hero-pseudo3d.jpg
-│   ├── gallery-1.jpg до gallery-6.jpg
-│   └── spin/ (24 кадра)
-├── crystal-vision-hero.jpg
-├── crystal-vision-project-1.jpg  
-├── noir-elegance-hero.jpg
-└── noir-elegance-project-1.jpg
-```
+Замена раздела "Услуги" в футере на два новых раздела:
+1. **Отзывы** - страница с авторизацией через Google для оставления отзывов
+2. **Игра "Веб-разработчик"** - интерактивный конструктор с эффектами и анимациями
 
 ---
 
-### План реализации
+## Часть 1: Страница Отзывов (`/reviews`)
 
-#### Этап 1: Улучшение компонента ImageWithFallback
+### 1.1. Настройка Google OAuth
 
-Добавить:
-- Поддержку `srcSet` для responsive изображений
-- Приоритетную загрузку (`fetchpriority="high"`) для hero-изображений
-- `decoding="async"` для неблокирующей декодировки
-- Blur-up эффект при загрузке (low-quality placeholder)
-- Intersection Observer для отложенной загрузки вне viewport
+Используем Lovable Cloud для авторизации через Google:
+- Настройка социальной авторизации через `configure-social-auth` tool
+- Генерация модуля `@lovable.dev/cloud-auth-js`
+
+### 1.2. Создание таблицы отзывов
+
+```sql
+CREATE TABLE reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  user_name TEXT NOT NULL,
+  user_avatar TEXT,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  is_approved BOOLEAN DEFAULT true
+);
+
+-- RLS политики
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+
+-- Все могут читать одобренные отзывы
+CREATE POLICY "Anyone can read approved reviews"
+  ON reviews FOR SELECT
+  USING (is_approved = true);
+
+-- Авторизованные пользователи могут создавать отзывы
+CREATE POLICY "Authenticated users can insert reviews"
+  ON reviews FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.uid() = user_id);
+
+-- Пользователи могут удалять свои отзывы
+CREATE POLICY "Users can delete own reviews"
+  ON reviews FOR DELETE
+  TO authenticated
+  USING (auth.uid() = user_id);
+```
+
+### 1.3. Структура страницы Reviews
+
+```text
++-----------------------------------------------------------+
+|                      HEADER                               |
++-----------------------------------------------------------+
+|                                                           |
+|              ★ ОТЗЫВЫ НАШИХ КЛИЕНТОВ ★                   |
+|                                                           |
+|  [Кнопка: Войти через Google] (если не авторизован)       |
+|  [Форма отзыва] (если авторизован)                        |
+|                                                           |
+|  +-------+  +-------+  +-------+                          |
+|  | Отзыв |  | Отзыв |  | Отзыв |  ... (masonry grid)      |
+|  +-------+  +-------+  +-------+                          |
+|                                                           |
++-----------------------------------------------------------+
+|                      FOOTER                               |
++-----------------------------------------------------------+
+```
+
+### 1.4. Компоненты
+
+| Файл | Описание |
+|------|----------|
+| `src/pages/Reviews.tsx` | Основная страница |
+| `src/components/reviews/ReviewCard.tsx` | Карточка отзыва |
+| `src/components/reviews/ReviewForm.tsx` | Форма добавления |
+| `src/components/reviews/GoogleAuthButton.tsx` | Кнопка входа через Google |
+| `src/components/reviews/StarRating.tsx` | Компонент рейтинга (1-5 звёзд) |
+
+---
+
+## Часть 2: Игра "Веб-разработчик" (`/playground`)
+
+### 2.1. Концепция
+
+Интерактивный конструктор где пользователи могут:
+- Добавлять/удалять блоки
+- Выбирать эффекты и анимации
+- Настраивать цвета и фоны
+- Сохранять результат на уникальную страницу
+
+### 2.2. Таблица для сохранённых проектов
+
+```sql
+CREATE TABLE playground_projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug TEXT UNIQUE NOT NULL,
+  title TEXT NOT NULL,
+  blocks JSONB NOT NULL DEFAULT '[]',
+  settings JSONB NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Публичный доступ для чтения
+ALTER TABLE playground_projects ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read projects"
+  ON playground_projects FOR SELECT
+  USING (true);
+
+CREATE POLICY "Anyone can insert projects"
+  ON playground_projects FOR INSERT
+  WITH CHECK (true);
+```
+
+### 2.3. Доступные эффекты и анимации
+
+| Категория | Эффекты |
+|-----------|---------|
+| **Fade** | fade-in, fade-out, fade-in-left, fade-in-right |
+| **Scale** | scale-in, scale-out, pulse, bounce |
+| **Slide** | slide-up, slide-down, slide-left, slide-right |
+| **Rotate** | rotate-in, rotate-slow, spin |
+| **Hover** | hover-scale, hover-glow, hover-lift, tilt-3d |
+| **Particles** | floating-particles, sparkle, shimmer |
+| **Glow** | glow-gold, glow-subtle, neon-glow |
+| **Parallax** | parallax-slow, parallax-fast |
+
+### 2.4. Структура страницы Playground
+
+```text
++-----------------------------------------------------------+
+|  [Название проекта]  [Сохранить]  [Поделиться]  [Сбросить] |
++-----------------------------------------------------------+
+|                    |                                       |
+|   ПАНЕЛЬ БЛОКОВ    |         CANVAS (Preview)             |
+|                    |                                       |
+|   [+ Заголовок]    |   +-------------------------------+  |
+|   [+ Текст]        |   |                               |  |
+|   [+ Кнопка]       |   |      Добавленные блоки        |  |
+|   [+ Изображение]  |   |      с эффектами              |  |
+|   [+ Разделитель]  |   |                               |  |
+|   [+ Карточка]     |   +-------------------------------+  |
+|                    |                                       |
++--------------------+---------------------------------------+
+|                                                           |
+|  ПАНЕЛЬ НАСТРОЕК ВЫБРАННОГО БЛОКА                         |
+|  [Анимация: dropdown]  [Цвет: picker]  [Размер: slider]   |
+|  [Фон: picker]  [Отступы: inputs]  [Удалить]              |
+|                                                           |
++-----------------------------------------------------------+
+```
+
+### 2.5. Компоненты конструктора
+
+| Файл | Описание |
+|------|----------|
+| `src/pages/Playground.tsx` | Основная страница конструктора |
+| `src/pages/PlaygroundView.tsx` | Страница просмотра сохранённого проекта |
+| `src/components/playground/BlockPalette.tsx` | Панель доступных блоков |
+| `src/components/playground/Canvas.tsx` | Область предпросмотра |
+| `src/components/playground/BlockEditor.tsx` | Редактор свойств блока |
+| `src/components/playground/EffectSelector.tsx` | Выбор эффекта/анимации |
+| `src/components/playground/ColorPicker.tsx` | Выбор цвета |
+| `src/components/playground/AnimationPreview.tsx` | Превью анимации |
+| `src/hooks/use-playground.tsx` | Хук управления состоянием |
+| `src/data/playground-effects.ts` | Каталог эффектов с описаниями |
+
+### 2.6. Типы данных
 
 ```typescript
-// Новые пропсы для ImageWithFallback
-interface ImageWithFallbackProps {
-  priority?: boolean;      // Для hero-изображений
-  blur?: boolean;          // Blur-up эффект
-  sizes?: string;          // Для responsive
+interface PlaygroundBlock {
+  id: string;
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card';
+  content: string;
+  animation?: AnimationEffect;
+  hoverEffect?: HoverEffect;
+  styles: BlockStyles;
+}
+
+interface BlockStyles {
+  backgroundColor?: string;
+  textColor?: string;
+  padding?: string;
+  fontSize?: string;
+  borderRadius?: string;
+}
+
+interface AnimationEffect {
+  name: string;
+  description: string;
+  duration?: number;
+  delay?: number;
 }
 ```
 
 ---
 
-#### Этап 2: Генерация недостающих изображений
+## Часть 3: Обновление Footer
 
-Использовать AI-генерацию через Edge Function для создания:
+Замена раздела "Услуги":
 
-| Шаблон | Изображения | Тематика |
-|--------|-------------|----------|
-| GoldenPrestige | 3 сервисных | VIP-консьерж, премиум-сервис, элитные услуги |
-| ExecutiveSuite | 4 команды | Бизнес-портреты руководителей |
-| TechHorizon | 3 проекта + 3 команды | Технические проекты, разработчики |
-| LuxeBoutique | 6 товаров | Платья, пальто, сумки, украшения |
-| ArtisanMarket | 6 товаров + 3 мастера | Керамика, изделия ручной работы |
-| MarbleGold | 6 портфолио + 4 команды | Люксовые интерьеры, дизайнеры |
+```tsx
+// До
+<h4>Услуги</h4>
+<li>Веб-разработка</li>
+<li>Реклама</li>
+<li>Каталог услуг</li>
+<li>Синтагма</li>
 
-**Всего: ~35 изображений**
-
----
-
-#### Этап 3: Оптимизация существующих изображений
-
-**3.1. Критические (hero) изображения:**
-```typescript
-// Предзагрузка в <head> через react-helmet-async
-<link rel="preload" as="image" href={heroImage} fetchpriority="high" />
-```
-
-**3.2. Галерея Premium Gallery:**
-- Использовать ленивую загрузку для изображений вне viewport
-- Добавить skeleton при загрузке (уже есть в ImageWithFallback)
-
-**3.3. Карточки товаров/проектов:**
-- Использовать `sizes` атрибут для responsive
-- Загружать только видимые в viewport
-
----
-
-#### Этап 4: Рефакторинг шаблонов
-
-Заменить все прямые `<img>` теги на `<ImageWithFallback>`:
-
-```typescript
-// Было
-<img src={url} className="..." />
-
-// Станет
-<ImageWithFallback 
-  src={url} 
-  alt="Описание"
-  priority={isHero}
-  aspectRatio="video"
-/>
+// После
+<h4>Сообщество</h4>
+<li><Link to="/reviews">Отзывы</Link></li>
+<li><Link to="/playground">Игра "Веб-разработчик"</Link></li>
+<li><Link to="/templates">Каталог шаблонов</Link></li>
+<li><a href="#">Синтагма</a></li>
 ```
 
 ---
 
-### Файлы для изменения
+## Часть 4: Маршрутизация
 
-1. `src/components/templates/ImageWithFallback.tsx` — расширение функционала
-2. `src/components/templates/previews/unique/*.tsx` — 10+ файлов шаблонов
-3. `supabase/functions/generate-template-images/index.ts` — Edge Function для генерации
-4. Создание новых изображений в storage
+Добавление в `App.tsx`:
 
----
+```tsx
+import Reviews from "./pages/Reviews";
+import Playground from "./pages/Playground";
+import PlaygroundView from "./pages/PlaygroundView";
 
-### Техническая реализация
-
-**Улучшенный ImageWithFallback:**
-```typescript
-export const ImageWithFallback = ({
-  src,
-  alt,
-  priority = false,
-  blur = true,
-  sizes = "(max-width: 768px) 100vw, 50vw",
-  aspectRatio = "video",
-  ...props
-}: ImageWithFallbackProps) => {
-  return (
-    <div className={cn("relative overflow-hidden", aspectRatioClasses[aspectRatio])}>
-      {/* Skeleton при загрузке */}
-      {isLoading && <Skeleton className="absolute inset-0" />}
-      
-      {/* Blur placeholder */}
-      {blur && isLoading && (
-        <div className="absolute inset-0 backdrop-blur-xl bg-muted/50" />
-      )}
-      
-      <img
-        src={src}
-        alt={alt}
-        loading={priority ? "eager" : "lazy"}
-        decoding={priority ? "sync" : "async"}
-        fetchpriority={priority ? "high" : "auto"}
-        sizes={sizes}
-        onLoad={() => setIsLoading(false)}
-        onError={() => setHasError(true)}
-        className={cn("w-full h-full object-cover", isLoading && "opacity-0")}
-      />
-    </div>
-  );
-};
+<Route path="/reviews" element={<Reviews />} />
+<Route path="/playground" element={<Playground />} />
+<Route path="/p/:slug" element={<PlaygroundView />} />
 ```
 
 ---
 
-### Ожидаемый результат
+## Порядок реализации
 
-1. **Ускорение загрузки** — hero-изображения загружаются приоритетно
-2. **Экономия трафика** — ленивая загрузка для изображений вне viewport  
-3. **Улучшенный UX** — плавный blur-up эффект вместо резкого появления
-4. **Консистентность** — все шаблоны имеют реальные изображения вместо градиентных заглушек
-5. **Responsive** — оптимальные размеры для разных устройств
+1. **Настройка Google OAuth** через Lovable Cloud
+2. **Миграция базы данных** - создание таблиц `reviews` и `playground_projects`
+3. **Страница отзывов** - компоненты авторизации, форма, список
+4. **Конструктор** - блоки, эффекты, canvas, сохранение
+5. **Обновление Footer** - новые ссылки
+6. **Тестирование** - проверка потоков авторизации и сохранения
+
+---
+
+## Технические детали
+
+### Зависимости
+- `@dnd-kit` - уже установлен для drag-and-drop блоков
+- `framer-motion` - уже установлен для анимаций
+- `@lovable.dev/cloud-auth-js` - будет установлен для Google OAuth
+
+### Стилизация
+- Использование существующей дизайн-системы (`luxury-card`, `gradient-gold-text`)
+- Декоративные элементы как на других страницах (`FloatingParticles`, `GeometricShapes`)
+- Анимации из `tailwind.config.ts` и `index.css`
+
+### Безопасность
+- RLS политики для защиты данных
+- Google OAuth через Lovable Cloud (управляемое решение)
+- Валидация контента отзывов
