@@ -43,6 +43,7 @@ const Playground = () => {
     setSelectedBlockId,
     setSettings,
     addBlock,
+    addBlocks,
     updateBlock,
     updateBlockStyles,
     deleteBlock,
@@ -202,7 +203,7 @@ const Playground = () => {
                 <div className="sticky top-24 space-y-6">
                   {/* Templates */}
                   <div className="p-4 rounded-lg border border-border bg-secondary/20">
-                    <ProjectTemplates onSelectTemplate={handleSelectTemplate} />
+                    <ProjectTemplates onSelectTemplate={handleSelectTemplate} onAddBlocks={addBlocks} />
                   </div>
                   
                   <BlockPalette onAddBlock={addBlock} />
@@ -225,7 +226,7 @@ const Playground = () => {
                       <SheetTitle>Добавить блок</SheetTitle>
                     </SheetHeader>
                     <div className="mt-6 space-y-6">
-                      <ProjectTemplates onSelectTemplate={handleSelectTemplate} />
+                      <ProjectTemplates onSelectTemplate={handleSelectTemplate} onAddBlocks={addBlocks} />
                       <BlockPalette onAddBlock={addBlock} />
                     </div>
                   </SheetContent>
