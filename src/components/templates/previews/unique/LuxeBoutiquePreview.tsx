@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingBag, Heart, Search, ChevronRight, ArrowRight, Sparkles, Gift, Truck, RefreshCcw, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal, StaggerContainer, StaggerItem, LiveChatWidget, InstagramFeed } from "../shared";
-import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // Local images
@@ -191,6 +191,7 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
                     alt="Fashion Preview"
                     className="w-full h-full"
                     aspectRatio="portrait"
+                    sizes={imageSizes.hero}
                     fallbackGradient="from-rose-100 to-rose-200"
                     priority
                   />
@@ -278,6 +279,7 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
                       alt={product.name}
                       className="w-full h-full"
                       aspectRatio="portrait"
+                      sizes={imageSizes.product}
                       fallbackGradient="from-rose-50 to-white"
                     />
                     

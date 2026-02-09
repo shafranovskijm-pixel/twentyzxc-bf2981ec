@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Template } from "@/data/templates";
 import { ScrollReveal, AnimatedCounter, GradientButton, LiveChatWidget } from "../shared";
-import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
 
 // Local images
 import artisan1 from "@/assets/templates/artisan-market/artisan-1.jpg";
@@ -247,6 +247,7 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
                       alt={artisan.name}
                       className="w-full h-full rounded-full"
                       aspectRatio="square"
+                      sizes={imageSizes.avatar}
                       fallbackGradient="from-orange-200 to-amber-200"
                     />
                   </div>
@@ -302,6 +303,7 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
                     alt={product.name}
                     className="w-full h-full"
                     aspectRatio="square"
+                    sizes={imageSizes.product}
                     fallbackGradient="from-orange-100 to-amber-100"
                   />
                   

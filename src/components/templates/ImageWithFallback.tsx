@@ -1,7 +1,32 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
+
+// Predefined sizes configurations for common use cases
+export const imageSizes = {
+  // Full width on mobile, half on tablet, third on desktop
+  card: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  // Full width on mobile, half on larger screens
+  hero: "(max-width: 768px) 100vw, 50vw",
+  // Always full width
+  fullWidth: "100vw",
+  // Small thumbnails
+  thumbnail: "(max-width: 640px) 50vw, 150px",
+  // Gallery grid - 2 cols on mobile, 3 on tablet, 4+ on desktop
+  gallery: "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
+  // Avatar sizes
+  avatar: "96px",
+  // Product cards - 2 cols on mobile, 3 on larger
+  product: "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 280px",
+  // Team member portraits
+  portrait: "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 192px",
+};
+
+interface ResponsiveImage {
+  src: string;
+  width: number;
+}
 
 interface ImageWithFallbackProps {
   src: string | undefined;
@@ -13,10 +38,15 @@ interface ImageWithFallbackProps {
   showSkeleton?: boolean;
   /** Priority loading for hero/above-fold images */
   priority?: boolean;
-  /** Responsive sizes attribute */
+  /** Responsive sizes attribute for browser optimization */
   sizes?: string;
   /** Enable blur-up effect during loading */
   blur?: boolean;
+  /** 
+   * srcSet for responsive images - array of {src, width} objects
+   * Example: [{ src: '/img-sm.jpg', width: 400 }, { src: '/img-lg.jpg', width: 800 }]
+   */
+  srcSet?: ResponsiveImage[];
 }
 
 const aspectRatioClasses = {
@@ -24,6 +54,13 @@ const aspectRatioClasses = {
   video: "aspect-video",
   portrait: "aspect-[3/4]",
   wide: "aspect-[21/9]",
+};
+
+/**
+ * Generate srcSet string from responsive image array
+ */
+const generateSrcSet = (images: ResponsiveImage[]): string => {
+  return images.map(({ src, width }) => `${src} ${width}w`).join(", ");
 };
 
 export const ImageWithFallback = ({
@@ -35,14 +72,21 @@ export const ImageWithFallback = ({
   fallbackGradient = "from-muted/50 to-muted",
   showSkeleton = true,
   priority = false,
-  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
+  sizes = imageSizes.card,
   blur = true,
+  srcSet,
 }: ImageWithFallbackProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | undefined>(src);
   const [isInView, setIsInView] = useState(priority);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Memoize srcSet string
+  const srcSetString = useMemo(() => {
+    if (!srcSet || srcSet.length === 0) return undefined;
+    return generateSrcSet(srcSet);
+  }, [srcSet]);
 
   useEffect(() => {
     setImageSrc(src);
@@ -118,6 +162,7 @@ export const ImageWithFallback = ({
       {isInView && (
         <motion.img
           src={imageSrc}
+          srcSet={srcSetString}
           alt={alt}
           className={cn(
             "w-full h-full object-cover",

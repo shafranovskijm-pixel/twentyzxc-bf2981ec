@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Diamond, ArrowRight, Quote, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { ScrollReveal, StaggerContainer, StaggerItem, AnimatedCounter } from "../shared";
-import { ImageWithFallback, AvatarWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, AvatarWithFallback, imageSizes } from "../../ImageWithFallback";
 import useEmblaCarousel from "embla-carousel-react";
 
 // Local images
@@ -215,6 +215,7 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
                       alt={project.title}
                       className="w-full h-full"
                       aspectRatio="portrait"
+                      sizes={imageSizes.gallery}
                       fallbackGradient="from-stone-800 to-stone-900"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -250,6 +251,7 @@ export const MarbleGoldPreview = ({ template }: MarbleGoldPreviewProps) => {
                       alt={member.name}
                       className="w-full h-full rounded-full"
                       aspectRatio="square"
+                      sizes={imageSizes.portrait}
                       fallbackGradient="from-stone-800 to-stone-900"
                     />
                   </div>
