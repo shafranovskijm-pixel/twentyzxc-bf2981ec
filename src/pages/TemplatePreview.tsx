@@ -2,6 +2,16 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { getTemplateById, getCategoryByTemplateId } from "@/data/templates";
 import { LandingPreview, CorporatePreview, EcommercePreview, WebAppPreview } from "@/components/templates/previews";
+import { 
+  NoirElegancePreview, 
+  GoldenPrestigePreview, 
+  CrystalVisionPreview,
+  ExecutiveSuitePreview,
+  MarbleGoldPreview,
+  LuxeBoutiquePreview,
+  DashboardProPreview,
+  CRMElitePreview
+} from "@/components/templates/previews/unique";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, ArrowLeft } from "lucide-react";
 import { DeviceSwitcher, DeviceType, getDeviceWidth } from "@/components/templates/previews/shared";
@@ -48,19 +58,48 @@ const TemplatePreview = () => {
     );
   }
 
-  // Render preview based on category
+  // Render unique preview based on template ID, fallback to category-based preview
   const renderPreview = () => {
-    switch (category.id) {
-      case "landing":
-        return <LandingPreview template={template} />;
-      case "corporate":
-        return <CorporatePreview template={template} />;
-      case "ecommerce":
-        return <EcommercePreview template={template} />;
-      case "webapp":
-        return <WebAppPreview template={template} />;
+    // Unique previews for specific templates
+    switch (id) {
+      // Landing templates
+      case "noir-elegance":
+        return <NoirElegancePreview template={template} />;
+      case "golden-prestige":
+        return <GoldenPrestigePreview template={template} />;
+      case "crystal-vision":
+        return <CrystalVisionPreview template={template} />;
+      
+      // Corporate templates
+      case "executive-suite":
+        return <ExecutiveSuitePreview template={template} />;
+      case "marble-gold":
+        return <MarbleGoldPreview template={template} />;
+      
+      // E-commerce templates
+      case "luxe-boutique":
+        return <LuxeBoutiquePreview template={template} />;
+      
+      // WebApp templates
+      case "dashboard-pro":
+        return <DashboardProPreview template={template} />;
+      case "crm-elite":
+        return <CRMElitePreview template={template} />;
+      
+      // Fallback to category-based preview for templates without unique preview
       default:
-        return <LandingPreview template={template} />;
+        switch (category.id) {
+          case "landing":
+            return <LandingPreview template={template} />;
+          case "corporate":
+            return <CorporatePreview template={template} />;
+          case "ecommerce":
+            return <EcommercePreview template={template} />;
+          case "webapp":
+            return <WebAppPreview template={template} />;
+          default:
+            return <LandingPreview template={template} />;
+        }
     }
   };
 
