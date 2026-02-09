@@ -86,7 +86,7 @@ const FormBlock = ({ block, slug, style, mp }: { block: PlaygroundBlock; slug: s
   );
 };
 
-
+const PlaygroundView = () => {
   const { slug } = useParams();
   const [project, setProject] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
