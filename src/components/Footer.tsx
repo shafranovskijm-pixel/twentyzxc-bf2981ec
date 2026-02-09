@@ -1,4 +1,5 @@
 import { Mail, Phone, Send, Diamond, Copy, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -147,11 +148,11 @@ const Footer = () => {
               {/* Links grid */}
               <div className="grid grid-cols-2 gap-8">
                 <div>
-                  <h4 className="text-sm font-semibold tracking-widest uppercase text-primary mb-6">Услуги</h4>
+                  <h4 className="text-sm font-semibold tracking-widest uppercase text-primary mb-6">Сообщество</h4>
                   <ul className="space-y-3 text-sm text-muted-foreground">
-                    <li><a href="#webdev" className="hover:text-foreground transition-colors">Веб-разработка</a></li>
-                    <li><a href="#advertising" className="hover:text-foreground transition-colors">Реклама</a></li>
-                    <li><a href="#services" className="hover:text-foreground transition-colors">Каталог услуг</a></li>
+                    <li><Link to="/reviews" className="hover:text-foreground transition-colors">Отзывы</Link></li>
+                    <li><Link to="/playground" className="hover:text-foreground transition-colors">Веб-разработчик</Link></li>
+                    <li><Link to="/templates" className="hover:text-foreground transition-colors">Каталог шаблонов</Link></li>
                     <li><a href="#" className="hover:text-foreground transition-colors">Синтагма</a></li>
                   </ul>
                 </div>
@@ -159,10 +160,10 @@ const Footer = () => {
                 <div>
                   <h4 className="text-sm font-semibold tracking-widest uppercase text-primary mb-6">Компания</h4>
                   <ul className="space-y-3 text-sm text-muted-foreground">
-                    <li><a href="#" className="hover:text-foreground transition-colors">О нас</a></li>
-                    <li><a href="#" className="hover:text-foreground transition-colors">Портфолио</a></li>
+                    <li><Link to="/about" className="hover:text-foreground transition-colors">О нас</Link></li>
+                    <li><Link to="/portfolio" className="hover:text-foreground transition-colors">Портфолио</Link></li>
                     <li><a href="#contact" className="hover:text-foreground transition-colors">Контакты</a></li>
-                    <li><a href="#" className="hover:text-foreground transition-colors">Политика</a></li>
+                    <li><Link to="/policy" className="hover:text-foreground transition-colors">Политика</Link></li>
                   </ul>
                 </div>
               </div>
