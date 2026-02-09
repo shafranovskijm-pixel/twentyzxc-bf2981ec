@@ -355,6 +355,16 @@ const PlaygroundView = () => {
     <>
       <Helmet><title>{project.title} | 24ZXC Playground</title></Helmet>
       <div style={getBackgroundStyle()}>
+        {/* Back to editor button */}
+        <div className="fixed top-4 left-4 z-50">
+          <a
+            href="/playground"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/80 transition-all text-sm border border-white/10 shadow-lg"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            В редактор
+          </a>
+        </div>
         <div className="max-w-4xl mx-auto p-6 space-y-4">
           {project.blocks.map((block, index) => {
             const rendered = renderBlock(block, index);
