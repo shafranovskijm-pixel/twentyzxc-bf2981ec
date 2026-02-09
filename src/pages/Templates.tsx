@@ -111,29 +111,9 @@ const Templates = () => {
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
               Каталог <span className="gradient-gold-text">шаблонов</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto mb-8">
+            <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
               Премиальные шаблоны сайтов класса люкс. Современный дизайн, продуманная UX и безупречное качество кода
             </p>
-
-            {/* Search Bar */}
-            <div className="max-w-md mx-auto relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Поиск шаблонов..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-10 h-12 rounded-sm bg-secondary/50 border-border"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
           </AnimatedSection>
         </div>
       </section>
