@@ -33,13 +33,13 @@ export const PlaygroundCTA = ({ onStartCreating }: PlaygroundCTAProps) => {
           </motion.div>
           
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-            Сделай свой сайт —{" "}
-            <span className="gradient-gold-text">опубликуем бесплатно</span>
+            Попробуй себя разработчиком —{" "}
+            <span className="gradient-gold-text">сделай свой первый сайт</span>
           </h2>
           
           <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
             Создай уникальный дизайн в нашем конструкторе с анимациями и эффектами.
-            Лучшие работы разместим на 24zxc.ru
+            И размести свой сайт на 24zxc.ru/твой-сайт
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
