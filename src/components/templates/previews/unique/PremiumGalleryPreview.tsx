@@ -10,6 +10,7 @@ import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
 import { ARBadge } from "../shared/ARBadge";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
+import { Product360Spin } from "../shared/Product360Spin";
 
 // Lazy load the 3D viewer for better performance
 const Product3DViewer = lazy(() => import("../shared/Product3DViewer"));
@@ -44,7 +45,41 @@ import gallery6Angle2 from "@/assets/templates/premium-gallery/gallery-6-angle-2
 import gallery6Angle3 from "@/assets/templates/premium-gallery/gallery-6-angle-3.jpg";
 import gallery6Angle4 from "@/assets/templates/premium-gallery/gallery-6-angle-4.jpg";
 
-// Hero images for 360° (4 views)
+// Import 24-frame hero spin sequence
+import heroSpin00 from "@/assets/templates/premium-gallery/spin/hero-spin-00.jpg";
+import heroSpin01 from "@/assets/templates/premium-gallery/spin/hero-spin-01.jpg";
+import heroSpin02 from "@/assets/templates/premium-gallery/spin/hero-spin-02.jpg";
+import heroSpin03 from "@/assets/templates/premium-gallery/spin/hero-spin-03.jpg";
+import heroSpin04 from "@/assets/templates/premium-gallery/spin/hero-spin-04.jpg";
+import heroSpin05 from "@/assets/templates/premium-gallery/spin/hero-spin-05.jpg";
+import heroSpin06 from "@/assets/templates/premium-gallery/spin/hero-spin-06.jpg";
+import heroSpin07 from "@/assets/templates/premium-gallery/spin/hero-spin-07.jpg";
+import heroSpin08 from "@/assets/templates/premium-gallery/spin/hero-spin-08.jpg";
+import heroSpin09 from "@/assets/templates/premium-gallery/spin/hero-spin-09.jpg";
+import heroSpin10 from "@/assets/templates/premium-gallery/spin/hero-spin-10.jpg";
+import heroSpin11 from "@/assets/templates/premium-gallery/spin/hero-spin-11.jpg";
+import heroSpin12 from "@/assets/templates/premium-gallery/spin/hero-spin-12.jpg";
+import heroSpin13 from "@/assets/templates/premium-gallery/spin/hero-spin-13.jpg";
+import heroSpin14 from "@/assets/templates/premium-gallery/spin/hero-spin-14.jpg";
+import heroSpin15 from "@/assets/templates/premium-gallery/spin/hero-spin-15.jpg";
+import heroSpin16 from "@/assets/templates/premium-gallery/spin/hero-spin-16.jpg";
+import heroSpin17 from "@/assets/templates/premium-gallery/spin/hero-spin-17.jpg";
+import heroSpin18 from "@/assets/templates/premium-gallery/spin/hero-spin-18.jpg";
+import heroSpin19 from "@/assets/templates/premium-gallery/spin/hero-spin-19.jpg";
+import heroSpin20 from "@/assets/templates/premium-gallery/spin/hero-spin-20.jpg";
+import heroSpin21 from "@/assets/templates/premium-gallery/spin/hero-spin-21.jpg";
+import heroSpin22 from "@/assets/templates/premium-gallery/spin/hero-spin-22.jpg";
+import heroSpin23 from "@/assets/templates/premium-gallery/spin/hero-spin-23.jpg";
+
+// 24-frame spin sequence for smooth 360° rotation
+const heroSpinSequence = [
+  heroSpin00, heroSpin01, heroSpin02, heroSpin03, heroSpin04, heroSpin05,
+  heroSpin06, heroSpin07, heroSpin08, heroSpin09, heroSpin10, heroSpin11,
+  heroSpin12, heroSpin13, heroSpin14, heroSpin15, heroSpin16, heroSpin17,
+  heroSpin18, heroSpin19, heroSpin20, heroSpin21, heroSpin22, heroSpin23,
+];
+
+// Hero images for 360° (4 views) - legacy
 const heroImages360 = [heroImage, heroAngle2, heroAngle3, heroAngle4];
 
 // Gallery images with 360° angles (4 views per product)
@@ -76,178 +111,20 @@ interface Product {
   stock: number;
 }
 
-// 360° Product Viewer Component
+// 360° Product Viewer Component - using new 24-frame spin viewer
 interface Product360ViewerProps {
-  rotation: number;
-  setRotation: (val: number) => void;
-  isDragging: boolean;
-  setIsDragging: (val: boolean) => void;
+  onClose?: () => void;
 }
 
-const Product360Viewer = ({ rotation, setRotation, isDragging, setIsDragging }: Product360ViewerProps) => {
-  const startXRef = useRef(0);
-  const [isAutoRotating, setIsAutoRotating] = useState(false);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setIsAutoRotating(false);
-    startXRef.current = e.clientX;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const delta = e.clientX - startXRef.current;
-    if (Math.abs(delta) > 5) {
-      setRotation((rotation + delta * 0.5) % 360);
-      startXRef.current = e.clientX;
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setIsDragging(true);
-    setIsAutoRotating(false);
-    startXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return;
-    const delta = e.touches[0].clientX - startXRef.current;
-    if (Math.abs(delta) > 5) {
-      setRotation((rotation + delta * 0.5) % 360);
-      startXRef.current = e.touches[0].clientX;
-    }
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-  };
-
+const Product360Viewer = ({ onClose }: Product360ViewerProps) => {
   return (
     <div className="relative max-w-md mx-auto">
-      {/* 360° Badge */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-sm">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-          className="w-5 h-5 rounded-full border-2 border-dashed border-white/60"
-        />
-        <span className="text-sm font-medium text-white">360°</span>
-      </div>
-
-      {/* Main viewer area */}
-      <div
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative aspect-square rounded-3xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-emerald-500/20 overflow-hidden cursor-grab active:cursor-grabbing select-none"
-      >
-        {/* Hero jewelry images - 360° rotation with real images */}
-        <div className="absolute inset-0">
-          {heroImages360.map((img, i) => {
-            const angleRange = 360 / 4; // 90° per image
-            const normalizedRotation = ((rotation % 360) + 360) % 360;
-            const imageAngleStart = i * angleRange;
-            const imageAngleEnd = (i + 1) * angleRange;
-            const isVisible = normalizedRotation >= imageAngleStart && normalizedRotation < imageAngleEnd;
-            
-            return (
-              <img
-                key={i}
-                src={img}
-                alt={`Luxury jewelry collection - angle ${i + 1}`}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ${
-                  isVisible ? "opacity-100" : "opacity-0"
-                }`}
-              />
-            );
-          })}
-        </div>
-        
-        {/* Overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-        
-        {/* Shine effect */}
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent pointer-events-none"
-          style={{
-            transform: `translateX(${rotation % 360}px)`,
-          }}
-        />
-
-        {/* Drag hint */}
-        <AnimatePresence>
-          {!isDragging && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            >
-              <motion.div
-                animate={{ x: [-20, 20, -20] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-sm"
-              >
-                <span className="text-sm text-white/70">← Перетащите для вращения →</span>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Rotation indicator */}
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-sm">
-          <RotateCcw className="w-4 h-4 text-white/60" />
-          <span className="text-sm text-white/80">{Math.round(Math.abs(rotation % 360))}°</span>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-2 mt-4">
-        <button
-          onClick={() => setIsAutoRotating(!isAutoRotating)}
-          className={`p-2 rounded-lg transition-colors ${
-            isAutoRotating 
-              ? "bg-emerald-500 text-white" 
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-          }`}
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
-        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
-          <ZoomOut className="w-5 h-5" />
-        </button>
-        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
-          <ZoomIn className="w-5 h-5" />
-        </button>
-        <button className="p-2 rounded-lg bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition-colors">
-          <Maximize2 className="w-5 h-5" />
-        </button>
-      </div>
-
-      {/* Frame indicator dots */}
-      <div className="flex justify-center gap-1 mt-3">
-        {[0, 1, 2, 3].map((i) => {
-          const isActive = Math.floor((rotation % 360) / 90) === i || 
-                          (rotation < 0 && Math.floor((360 + (rotation % 360)) / 90) === i);
-          return (
-            <button
-              key={i}
-              onClick={() => setRotation(i * 90)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                isActive ? "bg-emerald-500 w-4" : "bg-zinc-700 hover:bg-zinc-600"
-              }`}
-            />
-          );
-        })}
-      </div>
+      <Product360Spin 
+        images={heroSpinSequence}
+        autoPlay={true}
+        onClose={onClose}
+        className="aspect-square rounded-3xl"
+      />
     </div>
   );
 };
@@ -370,8 +247,6 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [selectedCity, setSelectedCity] = useState("moscow");
-  const [heroRotation, setHeroRotation] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   const cities = [
     { id: "moscow", name: "Москва", days: "1-2", price: 0 },
@@ -488,12 +363,7 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            <Product360Viewer 
-              rotation={heroRotation}
-              setRotation={setHeroRotation}
-              isDragging={isDragging}
-              setIsDragging={setIsDragging}
-            />
+            <Product360Viewer />
           </motion.div>
         </div>
       </section>
