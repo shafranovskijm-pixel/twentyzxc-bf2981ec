@@ -183,9 +183,15 @@ const WebDevSection = () => {
                 <FeatureItem icon={<Code2 />} title="Интеграции" desc="Moodle, ФРДО, API" />
               </div>
 
-              <Button variant="hero">
+              <a 
+                href="https://синтагма.рф" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-8 py-3 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 hover:shadow-[0_0_20px_hsl(45_80%_55%/0.3)]"
+              >
                 Подробнее о проекте
-              </Button>
+                <ArrowUpRight className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
