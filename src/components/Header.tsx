@@ -13,6 +13,7 @@ const navLinks = [
     ]
   },
   { href: "/templates", label: "Шаблоны" },
+  { href: "/playground", label: "Конструктор сайтов" },
   { href: "/portfolio", label: "Портфолио" },
   { href: "/about", label: "О нас" },
   { href: "/#contact", label: "Контакты" },

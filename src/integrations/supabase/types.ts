@@ -117,27 +117,36 @@ export type Database = {
       }
       playground_projects: {
         Row: {
+          author_name: string | null
           blocks: Json
           created_at: string
           id: string
+          is_featured: boolean | null
+          preview_image: string | null
           settings: Json
           slug: string
           title: string
           updated_at: string
         }
         Insert: {
+          author_name?: string | null
           blocks?: Json
           created_at?: string
           id?: string
+          is_featured?: boolean | null
+          preview_image?: string | null
           settings?: Json
           slug: string
           title: string
           updated_at?: string
         }
         Update: {
+          author_name?: string | null
           blocks?: Json
           created_at?: string
           id?: string
+          is_featured?: boolean | null
+          preview_image?: string | null
           settings?: Json
           slug?: string
           title?: string
