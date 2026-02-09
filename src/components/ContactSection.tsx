@@ -152,44 +152,18 @@ const ContactSection = () => {
 
   return (
     <section id="contact" ref={sectionRef} className="py-32 relative overflow-hidden bg-secondary/30">
-      {/* Animated top line */}
-      <div 
-        className={`absolute top-0 left-1/2 -translate-x-1/2 w-px bg-gradient-to-b from-primary/50 to-transparent transition-all duration-1000 ease-out ${
-          animationStep >= 1 ? 'h-32 opacity-100' : 'h-0 opacity-0'
-        }`}
-      />
-      
-      {/* Diamond at the end of line */}
-      <div 
-        className={`absolute top-32 left-1/2 -translate-x-1/2 transition-all duration-500 delay-300 ${
-          animationStep >= 2 ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
-        }`}
-      >
-        <Diamond className="w-4 h-4 text-primary" />
-      </div>
-      
       <div className="container relative z-10 px-4">
         <div className="max-w-5xl mx-auto">
-          {/* Section header - animated */}
+          {/* Section header */}
           <div 
             className={`text-center mb-16 transition-all duration-700 ${
               animationStep >= 3 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            <div className="inline-flex items-center gap-4 mb-6">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/50" />
-              <Diamond className="w-5 h-5 text-primary" />
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
-            </div>
             <h2 className="text-4xl md:text-6xl font-display font-bold mb-6">
               Начнём
               <span className="gradient-gold-text"> сотрудничество</span>
             </h2>
-            <p className="text-lg text-muted-foreground">
-              {keys.length > 0 
-                ? "Перетащите ключ к сундуку, чтобы открыть форму" 
-                : "Соберите ключи от услуг выше или откройте сундук напрямую"}
-            </p>
           </div>
 
           {/* Treasure Chest & Form */}
