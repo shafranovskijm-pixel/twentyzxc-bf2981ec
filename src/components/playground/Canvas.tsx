@@ -5,7 +5,8 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { PlaygroundBlock, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
 import { SortableBlock } from "./SortableBlock";
-import { Trash2, Copy, ImagePlus } from "lucide-react";
+import { Trash2, Copy, ImagePlus, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
@@ -20,6 +21,7 @@ interface CanvasProps {
 
 export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder, onDeleteBlock, onDuplicateBlock, onAddImageBlock }: CanvasProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -32,7 +34,28 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
     }
   };
 
-  const handleFileDrop = useCallback((e: React.DragEvent) => {
+  const uploadToStorage = useCallback(async (file: File): Promise<string | null> => {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { error } = await supabase.storage
+      .from('playground-images')
+      .upload(filePath, file, { cacheControl: '31536000', upsert: false });
+
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('playground-images')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  }, []);
+
+  const handleFileDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -41,12 +64,20 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
 
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    if (imageFiles.length === 0) return;
 
-    imageFiles.forEach(file => {
-      const url = URL.createObjectURL(file);
-      onAddImageBlock(url);
-    });
-  }, [onAddImageBlock]);
+    setIsUploading(true);
+    try {
+      for (const file of imageFiles) {
+        const url = await uploadToStorage(file);
+        if (url) {
+          onAddImageBlock(url);
+        }
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  }, [onAddImageBlock, uploadToStorage]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -333,12 +364,21 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      {/* Drop overlay */}
-      {isDragOver && (
+      {/* Drop / upload overlay */}
+      {(isDragOver || isUploading) && (
         <div className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
           <div className="flex flex-col items-center gap-3 text-primary">
-            <ImagePlus className="w-12 h-12" />
-            <span className="text-lg font-medium">Перетащите изображения сюда</span>
+            {isUploading ? (
+              <>
+                <Loader2 className="w-12 h-12 animate-spin" />
+                <span className="text-lg font-medium">Загрузка изображений...</span>
+              </>
+            ) : (
+              <>
+                <ImagePlus className="w-12 h-12" />
+                <span className="text-lg font-medium">Перетащите изображения сюда</span>
+              </>
+            )}
           </div>
         </div>
       )}
