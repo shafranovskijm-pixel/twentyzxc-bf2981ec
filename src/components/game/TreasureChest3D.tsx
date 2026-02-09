@@ -1,10 +1,67 @@
-import { Suspense, useRef, useState, useEffect, useMemo } from "react";
+import { Suspense, useRef, useState, useEffect, useMemo, useCallback } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Float, Sparkles } from "@react-three/drei";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lock, Unlock } from "lucide-react";
 import { useInventory, KeyItem } from "@/contexts/InventoryContext";
 import * as THREE from "three";
+
+// Sound effect for chest opening
+const playChestSound = () => {
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  // Create multiple oscillators for a rich "chest opening" sound
+  const createTone = (freq: number, startTime: number, duration: number, gain: number) => {
+    const osc = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    osc.frequency.setValueAtTime(freq, audioContext.currentTime + startTime);
+    osc.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime + startTime);
+    gainNode.gain.linearRampToValueAtTime(gain, audioContext.currentTime + startTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + startTime + duration);
+    
+    osc.start(audioContext.currentTime + startTime);
+    osc.stop(audioContext.currentTime + startTime + duration);
+  };
+  
+  // Creak sound (low frequency sweep)
+  const osc1 = audioContext.createOscillator();
+  const gain1 = audioContext.createGain();
+  osc1.connect(gain1);
+  gain1.connect(audioContext.destination);
+  osc1.type = 'sawtooth';
+  osc1.frequency.setValueAtTime(80, audioContext.currentTime);
+  osc1.frequency.linearRampToValueAtTime(200, audioContext.currentTime + 0.3);
+  osc1.frequency.linearRampToValueAtTime(100, audioContext.currentTime + 0.5);
+  gain1.gain.setValueAtTime(0.1, audioContext.currentTime);
+  gain1.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.5);
+  osc1.start();
+  osc1.stop(audioContext.currentTime + 0.5);
+  
+  // Magic sparkle tones
+  createTone(800, 0.1, 0.3, 0.08);
+  createTone(1200, 0.15, 0.25, 0.06);
+  createTone(1600, 0.2, 0.3, 0.04);
+  createTone(2000, 0.25, 0.2, 0.03);
+  
+  // Deep thud
+  const osc2 = audioContext.createOscillator();
+  const gain2 = audioContext.createGain();
+  osc2.connect(gain2);
+  gain2.connect(audioContext.destination);
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(60, audioContext.currentTime);
+  osc2.frequency.exponentialRampToValueAtTime(30, audioContext.currentTime + 0.2);
+  gain2.gain.setValueAtTime(0.15, audioContext.currentTime);
+  gain2.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.3);
+  osc2.start();
+  osc2.stop(audioContext.currentTime + 0.3);
+};
 
 // Key colors for different services
 const keyColors: Record<string, { main: string; accent: string; gem: string }> = {
@@ -478,6 +535,7 @@ export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () 
     // Turn: key rotates 90 degrees (1.2s)
     setTimeout(() => {
       setUnlockPhase('opening');
+      playChestSound(); // Play chest opening sound
       removeKey(keyId);
       onOpen();
     }, 3000);
@@ -526,10 +584,28 @@ export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () 
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleLockedChestClick}
       >
-        {/* Ambient glow */}
-        <div className={`absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent rounded-lg transition-opacity duration-500 ${
-          isDragOver || isOpen ? 'opacity-100' : 'opacity-50'
+        {/* Ambient glow - enhanced */}
+        <div className={`absolute inset-0 rounded-lg transition-all duration-700 ${
+          isDragOver || isOpen 
+            ? 'bg-gradient-radial from-primary/30 via-primary/10 to-transparent opacity-100' 
+            : isHovered
+              ? 'bg-gradient-radial from-primary/20 via-primary/5 to-transparent opacity-100'
+              : 'bg-gradient-radial from-primary/10 via-transparent to-transparent opacity-50'
         }`} />
+        
+        {/* Pulsing glow ring when hovered */}
+        {isHovered && !isOpen && unlockPhase === 'idle' && (
+          <div className="absolute inset-4 rounded-lg border-2 border-primary/30 animate-pulse" />
+        )}
+        
+        {/* Opening glow burst */}
+        {(unlockPhase === 'opening' || unlockPhase === 'done') && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1.2 }}
+            className="absolute inset-0 bg-gradient-radial from-primary/40 via-primary/20 to-transparent rounded-lg"
+          />
+        )}
         
         <Canvas
           camera={{ position: [0, 1.5, 4], fov: 45 }}
@@ -538,10 +614,14 @@ export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () 
           gl={{ antialias: true }}
         >
           <Suspense fallback={null}>
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
+            <ambientLight intensity={isHovered ? 0.6 : 0.4} />
+            <directionalLight position={[5, 5, 5]} intensity={isHovered ? 1.3 : 1} castShadow />
             <directionalLight position={[-3, 3, -3]} intensity={0.4} color="#ffd4a3" />
-            <pointLight position={[0, 2, 2]} intensity={0.5} color="#d4af37" />
+            <pointLight position={[0, 2, 2]} intensity={isHovered ? 0.8 : 0.5} color="#d4af37" />
+            {/* Extra glow light when hovered */}
+            {isHovered && (
+              <pointLight position={[0, 0, 3]} intensity={0.6} color="#ffd700" distance={5} />
+            )}
             
             <Float speed={2} rotationIntensity={0.1} floatIntensity={0.3}>
               <ChestModel isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={usedKeyId} isHovered={isHovered || isDragOver} />
