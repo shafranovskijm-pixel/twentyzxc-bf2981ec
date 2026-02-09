@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { PlaygroundBlock, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
 import { SortableBlock } from "./SortableBlock";
+import { Trash2, Copy } from "lucide-react";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
@@ -11,9 +12,11 @@ interface CanvasProps {
   selectedBlockId: string | null;
   onSelectBlock: (id: string | null) => void;
   onReorder: (activeId: string, overId: string) => void;
+  onDeleteBlock?: (id: string) => void;
+  onDuplicateBlock?: (id: string) => void;
 }
 
-export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder }: CanvasProps) => {
+export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder, onDeleteBlock, onDuplicateBlock }: CanvasProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -41,15 +44,25 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       block.hoverEffect
     );
 
-    const style = {
+    const style: React.CSSProperties = {
       backgroundColor: block.styles.backgroundColor,
       color: block.styles.textColor,
       padding: block.styles.padding,
       fontSize: block.styles.fontSize,
       borderRadius: block.styles.borderRadius,
       textAlign: block.styles.textAlign as React.CSSProperties['textAlign'],
-      fontFamily: block.styles.fontFamily || settings.globalFontFamily || undefined
+      fontFamily: block.styles.fontFamily || settings.globalFontFamily || undefined,
+      boxShadow: block.styles.boxShadow || undefined
     };
+
+    // Gradient text style
+    const textStyle = block.styles.gradientText ? {
+      ...style,
+      background: block.styles.gradientText,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      backgroundClip: 'text',
+    } as React.CSSProperties : style;
 
     const onClick = () => onSelectBlock(block.id);
 
@@ -79,17 +92,26 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         );
       }
       case 'heading':
-        return wrapWithLink(<motion.h2 className={cn(baseClasses, "font-bold")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.h2>);
+        return wrapWithLink(<motion.h2 className={cn(baseClasses, "font-bold")} style={textStyle} onClick={onClick} {...animProps}>{block.content}</motion.h2>);
       case 'text':
         return wrapWithLink(<motion.p className={baseClasses} style={style} onClick={onClick} {...animProps}>{block.content}</motion.p>);
-      case 'button':
+      case 'button': {
+        const btnStyle = block.buttonStyle || 'filled';
+        const btnClass = cn(
+          "px-6 py-3 font-medium hover:opacity-90 transition-opacity",
+          btnStyle === 'filled' && "bg-primary text-primary-foreground",
+          btnStyle === 'outline' && "bg-transparent border-2 border-current",
+          btnStyle === 'gradient' && "bg-gradient-to-r from-primary to-accent text-primary-foreground",
+          block.hoverEffect
+        );
         return wrapWithLink(
           <motion.div className={cn(baseClasses, "inline-block")} style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
-            <button className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 transition-opacity" style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius }}>
+            <button className={btnClass} style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius, color: btnStyle === 'outline' ? block.styles.textColor : undefined }}>
               {block.content}
             </button>
           </motion.div>
         );
+      }
       case 'image':
         return wrapWithLink(
           <motion.div className={baseClasses} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
@@ -170,6 +192,71 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
             )}
           </motion.div>
         );
+      case 'columns': {
+        const cols = block.content.split('||').filter(Boolean);
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "grid gap-4")} style={{ ...style, gridTemplateColumns: `repeat(${Math.min(cols.length, 4)}, 1fr)` }} onClick={onClick} {...animProps}>
+            {cols.map((col, i) => {
+              const [title, desc] = col.split('|');
+              return (
+                <div key={i} className="p-4 rounded-lg border border-border/30 text-center">
+                  <div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{title}</div>
+                  {desc && <div className="text-sm opacity-70">{desc}</div>}
+                </div>
+              );
+            })}
+          </motion.div>
+        );
+      }
+      case 'icon-text': {
+        const [icon, title, desc] = block.content.split('|');
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "flex items-center gap-4")} style={style} onClick={onClick} {...animProps}>
+            <span className="text-4xl">{icon}</span>
+            <div>
+              <div className="font-semibold" style={{ color: block.styles.textColor }}>{title}</div>
+              {desc && <div className="text-sm opacity-70">{desc}</div>}
+            </div>
+          </motion.div>
+        );
+      }
+      case 'countdown': {
+        const [dateStr, label] = block.content.split('|');
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "text-center")} style={style} onClick={onClick} {...animProps}>
+            <div className="text-3xl font-bold tracking-wider mb-1" style={{ color: block.styles.textColor }}>
+              {dateStr || '00:00:00'}
+            </div>
+            {label && <div className="text-sm opacity-70">{label}</div>}
+          </motion.div>
+        );
+      }
+      case 'gallery': {
+        const images = block.content.split('\n').filter(Boolean);
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "grid grid-cols-2 sm:grid-cols-3 gap-2")} style={{ padding: block.styles.padding }} onClick={onClick} {...animProps}>
+            {images.map((src, i) => (
+              <img key={i} src={src} alt="" className="w-full h-auto object-cover" style={{ borderRadius: block.styles.borderRadius }} />
+            ))}
+          </motion.div>
+        );
+      }
+      case 'socials': {
+        const links = block.content.split('\n').filter(Boolean);
+        const socialIcons: Record<string, string> = { telegram: '✈️', instagram: '📷', vk: '🔵', youtube: '▶️', tiktok: '🎵', twitter: '🐦', facebook: '📘', github: '🐱' };
+        return wrapWithLink(
+          <motion.div className={cn(baseClasses, "flex items-center justify-center gap-4")} style={style} onClick={onClick} {...animProps}>
+            {links.map((line, i) => {
+              const [platform, url] = line.split('|');
+              return (
+                <span key={i} className="text-2xl cursor-pointer hover:scale-110 transition-transform" title={platform}>
+                  {socialIcons[platform.trim().toLowerCase()] || '🔗'}
+                </span>
+              );
+            })}
+          </motion.div>
+        );
+      }
       default:
         return null;
     }
@@ -217,7 +304,31 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
               {blocks.map(block => (
                 <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
-                  {renderBlockContent(block)}
+                  <div className="relative group/block">
+                    {renderBlockContent(block)}
+                    {(onDeleteBlock || onDuplicateBlock) && (
+                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-20">
+                        {onDuplicateBlock && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDuplicateBlock(block.id); }}
+                            className="p-1.5 rounded bg-secondary/90 border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                            title="Дублировать (Ctrl+D)"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {onDeleteBlock && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDeleteBlock(block.id); }}
+                            className="p-1.5 rounded bg-destructive/90 border border-destructive hover:bg-destructive text-destructive-foreground transition-colors"
+                            title="Удалить (Delete)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </SortableBlock>
               ))}
             </SortableContext>

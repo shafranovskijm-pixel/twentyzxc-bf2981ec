@@ -71,6 +71,49 @@ export const BlockEditor = ({
         </div>
       )}
 
+      {/* Button Style */}
+      {block.type === 'button' && (
+        <div className="space-y-2">
+          <Label>Стиль кнопки</Label>
+          <Select
+            value={block.buttonStyle || 'filled'}
+            onValueChange={(value) => onUpdate({ buttonStyle: value as 'filled' | 'outline' | 'gradient' })}
+          >
+            <SelectTrigger className="bg-secondary/50 border-border">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="filled">Заполненная</SelectItem>
+              <SelectItem value="outline">Контурная</SelectItem>
+              <SelectItem value="gradient">Градиентная</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Gradient Text (for headings) */}
+      {block.type === 'heading' && (
+        <div className="space-y-2">
+          <Label>Градиентный текст</Label>
+          <Select
+            value={block.styles.gradientText || 'none'}
+            onValueChange={(value) => onUpdateStyles({ gradientText: value === 'none' ? undefined : value })}
+          >
+            <SelectTrigger className="bg-secondary/50 border-border">
+              <SelectValue placeholder="Без градиента" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Без градиента</SelectItem>
+              <SelectItem value="linear-gradient(135deg, #d4a855, #f5d799)">Золотой</SelectItem>
+              <SelectItem value="linear-gradient(135deg, #3b82f6, #8b5cf6)">Синий-фиолетовый</SelectItem>
+              <SelectItem value="linear-gradient(135deg, #ec4899, #f97316)">Розовый-оранжевый</SelectItem>
+              <SelectItem value="linear-gradient(135deg, #22c55e, #3b82f6)">Зелёный-синий</SelectItem>
+              <SelectItem value="linear-gradient(135deg, #f43f5e, #a855f7)">Красный-фиолетовый</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
       {/* Link */}
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5">
@@ -262,6 +305,26 @@ export const BlockEditor = ({
           className="bg-secondary/50 border-border"
           placeholder="8px"
         />
+      </div>
+      {/* Box Shadow */}
+      <div className="space-y-2">
+        <Label>Тень</Label>
+        <Select
+          value={block.styles.boxShadow || 'none'}
+          onValueChange={(value) => onUpdateStyles({ boxShadow: value === 'none' ? undefined : value })}
+        >
+          <SelectTrigger className="bg-secondary/50 border-border">
+            <SelectValue placeholder="Без тени" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Без тени</SelectItem>
+            <SelectItem value="0 4px 6px -1px rgba(0,0,0,0.3)">Лёгкая</SelectItem>
+            <SelectItem value="0 10px 25px -5px rgba(0,0,0,0.4)">Средняя</SelectItem>
+            <SelectItem value="0 20px 50px -10px rgba(0,0,0,0.5)">Сильная</SelectItem>
+            <SelectItem value="0 0 20px rgba(212,168,85,0.3)">Золотое свечение</SelectItem>
+            <SelectItem value="0 0 20px rgba(59,130,246,0.3)">Синее свечение</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
