@@ -174,13 +174,13 @@ const WebDevSection = () => {
                 <span className="absolute inset-0 gradient-gold-text shimmer">Синтагма</span>
               </h3>
               <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed">
-                Наша флагманская платформа для создания современных веб-решений. Передовые технологии, безупречная архитектура, масштабируемость без компромиссов.
+                Облачная LMS-платформа для автоматизации образовательных процессов. Разработка любых решений с использованием облачных технологий для компаний любого размера.
               </p>
 
               <div className="grid md:grid-cols-3 gap-8 mb-10">
-                <FeatureItem icon={<Zap />} title="Скорость" desc="Мгновенная загрузка" />
-                <FeatureItem icon={<Layers />} title="Модульность" desc="Гибкая архитектура" />
-                <FeatureItem icon={<Code2 />} title="Качество" desc="Чистый код" />
+                <FeatureItem icon={<Zap />} title="Автоматизация" desc="Ключевых бизнес-процессов" />
+                <FeatureItem icon={<Layers />} title="Облачные решения" desc="Масштабируемая инфраструктура" />
+                <FeatureItem icon={<Code2 />} title="Интеграции" desc="Moodle, ФРДО, API" />
               </div>
 
               <Button variant="hero">
