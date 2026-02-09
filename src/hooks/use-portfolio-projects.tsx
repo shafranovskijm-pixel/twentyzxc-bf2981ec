@@ -28,7 +28,7 @@ export const usePortfolioProjects = () => {
   return useQuery({
     queryKey: ["portfolio-projects"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portfolio_projects")
         .select("*")
         .order("sort_order", { ascending: true });
@@ -43,7 +43,7 @@ export const usePortfolioSettings = () => {
   return useQuery({
     queryKey: ["portfolio-settings"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portfolio_settings")
         .select("*")
         .eq("id", "main")
@@ -60,7 +60,7 @@ export const useUpdateSettings = () => {
 
   return useMutation({
     mutationFn: async (updates: Partial<PortfolioSettings>) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portfolio_settings")
         .update(updates)
         .eq("id", "main")
@@ -81,7 +81,7 @@ export const useUpdateProject = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<PortfolioProject> & { id: string }) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portfolio_projects")
         .update(updates)
         .eq("id", id)
@@ -103,14 +103,14 @@ export const useReorderProjects = () => {
   return useMutation({
     mutationFn: async (projects: { id: string; sort_order: number }[]) => {
       const promises = projects.map(({ id, sort_order }) =>
-        supabase
+        (supabase as any)
           .from("portfolio_projects")
           .update({ sort_order })
           .eq("id", id)
       );
       
       const results = await Promise.all(promises);
-      const errors = results.filter(r => r.error);
+      const errors = results.filter((r: any) => r.error);
       if (errors.length > 0) throw errors[0].error;
     },
     onSuccess: () => {
@@ -124,7 +124,7 @@ export const useCreateProject = () => {
 
   return useMutation({
     mutationFn: async (project: Omit<PortfolioProject, "id" | "created_at" | "updated_at">) => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("portfolio_projects")
         .insert(project)
         .select()
@@ -144,7 +144,7 @@ export const useDeleteProject = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("portfolio_projects")
         .delete()
         .eq("id", id);
