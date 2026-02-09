@@ -22,8 +22,8 @@ export interface BlockStyles {
   gradientText?: string;
 }
 
-export type BgDecoration = 'none' | 'particles' | 'glow' | 'corner-lines' | 'vignette' | 'noise';
-export type BgAnimation = 'none' | 'pulse-glow' | 'float-particles' | 'gradient-shift' | 'shimmer';
+export type BgDecoration = 'none' | 'particles' | 'glow' | 'corner-lines' | 'vignette' | 'noise' | 'stars' | 'waves' | 'aurora';
+export type BgAnimation = 'none' | 'pulse-glow' | 'float-particles' | 'gradient-shift' | 'shimmer' | 'starfield' | 'wave-motion' | 'aurora-glow';
 
 export interface PlaygroundSettings {
   backgroundColor: string;

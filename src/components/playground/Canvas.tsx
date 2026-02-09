@@ -408,6 +408,45 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }} />
       )}
+      {decorationClass === 'stars' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 40 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: `${1 + (i % 3)}px`,
+                height: `${1 + (i % 3)}px`,
+                left: `${(i * 23 + 7) % 100}%`,
+                top: `${(i * 31 + 13) % 100}%`,
+                opacity: 0.15 + (i % 5) * 0.1,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      {decorationClass === 'waves' && (
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-10">
+          <svg className="absolute bottom-0 w-full" viewBox="0 0 1440 200" preserveAspectRatio="none" style={{ height: '40%' }}>
+            <path d="M0,120 C240,180 480,60 720,120 C960,180 1200,60 1440,120 L1440,200 L0,200 Z" fill="currentColor" className="text-primary" />
+            <path d="M0,150 C240,100 480,180 720,130 C960,80 1200,160 1440,130 L1440,200 L0,200 Z" fill="currentColor" className="text-primary/50" />
+          </svg>
+        </div>
+      )}
+      {decorationClass === 'aurora' && (
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-1/2 h-2/3 opacity-[0.08]" style={{
+            background: 'linear-gradient(180deg, #22c55e 0%, #3b82f6 40%, #a855f7 70%, transparent 100%)',
+            filter: 'blur(60px)',
+            borderRadius: '50%',
+          }} />
+          <div className="absolute top-0 right-1/4 w-1/3 h-1/2 opacity-[0.06]" style={{
+            background: 'linear-gradient(180deg, #06b6d4 0%, #8b5cf6 50%, transparent 100%)',
+            filter: 'blur(50px)',
+            borderRadius: '50%',
+          }} />
+        </div>
+      )}
 
       {/* Background animations */}
       {animationClass === 'pulse-glow' && (
@@ -426,16 +465,8 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
               key={i}
               className="absolute w-1.5 h-1.5 rounded-full bg-primary/20"
               style={{ left: `${(i * 13 + 5) % 100}%` }}
-              animate={{
-                y: [0, -30, 0],
-                opacity: [0.2, 0.6, 0.2],
-              }}
-              transition={{
-                duration: 3 + (i % 3),
-                repeat: Infinity,
-                delay: i * 0.4,
-                ease: 'easeInOut',
-              }}
+              animate={{ y: [0, -30, 0], opacity: [0.2, 0.6, 0.2] }}
+              transition={{ duration: 3 + (i % 3), repeat: Infinity, delay: i * 0.4, ease: 'easeInOut' }}
               initial={{ top: `${(i * 19 + 15) % 80 + 10}%` }}
             />
           ))}
@@ -465,6 +496,64 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           animate={{ backgroundPosition: ['200% 0', '-200% 0'] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
         />
+      )}
+      {animationClass === 'starfield' && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 25 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: `${1 + (i % 3)}px`,
+                height: `${1 + (i % 3)}px`,
+                left: `${(i * 17 + 3) % 100}%`,
+                top: `${(i * 29 + 7) % 100}%`,
+              }}
+              animate={{ opacity: [0.1, 0.8, 0.1], scale: [1, 1.4, 1] }}
+              transition={{ duration: 2 + (i % 4), repeat: Infinity, delay: i * 0.2, ease: 'easeInOut' }}
+            />
+          ))}
+        </div>
+      )}
+      {animationClass === 'wave-motion' && (
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-15">
+          <motion.svg
+            className="absolute bottom-0 w-[200%]"
+            viewBox="0 0 2880 200"
+            preserveAspectRatio="none"
+            style={{ height: '35%' }}
+            animate={{ x: [0, -720] }}
+            transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          >
+            <path d="M0,120 C240,180 480,60 720,120 C960,180 1200,60 1440,120 C1680,180 1920,60 2160,120 C2400,180 2640,60 2880,120 L2880,200 L0,200 Z" fill="currentColor" className="text-primary" />
+          </motion.svg>
+          <motion.svg
+            className="absolute bottom-0 w-[200%]"
+            viewBox="0 0 2880 200"
+            preserveAspectRatio="none"
+            style={{ height: '25%' }}
+            animate={{ x: [-720, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+          >
+            <path d="M0,150 C240,100 480,180 720,130 C960,80 1200,160 1440,130 C1680,80 1920,160 2160,130 C2400,80 2640,160 2880,130 L2880,200 L0,200 Z" fill="currentColor" className="text-primary/60" />
+          </motion.svg>
+        </div>
+      )}
+      {animationClass === 'aurora-glow' && (
+        <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+          <motion.div
+            className="absolute top-0 left-1/4 w-1/2 h-2/3"
+            style={{ background: 'linear-gradient(180deg, #22c55e 0%, #3b82f6 40%, #a855f7 70%, transparent 100%)', filter: 'blur(60px)', borderRadius: '50%' }}
+            animate={{ opacity: [0.05, 0.12, 0.05], x: [0, 40, -30, 0], scaleX: [1, 1.2, 0.9, 1] }}
+            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          />
+          <motion.div
+            className="absolute top-0 right-1/4 w-1/3 h-1/2"
+            style={{ background: 'linear-gradient(180deg, #06b6d4 0%, #8b5cf6 50%, transparent 100%)', filter: 'blur(50px)', borderRadius: '50%' }}
+            animate={{ opacity: [0.04, 0.1, 0.04], x: [0, -30, 20, 0], scaleX: [1, 0.9, 1.15, 1] }}
+            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          />
+        </div>
       )}
       {/* Drop / upload overlay */}
       {(isDragOver || isUploading) && (

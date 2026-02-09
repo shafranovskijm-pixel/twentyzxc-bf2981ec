@@ -29,6 +29,9 @@ const DECORATION_OPTIONS: { id: BgDecoration; name: string; desc: string }[] = [
   { id: 'corner-lines', name: 'Линии', desc: 'Золотые угловые линии' },
   { id: 'vignette', name: 'Виньетка', desc: 'Затемнение по краям' },
   { id: 'noise', name: 'Шум', desc: 'Текстура зернистости' },
+  { id: 'stars', name: 'Звёзды', desc: 'Звёздное небо' },
+  { id: 'waves', name: 'Волны', desc: 'Волнистые линии' },
+  { id: 'aurora', name: 'Сияние', desc: 'Северное сияние' },
 ];
 
 const ANIMATION_OPTIONS: { id: BgAnimation; name: string; desc: string }[] = [
@@ -37,6 +40,9 @@ const ANIMATION_OPTIONS: { id: BgAnimation; name: string; desc: string }[] = [
   { id: 'float-particles', name: 'Парение', desc: 'Плавающие частицы' },
   { id: 'gradient-shift', name: 'Переливание', desc: 'Движение градиента' },
   { id: 'shimmer', name: 'Мерцание', desc: 'Мерцающий блеск' },
+  { id: 'starfield', name: 'Космос', desc: 'Мерцающие звёзды' },
+  { id: 'wave-motion', name: 'Волны', desc: 'Движущиеся волны' },
+  { id: 'aurora-glow', name: 'Сияние', desc: 'Переливы северного сияния' },
 ];
 
 interface CanvasSettingsProps {
