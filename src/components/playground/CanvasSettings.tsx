@@ -1,31 +1,9 @@
-import { Settings } from "lucide-react";
+import { Paintbrush } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlaygroundSettings, COLOR_PRESETS } from "@/data/playground-effects";
+import { PlaygroundSettings, COLOR_PRESETS, BgDecoration, BgAnimation } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
-
-const FONT_OPTIONS = [
-  { value: 'default', label: 'По умолчанию' },
-  { value: "'Playfair Display', serif", label: 'Playfair Display' },
-  { value: "'Inter', sans-serif", label: 'Inter' },
-  { value: "'Montserrat', sans-serif", label: 'Montserrat' },
-  { value: "'Roboto', sans-serif", label: 'Roboto' },
-  { value: "'Open Sans', sans-serif", label: 'Open Sans' },
-  { value: "'Raleway', sans-serif", label: 'Raleway' },
-  { value: "'Oswald', sans-serif", label: 'Oswald' },
-  { value: "'Merriweather', serif", label: 'Merriweather' },
-  { value: "'Lora', serif", label: 'Lora' },
-  { value: "'Nunito', sans-serif", label: 'Nunito' },
-  { value: "'PT Sans', sans-serif", label: 'PT Sans' },
-  { value: "'Rubik', sans-serif", label: 'Rubik' },
-  { value: "'Comfortaa', cursive", label: 'Comfortaa' },
-  { value: "'Caveat', cursive", label: 'Caveat' },
-  { value: "'Pacifico', cursive", label: 'Pacifico' },
-  { value: "'Bebas Neue', sans-serif", label: 'Bebas Neue' },
-  { value: "'Jost', sans-serif", label: 'Jost' },
-];
 
 const GRADIENT_PRESETS = [
   { name: 'Золотой', value: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a0a 50%, #2a1f0a 100%)' },
@@ -44,6 +22,23 @@ const PATTERN_OPTIONS = [
   { id: 'cross', name: 'Крестики' },
 ];
 
+const DECORATION_OPTIONS: { id: BgDecoration; name: string; desc: string }[] = [
+  { id: 'none', name: 'Нет', desc: '' },
+  { id: 'particles', name: 'Частицы', desc: 'Пульсирующие точки' },
+  { id: 'glow', name: 'Свечение', desc: 'Радиальные блики' },
+  { id: 'corner-lines', name: 'Линии', desc: 'Золотые угловые линии' },
+  { id: 'vignette', name: 'Виньетка', desc: 'Затемнение по краям' },
+  { id: 'noise', name: 'Шум', desc: 'Текстура зернистости' },
+];
+
+const ANIMATION_OPTIONS: { id: BgAnimation; name: string; desc: string }[] = [
+  { id: 'none', name: 'Нет', desc: '' },
+  { id: 'pulse-glow', name: 'Пульс', desc: 'Пульсирующее свечение' },
+  { id: 'float-particles', name: 'Парение', desc: 'Плавающие частицы' },
+  { id: 'gradient-shift', name: 'Переливание', desc: 'Движение градиента' },
+  { id: 'shimmer', name: 'Мерцание', desc: 'Мерцающий блеск' },
+];
+
 interface CanvasSettingsProps {
   settings: PlaygroundSettings;
   onSettingsChange: (settings: PlaygroundSettings) => void;
@@ -55,8 +50,8 @@ export const CanvasSettings = ({ settings, onSettingsChange }: CanvasSettingsPro
   return (
     <div className="space-y-4 p-4 rounded-lg border border-border bg-secondary/20">
       <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-        <Settings className="w-4 h-4" />
-        Настройки холста
+        <Paintbrush className="w-4 h-4" />
+        Настройки фона
       </h3>
 
       {/* Quick Color Themes */}
@@ -173,25 +168,42 @@ export const CanvasSettings = ({ settings, onSettingsChange }: CanvasSettingsPro
         </div>
       </div>
 
-      {/* Global Font */}
+      {/* Decorations */}
       <div className="space-y-2">
-        <Label className="text-xs">Глобальный шрифт</Label>
-        <Select
-          value={settings.globalFontFamily || 'default'}
-          onValueChange={(value) => onSettingsChange({ ...settings, globalFontFamily: value === 'default' ? undefined : value })}
-        >
-          <SelectTrigger className="bg-secondary/50 border-border text-xs h-8">
-            <SelectValue placeholder="По умолчанию" />
-          </SelectTrigger>
-          <SelectContent>
-            {FONT_OPTIONS.map((font) => (
-              <SelectItem key={font.value} value={font.value} style={{ fontFamily: font.value !== 'default' ? font.value : undefined }}>
-                {font.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-[10px] text-muted-foreground">Применяется ко всем блокам без индивидуального шрифта</p>
+        <Label className="text-xs">Декор</Label>
+        <div className="flex gap-1.5 flex-wrap">
+          {DECORATION_OPTIONS.map((d) => (
+            <Button
+              key={d.id}
+              size="sm"
+              variant={(settings.bgDecoration || 'none') === d.id ? 'default' : 'outline'}
+              onClick={() => onSettingsChange({ ...settings, bgDecoration: d.id })}
+              className="text-xs h-7 px-2.5"
+              title={d.desc}
+            >
+              {d.name}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Animations */}
+      <div className="space-y-2">
+        <Label className="text-xs">Анимация фона</Label>
+        <div className="flex gap-1.5 flex-wrap">
+          {ANIMATION_OPTIONS.map((a) => (
+            <Button
+              key={a.id}
+              size="sm"
+              variant={(settings.bgAnimation || 'none') === a.id ? 'default' : 'outline'}
+              onClick={() => onSettingsChange({ ...settings, bgAnimation: a.id })}
+              className="text-xs h-7 px-2.5"
+              title={a.desc}
+            >
+              {a.name}
+            </Button>
+          ))}
+        </div>
       </div>
     </div>
   );
