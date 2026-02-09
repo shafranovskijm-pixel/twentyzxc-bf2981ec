@@ -95,7 +95,131 @@ const Templates = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {/* Dot grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--primary)) 1px, transparent 0)`,
+            backgroundSize: "40px 40px",
+          }}
+        />
+        
+        {/* Floating gradient orbs */}
+        <motion.div
+          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(45 80% 55% / 0.08) 0%, transparent 70%)",
+          }}
+          animate={{
+            x: [0, 30, 0],
+            y: [0, -20, 0],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute top-1/3 -left-40 w-[400px] h-[400px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(45 80% 55% / 0.05) 0%, transparent 70%)",
+          }}
+          animate={{
+            x: [0, 20, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-1/4 w-[300px] h-[300px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, hsl(45 80% 55% / 0.06) 0%, transparent 70%)",
+          }}
+          animate={{
+            x: [0, -25, 0],
+            y: [0, 15, 0],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        
+        {/* Floating geometric shapes */}
+        <motion.div
+          className="absolute top-[15%] right-[10%] w-24 h-24 border border-primary/10 rotate-45"
+          animate={{
+            rotate: [45, 90, 45],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute top-[60%] left-[8%] w-16 h-16 border border-primary/10 rounded-full"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+        <motion.div
+          className="absolute bottom-[25%] right-[15%] w-20 h-20 border border-primary/5"
+          animate={{
+            rotate: [0, 180, 360],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: "linear",
+          }}
+        />
+        
+        {/* Floating particles */}
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 rounded-full bg-primary/20"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              y: [0, -30, 0],
+              opacity: [0.2, 0.5, 0.2],
+            }}
+            transition={{
+              duration: 5 + Math.random() * 5,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+              ease: "easeInOut",
+            }}
+          />
+        ))}
+        
+        {/* Corner decorative lines */}
+        <div className="absolute top-32 left-8 w-px h-32 bg-gradient-to-b from-primary/20 to-transparent" />
+        <div className="absolute top-32 left-8 h-px w-32 bg-gradient-to-r from-primary/20 to-transparent" />
+        <div className="absolute bottom-32 right-8 w-px h-32 bg-gradient-to-t from-primary/20 to-transparent" />
+        <div className="absolute bottom-32 right-8 h-px w-32 bg-gradient-to-l from-primary/20 to-transparent" />
+      </div>
+      
       <Header />
       
       {/* Hero Section */}
