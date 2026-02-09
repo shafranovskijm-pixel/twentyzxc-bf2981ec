@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense, lazy } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, ShoppingBag, Search, ChevronRight, ChevronLeft,
@@ -10,6 +10,9 @@ import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
 import { ARBadge } from "../shared/ARBadge";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
+
+// Lazy load the 3D viewer for better performance
+const Product3DViewer = lazy(() => import("../shared/Product3DViewer"));
 
 // Import gallery images
 import heroImage from "@/assets/templates/premium-gallery/hero.jpg";
@@ -258,170 +261,38 @@ interface ProductCard360Props {
 }
 
 const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360Props) => {
-  const [rotation, setRotation] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [show360Mode, setShow360Mode] = useState(false);
-  const startXRef = useRef(0);
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!show360Mode) return;
-    e.stopPropagation();
-    setIsDragging(true);
-    startXRef.current = e.clientX;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !show360Mode) return;
-    const delta = e.clientX - startXRef.current;
-    if (Math.abs(delta) > 3) {
-      setRotation((rotation + delta * 0.8) % 360);
-      startXRef.current = e.clientX;
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (!show360Mode) return;
-    e.stopPropagation();
-    setIsDragging(true);
-    startXRef.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !show360Mode) return;
-    const delta = e.touches[0].clientX - startXRef.current;
-    if (Math.abs(delta) > 3) {
-      setRotation((rotation + delta * 0.8) % 360);
-      startXRef.current = e.touches[0].clientX;
-    }
-  };
+  const [show3DMode, setShow3DMode] = useState(false);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      whileHover={{ y: show360Mode ? 0 : -8 }}
+      whileHover={{ y: show3DMode ? 0 : -8 }}
       className="group"
     >
       <div 
         className={`relative aspect-[3/4] rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border overflow-hidden mb-4 transition-all ${
-          show360Mode ? "border-emerald-500 cursor-grab active:cursor-grabbing" : "border-zinc-800 cursor-pointer"
+          show3DMode ? "border-emerald-500" : "border-zinc-800 cursor-pointer"
         }`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleMouseUp}
-        onClick={() => !show360Mode && onSelect(product.id)}
+        onClick={() => !show3DMode && onSelect(product.id)}
       >
-        {show360Mode ? (
-          <>
-            {/* 360° Mode with smooth CSS 3D rotation */}
-            <div 
-              className="absolute inset-0 flex items-center justify-center"
-              style={{ perspective: "1000px" }}
-            >
-              {/* Main product image with 3D transform */}
-              <div
-                className="relative w-[85%] h-[85%]"
-                style={{
-                  transformStyle: "preserve-3d",
-                  transform: `rotateY(${rotation}deg)`,
-                  transition: isDragging ? "none" : "transform 0.1s ease-out",
-                }}
-              >
-                {/* Front face */}
-                <img 
-                  src={galleryImages[product.id]}
-                  alt={product.name}
-                  className="absolute inset-0 w-full h-full object-contain drop-shadow-2xl"
-                  style={{
-                    backfaceVisibility: "hidden",
-                    filter: `brightness(${1 + Math.sin(rotation * Math.PI / 180) * 0.15})`,
-                  }}
-                />
-                
-                {/* Dynamic lighting overlay */}
-                <div 
-                  className="absolute inset-0 pointer-events-none rounded-lg"
-                  style={{
-                    background: `linear-gradient(${90 + rotation}deg, 
-                      transparent 0%, 
-                      rgba(255,255,255,${0.1 + Math.abs(Math.sin(rotation * Math.PI / 180)) * 0.15}) 50%, 
-                      transparent 100%)`,
-                  }}
-                />
-                
-                {/* Reflection/shine effect */}
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: `radial-gradient(ellipse at ${50 + Math.sin(rotation * Math.PI / 180) * 30}% 30%, 
-                      rgba(255,255,255,0.2) 0%, 
-                      transparent 50%)`,
-                  }}
-                />
-              </div>
-            </div>
-            
-            {/* Subtle shadow beneath */}
-            <div 
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[60%] h-4 rounded-full blur-xl pointer-events-none"
-              style={{
-                background: "rgba(16,185,129,0.3)",
-                transform: `translateX(${Math.sin(rotation * Math.PI / 180) * 20}px) scaleX(${0.8 + Math.abs(Math.cos(rotation * Math.PI / 180)) * 0.4})`,
-              }}
-            />
-            
-            {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
-
-            {/* 360° indicator */}
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500 text-white text-xs font-medium">
+        {show3DMode ? (
+          <Suspense fallback={
+            <div className="absolute inset-0 flex items-center justify-center bg-zinc-900">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="w-3 h-3 rounded-full border border-dashed border-white"
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full"
               />
-              360°
             </div>
-
-            {/* Rotation angle */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm">
-              <span className="text-xs text-white/80">{Math.round(((rotation % 360) + 360) % 360)}°</span>
-            </div>
-
-            {/* Drag hint */}
-            {!isDragging && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              >
-                <motion.div
-                  animate={{ x: [-10, 10, -10] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                  className="text-xs text-white/60 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm"
-                >
-                  ← →
-                </motion.div>
-              </motion.div>
-            )}
-
-            {/* Close 360 button */}
-            <button
-              onClick={(e) => { e.stopPropagation(); setShow360Mode(false); setRotation(0); }}
-              className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-colors z-10"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </>
+          }>
+            <Product3DViewer 
+              imageUrl={galleryImages[product.id]}
+              onClose={() => setShow3DMode(false)}
+              className="absolute inset-0"
+            />
+          </Suspense>
         ) : (
           <>
             {/* Normal product view */}
@@ -447,7 +318,7 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
 
             {/* 360° badge button - top right, always visible */}
             <button
-              onClick={(e) => { e.stopPropagation(); setShow360Mode(true); }}
+              onClick={(e) => { e.stopPropagation(); setShow3DMode(true); }}
               className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/90 backdrop-blur-sm border border-emerald-400/30 text-white text-sm font-medium hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/20"
             >
               <motion.div
