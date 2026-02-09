@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { KeyRound, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { useInventory } from "@/contexts/InventoryContext";
 import { DraggableKey } from "./DraggableKey";
 
@@ -30,34 +30,56 @@ export function InventoryBar() {
             <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
             
             {/* Main bar */}
-            <div className="relative flex items-center gap-2 px-4 py-3 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-lg shadow-[0_0_40px_hsl(45_80%_55%/0.2)]">
+            <div className="relative flex items-center gap-3 px-5 py-3 bg-card/95 backdrop-blur-xl border border-primary/30 rounded-xl shadow-[0_0_40px_hsl(45_80%_55%/0.2)]">
               {/* Inventory icon */}
               <div className="flex items-center gap-2 pr-3 border-r border-primary/20">
-                <Package className="w-4 h-4 text-primary" />
-                <span className="text-xs text-primary font-medium tracking-wide uppercase">
-                  Инвентарь
+                <motion.div
+                  animate={{ rotate: [0, 5, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Package className="w-5 h-5 text-primary" />
+                </motion.div>
+                <span className="text-xs text-primary font-semibold tracking-wide uppercase hidden sm:block">
+                  Ключи
                 </span>
               </div>
               
               {/* Keys */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <AnimatePresence mode="popLayout">
-                  {keys.map((key) => (
-                    <DraggableKey key={key.id} keyItem={key} />
+                  {keys.map((key, index) => (
+                    <DraggableKey key={key.id} keyItem={key} index={index} />
                   ))}
                 </AnimatePresence>
               </div>
               
               {/* Key count */}
-              <div className="pl-2 border-l border-primary/20">
-                <span className="text-xs text-muted-foreground">
-                  {keys.length}/7
+              <div className="pl-3 border-l border-primary/20">
+                <span className="text-xs font-medium text-primary">
+                  {keys.length}
+                  <span className="text-muted-foreground">/7</span>
                 </span>
               </div>
             </div>
             
             {/* Bottom glow line */}
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1/2 h-[2px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <motion.div 
+              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent"
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+            
+            {/* Hint text */}
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1 }}
+              className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap"
+            >
+              <span className="text-[10px] text-muted-foreground">
+                Нажмите на ключ чтобы использовать
+              </span>
+            </motion.div>
           </div>
         </motion.div>
       )}
