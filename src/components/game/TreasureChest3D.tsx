@@ -155,11 +155,13 @@ function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | '
 function ChestModel({ 
   isOpen, 
   unlockPhase,
-  activeKeyId 
+  activeKeyId,
+  isHovered
 }: { 
   isOpen: boolean; 
   unlockPhase: 'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done';
   activeKeyId: string | null;
+  isHovered: boolean;
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const lidRef = useRef<THREE.Group>(null);
@@ -185,8 +187,18 @@ function ChestModel({
     setInnerGlowIntensity(prev => THREE.MathUtils.lerp(prev, targetGlow, delta * 2));
     
     if (groupRef.current && unlockPhase === 'idle' && !isOpen) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.03;
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.015 - 0.3;
+      // Hover wiggle animation - more pronounced when hovered
+      const wiggleIntensity = isHovered ? 0.08 : 0.03;
+      const wiggleSpeed = isHovered ? 3 : 0.5;
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * wiggleSpeed) * wiggleIntensity;
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * (isHovered ? 4 : 0.8)) * (isHovered ? 0.04 : 0.015) - 0.3;
+      
+      // Add slight tilt on hover
+      if (isHovered) {
+        groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 2.5) * 0.03;
+      } else {
+        groupRef.current.rotation.x = THREE.MathUtils.lerp(groupRef.current.rotation.x, 0, delta * 5);
+      }
     }
     
     if (groupRef.current && unlockPhase === 'turning') {
@@ -398,6 +410,7 @@ function ChestModel({
 export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen: boolean }) {
   const { keys, activeKeyForChest, setActiveKeyForChest, removeKey } = useInventory();
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [unlockPhase, setUnlockPhase] = useState<'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done'>('idle');
   const [usedKeyId, setUsedKeyId] = useState<string | null>(null);
   const unlockStartedRef = useRef(false);
@@ -461,12 +474,14 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
     <div className="flex flex-col items-center gap-6">
       <div
         id="chest-drop-zone"
-        className={`relative w-full max-w-md aspect-square rounded-lg transition-all duration-300 ${
+        className={`relative w-full max-w-md aspect-square rounded-lg transition-all duration-300 cursor-pointer ${
           isDragOver ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105' : ''
         }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Ambient glow */}
         <div className={`absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent rounded-lg transition-opacity duration-500 ${
@@ -486,7 +501,7 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
             <pointLight position={[0, 2, 2]} intensity={0.5} color="#d4af37" />
             
             <Float speed={2} rotationIntensity={0.1} floatIntensity={0.3}>
-              <ChestModel isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={usedKeyId} />
+              <ChestModel isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={usedKeyId} isHovered={isHovered || isDragOver} />
             </Float>
             
             <OrbitControls
