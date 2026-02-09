@@ -101,10 +101,10 @@ const ContactSection = () => {
   };
 
   const handleLockedChestClick = () => {
-    // Scroll to webdev section with keys
-    const webdevSection = document.getElementById('webdev');
-    if (webdevSection) {
-      webdevSection.scrollIntoView({ behavior: 'smooth' });
+    // Scroll to service keys grid
+    const keysSection = document.getElementById('service-keys');
+    if (keysSection) {
+      keysSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     // Show toast hint
     toast({

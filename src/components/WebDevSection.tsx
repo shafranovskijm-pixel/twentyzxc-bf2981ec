@@ -212,7 +212,7 @@ const WebDevSection = () => {
               <Diamond className="w-4 h-4 text-primary/50" />
             </div>
             
-            <div className="grid md:grid-cols-2 overflow-visible">
+            <div id="service-keys" className="grid md:grid-cols-2 overflow-visible">
               <ServiceCard 
                 title="Лендинги"
                 price="от 15 000 ₽"
