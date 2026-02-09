@@ -8,16 +8,16 @@ import * as THREE from "three";
 
 // Key colors for different services
 const keyColors: Record<string, { main: string; accent: string; gem: string }> = {
-  landing: { main: "#d4af37", accent: "#f4d03f", gem: "#e74c3c" }, // Gold + Ruby
-  corporate: { main: "#c0c0c0", accent: "#e8e8e8", gem: "#3498db" }, // Silver + Sapphire
-  ecommerce: { main: "#cd7f32", accent: "#daa520", gem: "#2ecc71" }, // Bronze + Emerald
-  webapp: { main: "#b87333", accent: "#da8a67", gem: "#9b59b6" }, // Copper + Amethyst
-  ads: { main: "#ffd700", accent: "#ffec8b", gem: "#e67e22" }, // Pure Gold + Topaz
-  license: { main: "#4a4a4a", accent: "#6a6a6a", gem: "#1abc9c" }, // Iron + Turquoise
-  frdo: { main: "#8b4513", accent: "#a0522d", gem: "#f1c40f" }, // Bronze + Citrine
+  landing: { main: "#d4af37", accent: "#f4d03f", gem: "#e74c3c" },
+  corporate: { main: "#c0c0c0", accent: "#e8e8e8", gem: "#3498db" },
+  ecommerce: { main: "#cd7f32", accent: "#daa520", gem: "#2ecc71" },
+  webapp: { main: "#b87333", accent: "#da8a67", gem: "#9b59b6" },
+  ads: { main: "#ffd700", accent: "#ffec8b", gem: "#e67e22" },
+  license: { main: "#4a4a4a", accent: "#6a6a6a", gem: "#1abc9c" },
+  frdo: { main: "#8b4513", accent: "#a0522d", gem: "#f1c40f" },
 };
 
-// 3D Key component with unique design per service
+// 3D Key component
 function Key3D({ 
   keyId, 
   position, 
@@ -62,19 +62,13 @@ function Key3D({
     }
   });
 
-  // Different key blade patterns based on service
   const getBladePattern = () => {
     switch (keyId) {
-      case 'landing':
-        return [0.08, 0.06, 0.04, 0.07, 0.05];
-      case 'corporate':
-        return [0.05, 0.08, 0.05, 0.08, 0.05];
-      case 'ecommerce':
-        return [0.03, 0.06, 0.09, 0.06, 0.03];
-      case 'webapp':
-        return [0.07, 0.04, 0.07, 0.04, 0.07];
-      default:
-        return [0.06, 0.05, 0.07, 0.04, 0.06];
+      case 'landing': return [0.08, 0.06, 0.04, 0.07, 0.05];
+      case 'corporate': return [0.05, 0.08, 0.05, 0.08, 0.05];
+      case 'ecommerce': return [0.03, 0.06, 0.09, 0.06, 0.03];
+      case 'webapp': return [0.07, 0.04, 0.07, 0.04, 0.07];
+      default: return [0.06, 0.05, 0.07, 0.04, 0.06];
     }
   };
 
@@ -82,43 +76,26 @@ function Key3D({
 
   return (
     <group ref={groupRef} position={position} rotation={rotation} scale={scale}>
-      {/* Key bow (handle) - ornate ring */}
       <mesh position={[0, 0, 0]} material={mainMaterial}>
         <torusGeometry args={[0.15, 0.04, 16, 32]} />
       </mesh>
-      
-      {/* Decorative inner ring */}
       <mesh position={[0, 0, 0]} material={accentMaterial}>
         <torusGeometry args={[0.1, 0.02, 16, 32]} />
       </mesh>
-      
-      {/* Gem in center of bow */}
       <mesh position={[0, 0, 0.03]} material={gemMaterial}>
         <octahedronGeometry args={[0.05]} />
       </mesh>
-      
-      {/* Key shaft */}
       <mesh position={[0, -0.35, 0]} material={mainMaterial}>
         <boxGeometry args={[0.06, 0.5, 0.03]} />
       </mesh>
-      
-      {/* Decorative collar */}
       <mesh position={[0, -0.12, 0]} material={accentMaterial}>
         <boxGeometry args={[0.1, 0.04, 0.05]} />
       </mesh>
-      
-      {/* Key blade with unique teeth pattern */}
       <mesh position={[0.05, -0.55, 0]} material={mainMaterial}>
         <boxGeometry args={[0.15, 0.12, 0.02]} />
       </mesh>
-      
-      {/* Teeth */}
       {bladePattern.map((height, i) => (
-        <mesh 
-          key={i} 
-          position={[0.02 + i * 0.03, -0.62 - height / 2, 0]} 
-          material={mainMaterial}
-        >
+        <mesh key={i} position={[0.02 + i * 0.03, -0.62 - height / 2, 0]} material={mainMaterial}>
           <boxGeometry args={[0.02, height, 0.02]} />
         </mesh>
       ))}
@@ -127,13 +104,7 @@ function Key3D({
 }
 
 // Animated key inserting into lock
-function AnimatedKey({ 
-  keyId, 
-  phase 
-}: { 
-  keyId: string; 
-  phase: 'approaching' | 'inserting' | 'turning' | 'done';
-}) {
+function AnimatedKey({ keyId, phase }: { keyId: string; phase: 'approaching' | 'inserting' | 'turning' | 'done' }) {
   const groupRef = useRef<THREE.Group>(null);
   const [keyRotation, setKeyRotation] = useState(0);
   const [keyPosition, setKeyPosition] = useState<[number, number, number]>([0, 2, 2]);
@@ -162,14 +133,11 @@ function AnimatedKey({
   }, [phase]);
 
   useFrame((state, delta) => {
-    // Smooth position interpolation
     setKeyPosition(prev => [
       THREE.MathUtils.lerp(prev[0], targetPosition.current[0], delta * 3),
       THREE.MathUtils.lerp(prev[1], targetPosition.current[1], delta * 3),
       THREE.MathUtils.lerp(prev[2], targetPosition.current[2], delta * 3),
     ]);
-    
-    // Smooth rotation interpolation
     setKeyRotation(prev => THREE.MathUtils.lerp(prev, targetRotation.current, delta * 4));
   });
 
@@ -177,20 +145,13 @@ function AnimatedKey({
 
   return (
     <group ref={groupRef} position={keyPosition} rotation={[Math.PI / 2, 0, keyRotation]}>
-      <Key3D 
-        keyId={keyId} 
-        position={[0, 0, 0]} 
-        rotation={[0, 0, 0]} 
-        scale={1.5}
-      />
-      
-      {/* Glow effect */}
+      <Key3D keyId={keyId} position={[0, 0, 0]} rotation={[0, 0, 0]} scale={1.5} />
       <pointLight position={[0, 0, 0.2]} color="#d4af37" intensity={2} distance={1} />
     </group>
   );
 }
 
-// Chest model with animated lid
+// Simple chest with detailed wood planks
 function ChestModel({ 
   isOpen, 
   unlockPhase,
@@ -202,11 +163,9 @@ function ChestModel({
 }) {
   const groupRef = useRef<THREE.Group>(null);
   const lidRef = useRef<THREE.Group>(null);
-  const lockRef = useRef<THREE.Group>(null);
   const [lockVisible, setLockVisible] = useState(true);
   const [innerGlowIntensity, setInnerGlowIntensity] = useState(0);
 
-  // Hide lock after turning
   useEffect(() => {
     if (unlockPhase === 'opening' || unlockPhase === 'done') {
       setLockVisible(false);
@@ -217,27 +176,19 @@ function ChestModel({
 
   useFrame((state, delta) => {
     if (lidRef.current) {
-      // Only open after turning phase
       const shouldOpen = unlockPhase === 'opening' || unlockPhase === 'done' || isOpen;
       const targetAngle = shouldOpen ? -Math.PI * 0.65 : 0;
-      lidRef.current.rotation.x = THREE.MathUtils.lerp(
-        lidRef.current.rotation.x, 
-        targetAngle, 
-        delta * (shouldOpen ? 2 : 4)
-      );
+      lidRef.current.rotation.x = THREE.MathUtils.lerp(lidRef.current.rotation.x, targetAngle, delta * (shouldOpen ? 2 : 4));
     }
     
-    // Animate inner glow
     const targetGlow = (unlockPhase === 'opening' || unlockPhase === 'done' || isOpen) ? 3 : 0;
     setInnerGlowIntensity(prev => THREE.MathUtils.lerp(prev, targetGlow, delta * 2));
     
-    // Chest idle animation
     if (groupRef.current && unlockPhase === 'idle' && !isOpen) {
       groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.03;
       groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.015 - 0.3;
     }
     
-    // Shake during turning
     if (groupRef.current && unlockPhase === 'turning') {
       groupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 30) * 0.02;
     } else if (groupRef.current) {
@@ -245,36 +196,31 @@ function ChestModel({
     }
   });
 
+  // Materials
   const goldMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: new THREE.Color("#d4a84b"),
     metalness: 0.9,
     roughness: 0.12,
     emissive: new THREE.Color("#8b6914"),
-    emissiveIntensity: 0.2,
+    emissiveIntensity: 0.15,
   }), []);
 
-  const bronzeMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#8b6914"),
-    metalness: 0.85,
-    roughness: 0.2,
+  const darkWood = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#2d1a0f"),
+    metalness: 0.02,
+    roughness: 0.95,
   }), []);
 
-  const woodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+  const mediumWood = useMemo(() => new THREE.MeshStandardMaterial({
     color: new THREE.Color("#4a3525"),
     metalness: 0.02,
     roughness: 0.9,
   }), []);
 
-  const lightWoodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#6b4d35"),
+  const lightWood = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#5c4033"),
     metalness: 0.02,
     roughness: 0.85,
-  }), []);
-
-  const darkWoodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#2d1a0f"),
-    metalness: 0.02,
-    roughness: 0.95,
   }), []);
 
   const velvetMaterial = useMemo(() => new THREE.MeshStandardMaterial({
@@ -285,485 +231,301 @@ function ChestModel({
     emissiveIntensity: 0.1,
   }), []);
 
-  const ironMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#3d3d3d"),
-    metalness: 0.8,
-    roughness: 0.4,
-  }), []);
+  // Plank materials alternating
+  const plankMaterials = [darkWood, mediumWood, lightWood, mediumWood];
+
+  // Wood plank helper - creates individual planks
+  const renderPlanks = (count: number, width: number, height: number, depth: number, basePos: [number, number, number], axis: 'horizontal' | 'vertical') => {
+    const planks = [];
+    const gap = 0.008;
+    
+    if (axis === 'horizontal') {
+      const plankHeight = (height - gap * (count - 1)) / count;
+      for (let i = 0; i < count; i++) {
+        const y = basePos[1] + (i - (count - 1) / 2) * (plankHeight + gap);
+        planks.push(
+          <mesh key={`plank-h-${i}`} position={[basePos[0], y, basePos[2]]} material={plankMaterials[i % plankMaterials.length]}>
+            <boxGeometry args={[width, plankHeight - 0.005, depth]} />
+          </mesh>
+        );
+        // Add groove line between planks
+        if (i < count - 1) {
+          planks.push(
+            <mesh key={`groove-h-${i}`} position={[basePos[0], y + plankHeight / 2 + gap / 2, basePos[2] + 0.001]}>
+              <boxGeometry args={[width * 0.98, 0.004, 0.002]} />
+              <meshStandardMaterial color="#1a0f08" />
+            </mesh>
+          );
+        }
+      }
+    }
+    
+    return planks;
+  };
 
   return (
     <group ref={groupRef} position={[0, -0.3, 0]} scale={0.85}>
-      {/* ====== BASE BODY ====== */}
-      <mesh position={[0, 0, 0]} material={woodMaterial} castShadow receiveShadow>
+      {/* BASE BODY - frame */}
+      <mesh position={[0, 0, 0]} material={darkWood} castShadow receiveShadow>
         <boxGeometry args={[2, 1, 1.2]} />
       </mesh>
       
-      {/* Inner velvet lining */}
-      <mesh position={[0, 0.12, 0]} material={velvetMaterial}>
-        <boxGeometry args={[1.82, 0.82, 1.02]} />
+      {/* Inner velvet */}
+      <mesh position={[0, 0.08, 0]} material={velvetMaterial}>
+        <boxGeometry args={[1.85, 0.88, 1.05]} />
       </mesh>
       
-      {/* Wood planks texture - horizontal lines */}
-      {[-0.25, 0, 0.25].map((y, i) => (
-        <mesh key={`plank-line-${i}`} position={[0, y, 0.61]} material={darkWoodMaterial}>
-          <boxGeometry args={[1.95, 0.02, 0.01]} />
-        </mesh>
-      ))}
+      {/* FRONT PANEL - wooden planks */}
+      {renderPlanks(5, 1.9, 0.9, 0.04, [0, 0, 0.6], 'horizontal')}
       
-      {/* Front panel overlay */}
-      <mesh position={[0, 0, 0.605]} material={lightWoodMaterial}>
-        <boxGeometry args={[1.92, 0.94, 0.02]} />
-      </mesh>
+      {/* BACK PANEL - wooden planks */}
+      {renderPlanks(5, 1.9, 0.9, 0.04, [0, 0, -0.6], 'horizontal')}
       
-      {/* Back panel */}
-      <mesh position={[0, 0, -0.605]} material={lightWoodMaterial}>
-        <boxGeometry args={[1.92, 0.94, 0.02]} />
-      </mesh>
+      {/* LEFT PANEL - wooden planks */}
+      <group rotation={[0, Math.PI / 2, 0]}>
+        {renderPlanks(5, 1.1, 0.9, 0.04, [0, 0, 1.0], 'horizontal')}
+      </group>
       
-      {/* Side panels */}
-      <mesh position={[1.005, 0, 0]} material={lightWoodMaterial}>
-        <boxGeometry args={[0.02, 0.94, 1.16]} />
-      </mesh>
-      <mesh position={[-1.005, 0, 0]} material={lightWoodMaterial}>
-        <boxGeometry args={[0.02, 0.94, 1.16]} />
-      </mesh>
+      {/* RIGHT PANEL - wooden planks */}
+      <group rotation={[0, Math.PI / 2, 0]}>
+        {renderPlanks(5, 1.1, 0.9, 0.04, [0, 0, -1.0], 'horizontal')}
+      </group>
       
-      {/* ====== GOLD TRIM & BANDS ====== */}
+      {/* GOLD BANDS */}
       {/* Bottom band */}
       <mesh position={[0, -0.52, 0]} material={goldMaterial}>
-        <boxGeometry args={[2.12, 0.08, 1.32]} />
+        <boxGeometry args={[2.08, 0.06, 1.28]} />
       </mesh>
       
-      {/* Top edge band */}
+      {/* Top edge */}
       <mesh position={[0, 0.52, 0]} material={goldMaterial}>
-        <boxGeometry args={[2.12, 0.06, 1.32]} />
+        <boxGeometry args={[2.08, 0.05, 1.28]} />
       </mesh>
       
-      {/* Vertical gold straps on front */}
-      {[-0.6, 0.6].map((x, i) => (
+      {/* Corner posts */}
+      {[[-0.98, 0, 0.58], [0.98, 0, 0.58], [-0.98, 0, -0.58], [0.98, 0, -0.58]].map((pos, i) => (
+        <mesh key={`corner-${i}`} position={pos as [number, number, number]} material={goldMaterial}>
+          <boxGeometry args={[0.08, 1.08, 0.08]} />
+        </mesh>
+      ))}
+      
+      {/* Vertical straps on front */}
+      {[-0.5, 0.5].map((x, i) => (
         <mesh key={`strap-${i}`} position={[x, 0, 0.62]} material={goldMaterial}>
-          <boxGeometry args={[0.1, 1.02, 0.04]} />
+          <boxGeometry args={[0.08, 1.0, 0.03]} />
         </mesh>
       ))}
       
-      {/* ====== CORNER BRACKETS - ornate ====== */}
-      {[
-        [-0.98, -0.25, 0.59], [0.98, -0.25, 0.59], 
-        [-0.98, -0.25, -0.59], [0.98, -0.25, -0.59]
-      ].map((pos, i) => (
-        <group key={`corner-${i}`} position={pos as [number, number, number]}>
-          {/* Main bracket */}
-          <mesh material={goldMaterial}>
-            <boxGeometry args={[0.14, 0.55, 0.14]} />
-          </mesh>
-          {/* Decorative ball on top */}
-          <mesh position={[0, 0.32, 0]} material={goldMaterial}>
-            <sphereGeometry args={[0.06, 16, 16]} />
-          </mesh>
-          {/* Feet */}
-          <mesh position={[0, -0.32, 0]} material={goldMaterial}>
-            <cylinderGeometry args={[0.08, 0.1, 0.06, 8]} />
-          </mesh>
-        </group>
-      ))}
-      
-      {/* ====== DECORATIVE RIVETS ====== */}
-      {/* Front rivets - more of them */}
-      {[
-        [-0.8, 0.35, 0.62], [0.8, 0.35, 0.62],
-        [-0.8, -0.35, 0.62], [0.8, -0.35, 0.62],
-        [-0.4, 0.35, 0.62], [0.4, 0.35, 0.62],
-        [-0.4, -0.35, 0.62], [0.4, -0.35, 0.62],
-        [0, 0.35, 0.62], [0, -0.35, 0.62],
-      ].map((pos, i) => (
-        <mesh key={`rivet-front-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
-          <sphereGeometry args={[0.035, 12, 12]} />
-        </mesh>
-      ))}
-      
-      {/* Side rivets */}
-      {[
-        [1.01, 0.35, 0.35], [1.01, 0.35, -0.35],
-        [1.01, -0.35, 0.35], [1.01, -0.35, -0.35],
-        [-1.01, 0.35, 0.35], [-1.01, 0.35, -0.35],
-        [-1.01, -0.35, 0.35], [-1.01, -0.35, -0.35],
-      ].map((pos, i) => (
-        <mesh key={`rivet-side-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
-          <sphereGeometry args={[0.035, 12, 12]} />
-        </mesh>
-      ))}
-      
-      {/* ====== SIDE HANDLES - Ring style ====== */}
-      {[1.08, -1.08].map((x, i) => (
-        <group key={`handle-${i}`} position={[x, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
-          {/* Handle plate */}
-          <mesh material={ironMaterial}>
-            <boxGeometry args={[0.25, 0.35, 0.04]} />
-          </mesh>
-          {/* Ring */}
-          <mesh position={[0, -0.05, 0.08]} rotation={[Math.PI / 6, 0, 0]} material={ironMaterial}>
-            <torusGeometry args={[0.12, 0.025, 12, 24]} />
-          </mesh>
-          {/* Ring mount */}
-          <mesh position={[0, 0.08, 0.02]} material={ironMaterial}>
-            <cylinderGeometry args={[0.04, 0.04, 0.04, 12]} />
-          </mesh>
-        </group>
-      ))}
-      
-      {/* ====== LOCK PLATE - ornate ====== */}
+      {/* LOCK PLATE */}
       {lockVisible && (
-        <group ref={lockRef} position={[0, 0.08, 0.64]}>
-          {/* Decorative shield shape */}
+        <group position={[0, 0.05, 0.64]}>
           <mesh material={goldMaterial}>
-            <boxGeometry args={[0.32, 0.4, 0.05]} />
+            <boxGeometry args={[0.28, 0.35, 0.04]} />
           </mesh>
-          {/* Shield top decoration */}
-          <mesh position={[0, 0.22, 0]} material={goldMaterial}>
-            <cylinderGeometry args={[0.16, 0.16, 0.05, 16, 1, false, 0, Math.PI]} />
-          </mesh>
-          {/* Keyhole surround */}
-          <mesh position={[0, 0, 0.03]} material={bronzeMaterial}>
-            <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
-          </mesh>
-          {/* Keyhole */}
-          <mesh position={[0, 0.02, 0.04]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.025, 0.025, 0.03, 12]} />
+          {/* Keyhole circle */}
+          <mesh position={[0, 0.02, 0.025]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.02, 16]} />
             <meshStandardMaterial color="#0a0a0a" />
           </mesh>
           {/* Keyhole slot */}
-          <mesh position={[0, -0.04, 0.04]}>
-            <boxGeometry args={[0.018, 0.07, 0.03]} />
+          <mesh position={[0, -0.05, 0.025]}>
+            <boxGeometry args={[0.015, 0.08, 0.02]} />
             <meshStandardMaterial color="#0a0a0a" />
           </mesh>
-          {/* Corner rivets on lock plate */}
-          {[[-0.1, 0.12], [0.1, 0.12], [-0.1, -0.12], [0.1, -0.12]].map(([x, y], i) => (
-            <mesh key={`lock-rivet-${i}`} position={[x, y, 0.03]} material={bronzeMaterial}>
-              <sphereGeometry args={[0.02, 8, 8]} />
-            </mesh>
-          ))}
         </group>
       )}
       
-      {/* ====== LID GROUP ====== */}
+      {/* LID */}
       <group ref={lidRef} position={[0, 0.52, -0.55]}>
-        {/* Lid main body */}
-        <mesh position={[0, 0.2, 0.55]} material={woodMaterial} castShadow>
-          <boxGeometry args={[2, 0.4, 1.2]} />
+        {/* Lid base frame */}
+        <mesh position={[0, 0.18, 0.55]} material={darkWood} castShadow>
+          <boxGeometry args={[2, 0.36, 1.2]} />
         </mesh>
         
-        {/* Lid curved top - barrel vault */}
-        <mesh position={[0, 0.4, 0.55]} rotation={[0, 0, Math.PI / 2]} material={lightWoodMaterial}>
-          <cylinderGeometry args={[0.5, 0.5, 2.02, 32, 1, false, 0, Math.PI]} />
+        {/* Lid curved top */}
+        <mesh position={[0, 0.38, 0.55]} rotation={[0, 0, Math.PI / 2]} material={mediumWood}>
+          <cylinderGeometry args={[0.45, 0.45, 2.02, 32, 1, false, 0, Math.PI]} />
         </mesh>
         
-        {/* Lid front panel */}
-        <mesh position={[0, 0.2, 1.155]} material={lightWoodMaterial}>
-          <boxGeometry args={[1.94, 0.36, 0.02]} />
-        </mesh>
+        {/* Lid front planks */}
+        {[0.28, 0.14, 0, -0.14].map((y, i) => (
+          <mesh key={`lid-plank-${i}`} position={[0, y, 1.15]} material={plankMaterials[i % plankMaterials.length]}>
+            <boxGeometry args={[1.88, 0.12, 0.03]} />
+          </mesh>
+        ))}
         
-        {/* Gold bands on lid - arched */}
-        {[-0.65, 0, 0.65].map((x, i) => (
+        {/* Lid gold bands - arched */}
+        {[-0.6, 0, 0.6].map((x, i) => (
           <group key={`lid-band-${i}`}>
-            {/* Straight part */}
-            <mesh position={[x, 0.2, 1.16]} material={goldMaterial}>
-              <boxGeometry args={[0.1, 0.4, 0.04]} />
+            <mesh position={[x, 0.18, 1.16]} material={goldMaterial}>
+              <boxGeometry args={[0.08, 0.38, 0.03]} />
             </mesh>
-            {/* Curved part on top */}
-            <mesh position={[x, 0.45, 0.55]} rotation={[0, 0, Math.PI / 2]} material={goldMaterial}>
-              <torusGeometry args={[0.4, 0.04, 8, 16, Math.PI * 0.85]} />
+            <mesh position={[x, 0.42, 0.55]} rotation={[0, 0, Math.PI / 2]} material={goldMaterial}>
+              <torusGeometry args={[0.38, 0.03, 8, 16, Math.PI * 0.85]} />
             </mesh>
           </group>
         ))}
         
-        {/* Lid rivets */}
-        {[
-          [-0.85, 0.3, 1.16], [0.85, 0.3, 1.16],
-          [-0.85, 0.1, 1.16], [0.85, 0.1, 1.16],
-          [-0.35, 0.3, 1.16], [0.35, 0.3, 1.16],
-        ].map((pos, i) => (
-          <mesh key={`lid-rivet-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
-            <sphereGeometry args={[0.03, 10, 10]} />
-          </mesh>
-        ))}
-        
-        {/* Lid gold trim edge */}
-        <mesh position={[0, 0.01, 1.17]} material={goldMaterial}>
-          <boxGeometry args={[2.1, 0.05, 0.04]} />
+        {/* Lid edges */}
+        <mesh position={[0, 0, 1.16]} material={goldMaterial}>
+          <boxGeometry args={[2.06, 0.04, 0.03]} />
         </mesh>
-        
-        {/* Side gold trim on lid */}
-        <mesh position={[1.02, 0.2, 0.55]} material={goldMaterial}>
-          <boxGeometry args={[0.04, 0.42, 1.24]} />
+        <mesh position={[1.01, 0.18, 0.55]} material={goldMaterial}>
+          <boxGeometry args={[0.04, 0.38, 1.22]} />
         </mesh>
-        <mesh position={[-1.02, 0.2, 0.55]} material={goldMaterial}>
-          <boxGeometry args={[0.04, 0.42, 1.24]} />
+        <mesh position={[-1.01, 0.18, 0.55]} material={goldMaterial}>
+          <boxGeometry args={[0.04, 0.38, 1.22]} />
         </mesh>
       </group>
       
-      {/* Animated key during unlock sequence */}
-      {activeKeyId && unlockPhase !== 'idle' && unlockPhase !== 'done' && (
-        <AnimatedKey keyId={activeKeyId} phase={unlockPhase as any} />
-      )}
+      {/* Inner glow */}
+      <pointLight position={[0, 0.3, 0]} color="#d4af37" intensity={innerGlowIntensity} distance={2} />
       
-      {/* Inner glow when opening */}
-      <pointLight 
-        position={[0, 0.3, 0]} 
-        color="#d4af37" 
-        intensity={innerGlowIntensity} 
-        distance={2.5} 
-      />
-      
-      {/* Additional ambient glow from inside */}
+      {/* Show sparkles when open */}
       {(unlockPhase === 'opening' || unlockPhase === 'done' || isOpen) && (
-        <pointLight 
-          position={[0, 0.5, 0]} 
-          color="#ffcc00" 
-          intensity={2} 
-          distance={1.5} 
-        />
+        <Sparkles count={30} scale={1.5} size={3} speed={0.4} color="#d4af37" position={[0, 0.6, 0]} />
       )}
       
-      {/* Sparkles when fully open */}
-      {(unlockPhase === 'done' || isOpen) && (
-        <Sparkles
-          count={80}
-          scale={[2.5, 2, 2]}
-          size={5}
-          speed={0.5}
-          opacity={0.95}
-          color="#d4af37"
-        />
+      {/* Animated key */}
+      {activeKeyId && unlockPhase !== 'idle' && unlockPhase !== 'done' && (
+        <AnimatedKey keyId={activeKeyId} phase={unlockPhase as 'approaching' | 'inserting' | 'turning'} />
       )}
     </group>
   );
 }
 
-function ChestScene({ 
-  isOpen, 
-  unlockPhase,
-  activeKeyId 
-}: { 
-  isOpen: boolean; 
-  unlockPhase: 'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done';
-  activeKeyId: string | null;
-}) {
-  return (
-    <>
-      <ambientLight intensity={0.25} />
-      <directionalLight position={[5, 5, 5]} intensity={0.9} color="#fff5e6" castShadow />
-      <directionalLight position={[-3, 3, -3]} intensity={0.4} color="#b3c7ff" />
-      <spotLight
-        position={[0, 6, 2]}
-        angle={0.35}
-        penumbra={0.6}
-        intensity={1.2}
-        color="#d4af37"
-        castShadow
-      />
-      
-      <Float speed={1.5} rotationIntensity={0.05} floatIntensity={0.15}>
-        <ChestModel isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={activeKeyId} />
-      </Float>
-      
-      {/* Ground with reflection */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.95, 0]} receiveShadow>
-        <planeGeometry args={[12, 12]} />
-        <meshStandardMaterial
-          color="#080808"
-          metalness={0.9}
-          roughness={0.3}
-          transparent
-          opacity={0.6}
-        />
-      </mesh>
-      
-      <OrbitControls
-        enableZoom={false}
-        enablePan={false}
-        minPolarAngle={Math.PI / 3.5}
-        maxPolarAngle={Math.PI / 2.1}
-        minAzimuthAngle={-Math.PI / 5}
-        maxAzimuthAngle={Math.PI / 5}
-      />
-    </>
-  );
-}
-
-interface TreasureChest3DProps {
-  onOpen?: () => void;
-  isOpen?: boolean;
-}
-
-export function TreasureChest3D({ onOpen, isOpen: controlledIsOpen }: TreasureChest3DProps) {
-  const { activeKeyForChest, setActiveKeyForChest, useKey, keys } = useInventory();
-  const [isOpen, setIsOpen] = useState(controlledIsOpen || false);
+// Main component
+export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen: boolean }) {
+  const { keys, activeKeyForChest, setActiveKeyForChest, removeKey } = useInventory();
+  const [isDragOver, setIsDragOver] = useState(false);
   const [unlockPhase, setUnlockPhase] = useState<'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done'>('idle');
-  const [activeKeyId, setActiveKeyId] = useState<string | null>(null);
-  const [showParticles, setShowParticles] = useState(false);
+  const [usedKeyId, setUsedKeyId] = useState<string | null>(null);
 
-  // Sync with controlled prop
-  useEffect(() => {
-    if (controlledIsOpen !== undefined) {
-      setIsOpen(controlledIsOpen);
-      if (controlledIsOpen) {
-        setUnlockPhase('done');
-      }
+  // Handle key drop
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const keyId = e.dataTransfer.getData("keyId");
+    if (keyId && !isOpen) {
+      startUnlockSequence(keyId);
     }
-  }, [controlledIsOpen]);
+  };
 
-  // Handle key activation - full unlock sequence
+  // Start unlock animation sequence
+  const startUnlockSequence = (keyId: string) => {
+    setUsedKeyId(keyId);
+    setUnlockPhase('approaching');
+    
+    setTimeout(() => setUnlockPhase('inserting'), 800);
+    setTimeout(() => setUnlockPhase('turning'), 1600);
+    setTimeout(() => {
+      setUnlockPhase('opening');
+      removeKey(keyId);
+      onOpen();
+    }, 2400);
+    setTimeout(() => setUnlockPhase('done'), 3200);
+  };
+
+  // Handle click from inventory
   useEffect(() => {
     if (activeKeyForChest && !isOpen && unlockPhase === 'idle') {
-      setActiveKeyId(activeKeyForChest.id);
-      
-      // Phase 1: Key approaches
-      setUnlockPhase('approaching');
-      
-      setTimeout(() => {
-        // Phase 2: Key inserts into lock
-        setUnlockPhase('inserting');
-        
-        setTimeout(() => {
-          // Phase 3: Key turns
-          setUnlockPhase('turning');
-          
-          setTimeout(() => {
-            // Phase 4: Chest opens
-            setUnlockPhase('opening');
-            useKey(activeKeyForChest.id);
-            setActiveKeyForChest(null);
-            setShowParticles(true);
-            
-            setTimeout(() => {
-              // Phase 5: Done
-              setUnlockPhase('done');
-              setIsOpen(true);
-              setActiveKeyId(null);
-              onOpen?.();
-              
-              setTimeout(() => setShowParticles(false), 2500);
-            }, 1200);
-          }, 800);
-        }, 600);
-      }, 700);
+      startUnlockSequence(activeKeyForChest.id);
+      setActiveKeyForChest(null);
     }
-  }, [activeKeyForChest, isOpen, unlockPhase, onOpen, setActiveKeyForChest, useKey]);
+  }, [activeKeyForChest, isOpen, unlockPhase]);
+
+  // Reset when chest closes
+  useEffect(() => {
+    if (!isOpen && unlockPhase === 'done') {
+      setUnlockPhase('idle');
+      setUsedKeyId(null);
+    }
+  }, [isOpen, unlockPhase]);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (!isOpen) setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => setIsDragOver(false);
 
   return (
-    <div className="relative w-full h-[400px] md:h-[500px]">
-      {/* Drop zone indicator */}
+    <div className="flex flex-col items-center gap-6">
       <div
-        id="chest-drop-zone"
-        className="absolute inset-0 rounded-lg transition-all duration-300"
+        className={`relative w-full max-w-md aspect-square rounded-lg transition-all duration-300 ${
+          isDragOver ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105' : ''
+        }`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
-        {keys.length > 0 && !isOpen && unlockPhase === 'idle' && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-card/80 backdrop-blur-sm rounded-full border border-primary/30 z-10">
+        {/* Ambient glow */}
+        <div className={`absolute inset-0 bg-gradient-radial from-primary/10 via-transparent to-transparent rounded-lg transition-opacity duration-500 ${
+          isDragOver || isOpen ? 'opacity-100' : 'opacity-50'
+        }`} />
+        
+        <Canvas
+          camera={{ position: [0, 1.5, 4], fov: 45 }}
+          shadows
+          dpr={[1, 2]}
+          gl={{ antialias: true }}
+        >
+          <Suspense fallback={null}>
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
+            <directionalLight position={[-3, 3, -3]} intensity={0.4} color="#ffd4a3" />
+            <pointLight position={[0, 2, 2]} intensity={0.5} color="#d4af37" />
+            
+            <Float speed={2} rotationIntensity={0.1} floatIntensity={0.3}>
+              <ChestModel isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={usedKeyId} />
+            </Float>
+            
+            <OrbitControls
+              enablePan={false}
+              enableZoom={false}
+              minPolarAngle={Math.PI / 4}
+              maxPolarAngle={Math.PI / 2.2}
+              minAzimuthAngle={-Math.PI / 6}
+              maxAzimuthAngle={Math.PI / 6}
+            />
+          </Suspense>
+        </Canvas>
+        
+        {/* Status indicator */}
+        <AnimatePresence>
+          {!isOpen && unlockPhase === 'idle' && (
             <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm border border-border/50"
             >
               <Lock className="w-4 h-4 text-primary" />
+              <span className="text-sm text-muted-foreground">
+                {keys.length > 0 ? "Перетащите ключ" : "Соберите ключ"}
+              </span>
             </motion.div>
-            <span className="text-sm text-muted-foreground">
-              Нажмите на ключ в инвентаре
-            </span>
-          </div>
-        )}
+          )}
+          
+          {unlockPhase !== 'idle' && unlockPhase !== 'done' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 backdrop-blur-sm border border-primary/30"
+            >
+              <motion.div animate={{ rotate: unlockPhase === 'turning' ? 90 : 0 }} transition={{ duration: 0.5 }}>
+                <Unlock className="w-4 h-4 text-primary" />
+              </motion.div>
+              <span className="text-sm text-primary font-medium">
+                {unlockPhase === 'approaching' && "Ключ приближается..."}
+                {unlockPhase === 'inserting' && "Вставляю ключ..."}
+                {unlockPhase === 'turning' && "Открываю..."}
+                {unlockPhase === 'opening' && "Открыто!"}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      
-      {/* 3D Canvas */}
-      <Canvas
-        camera={{ position: [0, 1.8, 4.5], fov: 40 }}
-        shadows
-        className="rounded-lg"
-        gl={{ antialias: true }}
-      >
-        <Suspense fallback={null}>
-          <ChestScene isOpen={isOpen} unlockPhase={unlockPhase} activeKeyId={activeKeyId} />
-        </Suspense>
-      </Canvas>
-      
-      {/* Phase indicator during unlock */}
-      <AnimatePresence>
-        {unlockPhase !== 'idle' && unlockPhase !== 'done' && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20"
-          >
-            <div className="px-6 py-3 bg-card/90 backdrop-blur-md rounded-lg border border-primary/40 shadow-[0_0_30px_hsl(45_80%_55%/0.3)]">
-              <motion.span 
-                className="text-primary font-medium"
-                animate={{ opacity: [1, 0.5, 1] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-              >
-                {unlockPhase === 'approaching' && '🔑 Ключ подлетает...'}
-                {unlockPhase === 'inserting' && '🔐 Вставляем в замок...'}
-                {unlockPhase === 'turning' && '🔄 Поворачиваем...'}
-                {unlockPhase === 'opening' && '✨ Открываем!'}
-              </motion.span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Golden particles burst */}
-      <AnimatePresence>
-        {showParticles && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 pointer-events-none overflow-hidden z-10"
-          >
-            {[...Array(40)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{
-                  left: '50%',
-                  top: '55%',
-                  scale: 0,
-                  opacity: 1,
-                }}
-                animate={{
-                  left: `${50 + (Math.random() - 0.5) * 120}%`,
-                  top: `${55 + (Math.random() - 0.5) * 100}%`,
-                  scale: Math.random() * 2 + 0.5,
-                  opacity: 0,
-                  rotate: Math.random() * 360,
-                }}
-                transition={{
-                  duration: 2 + Math.random(),
-                  delay: Math.random() * 0.4,
-                  ease: "easeOut",
-                }}
-                className="absolute w-2 h-2 bg-primary rounded-full shadow-[0_0_12px_hsl(45_80%_55%)]"
-              />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
-      {/* Status indicator */}
-      <motion.div 
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 bg-card/80 backdrop-blur-sm rounded-full border border-primary/20"
-        animate={isOpen ? { scale: [1, 1.05, 1] } : {}}
-        transition={{ duration: 0.5 }}
-      >
-        {isOpen || unlockPhase === 'done' ? (
-          <>
-            <Unlock className="w-4 h-4 text-primary" />
-            <span className="text-sm text-primary font-medium">Сундук открыт!</span>
-          </>
-        ) : (
-          <>
-            <Lock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Сундук закрыт</span>
-          </>
-        )}
-      </motion.div>
     </div>
   );
 }
