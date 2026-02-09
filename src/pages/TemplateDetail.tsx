@@ -143,7 +143,7 @@ const TemplateDetail = () => {
               </p>
 
               <div className="flex flex-wrap items-center gap-6 mb-8">
-                <div className="text-3xl font-display font-bold gradient-gold-text shimmer">
+                <div className="text-3xl font-display font-bold text-primary">
                   {template.price}
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
