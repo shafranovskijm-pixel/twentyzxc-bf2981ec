@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
@@ -21,6 +21,8 @@ import { PublishedProjectsGallery } from "@/components/playground/PublishedProje
 import { FeedbackSection } from "@/components/playground/FeedbackSection";
 import { CanvasSettings } from "@/components/playground/CanvasSettings";
 import { SaveDialog } from "@/components/playground/SaveDialog";
+import { LayerList } from "@/components/playground/LayerList";
+import { exportToHTML } from "@/lib/export-html";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   Sheet, 
@@ -128,6 +130,23 @@ const Playground = () => {
     editorRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleExportHTML = () => {
+    if (blocks.length === 0) {
+      toast({ title: "Нечего экспортировать", description: "Добавьте хотя бы один блок", variant: "destructive" });
+      return;
+    }
+    const data = exportData();
+    const html = exportToHTML(data.title, data.blocks, data.settings);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectTitle.replace(/\s+/g, '-').toLowerCase()}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "HTML скачан!", description: "Файл готов к размещению на хостинге" });
+  };
+
   return (
     <>
       <Helmet>
@@ -189,6 +208,10 @@ const Playground = () => {
                 <Button variant="outline" onClick={handleShare} disabled={!savedSlug}>
                   <Share2 className="w-4 h-4 mr-2" />
                   Поделиться
+                </Button>
+                <Button variant="outline" onClick={handleExportHTML} disabled={blocks.length === 0}>
+                  <Download className="w-4 h-4 mr-2" />
+                  HTML
                 </Button>
                 <Button variant="hero" onClick={handleSaveClick} disabled={isSaving}>
                   <Save className="w-4 h-4 mr-2" />
@@ -312,6 +335,23 @@ const Playground = () => {
                     </AccordionTrigger>
                     <AccordionContent>
                       <BlockPalette onAddBlock={addBlock} />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="layers" className="border-border">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <ListTree className="w-4 h-4" />
+                        Структура страницы
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <LayerList
+                        blocks={blocks}
+                        selectedBlockId={selectedBlockId}
+                        onSelectBlock={setSelectedBlockId}
+                        onDeleteBlock={deleteBlock}
+                      />
                     </AccordionContent>
                   </AccordionItem>
 

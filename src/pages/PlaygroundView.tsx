@@ -331,6 +331,45 @@ const PlaygroundView = () => {
         return <motion.div key={block.id} style={{ padding: block.styles.padding }} {...mp} />;
       case 'form':
         return <FormBlock key={block.id} block={block} slug={slug || ''} style={style} mp={mp} />;
+      case 'accordion': {
+        const items = block.content.split('\n').filter(Boolean);
+        return wrapWithLink(block,
+          <motion.div key={block.id} className={block.hoverEffect} style={style} {...mp}>
+            {items.map((item, i) => {
+              const [q, a] = item.split('|');
+              return (
+                <details key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '12px 0' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: 500 }}>{q}</summary>
+                  <p style={{ marginTop: '8px', opacity: 0.8, fontSize: '0.9em' }}>{a}</p>
+                </details>
+              );
+            })}
+          </motion.div>
+        );
+      }
+      case 'tabs': {
+        const [ActiveTabBlock] = [({ tabs, style, mp, block }: any) => {
+          const [active, setActive] = useState(0);
+          const tabItems = tabs as string[];
+          return (
+            <motion.div key={block.id} className={block.hoverEffect} style={style} {...mp}>
+              <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.2)', marginBottom: '12px' }}>
+                {tabItems.map((tab: string, i: number) => {
+                  const [title] = tab.split('|');
+                  return (
+                    <button key={i} onClick={() => setActive(i)} style={{ padding: '8px 16px', background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 'inherit', opacity: i === active ? 1 : 0.5, borderBottom: i === active ? '2px solid currentColor' : '2px solid transparent' }}>
+                      {title}
+                    </button>
+                  );
+                })}
+              </div>
+              <div>{tabItems[active]?.split('|')[1] || ''}</div>
+            </motion.div>
+          );
+        }];
+        const tabItems = block.content.split('||').filter(Boolean);
+        return <ActiveTabBlock key={block.id} tabs={tabItems} style={style} mp={mp} block={block} />;
+      }
       default:
         return null;
     }
