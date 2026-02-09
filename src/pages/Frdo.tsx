@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +80,13 @@ const FrdoPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>ФРДО — Проверка документов об образовании | 24ZXC</title>
+        <meta name="description" content="Помощь с внесением данных в ФРДО. Проверка дипломов, сертификатов и документов об образовании через федеральный реестр." />
+        <link rel="canonical" href="https://24zxc.ru/frdo" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Top-right glow */}
@@ -482,6 +489,7 @@ const FrdoPage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

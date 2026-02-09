@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useCountUp } from "@/hooks/use-count-up";
@@ -50,7 +51,13 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
+      <Helmet>
+        <title>О компании 24ZXC — Веб-студия полного цикла</title>
+        <meta name="description" content="Команда 24ZXC: веб-разработка, реклама и цифровые решения. Узнайте о нашем подходе, принципах работы и опыте." />
+        <link rel="canonical" href="https://24zxc.ru/about" />
+      </Helmet>
+      <div className="min-h-screen bg-background">
       <Header />
       
       {/* Animated Hero Section */}
@@ -111,6 +118,7 @@ const About = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

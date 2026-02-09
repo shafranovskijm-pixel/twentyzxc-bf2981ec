@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -97,7 +98,13 @@ const EcommercePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Интернет-магазины — Разработка e-commerce | 24ZXC</title>
+        <meta name="description" content="Создание интернет-магазинов с каталогом, корзиной и оплатой. Полная интеграция с CRM и службами доставки." />
+        <link rel="canonical" href="https://24zxc.ru/services/ecommerce" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Glowing orbs */}
@@ -442,6 +449,7 @@ const EcommercePage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +59,13 @@ const benefits = [
 
 const Chmuleva = () => {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Чмулёва — Сайт для психолога | 24ZXC</title>
+        <meta name="description" content="Кейс: создание сайта для психолога Чмулёвой. Продающий лендинг с формой записи и интеграцией с соцсетями." />
+        <link rel="canonical" href="https://24zxc.ru/projects/chmuleva" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
@@ -257,6 +264,7 @@ const Chmuleva = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

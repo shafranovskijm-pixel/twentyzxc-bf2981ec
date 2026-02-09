@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -95,7 +96,13 @@ const Templates = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Шаблоны сайтов — Готовые решения | 24ZXC</title>
+        <meta name="description" content="Каталог готовых шаблонов сайтов от 24ZXC. Лендинги, корпоративные сайты, интернет-магазины и веб-приложения." />
+        <link rel="canonical" href="https://24zxc.ru/templates" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Dot grid pattern */}
@@ -344,6 +351,7 @@ const Templates = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

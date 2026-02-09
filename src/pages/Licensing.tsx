@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -79,7 +80,13 @@ const LicensingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Лицензирование образовательной деятельности | 24ZXC</title>
+        <meta name="description" content="Помощь в получении образовательной лицензии. Подготовка документов, сопровождение в Рособрнадзоре и полная поддержка." />
+        <link rel="canonical" href="https://24zxc.ru/licensing" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Glowing orbs */}
@@ -518,6 +525,7 @@ const LicensingPage = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

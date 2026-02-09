@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -58,7 +59,13 @@ const requirements = [
 
 const PrNutrition = () => {
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>PR Nutrition — Сайт для образовательного центра | 24ZXC</title>
+        <meta name="description" content="Кейс: разработка сайта PR Nutrition по требованиям Рособрнадзора. ФРДО, антиплагиат и полный пакет документов." />
+        <link rel="canonical" href="https://24zxc.ru/projects/pr-nutrition" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
@@ -291,6 +298,7 @@ const PrNutrition = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 

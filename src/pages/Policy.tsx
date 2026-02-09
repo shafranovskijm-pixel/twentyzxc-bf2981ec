@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -71,7 +72,13 @@ const Policy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <>
+      <Helmet>
+        <title>Политика конфиденциальности | 24ZXC</title>
+        <meta name="description" content="Политика конфиденциальности 24ZXC. Узнайте, как мы собираем, используем и защищаем ваши персональные данные." />
+        <link rel="canonical" href="https://24zxc.ru/policy" />
+      </Helmet>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background decorations */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {/* Dot grid pattern */}
@@ -187,6 +194,7 @@ const Policy = () => {
 
       <Footer />
     </div>
+    </>
   );
 };
 
