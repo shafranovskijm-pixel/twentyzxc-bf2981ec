@@ -9,7 +9,19 @@ import { Template } from "@/data/templates";
 import { ScrollReveal, AnimatedCounter, GradientButton, LiveChatWidget } from "../shared";
 import { ImageWithFallback } from "../../ImageWithFallback";
 
-const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
+// Local images
+import artisan1 from "@/assets/templates/artisan-market/artisan-1.jpg";
+import artisan2 from "@/assets/templates/artisan-market/artisan-2.jpg";
+import artisan3 from "@/assets/templates/artisan-market/artisan-3.jpg";
+import product1 from "@/assets/templates/artisan-market/product-1.jpg";
+import product2 from "@/assets/templates/artisan-market/product-2.jpg";
+import product3 from "@/assets/templates/artisan-market/product-3.jpg";
+import product4 from "@/assets/templates/artisan-market/product-4.jpg";
+import product5 from "@/assets/templates/artisan-market/product-5.jpg";
+import product6 from "@/assets/templates/artisan-market/product-6.jpg";
+
+const artisanImages = [artisan1, artisan2, artisan3];
+const productImages = [product1, product2, product3, product4, product5, product6];
 
 interface ArtisanMarketPreviewProps {
   template: Template;
@@ -231,7 +243,7 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-16 h-16 rounded-full overflow-hidden">
                     <ImageWithFallback
-                      src={`${STORAGE_BASE}/artisan-market/artisan-${i + 1}.png`}
+                      src={artisanImages[i]}
                       alt={artisan.name}
                       className="w-full h-full rounded-full"
                       aspectRatio="square"
@@ -286,7 +298,7 @@ export const ArtisanMarketPreview = ({ template }: ArtisanMarketPreviewProps) =>
               >
                 <div className="relative aspect-square rounded-2xl overflow-hidden mb-3">
                   <ImageWithFallback
-                    src={`${STORAGE_BASE}/artisan-market/product-${i + 1}.png`}
+                    src={productImages[i]}
                     alt={product.name}
                     className="w-full h-full"
                     aspectRatio="square"
