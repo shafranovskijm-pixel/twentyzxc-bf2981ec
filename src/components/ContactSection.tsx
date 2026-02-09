@@ -151,9 +151,9 @@ const ContactSection = () => {
   };
 
   return (
-    <section id="contact" ref={sectionRef} className="py-32 relative overflow-hidden bg-secondary/30">
+    <section id="contact" ref={sectionRef} className="py-16 relative overflow-hidden bg-secondary/30">
       <div className="container relative z-10 px-4">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-4xl mx-auto">
 
           {/* Treasure Chest & Form */}
           <div 
