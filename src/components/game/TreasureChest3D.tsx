@@ -400,19 +400,23 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
   const [isDragOver, setIsDragOver] = useState(false);
   const [unlockPhase, setUnlockPhase] = useState<'idle' | 'approaching' | 'inserting' | 'turning' | 'opening' | 'done'>('idle');
   const [usedKeyId, setUsedKeyId] = useState<string | null>(null);
+  const unlockStartedRef = useRef(false);
 
   // Handle key drop
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const keyId = e.dataTransfer.getData("keyId");
-    if (keyId && !isOpen) {
-      startUnlockSequence(keyId);
+    if (keyId && !isOpen && unlockPhase === 'idle') {
+      triggerUnlock(keyId);
     }
   };
 
   // Start unlock animation sequence
-  const startUnlockSequence = (keyId: string) => {
+  const triggerUnlock = (keyId: string) => {
+    if (unlockStartedRef.current) return;
+    unlockStartedRef.current = true;
+    
     setUsedKeyId(keyId);
     setUnlockPhase('approaching');
     
@@ -423,16 +427,20 @@ export function TreasureChest3D({ onOpen, isOpen }: { onOpen: () => void; isOpen
       removeKey(keyId);
       onOpen();
     }, 2400);
-    setTimeout(() => setUnlockPhase('done'), 3200);
+    setTimeout(() => {
+      setUnlockPhase('done');
+      unlockStartedRef.current = false;
+    }, 3200);
   };
 
   // Handle click from inventory
   useEffect(() => {
-    if (activeKeyForChest && !isOpen && unlockPhase === 'idle') {
-      startUnlockSequence(activeKeyForChest.id);
+    if (activeKeyForChest && !isOpen && unlockPhase === 'idle' && !unlockStartedRef.current) {
+      const keyId = activeKeyForChest.id;
       setActiveKeyForChest(null);
+      triggerUnlock(keyId);
     }
-  }, [activeKeyForChest, isOpen, unlockPhase]);
+  }, [activeKeyForChest, isOpen, unlockPhase, setActiveKeyForChest]);
 
   // Reset when chest closes
   useEffect(() => {
