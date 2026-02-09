@@ -95,7 +95,6 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'text', content: 'Осталось: 127 мест', animation: 'fade-in', styles: { ...ds, fontSize: '14px', textColor: '#666666', padding: '8px 16px' } }
     ]
   },
-  // --- New templates ---
   {
     id: 'resume',
     name: 'Резюме',
@@ -275,6 +274,67 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
   }
 ];
 
+/* Separate components for page templates and block examples */
+
+interface PageTemplatesListProps {
+  onSelectTemplate: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
+}
+
+export const PageTemplatesList = ({ onSelectTemplate }: PageTemplatesListProps) => (
+  <div className="grid grid-cols-2 gap-2">
+    {PAGE_TEMPLATES.map((template, index) => (
+      <motion.div
+        key={template.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03 }}
+      >
+        <Button
+          variant="outline"
+          className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1 hover:border-primary/50 hover:bg-primary/5"
+          onClick={() => onSelectTemplate(template.blocks)}
+        >
+          <span className="text-primary">{template.icon}</span>
+          <span className="text-xs font-medium">{template.name}</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">
+            {template.description}
+          </span>
+        </Button>
+      </motion.div>
+    ))}
+  </div>
+);
+
+interface BlockExamplesListProps {
+  onAddBlocks: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
+}
+
+export const BlockExamplesList = ({ onAddBlocks }: BlockExamplesListProps) => (
+  <div className="grid grid-cols-2 gap-2">
+    {BLOCK_EXAMPLES.map((example, index) => (
+      <motion.div
+        key={example.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03 }}
+      >
+        <Button
+          variant="outline"
+          className="w-full h-auto py-2.5 px-2.5 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
+          onClick={() => onAddBlocks(example.blocks)}
+        >
+          <span className="text-primary">{example.icon}</span>
+          <span className="text-[11px] font-medium">{example.name}</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">
+            {example.description}
+          </span>
+        </Button>
+      </motion.div>
+    ))}
+  </div>
+);
+
+/* Legacy combined component for backward compatibility */
 interface ProjectTemplatesProps {
   onSelectTemplate: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
   onAddBlocks?: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
@@ -283,59 +343,14 @@ interface ProjectTemplatesProps {
 export const ProjectTemplates = ({ onSelectTemplate, onAddBlocks }: ProjectTemplatesProps) => {
   return (
     <div className="space-y-5">
-      {/* Templates */}
       <div className="space-y-3">
         <h3 className="text-sm font-medium text-muted-foreground">Начать с шаблона</h3>
-        <div className="grid grid-cols-2 gap-2">
-          {PAGE_TEMPLATES.map((template, index) => (
-            <motion.div
-              key={template.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-            >
-              <Button
-                variant="outline"
-                className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1 hover:border-primary/50 hover:bg-primary/5"
-                onClick={() => onSelectTemplate(template.blocks)}
-              >
-                <span className="text-primary">{template.icon}</span>
-                <span className="text-xs font-medium">{template.name}</span>
-                <span className="text-[10px] text-muted-foreground leading-tight">
-                  {template.description}
-                </span>
-              </Button>
-            </motion.div>
-          ))}
-        </div>
+        <PageTemplatesList onSelectTemplate={onSelectTemplate} />
       </div>
-
-      {/* Block Examples */}
       {onAddBlocks && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground">Готовые примеры</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {BLOCK_EXAMPLES.map((example, index) => (
-              <motion.div
-                key={example.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.03 }}
-              >
-                <Button
-                  variant="outline"
-                  className="w-full h-auto py-2.5 px-2.5 flex flex-col items-center gap-0.5 hover:border-primary/50 hover:bg-primary/5"
-                  onClick={() => onAddBlocks(example.blocks)}
-                >
-                  <span className="text-primary">{example.icon}</span>
-                  <span className="text-[11px] font-medium">{example.name}</span>
-                  <span className="text-[10px] text-muted-foreground leading-tight">
-                    {example.description}
-                  </span>
-                </Button>
-              </motion.div>
-            ))}
-          </div>
+          <BlockExamplesList onAddBlocks={onAddBlocks} />
         </div>
       )}
     </div>
