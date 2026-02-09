@@ -41,8 +41,8 @@ const KeyModel = ({ variant, isHovered }: ServiceKeyProps) => {
   });
 
   return (
-    <Float speed={isHovered ? 4 : 1.5} rotationIntensity={isHovered ? 0.8 : 0.2} floatIntensity={isHovered ? 0.8 : 0.3}>
-      <group ref={groupRef} scale={isHovered ? 1.1 : 1} rotation={[0.3, 0, 0]}>
+    <Float speed={isHovered ? 4 : 1.5} rotationIntensity={isHovered ? 0.8 : 0.2} floatIntensity={isHovered ? 0.5 : 0.2}>
+      <group ref={groupRef} scale={isHovered ? 0.9 : 0.8} rotation={[0.3, 0, 0]}>
         {/* Key handle (ring) */}
         <mesh position={[0, 0.8, 0]}>
           <torusGeometry args={[0.35, 0.08, 16, 32]} />

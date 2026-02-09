@@ -200,7 +200,7 @@ const WebDevSection = () => {
           </div>
 
           {/* Services grid */}
-          <div className="relative">
+          <div className="relative overflow-visible">
             {/* Corner ornaments */}
             <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-primary/30" />
             <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-primary/30" />
@@ -212,7 +212,7 @@ const WebDevSection = () => {
               <Diamond className="w-4 h-4 text-primary/50" />
             </div>
             
-            <div className="grid md:grid-cols-2">
+            <div className="grid md:grid-cols-2 overflow-visible">
               <ServiceCard 
                 title="Лендинги"
                 price="от 15 000 ₽"
@@ -317,7 +317,7 @@ const ServiceCard = ({
       {keyId && !isCollected && (
         <button 
           onClick={handleTakeKey}
-          className="absolute bottom-2 right-2 w-20 h-24 z-20 cursor-pointer hover:scale-110 transition-transform"
+          className="absolute bottom-4 right-4 w-16 h-20 z-20 cursor-pointer hover:scale-110 transition-transform"
         >
           {/* Glow effect behind the key */}
           <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
