@@ -13,7 +13,7 @@ import {
 import { CodeBlock } from "../shared/CodeBlock";
 import { PricingToggle, AnimatedPrice } from "../shared/PricingToggle";
 import { StatusIndicator, StatusCard, StatusBanner } from "../shared/StatusIndicator";
-import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
 
 // Local images
 import project1 from "@/assets/templates/tech-horizon/project-1.jpg";

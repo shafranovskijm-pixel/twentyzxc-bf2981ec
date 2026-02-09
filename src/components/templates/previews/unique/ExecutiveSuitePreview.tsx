@@ -5,7 +5,7 @@ import { ArrowRight, Building2, Users, Globe, Award, ChevronRight, Mail, Phone, 
 import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedCounter, ScrollReveal, StaggerContainer, StaggerItem, TiltCard, VideoPlaceholder } from "../shared";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ImageWithFallback } from "../../ImageWithFallback";
+import { ImageWithFallback, imageSizes } from "../../ImageWithFallback";
 
 // Local images
 import team1 from "@/assets/templates/executive-suite/team-1.jpg";
@@ -303,6 +303,7 @@ export const ExecutiveSuitePreview = ({ template }: ExecutiveSuitePreviewProps) 
                       src={teamImages[i]}
                       alt={member.name}
                       aspectRatio="portrait"
+                      sizes={imageSizes.portrait}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
                     <div className="absolute bottom-0 left-0 right-0 p-6">
