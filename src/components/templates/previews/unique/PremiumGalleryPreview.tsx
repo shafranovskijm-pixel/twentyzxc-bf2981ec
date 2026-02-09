@@ -14,6 +14,16 @@ import { ImageWithFallback } from "../../ImageWithFallback";
 
 const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
 
+// Product type definition
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  ar: boolean;
+  stock: number;
+}
+
 // 360° Product Viewer Component
 interface Product360ViewerProps {
   rotation: number;
@@ -196,6 +206,214 @@ const Product360Viewer = ({ rotation, setRotation, isDragging, setIsDragging }: 
   );
 };
 
+// Product Card with 360° viewer
+interface ProductCard360Props {
+  product: Product;
+  index: number;
+  onSelect: (id: string) => void;
+  onOpen360: (id: string) => void;
+}
+
+const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360Props) => {
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [show360Mode, setShow360Mode] = useState(false);
+  const startXRef = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!show360Mode) return;
+    e.stopPropagation();
+    setIsDragging(true);
+    startXRef.current = e.clientX;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !show360Mode) return;
+    const delta = e.clientX - startXRef.current;
+    if (Math.abs(delta) > 3) {
+      setRotation((rotation + delta * 0.8) % 360);
+      startXRef.current = e.clientX;
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!show360Mode) return;
+    e.stopPropagation();
+    setIsDragging(true);
+    startXRef.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !show360Mode) return;
+    const delta = e.touches[0].clientX - startXRef.current;
+    if (Math.abs(delta) > 3) {
+      setRotation((rotation + delta * 0.8) % 360);
+      startXRef.current = e.touches[0].clientX;
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ y: show360Mode ? 0 : -8 }}
+      className="group"
+    >
+      <div 
+        className={`relative aspect-[3/4] rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border overflow-hidden mb-4 transition-all ${
+          show360Mode ? "border-emerald-500 cursor-grab active:cursor-grabbing" : "border-zinc-800 cursor-pointer"
+        }`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleMouseUp}
+        onClick={() => !show360Mode && onSelect(product.id)}
+      >
+        {show360Mode ? (
+          <>
+            {/* 360° Mode */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-teal-900/20" />
+            
+            {/* Rotating product representation */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+              <div 
+                className="relative w-32 h-32 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-xl flex items-center justify-center"
+                style={{ 
+                  transform: `perspective(400px) rotateY(${rotation}deg)`,
+                  transformStyle: 'preserve-3d'
+                }}
+              >
+                <Sparkles className="w-10 h-10 text-emerald-200/60" />
+                <motion.div 
+                  className="absolute inset-0 rounded-xl bg-gradient-to-tr from-transparent via-white/20 to-transparent"
+                  animate={{ opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              </div>
+            </div>
+
+            {/* 360° indicator */}
+            <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500 text-white text-xs font-medium">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-3 h-3 rounded-full border border-dashed border-white"
+              />
+              360°
+            </div>
+
+            {/* Rotation angle */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+              <span className="text-xs text-white/80">{Math.round(Math.abs(rotation % 360))}°</span>
+            </div>
+
+            {/* Drag hint */}
+            {!isDragging && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <motion.div
+                  animate={{ x: [-10, 10, -10] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                  className="text-xs text-white/60 bg-black/40 px-3 py-1 rounded-full backdrop-blur-sm"
+                >
+                  ← →
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* Close 360 button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShow360Mode(false); setRotation(0); }}
+              className="absolute top-3 left-3 w-7 h-7 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            {/* Normal product view */}
+            <ImageWithFallback 
+              src={`${STORAGE_BASE}/premium-gallery/gallery-${product.id}.png`}
+              alt={product.name}
+              aspectRatio="portrait"
+              className="absolute inset-0"
+            />
+
+            {/* AR badge */}
+            {product.ar && (
+              <div className="absolute top-4 left-4">
+                <ARBadge variant="compact" />
+              </div>
+            )}
+
+            {/* Stock badge */}
+            {product.stock <= 3 && (
+              <div className="absolute top-4 right-4">
+                <StockBadge status={product.stock === 1 ? "last-items" : "low"} count={product.stock} />
+              </div>
+            )}
+
+            {/* 360° badge button */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setShow360Mode(true); }}
+              className="absolute bottom-4 right-4 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white text-xs font-medium hover:bg-black/80 transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="w-4 h-4 rounded-full border-2 border-dashed border-emerald-400"
+              />
+              360°
+            </button>
+
+            {/* Hover overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+              className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent flex items-end p-6"
+            >
+              <div className="flex gap-2 w-full">
+                <button className="flex-1 py-3 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-colors">
+                  В корзину
+                </button>
+                <button className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center hover:bg-zinc-700 transition-colors">
+                  <Eye className="w-5 h-5 text-zinc-300" />
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </div>
+
+      <div>
+        <p className="text-xs text-emerald-400 mb-1">{product.category}</p>
+        <h3 className="font-medium text-white mb-2 group-hover:text-emerald-400 transition-colors">
+          {product.name}
+        </h3>
+        <p className="text-lg font-semibold text-white">
+          {product.price.toLocaleString()} ₽
+        </p>
+      </div>
+    </motion.div>
+  );
+};
+
 interface PremiumGalleryPreviewProps {
   template: Template;
 }
@@ -353,68 +571,16 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
             </div>
           </ScrollReveal>
 
-          {/* Products grid */}
+          {/* Products grid with 360° */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {products.map((product, i) => (
-              <motion.div
+              <ProductCard360
                 key={product.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                whileHover={{ y: -8 }}
-                onClick={() => setSelectedProduct(product.id)}
-                className="group cursor-pointer"
-              >
-                <div className="relative aspect-[3/4] rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-800 overflow-hidden mb-4">
-                  {/* Product image */}
-                  <ImageWithFallback 
-                    src={`${STORAGE_BASE}/premium-gallery/gallery-${product.id}.png`}
-                    alt={product.name}
-                    aspectRatio="portrait"
-                    className="absolute inset-0"
-                  />
-
-                  {/* AR badge */}
-                  {product.ar && (
-                    <div className="absolute top-4 left-4">
-                      <ARBadge variant="compact" />
-                    </div>
-                  )}
-
-                  {/* Stock badge */}
-                  {product.stock <= 3 && (
-                    <div className="absolute top-4 right-4">
-                      <StockBadge status={product.stock === 1 ? "last-items" : "low"} count={product.stock} />
-                    </div>
-                  )}
-
-                  {/* Hover overlay */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent flex items-end p-6"
-                  >
-                    <div className="flex gap-2 w-full">
-                      <button className="flex-1 py-3 rounded-xl bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-colors">
-                        В корзину
-                      </button>
-                      <button className="w-12 h-12 rounded-xl bg-zinc-800 flex items-center justify-center hover:bg-zinc-700 transition-colors">
-                        <Eye className="w-5 h-5 text-zinc-300" />
-                      </button>
-                    </div>
-                  </motion.div>
-                </div>
-
-                <div>
-                  <p className="text-xs text-emerald-400 mb-1">{product.category}</p>
-                  <h3 className="font-medium text-white mb-2 group-hover:text-emerald-400 transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-lg font-semibold text-white">
-                    {product.price.toLocaleString()} ₽
-                  </p>
-                </div>
-              </motion.div>
+                product={product}
+                index={i}
+                onSelect={setSelectedProduct}
+                onOpen360={(id) => setSelectedProduct(id)}
+              />
             ))}
           </div>
         </div>
