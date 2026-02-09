@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
 import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle } from "lucide-react";
+import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -175,6 +176,7 @@ const Playground = () => {
                   </Button>
                 </div>
 
+                <TelegramConnectButton />
                 <Button variant="outline" onClick={clearAll}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Сбросить
