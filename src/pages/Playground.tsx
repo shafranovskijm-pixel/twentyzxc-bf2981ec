@@ -16,6 +16,7 @@ import { BlockEditor } from "@/components/playground/BlockEditor";
 import { ProjectTemplates } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
+import { CanvasSettings } from "@/components/playground/CanvasSettings";
 import { COLOR_PRESETS } from "@/data/playground-effects";
 import { 
   Sheet, 
@@ -206,53 +207,7 @@ const Playground = () => {
                   
                   <BlockPalette onAddBlock={addBlock} />
                   
-                  {/* Canvas settings */}
-                  <div className="space-y-4 p-4 rounded-lg border border-border bg-secondary/20">
-                    <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Settings className="w-4 h-4" />
-                      Настройки холста
-                    </h3>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Фон</Label>
-                      <div className="flex gap-2 flex-wrap">
-                        {COLOR_PRESETS.slice(0, 6).map((color) => (
-                          <button
-                            key={color.value}
-                            onClick={() => setSettings({ ...settings, backgroundColor: color.value })}
-                            className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
-                            style={{ backgroundColor: color.value === 'transparent' ? '#000' : color.value }}
-                            title={color.name}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Паттерн</Label>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant={settings.backgroundPattern === 'none' ? 'default' : 'outline'}
-                          onClick={() => setSettings({ ...settings, backgroundPattern: 'none' })}
-                        >
-                          Нет
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={settings.backgroundPattern === 'dots' ? 'default' : 'outline'}
-                          onClick={() => setSettings({ ...settings, backgroundPattern: 'dots' })}
-                        >
-                          Точки
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={settings.backgroundPattern === 'grid' ? 'default' : 'outline'}
-                          onClick={() => setSettings({ ...settings, backgroundPattern: 'grid' })}
-                        >
-                          Сетка
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                  <CanvasSettings settings={settings} onSettingsChange={setSettings} />
                 </div>
               </div>
 
