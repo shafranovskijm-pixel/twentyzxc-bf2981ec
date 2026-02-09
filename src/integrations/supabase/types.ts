@@ -163,6 +163,27 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_settings: {
+        Row: {
+          all_title: string
+          featured_title: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          all_title?: string
+          featured_title?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          all_title?: string
+          featured_title?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
