@@ -1,6 +1,6 @@
 export interface PlaygroundBlock {
   id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer';
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video';
   content: string;
   animation?: string;
   hoverEffect?: string;
@@ -79,6 +79,10 @@ export const BLOCK_TYPES = [
   { type: 'text' as const, name: 'Текст', icon: 'AlignLeft', defaultContent: 'Текстовый блок с содержимым' },
   { type: 'button' as const, name: 'Кнопка', icon: 'MousePointer', defaultContent: 'Кнопка' },
   { type: 'image' as const, name: 'Изображение', icon: 'Image', defaultContent: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop' },
+  { type: 'list' as const, name: 'Список', icon: 'List', defaultContent: 'Первый пункт\nВторой пункт\nТретий пункт' },
+  { type: 'quote' as const, name: 'Цитата', icon: 'Quote', defaultContent: 'Великие дела начинаются с маленьких шагов.|Автор' },
+  { type: 'counter' as const, name: 'Счётчик', icon: 'Hash', defaultContent: '100|Клиентов' },
+  { type: 'video' as const, name: 'Видео', icon: 'Play', defaultContent: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
   { type: 'divider' as const, name: 'Разделитель', icon: 'Minus', defaultContent: '' },
   { type: 'card' as const, name: 'Карточка', icon: 'Square', defaultContent: 'Содержимое карточки' },
   { type: 'spacer' as const, name: 'Отступ', icon: 'ArrowUpDown', defaultContent: '' },
