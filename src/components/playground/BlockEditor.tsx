@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 const FONT_SIZE_PRESETS = [
@@ -66,7 +67,7 @@ export const BlockEditor = ({
       </div>
 
       {/* Content */}
-      {block.type !== 'divider' && block.type !== 'spacer' && (
+      {block.type !== 'divider' && block.type !== 'spacer' && block.type !== 'form' && (
         <div className="space-y-2">
           <Label>
             {block.type === 'list' ? 'Пункты (по одному на строку)' :
@@ -100,6 +101,56 @@ export const BlockEditor = ({
           )}
         </div>
       )}
+
+      {/* Form Settings */}
+      {block.type === 'form' && (() => {
+        const parts = block.content.split('|');
+        const [title = 'Оставьте заявку', namePh = 'Имя', contactPh = 'Телефон или Email', messagePh = 'Сообщение', btnText = 'Отправить'] = parts;
+        const showMessage = parts.length < 6 || parts[5] !== 'hide-message';
+        const updateFormContent = (index: number, value: string) => {
+          const p = [...parts];
+          while (p.length < 6) p.push('');
+          p[index] = value;
+          onUpdate({ content: p.join('|') });
+        };
+        const toggleMessage = (show: boolean) => {
+          const p = [...parts];
+          while (p.length < 6) p.push('');
+          p[5] = show ? '' : 'hide-message';
+          onUpdate({ content: p.join('|') });
+        };
+        return (
+          <div className="space-y-3">
+            <Label>Настройки формы</Label>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Заголовок формы</Label>
+              <Input value={title} onChange={(e) => updateFormContent(0, e.target.value)} className="bg-secondary/50 border-border" placeholder="Оставьте заявку" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Плейсхолдер «Имя»</Label>
+              <Input value={namePh} onChange={(e) => updateFormContent(1, e.target.value)} className="bg-secondary/50 border-border" placeholder="Имя" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Плейсхолдер «Контакт»</Label>
+              <Input value={contactPh} onChange={(e) => updateFormContent(2, e.target.value)} className="bg-secondary/50 border-border" placeholder="Телефон или Email" />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-muted-foreground">Поле «Сообщение»</Label>
+              <Switch checked={showMessage} onCheckedChange={toggleMessage} />
+            </div>
+            {showMessage && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Плейсхолдер «Сообщение»</Label>
+                <Input value={messagePh} onChange={(e) => updateFormContent(3, e.target.value)} className="bg-secondary/50 border-border" placeholder="Сообщение" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Текст кнопки</Label>
+              <Input value={btnText} onChange={(e) => updateFormContent(4, e.target.value)} className="bg-secondary/50 border-border" placeholder="Отправить" />
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Anchor ID */}
       {block.type !== 'navbar' && (

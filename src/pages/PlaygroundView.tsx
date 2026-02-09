@@ -20,6 +20,7 @@ const FormBlock = ({ block, slug, style, mp }: { block: PlaygroundBlock; slug: s
 
   const parts = block.content.split('|');
   const [title, namePh, contactPh, messagePh, btnText] = parts;
+  const showMessage = parts.length < 6 || parts[5] !== 'hide-message';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +68,14 @@ const FormBlock = ({ block, slug, style, mp }: { block: PlaygroundBlock; slug: s
           onChange={(e) => setFormData(p => ({ ...p, contact: e.target.value }))}
           required
         />
-        <textarea
-          className="w-full h-20 rounded-md border border-border/40 bg-background/50 px-3 py-2 text-sm resize-none"
-          placeholder={messagePh || 'Сообщение'}
-          value={formData.message}
-          onChange={(e) => setFormData(p => ({ ...p, message: e.target.value }))}
-        />
+        {showMessage && (
+          <textarea
+            className="w-full h-20 rounded-md border border-border/40 bg-background/50 px-3 py-2 text-sm resize-none"
+            placeholder={messagePh || 'Сообщение'}
+            value={formData.message}
+            onChange={(e) => setFormData(p => ({ ...p, message: e.target.value }))}
+          />
+        )}
         <button
           type="submit"
           disabled={sending}
