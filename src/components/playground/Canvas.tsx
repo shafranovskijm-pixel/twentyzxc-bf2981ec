@@ -47,7 +47,8 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       padding: block.styles.padding,
       fontSize: block.styles.fontSize,
       borderRadius: block.styles.borderRadius,
-      textAlign: block.styles.textAlign as React.CSSProperties['textAlign']
+      textAlign: block.styles.textAlign as React.CSSProperties['textAlign'],
+      fontFamily: block.styles.fontFamily || undefined
     };
 
     const onClick = () => onSelectBlock(block.id);

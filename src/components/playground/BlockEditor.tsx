@@ -198,6 +198,39 @@ export const BlockEditor = ({
         </div>
       </div>
 
+      {/* Font Family */}
+      <div className="space-y-2">
+        <Label>Шрифт</Label>
+        <Select
+          value={block.styles.fontFamily || 'default'}
+          onValueChange={(value) => onUpdateStyles({ fontFamily: value === 'default' ? undefined : value })}
+        >
+          <SelectTrigger className="bg-secondary/50 border-border">
+            <SelectValue placeholder="По умолчанию" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">По умолчанию</SelectItem>
+            <SelectItem value="'Playfair Display', serif">Playfair Display</SelectItem>
+            <SelectItem value="'Inter', sans-serif">Inter</SelectItem>
+            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+            <SelectItem value="'Roboto', sans-serif">Roboto</SelectItem>
+            <SelectItem value="'Open Sans', sans-serif">Open Sans</SelectItem>
+            <SelectItem value="'Raleway', sans-serif">Raleway</SelectItem>
+            <SelectItem value="'Oswald', sans-serif">Oswald</SelectItem>
+            <SelectItem value="'Merriweather', serif">Merriweather</SelectItem>
+            <SelectItem value="'Lora', serif">Lora</SelectItem>
+            <SelectItem value="'Nunito', sans-serif">Nunito</SelectItem>
+            <SelectItem value="'PT Sans', sans-serif">PT Sans</SelectItem>
+            <SelectItem value="'Rubik', sans-serif">Rubik</SelectItem>
+            <SelectItem value="'Comfortaa', cursive">Comfortaa</SelectItem>
+            <SelectItem value="'Caveat', cursive">Caveat</SelectItem>
+            <SelectItem value="'Pacifico', cursive">Pacifico</SelectItem>
+            <SelectItem value="'Bebas Neue', sans-serif">Bebas Neue</SelectItem>
+            <SelectItem value="'Jost', sans-serif">Jost</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Font Size */}
       <div className="space-y-2">
         <Label>Размер шрифта</Label>

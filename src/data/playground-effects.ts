@@ -15,6 +15,7 @@ export interface BlockStyles {
   fontSize?: string;
   borderRadius?: string;
   textAlign?: 'left' | 'center' | 'right';
+  fontFamily?: string;
 }
 
 export interface PlaygroundSettings {
