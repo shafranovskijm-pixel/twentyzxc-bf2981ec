@@ -11,6 +11,7 @@ import { ARBadge } from "../shared/ARBadge";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
 import { ProductPseudo3D } from "../shared/ProductPseudo3D";
+import { ImagePreload, MultiImagePreload } from "../../ImagePreload";
 
 // Lazy load the 3D viewer for better performance
 const Product3DViewer = lazy(() => import("../shared/Product3DViewer"));
@@ -245,6 +246,9 @@ export const PremiumGalleryPreview = ({ template }: PremiumGalleryPreviewProps) 
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans overflow-hidden">
+      {/* Preload hero images for faster LCP */}
+      <ImagePreload src={heroImage} />
+      
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-xl border-b border-emerald-900/30">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">

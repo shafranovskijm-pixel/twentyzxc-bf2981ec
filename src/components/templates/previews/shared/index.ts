@@ -25,3 +25,6 @@ export { Product360Spin, Product360Badge } from "./Product360Spin";
 export { ProductPseudo3D, Pseudo3DBadge } from "./ProductPseudo3D";
 export { KeyboardShortcuts, Key, ShortcutHint } from "./KeyboardShortcuts";
 export { ActivityFeed, ActivityItem, LiveIndicator } from "./ActivityFeed";
+
+// Re-export ImagePreload from parent
+export { ImagePreload, MultiImagePreload } from "../../ImagePreload";
