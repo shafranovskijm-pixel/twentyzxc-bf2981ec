@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ const Playground = () => {
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [isPreview, setIsPreview] = useState(false);
 
   const {
     blocks,
@@ -176,6 +177,10 @@ const Playground = () => {
                 <Button variant="outline" onClick={clearAll}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Сбросить
+                </Button>
+                <Button variant="outline" onClick={() => setIsPreview(true)} disabled={blocks.length === 0}>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Предпросмотр
                 </Button>
                 <Button variant="outline" onClick={handleShare} disabled={!savedSlug}>
                   <Share2 className="w-4 h-4 mr-2" />
@@ -345,6 +350,43 @@ const Playground = () => {
 
         <Footer />
       </div>
+
+      {/* Fullscreen Preview */}
+      {isPreview && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col">
+          <div className="flex items-center justify-between px-6 py-3 border-b border-border bg-secondary/30">
+            <span className="text-sm font-medium text-muted-foreground">Предпросмотр: {projectTitle}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 p-1 rounded-lg border border-border bg-secondary/20">
+                <Button variant={deviceMode === 'desktop' ? 'default' : 'ghost'} size="sm" onClick={() => setDeviceMode('desktop')}>
+                  <Monitor className="w-4 h-4" />
+                </Button>
+                <Button variant={deviceMode === 'tablet' ? 'default' : 'ghost'} size="sm" onClick={() => setDeviceMode('tablet')}>
+                  <Tablet className="w-4 h-4" />
+                </Button>
+                <Button variant={deviceMode === 'mobile' ? 'default' : 'ghost'} size="sm" onClick={() => setDeviceMode('mobile')}>
+                  <Smartphone className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button variant="outline" onClick={() => setIsPreview(false)}>Закрыть</Button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto flex justify-center p-6">
+            <div
+              className="w-full transition-all duration-300"
+              style={{ maxWidth: deviceMode === 'mobile' ? '375px' : deviceMode === 'tablet' ? '768px' : '100%' }}
+            >
+              <Canvas
+                blocks={blocks}
+                settings={settings}
+                selectedBlockId={null}
+                onSelectBlock={() => {}}
+                onReorder={() => {}}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
