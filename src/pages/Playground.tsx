@@ -17,6 +17,7 @@ import { ProjectTemplates } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
 import { CanvasSettings } from "@/components/playground/CanvasSettings";
+import { SaveDialog } from "@/components/playground/SaveDialog";
 import { COLOR_PRESETS } from "@/data/playground-effects";
 import { 
   Sheet, 
@@ -30,6 +31,7 @@ const Playground = () => {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isPreview, setIsPreview] = useState(false);
@@ -68,19 +70,22 @@ const Playground = () => {
     editorRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSave = async () => {
+  const handleSaveClick = () => {
     if (blocks.length === 0) {
-      toast({
-        title: "Нечего сохранять",
-        description: "Добавьте хотя бы один блок",
-        variant: "destructive"
-      });
+      toast({ title: "Нечего сохранять", description: "Добавьте хотя бы один блок", variant: "destructive" });
       return;
     }
+    if (savedSlug) {
+      handleSave(savedSlug);
+    } else {
+      setShowSaveDialog(true);
+    }
+  };
 
+  const handleSave = async (slug: string) => {
     setIsSaving(true);
+    setShowSaveDialog(false);
     try {
-      const slug = savedSlug || generateSlug();
       const data = exportData();
 
       const { error } = await supabase
@@ -187,7 +192,7 @@ const Playground = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Поделиться
                 </Button>
-                <Button variant="hero" onClick={handleSave} disabled={isSaving}>
+                <Button variant="hero" onClick={handleSaveClick} disabled={isSaving}>
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? "Сохранение..." : "Сохранить"}
                 </Button>
@@ -390,6 +395,14 @@ const Playground = () => {
           </div>
         </div>
       )}
+
+      <SaveDialog
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onSave={handleSave}
+        isSaving={isSaving}
+        existingSlug={savedSlug}
+      />
     </>
   );
 };

@@ -84,9 +84,14 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           <motion.nav className={cn(baseClasses, "flex items-center justify-between flex-wrap gap-4")} style={{ ...style, textAlign: undefined }} onClick={onClick} {...animProps}>
             <div className="font-bold text-lg" style={{ color: block.styles.textColor }}>☰</div>
             <div className="flex items-center gap-6 flex-wrap">
-              {items.map((item, i) => (
-                <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>{item}</span>
-              ))}
+              {items.map((item, i) => {
+                const [label, href] = item.split('|').map(s => s.trim());
+                return (
+                  <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>
+                    {label}{href && <span className="text-[10px] text-muted-foreground ml-1">→{href}</span>}
+                  </span>
+                );
+              })}
             </div>
           </motion.nav>
         );
@@ -304,7 +309,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
             <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
               {blocks.map(block => (
                 <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
-                  <div className="relative group/block">
+                  <div className="relative group/block" id={block.anchorId || undefined}>
                     {renderBlockContent(block)}
                     {(onDeleteBlock || onDuplicateBlock) && (
                       <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-20">

@@ -49,7 +49,7 @@ export const BlockEditor = ({
              block.type === 'quote' ? 'Цитата | Автор' :
              block.type === 'counter' ? 'Число | Подпись' :
              block.type === 'video' ? 'Ссылка для embed (YouTube/Vimeo)' :
-             block.type === 'navbar' ? 'Пункты меню (по одному на строку)' :
+             block.type === 'navbar' ? 'Пункты меню: Текст|#якорь или URL' :
              block.type === 'footer' ? 'Копирайт | Email | Телефон' :
              'Содержимое'}
           </Label>
@@ -59,6 +59,7 @@ export const BlockEditor = ({
               onChange={(e) => onUpdate({ content: e.target.value })}
               className="bg-secondary/50 border-border"
               rows={block.type === 'list' || block.type === 'navbar' ? 5 : 3}
+              placeholder={block.type === 'navbar' ? 'Главная|#hero\nО нас|#about\nУслуги|https://example.com' : ''}
             />
           ) : (
             <Input
@@ -68,6 +69,30 @@ export const BlockEditor = ({
               placeholder={block.type === 'video' ? 'https://www.youtube.com/embed/...' : block.type === 'footer' ? '© 2026 Компания|email@test.com|+7...' : ''}
             />
           )}
+          {block.type === 'navbar' && (
+            <p className="text-xs text-muted-foreground">
+              Формат: <code className="bg-secondary px-1 rounded">Текст|#якорь</code> для прокрутки к блоку или <code className="bg-secondary px-1 rounded">Текст|https://...</code> для внешней ссылки. Без <code className="bg-secondary px-1 rounded">|</code> — просто текст.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Anchor ID */}
+      {block.type !== 'navbar' && (
+        <div className="space-y-2">
+          <Label className="flex items-center gap-1.5">
+            <span className="text-xs">⚓</span>
+            ID якоря
+          </Label>
+          <Input
+            value={block.anchorId || ''}
+            onChange={(e) => onUpdate({ anchorId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') || undefined })}
+            className="bg-secondary/50 border-border"
+            placeholder="например: about, services"
+          />
+          <p className="text-xs text-muted-foreground">
+            Используйте в навигации как <code className="bg-secondary px-1 rounded">#якорь</code>
+          </p>
         </div>
       )}
 

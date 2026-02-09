@@ -3,6 +3,7 @@ export interface PlaygroundBlock {
   type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials';
   content: string;
   link?: string;
+  anchorId?: string;
   animation?: string;
   hoverEffect?: string;
   buttonStyle?: 'filled' | 'outline' | 'gradient';

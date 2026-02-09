@@ -90,14 +90,40 @@ const PlaygroundView = () => {
     } as React.CSSProperties : style;
     const mp = { ...animProps, transition: { ...((animProps as any).transition || {}), delay } };
 
+    const blockWrapper = (block: PlaygroundBlock, element: React.ReactNode) => {
+      const wrapped = block.anchorId ? <div id={block.anchorId}>{element}</div> : element;
+      return wrapped;
+    };
+
     switch (block.type) {
       case 'navbar': {
         const items = block.content.split('\n').filter(Boolean);
         return wrapWithLink(block,
-          <motion.nav key={block.id} className={cn("flex items-center justify-between flex-wrap gap-4", block.hoverEffect)} style={{ ...style, textAlign: undefined }} {...mp}>
+          <motion.nav key={block.id} className={cn("flex items-center justify-between flex-wrap gap-4 sticky top-0 z-50", block.hoverEffect)} style={{ ...style, textAlign: undefined }} {...mp}>
             <div className="font-bold text-lg" style={{ color: block.styles.textColor }}>☰</div>
             <div className="flex items-center gap-6 flex-wrap">
-              {items.map((item, i) => <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>{item}</span>)}
+              {items.map((item, i) => {
+                const [label, href] = item.split('|').map(s => s.trim());
+                if (href) {
+                  const isAnchor = href.startsWith('#');
+                  return (
+                    <a
+                      key={i}
+                      href={href}
+                      {...(isAnchor ? {} : { target: "_blank", rel: "noopener noreferrer" })}
+                      className="text-sm hover:opacity-80 cursor-pointer transition-opacity no-underline"
+                      style={{ color: block.styles.textColor }}
+                      onClick={isAnchor ? (e) => {
+                        e.preventDefault();
+                        document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+                      } : undefined}
+                    >
+                      {label}
+                    </a>
+                  );
+                }
+                return <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>{label}</span>;
+              })}
             </div>
           </motion.nav>
         );
@@ -252,7 +278,13 @@ const PlaygroundView = () => {
       <Helmet><title>{project.title} | 24ZXC Playground</title></Helmet>
       <div style={getBackgroundStyle()}>
         <div className="max-w-4xl mx-auto p-6 space-y-4">
-          {project.blocks.map((block, index) => renderBlock(block, index))}
+          {project.blocks.map((block, index) => {
+            const rendered = renderBlock(block, index);
+            if (!rendered) return null;
+            return block.anchorId && block.type !== 'navbar'
+              ? <div key={block.id} id={block.anchorId}>{rendered}</div>
+              : <div key={block.id}>{rendered}</div>;
+          })}
         </div>
       </div>
     </>
