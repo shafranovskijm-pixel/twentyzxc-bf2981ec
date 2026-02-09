@@ -45,10 +45,11 @@ const processSteps: ProcessStep[] = [
 
 const ProcessFlow = () => {
   const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [sectionRef, isInView] = useInView<HTMLDivElement>({ threshold: 0.2 });
 
   return (
-    <section className="py-24 relative overflow-hidden" ref={sectionRef}>
+    <section className="py-24 pb-48 relative" ref={sectionRef}>
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/3 rounded-full blur-3xl" />
       
@@ -68,9 +69,9 @@ const ProcessFlow = () => {
         </div>
         
         {/* Process Steps */}
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto pb-20">
           {/* Desktop: Horizontal Flow */}
-          <div className="hidden md:flex items-start justify-between relative">
+          <div className="hidden md:flex items-start justify-between relative pb-32">
             {/* Connection Line */}
             <div className="absolute top-10 left-0 right-0 h-px bg-gradient-to-r from-primary/30 via-primary/50 to-primary/30" />
             
