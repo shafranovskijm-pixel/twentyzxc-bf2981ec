@@ -4,7 +4,8 @@ import Footer from "@/components/Footer";
 import AnimatedSection from "@/components/AnimatedSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye, Search, SlidersHorizontal, Star, TrendingUp, X } from "lucide-react";
+import { Diamond, ArrowRight, Sparkles, Layers, ShoppingBag, Monitor, Eye, Star } from "lucide-react";
+import { TiltCard } from "@/components/templates/previews/shared/TiltCard";
 import { Link } from "react-router-dom";
 import { categories, type Template, type Category, getAllTemplates, getPopularTemplates } from "@/data/templates";
 import { Input } from "@/components/ui/input";
@@ -227,137 +228,127 @@ interface TemplateCardProps {
 }
 
 const TemplateCard = ({ template }: TemplateCardProps) => {
-  // Get glow color from template's unique style or derive from accent
-  const glowColor = template.uniqueStyle?.secondaryColor || 
-    template.accentColor?.replace('bg-', '').replace('-500', '') || 'primary';
+  // Get glow color from template's accent color
+  const glowColors: Record<string, string> = {
+    'bg-white': 'rgba(255, 255, 255, 0.25)',
+    'bg-amber-500': 'rgba(245, 158, 11, 0.35)',
+    'bg-cyan-400': 'rgba(34, 211, 238, 0.35)',
+    'bg-violet-500': 'rgba(139, 92, 246, 0.35)',
+    'bg-rose-400': 'rgba(251, 113, 133, 0.35)',
+    'bg-emerald-400': 'rgba(52, 211, 153, 0.35)',
+    'bg-blue-500': 'rgba(59, 130, 246, 0.35)',
+    'bg-fuchsia-500': 'rgba(217, 70, 239, 0.35)',
+    'bg-orange-500': 'rgba(249, 115, 22, 0.35)',
+  };
+  const glowColor = glowColors[template.accentColor] || 'rgba(245, 158, 11, 0.3)';
   
   return (
     <Link to={`/templates/${template.id}`} className="block group">
-      <div 
-        className="luxury-card rounded-sm overflow-hidden relative transition-all duration-300 group-hover:border-primary/50"
-        style={{
-          boxShadow: 'none',
-          transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-        }}
-        onMouseEnter={(e) => {
-          const target = e.currentTarget;
-          // Create glow effect based on template's accent color
-          const glowColors: Record<string, string> = {
-            'bg-white': 'rgba(255, 255, 255, 0.15)',
-            'bg-amber-500': 'rgba(245, 158, 11, 0.25)',
-            'bg-cyan-400': 'rgba(34, 211, 238, 0.25)',
-            'bg-violet-500': 'rgba(139, 92, 246, 0.25)',
-            'bg-rose-400': 'rgba(251, 113, 133, 0.25)',
-            'bg-emerald-400': 'rgba(52, 211, 153, 0.25)',
-            'bg-blue-500': 'rgba(59, 130, 246, 0.25)',
-            'bg-fuchsia-500': 'rgba(217, 70, 239, 0.25)',
-            'bg-orange-500': 'rgba(249, 115, 22, 0.25)',
-          };
-          const color = glowColors[template.accentColor] || 'rgba(245, 158, 11, 0.2)';
-          target.style.boxShadow = `0 0 40px 10px ${color}, 0 0 80px 20px ${color.replace('0.25', '0.1').replace('0.15', '0.08')}`;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = 'none';
-        }}
+      <TiltCard 
+        className="h-full" 
+        glowColor={glowColor}
+        maxTilt={8}
       >
-        {/* Preview Area */}
-        <div className={`aspect-[4/3] bg-gradient-to-br ${template.gradient} relative overflow-hidden`}>
-          {/* Badges */}
-          <div className="absolute top-4 left-4 flex gap-2 z-10">
-            {template.isNew && (
-              <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-sm flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                Новинка
-              </span>
-            )}
+        <div className="luxury-card rounded-sm overflow-hidden relative h-full">
+          {/* Preview Area */}
+          <div className={`aspect-[4/3] bg-gradient-to-br ${template.gradient} relative overflow-hidden`}>
+            {/* Badges */}
+            <div className="absolute top-4 left-4 flex gap-2 z-10">
+              {template.isNew && (
+                <span className="px-2 py-1 bg-green-500 text-white text-xs font-medium rounded-sm flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Новинка
+                </span>
+              )}
+            </div>
+
+            {/* Decorative elements to simulate a website */}
+            <div className="absolute inset-4 border border-white/10 rounded-sm">
+              {/* Header bar */}
+              <div className="h-8 border-b border-white/10 flex items-center px-3 gap-2">
+                <div className="w-2 h-2 rounded-full bg-white/20" />
+                <div className="w-2 h-2 rounded-full bg-white/20" />
+                <div className="w-2 h-2 rounded-full bg-white/20" />
+                <div className="flex-1" />
+                <div className="w-16 h-2 rounded bg-white/10" />
+              </div>
+              
+              {/* Content simulation */}
+              <div className="p-4 space-y-3">
+                <div className={`w-8 h-8 rounded ${template.accentColor} opacity-80`} />
+                <div className="w-3/4 h-3 rounded bg-white/20" />
+                <div className="w-1/2 h-3 rounded bg-white/10" />
+                <div className="mt-6 grid grid-cols-3 gap-2">
+                  <div className="aspect-square rounded bg-white/5" />
+                  <div className="aspect-square rounded bg-white/5" />
+                  <div className="aspect-square rounded bg-white/5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Button variant="hero" size="sm">
+                Подробнее
+                <Eye className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Glow effect */}
+            <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-32 ${template.accentColor} opacity-20 blur-3xl group-hover:opacity-50 transition-opacity`} />
           </div>
 
-          {/* Decorative elements to simulate a website */}
-          <div className="absolute inset-4 border border-white/10 rounded-sm">
-            {/* Header bar */}
-            <div className="h-8 border-b border-white/10 flex items-center px-3 gap-2">
-              <div className="w-2 h-2 rounded-full bg-white/20" />
-              <div className="w-2 h-2 rounded-full bg-white/20" />
-              <div className="w-2 h-2 rounded-full bg-white/20" />
-              <div className="flex-1" />
-              <div className="w-16 h-2 rounded bg-white/10" />
+          {/* Info */}
+          <div className="p-6">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h3 className="text-lg font-display font-semibold group-hover:text-primary transition-colors">
+                {template.name}
+              </h3>
+              <span className="text-primary font-semibold text-sm whitespace-nowrap shimmer">
+                {template.price}
+              </span>
             </div>
-            
-            {/* Content simulation */}
-            <div className="p-4 space-y-3">
-              <div className={`w-8 h-8 rounded ${template.accentColor} opacity-80`} />
-              <div className="w-3/4 h-3 rounded bg-white/20" />
-              <div className="w-1/2 h-3 rounded bg-white/10" />
-              <div className="mt-6 grid grid-cols-3 gap-2">
-                <div className="aspect-square rounded bg-white/5" />
-                <div className="aspect-square rounded bg-white/5" />
-                <div className="aspect-square rounded bg-white/5" />
+
+            {/* Rating */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star 
+                    key={i}
+                    className={`w-3 h-3 ${i < Math.floor(template.rating) ? "text-primary fill-primary" : "text-muted"}`}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-muted-foreground">{template.rating} ({template.ordersCount})</span>
+            </div>
+
+            <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+              {template.description}
+            </p>
+
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {template.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+
+            {/* Features */}
+            <div className="pt-4 border-t border-border">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                {template.features.map((feature) => (
+                  <span key={feature} className="flex items-center gap-1">
+                    <span className="w-1 h-1 rounded-full bg-primary" />
+                    {feature}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
-
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Button variant="hero" size="sm">
-              Подробнее
-              <Eye className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Glow effect */}
-          <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-32 ${template.accentColor} opacity-20 blur-3xl group-hover:opacity-40 transition-opacity`} />
         </div>
-
-        {/* Info */}
-        <div className="p-6">
-          <div className="flex items-start justify-between gap-4 mb-2">
-            <h3 className="text-lg font-display font-semibold group-hover:text-primary transition-colors">
-              {template.name}
-            </h3>
-            <span className="text-primary font-semibold text-sm whitespace-nowrap shimmer">
-              {template.price}
-            </span>
-          </div>
-
-          {/* Rating */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i}
-                  className={`w-3 h-3 ${i < Math.floor(template.rating) ? "text-primary fill-primary" : "text-muted"}`}
-                />
-              ))}
-            </div>
-            <span className="text-xs text-muted-foreground">{template.rating} ({template.ordersCount})</span>
-          </div>
-
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {template.description}
-          </p>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            {template.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Features */}
-          <div className="pt-4 border-t border-border">
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {template.features.map((feature) => (
-                <span key={feature} className="flex items-center gap-1">
-                  <span className="w-1 h-1 rounded-full bg-primary" />
-                  {feature}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      </TiltCard>
     </Link>
   );
 };
