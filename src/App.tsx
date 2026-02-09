@@ -14,6 +14,7 @@ import Portfolio from "./pages/Portfolio";
 import Frdo from "./pages/Frdo";
 import Licensing from "./pages/Licensing";
 import About from "./pages/About";
+import Policy from "./pages/Policy";
 import Templates from "./pages/Templates";
 import TemplateDetail from "./pages/TemplateDetail";
 import TemplatePreview from "./pages/TemplatePreview";
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/frdo" element={<Frdo />} />
                 <Route path="/licensing" element={<Licensing />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/policy" element={<Policy />} />
                 <Route path="/templates" element={<Templates />} />
                 <Route path="/templates/:id" element={<TemplateDetail />} />
                 <Route path="/templates/:id/preview" element={<TemplatePreview />} />
