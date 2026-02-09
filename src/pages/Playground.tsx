@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,9 @@ import { usePlayground } from "@/hooks/use-playground";
 import { BlockPalette } from "@/components/playground/BlockPalette";
 import { Canvas } from "@/components/playground/Canvas";
 import { BlockEditor } from "@/components/playground/BlockEditor";
+import { ProjectTemplates } from "@/components/playground/ProjectTemplates";
+import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
+import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
 import { COLOR_PRESETS } from "@/data/playground-effects";
 import { 
   Sheet, 
@@ -26,6 +29,7 @@ const Playground = () => {
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   const {
     blocks,
@@ -43,11 +47,16 @@ const Playground = () => {
     moveBlock,
     duplicateBlock,
     clearAll,
+    loadTemplate,
     exportData
   } = usePlayground();
 
   const generateSlug = () => {
     return Math.random().toString(36).substring(2, 10);
+  };
+
+  const scrollToEditor = () => {
+    editorRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSave = async () => {
@@ -110,17 +119,35 @@ const Playground = () => {
     });
   };
 
+  const handleSelectTemplate = (templateBlocks: Parameters<typeof loadTemplate>[0]) => {
+    if (blocks.length > 0) {
+      const confirmed = window.confirm("Текущие блоки будут заменены шаблоном. Продолжить?");
+      if (!confirmed) return;
+    }
+    loadTemplate(templateBlocks);
+    toast({
+      title: "Шаблон загружен",
+      description: "Теперь вы можете редактировать блоки"
+    });
+  };
+
   return (
     <>
       <Helmet>
-        <title>Веб-разработчик — Конструктор | 24ZXC</title>
-        <meta name="description" content="Интерактивный конструктор веб-страниц. Создавайте уникальные дизайны с анимациями и эффектами." />
+        <title>Конструктор сайтов — Создай бесплатно | 24ZXC</title>
+        <meta name="description" content="Бесплатный конструктор веб-страниц. Создавайте уникальные дизайны с анимациями и эффектами. Лучшие работы опубликуем на 24zxc.ru" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
         <Header />
         
-        <main className="pt-24 pb-20">
+        {/* CTA Section */}
+        <div className="pt-24">
+          <PlaygroundCTA onStartCreating={scrollToEditor} />
+        </div>
+
+        {/* Editor Section */}
+        <main ref={editorRef} className="pb-20 scroll-mt-24">
           <div className="container px-4">
             {/* Toolbar */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
@@ -160,6 +187,11 @@ const Playground = () => {
               {/* Left sidebar - Block Palette */}
               <div className="lg:block hidden">
                 <div className="sticky top-24 space-y-6">
+                  {/* Templates */}
+                  <div className="p-4 rounded-lg border border-border bg-secondary/20">
+                    <ProjectTemplates onSelectTemplate={handleSelectTemplate} />
+                  </div>
+                  
                   <BlockPalette onAddBlock={addBlock} />
                   
                   {/* Canvas settings */}
@@ -225,7 +257,8 @@ const Playground = () => {
                     <SheetHeader>
                       <SheetTitle>Добавить блок</SheetTitle>
                     </SheetHeader>
-                    <div className="mt-6">
+                    <div className="mt-6 space-y-6">
+                      <ProjectTemplates onSelectTemplate={handleSelectTemplate} />
                       <BlockPalette onAddBlock={addBlock} />
                     </div>
                   </SheetContent>
@@ -298,6 +331,11 @@ const Playground = () => {
             </div>
           </div>
         </main>
+
+        {/* Gallery Section */}
+        <div id="gallery">
+          <PublishedProjectsGallery />
+        </div>
 
         <Footer />
       </div>

@@ -93,6 +93,15 @@ export const usePlayground = () => {
     setProjectTitle("Мой проект");
   }, []);
 
+  const loadTemplate = useCallback((templateBlocks: Omit<PlaygroundBlock, 'id'>[]) => {
+    const blocksWithIds = templateBlocks.map(block => ({
+      ...block,
+      id: generateId()
+    }));
+    setBlocks(blocksWithIds);
+    setSelectedBlockId(null);
+  }, []);
+
   const exportData = useCallback(() => {
     return {
       title: projectTitle,
@@ -124,6 +133,7 @@ export const usePlayground = () => {
     moveBlock,
     duplicateBlock,
     clearAll,
+    loadTemplate,
     exportData,
     importData
   };
