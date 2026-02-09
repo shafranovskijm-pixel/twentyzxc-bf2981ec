@@ -12,6 +12,7 @@ const navLinks = [
       { href: "/licensing", label: "Лицензирование" },
     ]
   },
+  { href: "/templates", label: "Шаблоны" },
   { href: "/portfolio", label: "Портфолио" },
   { href: "/about", label: "О нас" },
   { href: "/#contact", label: "Контакты" },
