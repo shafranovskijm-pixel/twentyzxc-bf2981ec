@@ -7,7 +7,12 @@ import { TypewriterText, ScrollReveal, StaggerContainer, StaggerItem, AnimatedCo
 import useEmblaCarousel from "embla-carousel-react";
 import { ImageWithFallback } from "../../ImageWithFallback";
 
-const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
+// Local images
+import service1 from "@/assets/templates/golden-prestige/service-1.jpg";
+import service2 from "@/assets/templates/golden-prestige/service-2.jpg";
+import service3 from "@/assets/templates/golden-prestige/service-3.jpg";
+
+const serviceImages = [service1, service2, service3];
 
 interface GoldenPrestigePreviewProps {
   template: Template;
@@ -243,7 +248,7 @@ export const GoldenPrestigePreview = ({ template }: GoldenPrestigePreviewProps) 
                   >
                     <div className="aspect-[4/3] relative overflow-hidden">
                       <ImageWithFallback 
-                        src={`${STORAGE_BASE}/golden-prestige/service-${i + 1}.png`}
+                        src={serviceImages[i]}
                         alt={service.title}
                         aspectRatio="video"
                       />

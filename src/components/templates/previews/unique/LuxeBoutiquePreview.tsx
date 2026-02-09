@@ -7,7 +7,16 @@ import { ScrollReveal, StaggerContainer, StaggerItem, LiveChatWidget, InstagramF
 import { ImageWithFallback } from "../../ImageWithFallback";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/template-images";
+// Local images
+import heroImg from "@/assets/templates/luxe-boutique/hero.jpg";
+import product1 from "@/assets/templates/luxe-boutique/product-1.jpg";
+import product2 from "@/assets/templates/luxe-boutique/product-2.jpg";
+import product3 from "@/assets/templates/luxe-boutique/product-3.jpg";
+import product4 from "@/assets/templates/luxe-boutique/product-4.jpg";
+import product5 from "@/assets/templates/luxe-boutique/product-5.jpg";
+import product6 from "@/assets/templates/luxe-boutique/product-6.jpg";
+
+const productImages = [product1, product2, product3, product4, product5, product6];
 
 interface LuxeBoutiquePreviewProps {
   template: Template;
@@ -178,11 +187,12 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
               <div className="relative">
                 <div className="aspect-[3/4] rounded-2xl overflow-hidden">
                   <ImageWithFallback
-                    src={`${STORAGE_BASE}/luxe-boutique/hero.png`}
+                    src={heroImg}
                     alt="Fashion Preview"
                     className="w-full h-full"
                     aspectRatio="portrait"
                     fallbackGradient="from-rose-100 to-rose-200"
+                    priority
                   />
                 </div>
                 {/* Floating badge */}
@@ -264,7 +274,7 @@ export const LuxeBoutiquePreview = ({ template }: LuxeBoutiquePreviewProps) => {
                     </motion.button>
                     
                     <ImageWithFallback
-                      src={`${STORAGE_BASE}/luxe-boutique/product-${i + 1}.png`}
+                      src={productImages[i]}
                       alt={product.name}
                       className="w-full h-full"
                       aspectRatio="portrait"
