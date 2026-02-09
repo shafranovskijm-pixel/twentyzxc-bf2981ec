@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond, KeyRound } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Diamond, KeyRound, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useInventory } from "@/contexts/InventoryContext";
 
 // Spark particle component
 const Spark = ({ delay, direction }: { delay: number; direction: 'left' | 'right' | 'up' | 'down' | 'random' }) => {
@@ -277,64 +277,92 @@ const ServiceCard = ({
   href: string;
   number: string;
   keyId?: string;
-}) => (
-  <div className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden">
-    {/* Background number */}
-    <div className="absolute top-4 right-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
-      {number}
-    </div>
+}) => {
+  const { addKey, isKeyCollected } = useInventory();
+  const isCollected = keyId ? isKeyCollected(keyId) : false;
+
+  const handleTakeKey = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     
-    {/* Decorative corner lines */}
-    <div className="absolute top-0 left-0 w-12 h-[1px] bg-gradient-to-r from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <div className="absolute top-0 left-0 w-[1px] h-12 bg-gradient-to-b from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <div className="absolute bottom-0 right-0 w-12 h-[1px] bg-gradient-to-l from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-    <div className="absolute bottom-0 right-0 w-[1px] h-12 bg-gradient-to-t from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+    if (!keyId || isCollected) return;
     
-    {/* Background pattern */}
-    <div 
-      className="absolute inset-0 opacity-0 group-hover:opacity-[0.02] transition-opacity duration-500"
-      style={{
-        backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
-        backgroundSize: '20px 20px'
-      }}
-    />
+    // Get button position for flying animation
+    const button = e.currentTarget as HTMLElement;
+    const rect = button.getBoundingClientRect();
+    const startPosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
     
-    <div className="relative z-10 flex items-start justify-between mb-4">
-      <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
-      <span className="text-primary text-sm font-medium shimmer">{price}</span>
-    </div>
-    <p className="relative z-10 text-muted-foreground text-sm mb-6">{description}</p>
-    
-    <div className="relative z-10 flex items-center justify-between gap-4">
-      <Link 
-        to={href}
-        className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors"
-      >
-        <span>Подробнее</span>
-        <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
-      </Link>
+    addKey(keyId, title, startPosition);
+  };
+
+  return (
+    <div className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 overflow-hidden">
+      {/* Background number */}
+      <div className="absolute top-4 right-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
+        {number}
+      </div>
       
-      {keyId && (
-        <a 
-          href={`#contact`}
-          onClick={(e) => {
-            e.preventDefault();
-            // Navigate to contact with key parameter
-            const contactSection = document.getElementById('contact');
-            if (contactSection) {
-              contactSection.scrollIntoView({ behavior: 'smooth' });
-              // Dispatch custom event with key info
-              window.dispatchEvent(new CustomEvent('selectKey', { detail: { keyId } }));
-            }
-          }}
-          className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-sm border border-primary/30 text-primary hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100"
+      {/* Decorative corner lines */}
+      <div className="absolute top-0 left-0 w-12 h-[1px] bg-gradient-to-r from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute top-0 left-0 w-[1px] h-12 bg-gradient-to-b from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute bottom-0 right-0 w-12 h-[1px] bg-gradient-to-l from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="absolute bottom-0 right-0 w-[1px] h-12 bg-gradient-to-t from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      {/* Background pattern */}
+      <div 
+        className="absolute inset-0 opacity-0 group-hover:opacity-[0.02] transition-opacity duration-500"
+        style={{
+          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
+          backgroundSize: '20px 20px'
+        }}
+      />
+      
+      <div className="relative z-10 flex items-start justify-between mb-4">
+        <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
+        <span className="text-primary text-sm font-medium shimmer">{price}</span>
+      </div>
+      <p className="relative z-10 text-muted-foreground text-sm mb-6">{description}</p>
+      
+      <div className="relative z-10 flex items-center justify-between gap-4">
+        <Link 
+          to={href}
+          className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors"
         >
-          <KeyRound className="w-3 h-3" />
-          Взять ключ
-        </a>
-      )}
+          <span>Подробнее</span>
+          <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
+        </Link>
+        
+        {keyId && (
+          <button 
+            onClick={handleTakeKey}
+            disabled={isCollected}
+            className={`
+              flex items-center gap-2 text-xs px-3 py-1.5 rounded-sm border transition-all
+              ${isCollected 
+                ? 'border-primary/50 text-primary bg-primary/10 cursor-default' 
+                : 'border-primary/30 text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95'
+              }
+            `}
+          >
+            {isCollected ? (
+              <>
+                <Check className="w-3 h-3" />
+                Собран
+              </>
+            ) : (
+              <>
+                <KeyRound className="w-3 h-3" />
+                Взять ключ
+              </>
+            )}
+          </button>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default WebDevSection;
