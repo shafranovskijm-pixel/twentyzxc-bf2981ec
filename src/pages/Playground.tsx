@@ -48,6 +48,7 @@ const Playground = () => {
     duplicateBlock,
     clearAll,
     loadTemplate,
+    reorderBlocks,
     exportData
   } = usePlayground();
 
@@ -302,6 +303,7 @@ const Playground = () => {
                   settings={settings}
                   selectedBlockId={selectedBlockId}
                   onSelectBlock={setSelectedBlockId}
+                  onReorder={reorderBlocks}
                 />
               </div>
 

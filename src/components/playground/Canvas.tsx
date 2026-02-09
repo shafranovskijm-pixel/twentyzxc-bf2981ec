@@ -1,25 +1,40 @@
 import { motion } from "framer-motion";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { PlaygroundBlock, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
+import { SortableBlock } from "./SortableBlock";
 
 interface CanvasProps {
   blocks: PlaygroundBlock[];
   settings: { backgroundColor: string; backgroundPattern?: string };
   selectedBlockId: string | null;
   onSelectBlock: (id: string | null) => void;
+  onReorder: (activeId: string, overId: string) => void;
 }
 
-export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock }: CanvasProps) => {
+export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReorder }: CanvasProps) => {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      onReorder(String(active.id), String(over.id));
+    }
+  };
+
   const getAnimationProps = (animationId?: string) => {
     if (!animationId) return {};
     const effect = ANIMATION_EFFECTS.find(e => e.id === animationId);
     return effect?.framerProps || {};
   };
 
-  const renderBlock = (block: PlaygroundBlock) => {
+  const renderBlockContent = (block: PlaygroundBlock) => {
     const isSelected = block.id === selectedBlockId;
     const animProps = getAnimationProps(block.animation);
-    
+
     const baseClasses = cn(
       "cursor-pointer transition-all duration-200",
       isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
@@ -35,155 +50,64 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock }: Can
       textAlign: block.styles.textAlign as React.CSSProperties['textAlign']
     };
 
+    const onClick = () => onSelectBlock(block.id);
+
     switch (block.type) {
       case 'heading':
-        return (
-          <motion.h2
-            key={block.id}
-            className={cn(baseClasses, "font-bold")}
-            style={style}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            {block.content}
-          </motion.h2>
-        );
-      
+        return <motion.h2 className={cn(baseClasses, "font-bold")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.h2>;
       case 'text':
-        return (
-          <motion.p
-            key={block.id}
-            className={baseClasses}
-            style={style}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            {block.content}
-          </motion.p>
-        );
-      
+        return <motion.p className={baseClasses} style={style} onClick={onClick} {...animProps}>{block.content}</motion.p>;
       case 'button':
         return (
-          <motion.div
-            key={block.id}
-            className={cn(baseClasses, "inline-block")}
-            style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            <button
-              className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 transition-opacity"
-              style={{ 
-                fontSize: block.styles.fontSize,
-                borderRadius: block.styles.borderRadius 
-              }}
-            >
+          <motion.div className={cn(baseClasses, "inline-block")} style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
+            <button className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-md hover:opacity-90 transition-opacity" style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius }}>
               {block.content}
             </button>
           </motion.div>
         );
-      
       case 'image':
         return (
-          <motion.div
-            key={block.id}
-            className={baseClasses}
-            style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            <img
-              src={block.content}
-              alt="Изображение"
-              className="max-w-full h-auto"
-              style={{ borderRadius: block.styles.borderRadius }}
-            />
+          <motion.div className={baseClasses} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
+            <img src={block.content} alt="Изображение" className="max-w-full h-auto" style={{ borderRadius: block.styles.borderRadius }} />
           </motion.div>
         );
-      
       case 'divider':
         return (
-          <motion.div
-            key={block.id}
-            className={cn(baseClasses, "py-4")}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            <div 
-              className="h-px w-full"
-              style={{ backgroundColor: block.styles.textColor || '#333' }}
-            />
+          <motion.div className={cn(baseClasses, "py-4")} onClick={onClick} {...animProps}>
+            <div className="h-px w-full" style={{ backgroundColor: block.styles.textColor || '#333' }} />
           </motion.div>
         );
-      
       case 'card':
-        return (
-          <motion.div
-            key={block.id}
-            className={cn(baseClasses, "border border-border")}
-            style={style}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
-            {block.content}
-          </motion.div>
-        );
-      
+        return <motion.div className={cn(baseClasses, "border border-border")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.div>;
       case 'spacer':
         return (
-          <motion.div
-            key={block.id}
-            className={cn(baseClasses, "min-h-[40px]")}
-            style={{ padding: block.styles.padding }}
-            onClick={() => onSelectBlock(block.id)}
-            {...animProps}
-          >
+          <motion.div className={cn(baseClasses, "min-h-[40px]")} style={{ padding: block.styles.padding }} onClick={onClick} {...animProps}>
             {isSelected && (
-              <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed border-muted-foreground/30 rounded">
-                Отступ
-              </div>
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed border-muted-foreground/30 rounded">Отступ</div>
             )}
           </motion.div>
         );
-      
       default:
         return null;
     }
   };
 
   const getBackgroundStyle = () => {
-    const base: React.CSSProperties = {
-      backgroundColor: settings.backgroundColor
-    };
-    
+    const base: React.CSSProperties = { backgroundColor: settings.backgroundColor };
     if (settings.backgroundPattern === 'dots') {
-      return {
-        ...base,
-        backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`,
-        backgroundSize: '20px 20px'
-      };
+      return { ...base, backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)`, backgroundSize: '20px 20px' };
     }
-    
     if (settings.backgroundPattern === 'grid') {
-      return {
-        ...base,
-        backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-        backgroundSize: '20px 20px'
-      };
+      return { ...base, backgroundImage: `linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)`, backgroundSize: '20px 20px' };
     }
-    
     return base;
   };
 
   return (
-    <div 
+    <div
       className="min-h-[500px] rounded-lg border border-border overflow-hidden"
       style={getBackgroundStyle()}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onSelectBlock(null);
-        }
-      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onSelectBlock(null); }}
     >
       <div className="p-6 space-y-4">
         {blocks.length === 0 ? (
@@ -191,11 +115,19 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock }: Can
             <p className="text-center">
               Добавьте блоки из панели слева
               <br />
-              <span className="text-sm opacity-60">Нажмите на блок для редактирования</span>
+              <span className="text-sm opacity-60">Перетаскивайте блоки для изменения порядка</span>
             </p>
           </div>
         ) : (
-          blocks.map(renderBlock)
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+              {blocks.map(block => (
+                <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
+                  {renderBlockContent(block)}
+                </SortableBlock>
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
