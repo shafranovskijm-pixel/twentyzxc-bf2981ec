@@ -8,8 +8,6 @@ import { InventoryProvider } from "@/contexts/InventoryContext";
 import { AchievementsProvider } from "@/contexts/AchievementsContext";
 import { InventoryBar } from "@/components/game/InventoryBar";
 import { FlyingKey } from "@/components/game/FlyingKey";
-import { AchievementsPanel } from "@/components/game/AchievementsPanel";
-import { AchievementsButton } from "@/components/game/AchievementsButton";
 import Index from "./pages/Index";
 import Portfolio from "./pages/Portfolio";
 import Frdo from "./pages/Frdo";
@@ -40,8 +38,6 @@ const App = () => (
           <Sonner />
           <FlyingKey />
           <InventoryBar />
-          <AchievementsPanel />
-          <AchievementsButton />
           <BrowserRouter>
             <ScrollToHash />
             <Routes>
