@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useInView } from "@/hooks/use-in-view";
 import { useInventory } from "@/contexts/InventoryContext";
 import { TreasureChest3D } from "@/components/game/TreasureChest3D";
+import { sendToTelegram } from "@/lib/telegram";
 import { motion, AnimatePresence } from "framer-motion";
 
 const contactSchema = z.object({
@@ -134,20 +135,37 @@ const ContactSection = () => {
     }
 
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
     
-    toast({
-      title: "Заявка отправлена!",
-      description: "Мы свяжемся с вами в ближайшее время.",
+    const telegramResult = await sendToTelegram({
+      type: 'contact',
+      service: formData.service,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      message: formData.message,
     });
+    
+    setIsSubmitting(false);
+    
+    if (telegramResult.success) {
+      setIsSubmitted(true);
+      toast({
+        title: "Заявка отправлена!",
+        description: "Мы свяжемся с вами в ближайшее время.",
+      });
 
-    setTimeout(() => {
-      setFormData({ name: "", email: "", phone: "", message: "", service: "" });
-      setIsSubmitted(false);
-      setSelectedKey(null);
-    }, 3000);
+      setTimeout(() => {
+        setFormData({ name: "", email: "", phone: "", message: "", service: "" });
+        setIsSubmitted(false);
+        setSelectedKey(null);
+      }, 3000);
+    } else {
+      toast({
+        title: "Ошибка отправки",
+        description: "Попробуйте ещё раз или свяжитесь с нами другим способом.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

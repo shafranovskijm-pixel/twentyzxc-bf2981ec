@@ -11,10 +11,12 @@ import {
   Send,
   Globe,
   Shield,
-  Layers
+  Layers,
+  Loader2
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { sendToTelegram } from "@/lib/telegram";
 
 const CorporatePage = () => {
   const { toast } = useToast();
@@ -57,13 +59,39 @@ const CorporatePage = () => {
     deadline: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Заявка отправлена",
-      description: "Мы свяжемся с вами в ближайшее время",
+    setIsSubmitting(true);
+    
+    const result = await sendToTelegram({
+      type: 'brief',
+      service: 'Корпоративный сайт',
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      company: formData.company,
+      description: formData.description,
+      budget: formData.budget,
+      deadline: formData.deadline,
     });
-    setFormData({ name: "", phone: "", email: "", company: "", description: "", budget: "", deadline: "" });
+    
+    setIsSubmitting(false);
+    
+    if (result.success) {
+      toast({
+        title: "Бриф отправлен!",
+        description: "Мы свяжемся с вами в ближайшее время",
+      });
+      setFormData({ name: "", phone: "", email: "", company: "", description: "", budget: "", deadline: "" });
+    } else {
+      toast({
+        title: "Ошибка отправки",
+        description: "Попробуйте ещё раз или свяжитесь с нами другим способом",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -388,9 +416,18 @@ const CorporatePage = () => {
                     </div>
                   </div>
                   
-                  <Button type="submit" variant="hero" size="lg" className="w-full">
-                    <Send className="w-4 h-4 mr-2" />
-                    Отправить бриф
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Отправка...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4 mr-2" />
+                        Отправить бриф
+                      </>
+                    )}
                   </Button>
                 </form>
               </CardContent>
