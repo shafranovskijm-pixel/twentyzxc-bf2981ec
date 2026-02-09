@@ -1,9 +1,21 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ExternalLink, User, ChevronDown } from "lucide-react";
+import { ExternalLink, User, ChevronDown, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Project {
   id: string;
@@ -14,7 +26,12 @@ interface Project {
   created_at: string;
 }
 
-export const PublishedProjectsGallery = () => {
+interface PublishedProjectsGalleryProps {
+  isAdmin?: boolean;
+}
+
+export const PublishedProjectsGallery = ({ isAdmin = false }: PublishedProjectsGalleryProps) => {
+  const { toast } = useToast();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [visibleCount, setVisibleCount] = useState(4);
@@ -28,9 +45,8 @@ export const PublishedProjectsGallery = () => {
       const { data, error } = await supabase
         .from("playground_projects")
         .select("id, slug, title, author_name, preview_image, created_at")
-        .eq("is_featured", true)
         .order("created_at", { ascending: false })
-        .limit(12);
+        .limit(50);
 
       if (error) throw error;
       setProjects(data || []);
@@ -38,6 +54,18 @@ export const PublishedProjectsGallery = () => {
       console.error("Error fetching projects:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase.from("playground_projects").delete().eq("id", id);
+      if (error) throw error;
+      setProjects((prev) => prev.filter((p) => p.id !== id));
+      toast({ title: "Проект удалён" });
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast({ title: "Ошибка удаления", variant: "destructive" });
     }
   };
 
@@ -59,9 +87,7 @@ export const PublishedProjectsGallery = () => {
     );
   }
 
-  if (projects.length === 0) {
-    return null;
-  }
+  if (projects.length === 0) return null;
 
   return (
     <section className="py-16 border-t border-border">
@@ -88,10 +114,11 @@ export const PublishedProjectsGallery = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
+              className="relative group"
             >
               <Link
                 to={`/p/${project.slug}`}
-                className="group block rounded-lg overflow-hidden border border-border bg-secondary/20 hover:border-primary/50 transition-all duration-300"
+                className="block rounded-lg overflow-hidden border border-border bg-secondary/20 hover:border-primary/50 transition-all duration-300"
               >
                 <div className="aspect-video bg-background relative overflow-hidden">
                   {project.preview_image ? (
@@ -122,6 +149,34 @@ export const PublishedProjectsGallery = () => {
                   </p>
                 </div>
               </Link>
+
+              {isAdmin && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Проект «{project.title}» будет удалён навсегда.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleDelete(project.id)}>
+                        Удалить
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </motion.div>
           ))}
         </div>
