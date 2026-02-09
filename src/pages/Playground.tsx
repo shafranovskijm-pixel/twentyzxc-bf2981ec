@@ -313,6 +313,8 @@ const Playground = () => {
                     selectedBlockId={selectedBlockId}
                     onSelectBlock={setSelectedBlockId}
                     onReorder={reorderBlocks}
+                    onDeleteBlock={deleteBlock}
+                    onDuplicateBlock={duplicateBlock}
                   />
                 </div>
               </div>

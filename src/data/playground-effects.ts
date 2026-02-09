@@ -1,10 +1,11 @@
 export interface PlaygroundBlock {
   id: string;
-  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer';
+  type: 'heading' | 'text' | 'button' | 'image' | 'divider' | 'card' | 'spacer' | 'list' | 'quote' | 'counter' | 'video' | 'navbar' | 'footer' | 'columns' | 'icon-text' | 'countdown' | 'gallery' | 'socials';
   content: string;
   link?: string;
   animation?: string;
   hoverEffect?: string;
+  buttonStyle?: 'filled' | 'outline' | 'gradient';
   styles: BlockStyles;
 }
 
@@ -16,6 +17,8 @@ export interface BlockStyles {
   borderRadius?: string;
   textAlign?: 'left' | 'center' | 'right';
   fontFamily?: string;
+  boxShadow?: string;
+  gradientText?: string;
 }
 
 export interface PlaygroundSettings {
@@ -83,10 +86,15 @@ export const BLOCK_TYPES = [
   { type: 'text' as const, name: 'Текст', icon: 'AlignLeft', defaultContent: 'Текстовый блок с содержимым' },
   { type: 'button' as const, name: 'Кнопка', icon: 'MousePointer', defaultContent: 'Кнопка' },
   { type: 'image' as const, name: 'Изображение', icon: 'Image', defaultContent: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=300&fit=crop' },
+  { type: 'columns' as const, name: 'Колонки', icon: 'Columns', defaultContent: 'Колонка 1|Описание первой колонки||Колонка 2|Описание второй колонки||Колонка 3|Описание третьей колонки' },
+  { type: 'icon-text' as const, name: 'Иконка+текст', icon: 'Sparkles', defaultContent: '🚀|Быстрый старт|Начните работу за 5 минут' },
   { type: 'list' as const, name: 'Список', icon: 'List', defaultContent: 'Первый пункт\nВторой пункт\nТретий пункт' },
   { type: 'quote' as const, name: 'Цитата', icon: 'Quote', defaultContent: 'Великие дела начинаются с маленьких шагов.|Автор' },
   { type: 'counter' as const, name: 'Счётчик', icon: 'Hash', defaultContent: '100|Клиентов' },
+  { type: 'countdown' as const, name: 'Таймер', icon: 'Timer', defaultContent: '2026-12-31T23:59:59|До Нового Года' },
+  { type: 'gallery' as const, name: 'Галерея', icon: 'LayoutGrid', defaultContent: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&h=300&fit=crop\nhttps://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=300&h=300&fit=crop\nhttps://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=300&h=300&fit=crop' },
   { type: 'video' as const, name: 'Видео', icon: 'Play', defaultContent: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+  { type: 'socials' as const, name: 'Соцсети', icon: 'Share2', defaultContent: 'telegram|https://t.me/example\ninstagram|https://instagram.com/example\nvk|https://vk.com/example' },
   { type: 'divider' as const, name: 'Разделитель', icon: 'Minus', defaultContent: '' },
   { type: 'card' as const, name: 'Карточка', icon: 'Square', defaultContent: 'Содержимое карточки' },
   { type: 'spacer' as const, name: 'Отступ', icon: 'ArrowUpDown', defaultContent: '' },

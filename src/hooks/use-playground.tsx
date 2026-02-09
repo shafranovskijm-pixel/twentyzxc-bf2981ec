@@ -98,20 +98,6 @@ export const usePlayground = () => {
   const canUndo = historyIndexRef.current > 0;
   const canRedo = historyIndexRef.current < historyRef.current.length - 1;
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
-        if (e.shiftKey) { e.preventDefault(); redo(); }
-        else { e.preventDefault(); undo(); }
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
-        e.preventDefault(); redo();
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [undo, redo]);
 
   const addBlock = useCallback((type: PlaygroundBlock['type']) => {
     const blockType = BLOCK_TYPES.find(b => b.type === type);
@@ -172,6 +158,24 @@ export const usePlayground = () => {
       return [...prev.slice(0, index + 1), newBlock, ...prev.slice(index + 1)];
     });
   }, [setBlocksWithHistory]);
+
+
+  // Keyboard shortcuts (after deleteBlock/duplicateBlock are defined)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) { e.preventDefault(); redo(); }
+        else { e.preventDefault(); undo(); }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+      if (e.key === 'Delete' && !isInput && selectedBlockId) { e.preventDefault(); deleteBlock(selectedBlockId); }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd' && !isInput && selectedBlockId) { e.preventDefault(); duplicateBlock(selectedBlockId); }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo, selectedBlockId, deleteBlock, duplicateBlock]);
 
   const reorderBlocks = useCallback((activeId: string, overId: string) => {
     setBlocksWithHistory(prev => {
