@@ -98,15 +98,19 @@
   }
 
   .gradient-gold-text {
-    color: hsl(45 80% 65%); /* fallback color - always visible */
+    background: var(--gradient-gold-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
   }
   
-  @supports (-webkit-background-clip: text) or (background-clip: text) {
+  /* Fallback for browsers that don't support background-clip: text */
+  @supports not ((-webkit-background-clip: text) or (background-clip: text)) {
     .gradient-gold-text {
-      background: var(--gradient-gold-text);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      background: none;
+      -webkit-text-fill-color: unset;
+      color: hsl(45 80% 65%);
     }
   }
 
