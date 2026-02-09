@@ -91,10 +91,12 @@ const WebDevSection = () => {
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
                 От элегантных лендингов до сложных веб-приложений. Каждый проект — это синергия технологий и эстетики, созданная с вниманием к каждой детали.
               </p>
-              <Button variant="heroOutline" size="lg">
-                Все проекты
-                <ArrowUpRight className="w-4 h-4" />
-              </Button>
+              <Link to="/portfolio">
+                <Button variant="heroOutline" size="lg">
+                  Все проекты
+                  <ArrowUpRight className="w-4 h-4" />
+                </Button>
+              </Link>
             </div>
           </div>
 
