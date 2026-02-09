@@ -18,9 +18,9 @@ const Footer = () => {
                   Премиальные цифровые решения для бизнеса. Веб-разработка, реклама и полный спектр услуг.
                 </p>
                 <div className="flex gap-3">
-                  <SocialLink href="https://t.me/your_telegram" icon={<Send className="w-4 h-4" />} />
-                  <SocialLink href="mailto:info@24zxc.ru" icon={<Mail className="w-4 h-4" />} />
-                  <SocialLink href="tel:+7XXXXXXXXXX" icon={<Phone className="w-4 h-4" />} />
+                  <SocialLink href="https://t.me/Aliencorso" icon={<Send className="w-4 h-4" />} />
+                  <SocialLink href="mailto:24@24zxc.ru" icon={<Mail className="w-4 h-4" />} />
+                  <SocialLink href="tel:+79147213424" icon={<Phone className="w-4 h-4" />} />
                 </div>
               </div>
 
