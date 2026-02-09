@@ -392,7 +392,10 @@ const PlaygroundView = () => {
 
   return (
     <>
-      <Helmet><title>{project.title} | 24ZXC Playground</title></Helmet>
+      <Helmet>
+        <title>{project.settings.seoTitle || project.title} | 24ZXC Playground</title>
+        {project.settings.seoDescription && <meta name="description" content={project.settings.seoDescription} />}
+      </Helmet>
       <div style={getBackgroundStyle()}>
         {/* Back to editor button */}
         <div className="fixed top-4 left-4 z-50">
@@ -405,7 +408,7 @@ const PlaygroundView = () => {
           </a>
         </div>
         <div className="max-w-4xl mx-auto p-6 space-y-4">
-          {project.blocks.map((block, index) => {
+          {project.blocks.filter(b => !b.hidden).map((block, index) => {
             const rendered = renderBlock(block, index);
             if (!rendered) return null;
             return block.anchorId && block.type !== 'navbar'

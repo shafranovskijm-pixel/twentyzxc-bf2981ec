@@ -1,4 +1,5 @@
-import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link, Clipboard, ClipboardPaste } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link, Clipboard, ClipboardPaste, Plus, X } from "lucide-react";
 import { PlaygroundBlock, ANIMATION_EFFECTS, HOVER_EFFECTS, COLOR_PRESETS, BlockStyles } from "@/data/playground-effects";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,27 @@ export const BlockEditor = ({
   onCopyStyles,
   onPasteStyles
 }: BlockEditorProps) => {
+  const [customColors, setCustomColors] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('playground-custom-colors');
+      if (saved) setCustomColors(JSON.parse(saved));
+    } catch {}
+  }, []);
+
+  const addCustomColor = (color: string) => {
+    if (!color || customColors.includes(color)) return;
+    const updated = [...customColors, color];
+    setCustomColors(updated);
+    localStorage.setItem('playground-custom-colors', JSON.stringify(updated));
+  };
+
+  const removeCustomColor = (color: string) => {
+    const updated = customColors.filter(c => c !== color);
+    setCustomColors(updated);
+    localStorage.setItem('playground-custom-colors', JSON.stringify(updated));
+  };
   return (
     <div className="space-y-6">
       {/* Actions */}
@@ -318,13 +340,38 @@ export const BlockEditor = ({
             />
           ))}
         </div>
-        <Input
-          type="text"
-          value={block.styles.textColor || '#ffffff'}
-          onChange={(e) => onUpdateStyles({ textColor: e.target.value })}
-          className="bg-secondary/50 border-border mt-2"
-          placeholder="#ffffff"
-        />
+        {customColors.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {customColors.map((color) => (
+              <div key={color} className="relative group/cc">
+                <button
+                  onClick={() => onUpdateStyles({ textColor: color })}
+                  className="w-8 h-8 rounded border border-primary/30 hover:scale-110 transition-transform"
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+                <button
+                  onClick={() => removeCustomColor(color)}
+                  className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover/cc:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  <X className="w-2 h-2" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={block.styles.textColor || '#ffffff'}
+            onChange={(e) => onUpdateStyles({ textColor: e.target.value })}
+            className="bg-secondary/50 border-border flex-1"
+            placeholder="#ffffff"
+          />
+          <Button variant="outline" size="icon" className="shrink-0 h-10 w-10" onClick={() => addCustomColor(block.styles.textColor || '#ffffff')} title="Сохранить цвет">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Background Color */}
@@ -345,6 +392,19 @@ export const BlockEditor = ({
             </button>
           ))}
         </div>
+        {customColors.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {customColors.map((color) => (
+              <button
+                key={color}
+                onClick={() => onUpdateStyles({ backgroundColor: color })}
+                className="w-8 h-8 rounded border border-primary/30 hover:scale-110 transition-transform"
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Text Align */}

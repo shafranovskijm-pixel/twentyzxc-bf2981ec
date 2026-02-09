@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
@@ -64,11 +64,15 @@ const Playground = () => {
     loadTemplate,
     reorderBlocks,
     exportData,
+    importData,
+    toggleBlockHidden,
     undo,
     redo,
     canUndo,
     canRedo
   } = usePlayground();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSaveClick = () => {
     if (blocks.length === 0) {
@@ -147,6 +151,50 @@ const Playground = () => {
     toast({ title: "HTML скачан!", description: "Файл готов к размещению на хостинге" });
   };
 
+  const handleExportJSON = () => {
+    if (blocks.length === 0) {
+      toast({ title: "Нечего экспортировать", variant: "destructive" });
+      return;
+    }
+    const data = exportData();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectTitle.replace(/\s+/g, '-').toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: "JSON скачан!" });
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string);
+        if (!data.blocks || !Array.isArray(data.blocks)) throw new Error('Invalid format');
+        importData({ title: data.title || 'Импорт', blocks: data.blocks, settings: data.settings || {} });
+        toast({ title: "Проект импортирован!" });
+      } catch {
+        toast({ title: "Ошибка импорта", description: "Неверный формат файла", variant: "destructive" });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleDuplicate = () => {
+    if (blocks.length === 0) {
+      toast({ title: "Нечего дублировать", variant: "destructive" });
+      return;
+    }
+    setSavedSlug(null);
+    setShowSaveDialog(true);
+    toast({ title: "Введите новый slug для копии проекта" });
+  };
+
   return (
     <>
       <Helmet>
@@ -209,9 +257,22 @@ const Playground = () => {
                   <Share2 className="w-4 h-4 mr-2" />
                   Поделиться
                 </Button>
-                <Button variant="outline" onClick={handleExportHTML} disabled={blocks.length === 0}>
+                <Button variant="outline" onClick={handleExportHTML} disabled={blocks.length === 0} title="Скачать HTML">
                   <Download className="w-4 h-4 mr-2" />
                   HTML
+                </Button>
+                <Button variant="outline" onClick={handleExportJSON} disabled={blocks.length === 0} title="Скачать JSON">
+                  <FileJson className="w-4 h-4 mr-2" />
+                  JSON
+                </Button>
+                <Button variant="outline" onClick={() => fileInputRef.current?.click()} title="Импорт из JSON">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Импорт
+                </Button>
+                <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
+                <Button variant="outline" onClick={handleDuplicate} disabled={blocks.length === 0} title="Дублировать проект">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Копия
                 </Button>
                 <Button variant="hero" onClick={handleSaveClick} disabled={isSaving}>
                   <Save className="w-4 h-4 mr-2" />
@@ -351,6 +412,7 @@ const Playground = () => {
                         selectedBlockId={selectedBlockId}
                         onSelectBlock={setSelectedBlockId}
                         onDeleteBlock={deleteBlock}
+                        onToggleHidden={toggleBlockHidden}
                       />
                     </AccordionContent>
                   </AccordionItem>
@@ -367,7 +429,7 @@ const Playground = () => {
                     </AccordionContent>
                   </AccordionItem>
 
-                  <AccordionItem value="font" className="border-b-0">
+                  <AccordionItem value="font" className="border-border">
                     <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
                       <span className="flex items-center gap-2">
                         <Type className="w-4 h-4" />
@@ -376,6 +438,38 @@ const Playground = () => {
                     </AccordionTrigger>
                     <AccordionContent>
                       <FontSettings settings={settings} onSettingsChange={setSettings} />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="seo" className="border-b-0">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <Search className="w-4 h-4" />
+                        SEO
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Заголовок (title)</label>
+                          <input
+                            value={settings.seoTitle || ''}
+                            onChange={(e) => setSettings({ ...settings, seoTitle: e.target.value || undefined })}
+                            className="w-full h-8 rounded-md border border-border bg-secondary/50 px-2 text-xs"
+                            placeholder="Заголовок страницы"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Описание (description)</label>
+                          <textarea
+                            value={settings.seoDescription || ''}
+                            onChange={(e) => setSettings({ ...settings, seoDescription: e.target.value || undefined })}
+                            className="w-full h-16 rounded-md border border-border bg-secondary/50 px-2 py-1 text-xs resize-none"
+                            placeholder="Описание для поисковых систем"
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">Применяется на опубликованной странице /p/slug</p>
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
