@@ -33,7 +33,7 @@ export const PlaygroundCTA = ({ onStartCreating }: PlaygroundCTAProps) => {
           </motion.div>
           
           <h2 className="text-3xl md:text-5xl font-display font-bold mb-4">
-            Попробуй себя разработчиком —{" "}
+            Почувствуй себя разработчиком —{" "}
             <span className="gradient-gold-text">сделай свой первый сайт</span>
           </h2>
           
