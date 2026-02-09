@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useInView } from "@/hooks/use-in-view";
 import { useInventory } from "@/contexts/InventoryContext";
+import { useAchievements } from "@/contexts/AchievementsContext";
 import { TreasureChest3D } from "@/components/game/TreasureChest3D";
 import { sendToTelegram } from "@/lib/telegram";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +36,7 @@ const serviceKeys: Record<string, { label: string; message: string }> = {
 const ContactSection = () => {
   const { toast } = useToast();
   const { keys, activeKeyForChest, chestUnlocked, setChestUnlocked } = useInventory();
+  const { unlockAchievement } = useAchievements();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isChestOpen, setIsChestOpen] = useState(false);
@@ -98,6 +100,7 @@ const ContactSection = () => {
   const handleChestOpen = () => {
     setIsChestOpen(true);
     setChestUnlocked(true);
+    unlockAchievement('treasure_hunter');
   };
 
   const handleLockedChestClick = () => {
@@ -162,6 +165,7 @@ const ContactSection = () => {
     
     if (telegramResult.success) {
       setIsSubmitted(true);
+      unlockAchievement('connected');
       toast({
         title: "Заявка отправлена!",
         description: "Мы свяжемся с вами в ближайшее время.",

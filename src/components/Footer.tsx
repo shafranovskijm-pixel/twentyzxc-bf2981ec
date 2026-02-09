@@ -2,9 +2,15 @@ import { Mail, Phone, Send, Diamond, Copy, ExternalLink } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useAchievements } from "@/contexts/AchievementsContext";
 
 const Footer = () => {
   const { toast } = useToast();
+  const { unlockAchievement } = useAchievements();
+
+  const handleSocialClick = () => {
+    unlockAchievement('social');
+  };
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -54,7 +60,10 @@ const Footer = () => {
                           variant="hero" 
                           size="sm" 
                           className="w-full"
-                          onClick={() => window.open("https://t.me/Aliencorso", "_blank")}
+                          onClick={() => {
+                            handleSocialClick();
+                            window.open("https://t.me/Aliencorso", "_blank");
+                          }}
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                           Открыть Telegram
@@ -86,7 +95,10 @@ const Footer = () => {
                           variant="hero" 
                           size="sm" 
                           className="w-full"
-                          onClick={() => window.location.href = "mailto:24@24zxc.ru"}
+                          onClick={() => {
+                            handleSocialClick();
+                            window.location.href = "mailto:24@24zxc.ru";
+                          }}
                         >
                           <Mail className="w-3.5 h-3.5" />
                           Написать письмо
@@ -118,7 +130,10 @@ const Footer = () => {
                           variant="hero" 
                           size="sm" 
                           className="w-full"
-                          onClick={() => window.location.href = "tel:+79147213424"}
+                          onClick={() => {
+                            handleSocialClick();
+                            window.location.href = "tel:+79147213424";
+                          }}
                         >
                           <Phone className="w-3.5 h-3.5" />
                           Позвонить

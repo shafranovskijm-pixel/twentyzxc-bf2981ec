@@ -1,5 +1,11 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 
+// Achievement unlock helper - will be set by AchievementsProvider
+let unlockAchievementFn: ((id: string) => void) | null = null;
+export const setAchievementUnlocker = (fn: (id: string) => void) => {
+  unlockAchievementFn = fn;
+};
+
 export interface KeyItem {
   id: string;
   label: string;
@@ -84,13 +90,31 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         setFlyingKey(prev => prev ? { ...prev, phase: 'arriving' } : null);
         setTimeout(() => {
-          setKeys(prev => [...prev, newKey]);
+          setKeys(prev => {
+            const newKeys = [...prev, newKey];
+            // Trigger achievements
+            if (unlockAchievementFn) {
+              if (newKeys.length === 1) unlockAchievementFn('first_key');
+              if (newKeys.length >= 3) unlockAchievementFn('key_bunch');
+              if (newKeys.length >= 4) unlockAchievementFn('master_key');
+            }
+            return newKeys;
+          });
           setFlyingKey(null);
         }, 300);
       }, 800);
     } else {
       // Add immediately without animation
-      setKeys(prev => [...prev, newKey]);
+      setKeys(prev => {
+        const newKeys = [...prev, newKey];
+        // Trigger achievements
+        if (unlockAchievementFn) {
+          if (newKeys.length === 1) unlockAchievementFn('first_key');
+          if (newKeys.length >= 3) unlockAchievementFn('key_bunch');
+          if (newKeys.length >= 4) unlockAchievementFn('master_key');
+        }
+        return newKeys;
+      });
     }
   }, [keys, inventoryRef]);
 

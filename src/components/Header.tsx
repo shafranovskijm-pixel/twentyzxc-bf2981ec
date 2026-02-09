@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, ChevronDown } from "lucide-react";
+import { useAchievements } from "@/contexts/AchievementsContext";
 
 const navLinks = [
   { 
@@ -21,6 +22,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { incrementLogoClicks } = useAchievements();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,7 +53,7 @@ const Header = () => {
       <div className="container px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="text-2xl font-display font-bold gradient-gold-text">
+          <Link to="/" className="text-2xl font-display font-bold gradient-gold-text" onClick={incrementLogoClicks}>
             24ZXC
           </Link>
 
