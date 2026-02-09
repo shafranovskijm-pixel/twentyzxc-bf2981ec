@@ -14,11 +14,39 @@ import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
 // Import gallery images
 import heroImage from "@/assets/templates/premium-gallery/hero.jpg";
 import gallery1 from "@/assets/templates/premium-gallery/gallery-1.jpg";
+import gallery1Angle2 from "@/assets/templates/premium-gallery/gallery-1-angle-2.jpg";
+import gallery1Angle3 from "@/assets/templates/premium-gallery/gallery-1-angle-3.jpg";
+import gallery1Angle4 from "@/assets/templates/premium-gallery/gallery-1-angle-4.jpg";
 import gallery2 from "@/assets/templates/premium-gallery/gallery-2.jpg";
+import gallery2Angle2 from "@/assets/templates/premium-gallery/gallery-2-angle-2.jpg";
+import gallery2Angle3 from "@/assets/templates/premium-gallery/gallery-2-angle-3.jpg";
+import gallery2Angle4 from "@/assets/templates/premium-gallery/gallery-2-angle-4.jpg";
 import gallery3 from "@/assets/templates/premium-gallery/gallery-3.jpg";
+import gallery3Angle2 from "@/assets/templates/premium-gallery/gallery-3-angle-2.jpg";
+import gallery3Angle3 from "@/assets/templates/premium-gallery/gallery-3-angle-3.jpg";
+import gallery3Angle4 from "@/assets/templates/premium-gallery/gallery-3-angle-4.jpg";
 import gallery4 from "@/assets/templates/premium-gallery/gallery-4.jpg";
+import gallery4Angle2 from "@/assets/templates/premium-gallery/gallery-4-angle-2.jpg";
+import gallery4Angle3 from "@/assets/templates/premium-gallery/gallery-4-angle-3.jpg";
+import gallery4Angle4 from "@/assets/templates/premium-gallery/gallery-4-angle-4.jpg";
 import gallery5 from "@/assets/templates/premium-gallery/gallery-5.jpg";
+import gallery5Angle2 from "@/assets/templates/premium-gallery/gallery-5-angle-2.jpg";
+import gallery5Angle3 from "@/assets/templates/premium-gallery/gallery-5-angle-3.jpg";
+import gallery5Angle4 from "@/assets/templates/premium-gallery/gallery-5-angle-4.jpg";
 import gallery6 from "@/assets/templates/premium-gallery/gallery-6.jpg";
+import gallery6Angle2 from "@/assets/templates/premium-gallery/gallery-6-angle-2.jpg";
+import gallery6Angle3 from "@/assets/templates/premium-gallery/gallery-6-angle-3.jpg";
+import gallery6Angle4 from "@/assets/templates/premium-gallery/gallery-6-angle-4.jpg";
+
+// Gallery images with 360° angles (4 views per product)
+const galleryImages360: Record<string, string[]> = {
+  "1": [gallery1, gallery1Angle2, gallery1Angle3, gallery1Angle4],
+  "2": [gallery2, gallery2Angle2, gallery2Angle3, gallery2Angle4],
+  "3": [gallery3, gallery3Angle2, gallery3Angle3, gallery3Angle4],
+  "4": [gallery4, gallery4Angle2, gallery4Angle3, gallery4Angle4],
+  "5": [gallery5, gallery5Angle2, gallery5Angle3, gallery5Angle4],
+  "6": [gallery6, gallery6Angle2, gallery6Angle3, gallery6Angle4],
+};
 
 const galleryImages: Record<string, string> = {
   "1": gallery1,
@@ -277,31 +305,31 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
       >
         {show360Mode ? (
           <>
-            {/* 360° Mode */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-teal-900/20" />
-            
-            {/* Rotating product representation */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              />
-              <div 
-                className="relative w-32 h-32 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 shadow-xl flex items-center justify-center"
-                style={{ 
-                  transform: `perspective(400px) rotateY(${rotation}deg)`,
-                  transformStyle: 'preserve-3d'
-                }}
-              >
-                <Sparkles className="w-10 h-10 text-emerald-200/60" />
-                <motion.div 
-                  className="absolute inset-0 rounded-xl bg-gradient-to-tr from-transparent via-white/20 to-transparent"
-                  animate={{ opacity: [0.2, 0.5, 0.2] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
-              </div>
+            {/* 360° Mode with real images */}
+            <div className="absolute inset-0">
+              {/* Show image based on rotation angle */}
+              {galleryImages360[product.id]?.map((img, i) => {
+                const angleRange = 360 / 4; // 90° per image
+                const normalizedRotation = ((rotation % 360) + 360) % 360;
+                const imageAngleStart = i * angleRange;
+                const imageAngleEnd = (i + 1) * angleRange;
+                const isVisible = normalizedRotation >= imageAngleStart && normalizedRotation < imageAngleEnd;
+                
+                return (
+                  <img
+                    key={i}
+                    src={img}
+                    alt={`${product.name} - angle ${i + 1}`}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-150 ${
+                      isVisible ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                );
+              })}
             </div>
+            
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/10 pointer-events-none" />
 
             {/* 360° indicator */}
             <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500 text-white text-xs font-medium">
