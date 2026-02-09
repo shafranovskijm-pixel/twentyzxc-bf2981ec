@@ -246,125 +246,258 @@ function ChestModel({
   });
 
   const goldMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("hsl(45, 80%, 55%)"),
+    color: new THREE.Color("#d4a84b"),
+    metalness: 0.9,
+    roughness: 0.12,
+    emissive: new THREE.Color("#8b6914"),
+    emissiveIntensity: 0.2,
+  }), []);
+
+  const bronzeMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#8b6914"),
     metalness: 0.85,
-    roughness: 0.15,
-    emissive: new THREE.Color("hsl(45, 80%, 30%)"),
-    emissiveIntensity: 0.15,
+    roughness: 0.2,
   }), []);
 
   const woodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#5a4332"),
-    metalness: 0.05,
+    color: new THREE.Color("#4a3525"),
+    metalness: 0.02,
+    roughness: 0.9,
+  }), []);
+
+  const lightWoodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#6b4d35"),
+    metalness: 0.02,
     roughness: 0.85,
   }), []);
 
   const darkWoodMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#3d2817"),
-    metalness: 0.05,
-    roughness: 0.9,
+    color: new THREE.Color("#2d1a0f"),
+    metalness: 0.02,
+    roughness: 0.95,
   }), []);
 
   const velvetMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-    color: new THREE.Color("#8B0000"),
+    color: new THREE.Color("#6B0F1A"),
     metalness: 0,
     roughness: 1,
+    emissive: new THREE.Color("#3d0000"),
+    emissiveIntensity: 0.1,
+  }), []);
+
+  const ironMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: new THREE.Color("#3d3d3d"),
+    metalness: 0.8,
+    roughness: 0.4,
   }), []);
 
   return (
     <group ref={groupRef} position={[0, -0.3, 0]} scale={0.85}>
-      {/* Base of chest */}
+      {/* ====== BASE BODY ====== */}
       <mesh position={[0, 0, 0]} material={woodMaterial} castShadow receiveShadow>
         <boxGeometry args={[2, 1, 1.2]} />
       </mesh>
       
       {/* Inner velvet lining */}
-      <mesh position={[0, 0.1, 0]} material={velvetMaterial}>
-        <boxGeometry args={[1.85, 0.85, 1.05]} />
+      <mesh position={[0, 0.12, 0]} material={velvetMaterial}>
+        <boxGeometry args={[1.82, 0.82, 1.02]} />
       </mesh>
       
-      {/* Front panel with wood grain */}
-      <mesh position={[0, 0, 0.605]} material={darkWoodMaterial}>
-        <boxGeometry args={[1.9, 0.9, 0.02]} />
-      </mesh>
-      
-      {/* Gold trim - bottom */}
-      <mesh position={[0, -0.5, 0]} material={goldMaterial}>
-        <boxGeometry args={[2.08, 0.1, 1.28]} />
-      </mesh>
-      
-      {/* Gold trim - top edge */}
-      <mesh position={[0, 0.5, 0]} material={goldMaterial}>
-        <boxGeometry args={[2.08, 0.06, 1.28]} />
-      </mesh>
-      
-      {/* Gold corner brackets */}
-      {[
-        [-0.97, -0.2, 0.58], [0.97, -0.2, 0.58], 
-        [-0.97, -0.2, -0.58], [0.97, -0.2, -0.58]
-      ].map((pos, i) => (
-        <mesh key={i} position={pos as [number, number, number]} material={goldMaterial}>
-          <boxGeometry args={[0.12, 0.7, 0.12]} />
+      {/* Wood planks texture - horizontal lines */}
+      {[-0.25, 0, 0.25].map((y, i) => (
+        <mesh key={`plank-line-${i}`} position={[0, y, 0.61]} material={darkWoodMaterial}>
+          <boxGeometry args={[1.95, 0.02, 0.01]} />
         </mesh>
       ))}
       
-      {/* Decorative gold rivets */}
-      {[
-        [-0.7, 0.3, 0.62], [0.7, 0.3, 0.62],
-        [-0.7, -0.3, 0.62], [0.7, -0.3, 0.62],
-      ].map((pos, i) => (
-        <mesh key={`rivet-${i}`} position={pos as [number, number, number]} material={goldMaterial}>
-          <sphereGeometry args={[0.04, 16, 16]} />
+      {/* Front panel overlay */}
+      <mesh position={[0, 0, 0.605]} material={lightWoodMaterial}>
+        <boxGeometry args={[1.92, 0.94, 0.02]} />
+      </mesh>
+      
+      {/* Back panel */}
+      <mesh position={[0, 0, -0.605]} material={lightWoodMaterial}>
+        <boxGeometry args={[1.92, 0.94, 0.02]} />
+      </mesh>
+      
+      {/* Side panels */}
+      <mesh position={[1.005, 0, 0]} material={lightWoodMaterial}>
+        <boxGeometry args={[0.02, 0.94, 1.16]} />
+      </mesh>
+      <mesh position={[-1.005, 0, 0]} material={lightWoodMaterial}>
+        <boxGeometry args={[0.02, 0.94, 1.16]} />
+      </mesh>
+      
+      {/* ====== GOLD TRIM & BANDS ====== */}
+      {/* Bottom band */}
+      <mesh position={[0, -0.52, 0]} material={goldMaterial}>
+        <boxGeometry args={[2.12, 0.08, 1.32]} />
+      </mesh>
+      
+      {/* Top edge band */}
+      <mesh position={[0, 0.52, 0]} material={goldMaterial}>
+        <boxGeometry args={[2.12, 0.06, 1.32]} />
+      </mesh>
+      
+      {/* Vertical gold straps on front */}
+      {[-0.6, 0.6].map((x, i) => (
+        <mesh key={`strap-${i}`} position={[x, 0, 0.62]} material={goldMaterial}>
+          <boxGeometry args={[0.1, 1.02, 0.04]} />
         </mesh>
       ))}
       
-      {/* Lock plate */}
+      {/* ====== CORNER BRACKETS - ornate ====== */}
+      {[
+        [-0.98, -0.25, 0.59], [0.98, -0.25, 0.59], 
+        [-0.98, -0.25, -0.59], [0.98, -0.25, -0.59]
+      ].map((pos, i) => (
+        <group key={`corner-${i}`} position={pos as [number, number, number]}>
+          {/* Main bracket */}
+          <mesh material={goldMaterial}>
+            <boxGeometry args={[0.14, 0.55, 0.14]} />
+          </mesh>
+          {/* Decorative ball on top */}
+          <mesh position={[0, 0.32, 0]} material={goldMaterial}>
+            <sphereGeometry args={[0.06, 16, 16]} />
+          </mesh>
+          {/* Feet */}
+          <mesh position={[0, -0.32, 0]} material={goldMaterial}>
+            <cylinderGeometry args={[0.08, 0.1, 0.06, 8]} />
+          </mesh>
+        </group>
+      ))}
+      
+      {/* ====== DECORATIVE RIVETS ====== */}
+      {/* Front rivets - more of them */}
+      {[
+        [-0.8, 0.35, 0.62], [0.8, 0.35, 0.62],
+        [-0.8, -0.35, 0.62], [0.8, -0.35, 0.62],
+        [-0.4, 0.35, 0.62], [0.4, 0.35, 0.62],
+        [-0.4, -0.35, 0.62], [0.4, -0.35, 0.62],
+        [0, 0.35, 0.62], [0, -0.35, 0.62],
+      ].map((pos, i) => (
+        <mesh key={`rivet-front-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+        </mesh>
+      ))}
+      
+      {/* Side rivets */}
+      {[
+        [1.01, 0.35, 0.35], [1.01, 0.35, -0.35],
+        [1.01, -0.35, 0.35], [1.01, -0.35, -0.35],
+        [-1.01, 0.35, 0.35], [-1.01, 0.35, -0.35],
+        [-1.01, -0.35, 0.35], [-1.01, -0.35, -0.35],
+      ].map((pos, i) => (
+        <mesh key={`rivet-side-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
+          <sphereGeometry args={[0.035, 12, 12]} />
+        </mesh>
+      ))}
+      
+      {/* ====== SIDE HANDLES - Ring style ====== */}
+      {[1.08, -1.08].map((x, i) => (
+        <group key={`handle-${i}`} position={[x, 0.05, 0]} rotation={[0, Math.PI / 2, 0]}>
+          {/* Handle plate */}
+          <mesh material={ironMaterial}>
+            <boxGeometry args={[0.25, 0.35, 0.04]} />
+          </mesh>
+          {/* Ring */}
+          <mesh position={[0, -0.05, 0.08]} rotation={[Math.PI / 6, 0, 0]} material={ironMaterial}>
+            <torusGeometry args={[0.12, 0.025, 12, 24]} />
+          </mesh>
+          {/* Ring mount */}
+          <mesh position={[0, 0.08, 0.02]} material={ironMaterial}>
+            <cylinderGeometry args={[0.04, 0.04, 0.04, 12]} />
+          </mesh>
+        </group>
+      ))}
+      
+      {/* ====== LOCK PLATE - ornate ====== */}
       {lockVisible && (
-        <group ref={lockRef} position={[0, 0.1, 0.63]}>
-          {/* Lock base plate */}
-          <mesh rotation={[0, 0, 0]} material={goldMaterial}>
-            <boxGeometry args={[0.25, 0.3, 0.04]} />
+        <group ref={lockRef} position={[0, 0.08, 0.64]}>
+          {/* Decorative shield shape */}
+          <mesh material={goldMaterial}>
+            <boxGeometry args={[0.32, 0.4, 0.05]} />
+          </mesh>
+          {/* Shield top decoration */}
+          <mesh position={[0, 0.22, 0]} material={goldMaterial}>
+            <cylinderGeometry args={[0.16, 0.16, 0.05, 16, 1, false, 0, Math.PI]} />
+          </mesh>
+          {/* Keyhole surround */}
+          <mesh position={[0, 0, 0.03]} material={bronzeMaterial}>
+            <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
           </mesh>
           {/* Keyhole */}
-          <mesh position={[0, -0.02, 0.025]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.03, 0.03, 0.02, 16]} />
-            <meshStandardMaterial color="#1a1a1a" />
+          <mesh position={[0, 0.02, 0.04]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.025, 0.025, 0.03, 12]} />
+            <meshStandardMaterial color="#0a0a0a" />
           </mesh>
           {/* Keyhole slot */}
-          <mesh position={[0, -0.08, 0.025]}>
-            <boxGeometry args={[0.02, 0.08, 0.02]} />
-            <meshStandardMaterial color="#1a1a1a" />
+          <mesh position={[0, -0.04, 0.04]}>
+            <boxGeometry args={[0.018, 0.07, 0.03]} />
+            <meshStandardMaterial color="#0a0a0a" />
           </mesh>
+          {/* Corner rivets on lock plate */}
+          {[[-0.1, 0.12], [0.1, 0.12], [-0.1, -0.12], [0.1, -0.12]].map(([x, y], i) => (
+            <mesh key={`lock-rivet-${i}`} position={[x, y, 0.03]} material={bronzeMaterial}>
+              <sphereGeometry args={[0.02, 8, 8]} />
+            </mesh>
+          ))}
         </group>
       )}
       
-      {/* Lid group - pivots from back */}
-      <group ref={lidRef} position={[0, 0.5, -0.55]}>
+      {/* ====== LID GROUP ====== */}
+      <group ref={lidRef} position={[0, 0.52, -0.55]}>
         {/* Lid main body */}
-        <mesh position={[0, 0.22, 0.55]} material={woodMaterial} castShadow>
-          <boxGeometry args={[2, 0.44, 1.2]} />
+        <mesh position={[0, 0.2, 0.55]} material={woodMaterial} castShadow>
+          <boxGeometry args={[2, 0.4, 1.2]} />
         </mesh>
         
-        {/* Lid curved top */}
-        <mesh position={[0, 0.44, 0.55]} rotation={[0, 0, Math.PI / 2]} material={woodMaterial}>
-          <cylinderGeometry args={[0.55, 0.55, 2, 24, 1, false, 0, Math.PI]} />
+        {/* Lid curved top - barrel vault */}
+        <mesh position={[0, 0.4, 0.55]} rotation={[0, 0, Math.PI / 2]} material={lightWoodMaterial}>
+          <cylinderGeometry args={[0.5, 0.5, 2.02, 32, 1, false, 0, Math.PI]} />
         </mesh>
         
-        {/* Gold bands on lid */}
-        {[-0.5, 0, 0.5].map((x, i) => (
-          <mesh key={i} position={[x, 0.3, 0.6]} material={goldMaterial}>
-            <boxGeometry args={[0.08, 0.5, 0.06]} />
+        {/* Lid front panel */}
+        <mesh position={[0, 0.2, 1.155]} material={lightWoodMaterial}>
+          <boxGeometry args={[1.94, 0.36, 0.02]} />
+        </mesh>
+        
+        {/* Gold bands on lid - arched */}
+        {[-0.65, 0, 0.65].map((x, i) => (
+          <group key={`lid-band-${i}`}>
+            {/* Straight part */}
+            <mesh position={[x, 0.2, 1.16]} material={goldMaterial}>
+              <boxGeometry args={[0.1, 0.4, 0.04]} />
+            </mesh>
+            {/* Curved part on top */}
+            <mesh position={[x, 0.45, 0.55]} rotation={[0, 0, Math.PI / 2]} material={goldMaterial}>
+              <torusGeometry args={[0.4, 0.04, 8, 16, Math.PI * 0.85]} />
+            </mesh>
+          </group>
+        ))}
+        
+        {/* Lid rivets */}
+        {[
+          [-0.85, 0.3, 1.16], [0.85, 0.3, 1.16],
+          [-0.85, 0.1, 1.16], [0.85, 0.1, 1.16],
+          [-0.35, 0.3, 1.16], [0.35, 0.3, 1.16],
+        ].map((pos, i) => (
+          <mesh key={`lid-rivet-${i}`} position={pos as [number, number, number]} material={bronzeMaterial}>
+            <sphereGeometry args={[0.03, 10, 10]} />
           </mesh>
         ))}
         
-        {/* Lid front panel */}
-        <mesh position={[0, 0.22, 1.155]} material={darkWoodMaterial}>
-          <boxGeometry args={[1.9, 0.38, 0.02]} />
+        {/* Lid gold trim edge */}
+        <mesh position={[0, 0.01, 1.17]} material={goldMaterial}>
+          <boxGeometry args={[2.1, 0.05, 0.04]} />
         </mesh>
         
-        {/* Gold trim on lid edge */}
-        <mesh position={[0, 0.02, 1.16]} material={goldMaterial}>
-          <boxGeometry args={[2.08, 0.06, 0.04]} />
+        {/* Side gold trim on lid */}
+        <mesh position={[1.02, 0.2, 0.55]} material={goldMaterial}>
+          <boxGeometry args={[0.04, 0.42, 1.24]} />
+        </mesh>
+        <mesh position={[-1.02, 0.2, 0.55]} material={goldMaterial}>
+          <boxGeometry args={[0.04, 0.42, 1.24]} />
         </mesh>
       </group>
       
@@ -381,14 +514,24 @@ function ChestModel({
         distance={2.5} 
       />
       
+      {/* Additional ambient glow from inside */}
+      {(unlockPhase === 'opening' || unlockPhase === 'done' || isOpen) && (
+        <pointLight 
+          position={[0, 0.5, 0]} 
+          color="#ffcc00" 
+          intensity={2} 
+          distance={1.5} 
+        />
+      )}
+      
       {/* Sparkles when fully open */}
       {(unlockPhase === 'done' || isOpen) && (
         <Sparkles
-          count={60}
-          scale={[2.2, 1.8, 1.8]}
-          size={4}
-          speed={0.4}
-          opacity={0.9}
+          count={80}
+          scale={[2.5, 2, 2]}
+          size={5}
+          speed={0.5}
+          opacity={0.95}
           color="#d4af37"
         />
       )}
