@@ -289,6 +289,7 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
           }>
             <Product3DViewer 
               imageUrl={galleryImages[product.id]}
+              images={galleryImages360[product.id]}
               onClose={() => setShow3DMode(false)}
               className="absolute inset-0"
             />
