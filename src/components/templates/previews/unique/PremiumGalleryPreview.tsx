@@ -10,9 +10,23 @@ import { ScrollReveal, AnimatedCounter, GradientButton } from "../shared";
 import { ARBadge } from "../shared/ARBadge";
 import { SizeGuideModal, SizeGuideButton } from "../shared/SizeGuideModal";
 import { StockBadge, UrgencyMessage } from "../shared/StockBadge";
-import { ImageWithFallback } from "../../ImageWithFallback";
 
-const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/template-images`;
+// Import gallery images
+import gallery1 from "@/assets/templates/premium-gallery/gallery-1.jpg";
+import gallery2 from "@/assets/templates/premium-gallery/gallery-2.jpg";
+import gallery3 from "@/assets/templates/premium-gallery/gallery-3.jpg";
+import gallery4 from "@/assets/templates/premium-gallery/gallery-4.jpg";
+import gallery5 from "@/assets/templates/premium-gallery/gallery-5.jpg";
+import gallery6 from "@/assets/templates/premium-gallery/gallery-6.jpg";
+
+const galleryImages: Record<string, string> = {
+  "1": gallery1,
+  "2": gallery2,
+  "3": gallery3,
+  "4": gallery4,
+  "5": gallery5,
+  "6": gallery6,
+};
 
 // Product type definition
 interface Product {
@@ -348,11 +362,10 @@ const ProductCard360 = ({ product, index, onSelect, onOpen360 }: ProductCard360P
         ) : (
           <>
             {/* Normal product view */}
-            <ImageWithFallback 
-              src={`${STORAGE_BASE}/premium-gallery/gallery-${product.id}.png`}
+            <img 
+              src={galleryImages[product.id]}
               alt={product.name}
-              aspectRatio="portrait"
-              className="absolute inset-0"
+              className="absolute inset-0 w-full h-full object-cover"
             />
 
             {/* AR badge */}
