@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search, LayoutTemplate, Droplets } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search, LayoutTemplate, Droplets, MoreHorizontal, MessageCircle } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
@@ -24,6 +24,12 @@ import { SaveDialog } from "@/components/playground/SaveDialog";
 import { LayerList } from "@/components/playground/LayerList";
 import { exportToHTML } from "@/lib/export-html";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   Sheet, 
   SheetContent, 
@@ -245,7 +251,6 @@ const Playground = () => {
                   </Button>
                 </div>
 
-                <TelegramConnectButton slug={savedSlug || undefined} />
                 <Button variant="outline" onClick={clearAll}>
                   <RotateCcw className="w-4 h-4 mr-2" />
                   Сбросить
@@ -254,27 +259,37 @@ const Playground = () => {
                   <Eye className="w-4 h-4 mr-2" />
                   Предпросмотр
                 </Button>
-                <Button variant="outline" onClick={handleShare} disabled={!savedSlug}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Поделиться
+                <Button variant="outline" size="icon" onClick={handleShare} disabled={!savedSlug} title="Поделиться">
+                  <Share2 className="w-4 h-4" />
                 </Button>
-                <Button variant="outline" onClick={handleExportHTML} disabled={blocks.length === 0} title="Скачать HTML">
-                  <Download className="w-4 h-4 mr-2" />
-                  HTML
-                </Button>
-                <Button variant="outline" onClick={handleExportJSON} disabled={blocks.length === 0} title="Скачать JSON">
-                  <FileJson className="w-4 h-4 mr-2" />
-                  JSON
-                </Button>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()} title="Импорт из JSON">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Импорт
-                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" title="Ещё">
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportHTML} disabled={blocks.length === 0}>
+                      <Download className="w-4 h-4 mr-2" />
+                      Скачать HTML
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportJSON} disabled={blocks.length === 0}>
+                      <FileJson className="w-4 h-4 mr-2" />
+                      Скачать JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Импорт из JSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDuplicate} disabled={blocks.length === 0}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Дублировать проект
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImportJSON} />
-                <Button variant="outline" onClick={handleDuplicate} disabled={blocks.length === 0} title="Дублировать проект">
-                  <Copy className="w-4 h-4 mr-2" />
-                  Копия
-                </Button>
+
                 <Button variant="hero" onClick={handleSaveClick} disabled={isSaving}>
                   <Save className="w-4 h-4 mr-2" />
                   {isSaving ? "Сохранение..." : "Сохранить"}
@@ -471,6 +486,20 @@ const Playground = () => {
                           toast({ title: "Цветовая схема применена!" });
                         }}
                       />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="telegram" className="border-border">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4" />
+                        Заявки в Telegram
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="p-2">
+                        <TelegramConnectButton slug={savedSlug || undefined} />
+                      </div>
                     </AccordionContent>
                   </AccordionItem>
 
