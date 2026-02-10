@@ -6,13 +6,17 @@ import AdvertisingSection from "@/components/AdvertisingSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import { FloatingParticles, GeometricShapes, GradientGlows, SectionDivider } from "@/components/decorations";
+import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const Index = () => {
+  const { settings } = useSiteSettings();
+
   return (
     <>
       <Helmet>
-        <title>24ZXC — Веб-разработка, реклама и услуги для бизнеса</title>
-        <meta name="description" content="Создаём современные сайты, настраиваем рекламу в Яндекс Директ и соцсетях. Полный спектр цифровых услуг для вашего бизнеса." />
+        <title>{settings.seo_title || "24ZXC — Веб-разработка, реклама и услуги для бизнеса"}</title>
+        <meta name="description" content={settings.seo_description || "Создаём современные сайты, настраиваем рекламу в Яндекс Директ и соцсетях. Полный спектр цифровых услуг для вашего бизнеса."} />
+        {settings.seo_keywords && <meta name="keywords" content={settings.seo_keywords} />}
         <link rel="canonical" href="https://24zxc.ru/" />
       </Helmet>
       <div className="min-h-screen bg-background relative">

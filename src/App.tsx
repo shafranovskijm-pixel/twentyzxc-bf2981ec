@@ -32,6 +32,7 @@ import SpinRide from "./pages/projects/SpinRide";
 import Reviews from "./pages/Reviews";
 import Playground from "./pages/Playground";
 import PlaygroundView from "./pages/PlaygroundView";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/reviews" element={<Reviews />} />
                 <Route path="/playground" element={<Playground />} />
                 <Route path="/p/:slug" element={<PlaygroundView />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
