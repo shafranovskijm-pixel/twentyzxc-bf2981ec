@@ -151,7 +151,7 @@ const Footer = () => {
                   <h4 className="text-sm font-semibold tracking-widest uppercase text-primary mb-6">Сообщество</h4>
                   <ul className="space-y-3 text-sm text-muted-foreground">
                     <li><Link to="/reviews" className="hover:text-foreground transition-colors">Отзывы</Link></li>
-                    <li><Link to="/playground" className="hover:text-foreground transition-colors">Веб-разработчик</Link></li>
+                    <li><Link to="/playground" className="hover:text-foreground transition-colors">Конструктор сайтов</Link></li>
                     <li><Link to="/templates" className="hover:text-foreground transition-colors">Каталог шаблонов</Link></li>
                     <li><a href="#" className="hover:text-foreground transition-colors">Синтагма</a></li>
                   </ul>
