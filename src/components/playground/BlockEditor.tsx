@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Trash2, Copy, ChevronUp, ChevronDown, AlignLeft, AlignCenter, AlignRight, Link, Clipboard, ClipboardPaste, Plus, X } from "lucide-react";
 import { PlaygroundBlock, ANIMATION_EFFECTS, HOVER_EFFECTS, COLOR_PRESETS, BlockStyles } from "@/data/playground-effects";
+import { LucideIconPicker, isLucideIcon, getLucideIconName } from "./LucideIconPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -125,6 +126,28 @@ export const BlockEditor = ({
           )}
         </div>
       )}
+
+      {/* Icon picker for icon-text */}
+      {block.type === 'icon-text' && (() => {
+        const parts = block.content.split('|');
+        const currentIcon = parts[0] || '';
+        const isLucide = isLucideIcon(currentIcon);
+        const currentIconName = isLucide ? getLucideIconName(currentIcon) : '';
+        
+        return (
+          <div className="space-y-2">
+            <Label>Иконка</Label>
+            <LucideIconPicker
+              value={currentIconName}
+              onChange={(iconName) => {
+                const newParts = [...parts];
+                newParts[0] = iconName ? `lucide:${iconName}` : '';
+                onUpdate({ content: newParts.join('|') });
+              }}
+            />
+          </div>
+        );
+      })()}
 
       {/* Form Settings */}
       {block.type === 'form' && (() => {

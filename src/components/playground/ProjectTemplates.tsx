@@ -49,13 +49,13 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Навыки секция (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111d2e' } },
       { type: 'heading', content: 'Навыки', anchorId: 'skills', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#111d2e', gradientText: 'linear-gradient(135deg, #38bdf8, #7dd3fc)' } },
-      { type: 'columns', content: '⚛️ React|TypeScript, Next.js, SSR||🎨 Дизайн|Figma, UI/UX, прототипы||☁️ Backend|Node.js, PostgreSQL, API||📱 Мобайл|React Native, PWA', anchorId: 'works', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1e293b', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(56,189,248,0.1)' } },
+      { type: 'columns', content: 'lucide:code React|TypeScript, Next.js, SSR||lucide:palette Дизайн|Figma, UI/UX, прототипы||lucide:cloud Backend|Node.js, PostgreSQL, API||lucide:smartphone Мобайл|React Native, PWA', anchorId: 'works', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1e293b', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(56,189,248,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111d2e' } },
       // — Портфолио секция —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0d1b2a' } },
       { type: 'heading', content: 'Проекты', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#0d1b2a' } },
-      { type: 'icon-text', content: '🏦|Финтех-платформа|CRM для банка — рост конверсии на 40%', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 2px 15px rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.1)' } },
-      { type: 'icon-text', content: '🛒|E-commerce|Маркетплейс — 50K заказов/мес', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 2px 15px rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:building|Финтех-платформа|CRM для банка — рост конверсии на 40%', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 2px 15px rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:cart|E-commerce|Маркетплейс — 50K заказов/мес', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e293b', padding: '20px', borderRadius: '12px', textColor: '#cbd5e1', boxShadow: '0 2px 15px rgba(56,189,248,0.08)', borderColor: 'rgba(56,189,248,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px', backgroundColor: '#0d1b2a' } },
       // — CTA + контакт —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111d2e' } },
@@ -90,10 +90,10 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       { type: 'heading', content: 'Почему выбирают нас', anchorId: 'features', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '0 16px 8px', backgroundColor: '#111111' } },
       { type: 'text', content: 'Решение, которому доверяют тысячи компаний по всему миру', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#52525b', padding: '0 16px 16px', backgroundColor: '#111111' } },
-      { type: 'icon-text', content: '🚀|Быстрый старт|Настройка за 5 минут без программирования', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
-      { type: 'icon-text', content: '🔒|Безопасность|Шифрование данных на всех уровнях', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
-      { type: 'icon-text', content: '📱|Адаптивность|Работает на любых устройствах', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
-      { type: 'icon-text', content: '📊|Аналитика|Подробные отчёты в реальном времени', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
+      { type: 'icon-text', content: 'lucide:rocket|Быстрый старт|Настройка за 5 минут без программирования', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
+      { type: 'icon-text', content: 'lucide:lock|Безопасность|Шифрование данных на всех уровнях', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
+      { type: 'icon-text', content: 'lucide:smartphone|Адаптивность|Работает на любых устройствах', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
+      { type: 'icon-text', content: 'lucide:chart|Аналитика|Подробные отчёты в реальном времени', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a1a', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(34,197,94,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       // — Статистика —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0a0a0a' } },
@@ -132,7 +132,7 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Навыки (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#141422' } },
       { type: 'heading', content: 'Навыки', anchorId: 'skills', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#141422' } },
-      { type: 'columns', content: '🎨 UI/UX Дизайн|Figma, Sketch, прототипирование||💻 Разработка|React, TypeScript, Node.js||📱 Мобайл|React Native, Flutter||📊 Аналитика|A/B тесты, метрики', anchorId: 'about', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a2e', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 4px 30px rgba(168,85,247,0.1)', borderColor: 'rgba(168,85,247,0.12)' } },
+      { type: 'columns', content: 'lucide:palette UI/UX Дизайн|Figma, Sketch, прототипирование||lucide:code Разработка|React, TypeScript, Node.js||lucide:smartphone Мобайл|React Native, Flutter||lucide:chart Аналитика|A/B тесты, метрики', anchorId: 'about', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1a2e', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 4px 30px rgba(168,85,247,0.1)', borderColor: 'rgba(168,85,247,0.12)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#141422' } },
       // — О себе —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0f0f1a' } },
@@ -168,7 +168,7 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Услуги (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       { type: 'heading', content: 'Что в акции', animation: 'fade-in-up', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#111111' } },
-      { type: 'columns', content: '🎨 Дизайн|от 15 000₽ ~~30 000₽~~||💻 Разработка|от 25 000₽ ~~50 000₽~~||📈 Маркетинг|от 10 000₽ ~~20 000₽~~', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1111', borderRadius: '12px', textColor: '#fca5a5', boxShadow: '0 4px 30px rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.15)' } },
+      { type: 'columns', content: 'lucide:palette Дизайн|от 15 000₽ ~~30 000₽~~||lucide:code Разработка|от 25 000₽ ~~50 000₽~~||lucide:trending Маркетинг|от 10 000₽ ~~20 000₽~~', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1111', borderRadius: '12px', textColor: '#fca5a5', boxShadow: '0 4px 30px rgba(239,68,68,0.1)', borderColor: 'rgba(239,68,68,0.15)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       // — Отзыв + CTA —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0a0a0a' } },
@@ -198,10 +198,10 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Навыки (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#131320' } },
       { type: 'heading', content: 'Навыки', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 12px', backgroundColor: '#131320', gradientText: 'linear-gradient(135deg, #818cf8, #c084fc)' } },
-      { type: 'icon-text', content: '⚛️|React & TypeScript|Компоненты, хуки, Next.js, SSR', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
-      { type: 'icon-text', content: '🎨|Дизайн-системы|Tailwind CSS, Figma, Storybook', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
-      { type: 'icon-text', content: '🗄️|Backend|PostgreSQL, Supabase, Node.js, REST/GraphQL', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
-      { type: 'icon-text', content: '☁️|DevOps|Docker, CI/CD, Vercel, AWS', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
+      { type: 'icon-text', content: 'lucide:code|React & TypeScript|Компоненты, хуки, Next.js, SSR', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
+      { type: 'icon-text', content: 'lucide:palette|Дизайн-системы|Tailwind CSS, Figma, Storybook', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
+      { type: 'icon-text', content: 'lucide:database|Backend|PostgreSQL, Supabase, Node.js, REST/GraphQL', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
+      { type: 'icon-text', content: 'lucide:cloud|DevOps|Docker, CI/CD, Vercel, AWS', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1e1b2e', padding: '16px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(124,58,237,0.15)', borderColor: 'rgba(124,58,237,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#131320' } },
       // — Опыт —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0e0e1a' } },
@@ -282,7 +282,7 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Спикеры —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0c1222' } },
       { type: 'heading', content: 'Спикеры', anchorId: 'speakers', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#0c1222' } },
-      { type: 'columns', content: '🎤 Дмитрий А.|Lead разработчик, Яндекс||🎤 Мария К.|Senior Frontend, VK||🎤 Алексей С.|CTO, Тинькофф||🎤 Ольга П.|DevRel, Google', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#131c33', borderRadius: '12px', textColor: '#94a3b8', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(56,189,248,0.1)' } },
+      { type: 'columns', content: 'lucide:mic Дмитрий А.|Lead разработчик, Яндекс||lucide:mic Мария К.|Senior Frontend, VK||lucide:mic Алексей С.|CTO, Тинькофф||lucide:mic Ольга П.|DevRel, Google', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#131c33', borderRadius: '12px', textColor: '#94a3b8', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(56,189,248,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px', backgroundColor: '#0c1222' } },
       // — Билеты CTA —
       { type: 'spacer', content: '', styles: { ...ds, padding: '32px', backgroundColor: '#101828' } },
@@ -316,9 +316,9 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0f0f1c' } },
       { type: 'heading', content: 'Возможности', anchorId: 'features', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '0 16px 8px', backgroundColor: '#0f0f1c' } },
       { type: 'text', content: 'Всё что нужно для работы с данными в одном месте', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#52525b', padding: '0 16px 16px', backgroundColor: '#0f0f1c' } },
-      { type: 'icon-text', content: '🚀|Мгновенная синхронизация|Данные обновляются в реальном времени на всех устройствах', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
-      { type: 'icon-text', content: '🔒|Шифрование E2E|Военный уровень защиты ваших данных', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
-      { type: 'icon-text', content: '⚡|API & Интеграции|Подключайтесь к 200+ сервисам', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
+      { type: 'icon-text', content: 'lucide:rocket|Мгновенная синхронизация|Данные обновляются в реальном времени на всех устройствах', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
+      { type: 'icon-text', content: 'lucide:lock|Шифрование E2E|Военный уровень защиты ваших данных', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
+      { type: 'icon-text', content: 'lucide:zap|API & Интеграции|Подключайтесь к 200+ сервисам', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#12121f', padding: '20px', borderRadius: '12px', textColor: '#a5b4fc', boxShadow: '0 2px 15px rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0f0f1c' } },
       // — Метрики —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0a0a12' } },
@@ -365,9 +365,9 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Программы (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       { type: 'heading', content: 'Программы тренировок', anchorId: 'programs', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '0 16px 16px', backgroundColor: '#111111', gradientText: 'linear-gradient(135deg, #f97316, #fdba74)' } },
-      { type: 'icon-text', content: '🏋️|Силовые|Набор мышечной массы, рельеф, функциональная сила', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
-      { type: 'icon-text', content: '🥊|Единоборства|Бокс, кикбоксинг, MMA для всех уровней', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
-      { type: 'icon-text', content: '🧘|Йога и растяжка|Гибкость, баланс, медитация', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
+      { type: 'icon-text', content: 'lucide:dumbbell|Силовые|Набор мышечной массы, рельеф, функциональная сила', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
+      { type: 'icon-text', content: 'lucide:zap|Единоборства|Бокс, кикбоксинг, MMA для всех уровней', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
+      { type: 'icon-text', content: 'lucide:heart|Йога и растяжка|Гибкость, баланс, медитация', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1208', padding: '20px', borderRadius: '12px', textColor: '#fdba74', boxShadow: '0 2px 15px rgba(249,115,22,0.1)', borderColor: 'rgba(249,115,22,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       // — Расписание —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0a0a0a' } },
@@ -377,7 +377,7 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Тренеры —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       { type: 'heading', content: 'Наши тренеры', anchorId: 'trainers', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#111111' } },
-      { type: 'columns', content: '💪 Дмитрий|Силовые, 10 лет||🧘 Ольга|Йога, 8 лет||🥊 Артём|Бокс, 6 лет||💃 Ирина|Танцы, 7 лет', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1208', borderRadius: '12px', textColor: '#d4d4d4', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(249,115,22,0.08)' } },
+      { type: 'columns', content: 'lucide:dumbbell Дмитрий|Силовые, 10 лет||lucide:heart Ольга|Йога, 8 лет||lucide:zap Артём|Бокс, 6 лет||lucide:music Ирина|Танцы, 7 лет', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1208', borderRadius: '12px', textColor: '#d4d4d4', boxShadow: '0 4px 20px rgba(0,0,0,0.4)', borderColor: 'rgba(249,115,22,0.08)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111111' } },
       // — CTA —
       { type: 'spacer', content: '', styles: { ...ds, padding: '32px', backgroundColor: '#0a0a0a' } },
@@ -458,7 +458,7 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Услуги —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#050505' } },
       { type: 'heading', content: 'Услуги', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#050505' } },
-      { type: 'columns', content: '📸 Портрет|Студия, стрит, деловой||🌆 Город|Архитектура, стрит||🎭 Мероприятия|Свадьбы, корпоративы', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#111111', borderRadius: '12px', textColor: '#a3a3a3', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' } },
+      { type: 'columns', content: 'lucide:camera Портрет|Студия, стрит, деловой||lucide:globe Город|Архитектура, стрит||lucide:play Мероприятия|Свадьбы, корпоративы', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#111111', borderRadius: '12px', textColor: '#a3a3a3', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px', backgroundColor: '#050505' } },
       // — Цитата + CTA —
       { type: 'quote', content: 'Фотография — это искусство замечать.|Эллиот Эрвитт', animation: 'fade-in-up', styles: { ...ds, padding: '24px 48px', textColor: '#404040', backgroundColor: '#050505' } },
@@ -494,15 +494,15 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Услуги (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0e1520' } },
       { type: 'heading', content: 'Наши услуги', anchorId: 'services', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '0 16px 16px', backgroundColor: '#0e1520', gradientText: 'linear-gradient(135deg, #10b981, #6ee7b7)' } },
-      { type: 'icon-text', content: '🎨|UI/UX Дизайн|Исследование, прототипирование, дизайн-системы', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
-      { type: 'icon-text', content: '💻|Веб-разработка|React, TypeScript, Node.js, высоконагруженные системы', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
-      { type: 'icon-text', content: '📱|Мобильные приложения|React Native, Flutter, нативная разработка', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
-      { type: 'icon-text', content: '📈|SEO и маркетинг|Продвижение, аналитика, контекстная реклама', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
+      { type: 'icon-text', content: 'lucide:palette|UI/UX Дизайн|Исследование, прототипирование, дизайн-системы', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
+      { type: 'icon-text', content: 'lucide:code|Веб-разработка|React, TypeScript, Node.js, высоконагруженные системы', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
+      { type: 'icon-text', content: 'lucide:smartphone|Мобильные приложения|React Native, Flutter, нативная разработка', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
+      { type: 'icon-text', content: 'lucide:trending|SEO и маркетинг|Продвижение, аналитика, контекстная реклама', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#0f1a15', padding: '20px', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 2px 15px rgba(16,185,129,0.1)', borderColor: 'rgba(16,185,129,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0e1520' } },
       // — Кейсы —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0a0f1a' } },
       { type: 'heading', content: 'Кейсы', anchorId: 'cases', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#0a0f1a' } },
-      { type: 'columns', content: '🏦 Финтех|CRM для банка — рост конверсии на 40%||🛒 E-commerce|Маркетплейс — 50K заказов/мес||🏥 Медтех|Телемедицина — 100K пользователей', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#0f1a15', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(16,185,129,0.1)' } },
+      { type: 'columns', content: 'lucide:building Финтех|CRM для банка — рост конверсии на 40%||lucide:cart E-commerce|Маркетплейс — 50K заказов/мес||lucide:heart Медтех|Телемедицина — 100K пользователей', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#0f1a15', borderRadius: '12px', textColor: '#a7f3d0', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(16,185,129,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px', backgroundColor: '#0a0f1a' } },
       // — Форма (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0e1520' } },
@@ -537,8 +537,8 @@ export const PAGE_TEMPLATES: Template[] = [
       // — Характеристики —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#111318' } },
       { type: 'heading', content: 'Характеристики', anchorId: 'specs', animation: 'fade-in-left', styles: { ...ds, fontSize: '28px', padding: '0 16px 16px', backgroundColor: '#111318' } },
-      { type: 'columns', content: '📐 от 45 м²|Площадь квартир||🏢 25 этажей|Монолитный каркас||🌳 Парк 5 га|В пешей доступности||🚗 Паркинг|2 уровня, подземный', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1c22', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(245,158,11,0.1)' } },
-      { type: 'icon-text', content: '🏗️|Срок сдачи: Q4 2026|Ход строительства — 78%', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1c22', padding: '16px', borderRadius: '12px', textColor: '#fbbf24', boxShadow: '0 2px 15px rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.1)' } },
+      { type: 'columns', content: 'lucide:layout от 45 м²|Площадь квартир||lucide:building 25 этажей|Монолитный каркас||lucide:sun Парк 5 га|В пешей доступности||lucide:car Паркинг|2 уровня, подземный', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#1a1c22', borderRadius: '12px', textColor: '#d4d4d8', boxShadow: '0 4px 20px rgba(0,0,0,0.3)', borderColor: 'rgba(245,158,11,0.1)' } },
+      { type: 'icon-text', content: 'lucide:clock|Срок сдачи: Q4 2026|Ход строительства — 78%', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1c22', padding: '16px', borderRadius: '12px', textColor: '#fbbf24', boxShadow: '0 2px 15px rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '16px', backgroundColor: '#111318' } },
       // — Форма (контраст) —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#161820' } },
@@ -606,10 +606,10 @@ export const PAGE_TEMPLATES: Template[] = [
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0f1320' } },
       { type: 'heading', content: 'Возможности', anchorId: 'features', animation: 'fade-in-left', styles: { ...ds, fontSize: '32px', padding: '0 16px 8px', backgroundColor: '#0f1320' } },
       { type: 'text', content: 'Всё для продуктивной работы команды', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#6b7280', padding: '0 16px 16px', backgroundColor: '#0f1320' } },
-      { type: 'icon-text', content: '📋|Канбан-доски|Визуальное управление задачами с drag & drop', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
-      { type: 'icon-text', content: '⏱️|Трекинг времени|Встроенный таймер для каждой задачи', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
-      { type: 'icon-text', content: '📊|Аналитика|Отчёты по продуктивности в реальном времени', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
-      { type: 'icon-text', content: '🔗|Интеграции|Slack, Notion, GitHub, Figma и 100+ сервисов', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:layout|Канбан-доски|Визуальное управление задачами с drag & drop', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:clock|Трекинг времени|Встроенный таймер для каждой задачи', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:chart|Аналитика|Отчёты по продуктивности в реальном времени', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
+      { type: 'icon-text', content: 'lucide:link|Интеграции|Slack, Notion, GitHub, Figma и 100+ сервисов', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#111827', padding: '20px', borderRadius: '12px', textColor: '#c4b5fd', boxShadow: '0 2px 15px rgba(129,140,248,0.1)', borderColor: 'rgba(129,140,248,0.1)' } },
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0f1320' } },
       // — Тарифы —
       { type: 'spacer', content: '', styles: { ...ds, padding: '24px', backgroundColor: '#0b0f19' } },
@@ -776,9 +776,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Карточки с описанием',
     icon: <ListChecks className="w-4 h-4" />,
     blocks: [
-      { type: 'icon-text', content: '🚀|Скорость|Загрузка менее 1 секунды', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
-      { type: 'icon-text', content: '🎨|Дизайн|Уникальный стиль под ваш бренд', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
-      { type: 'icon-text', content: '📱|Адаптивность|Идеально на любом экране', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
+      { type: 'icon-text', content: 'lucide:rocket|Скорость|Загрузка менее 1 секунды', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: 'lucide:palette|Дизайн|Уникальный стиль под ваш бренд', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: 'lucide:smartphone|Адаптивность|Идеально на любом экране', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   },
   {
