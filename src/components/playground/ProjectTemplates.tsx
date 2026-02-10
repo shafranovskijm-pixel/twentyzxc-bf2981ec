@@ -412,7 +412,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Стандартное',
     icon: <Menu className="w-4 h-4" />,
     blocks: [
-      { type: 'navbar', content: 'Главная|#hero\nО нас|#about\nУслуги|#services\nПортфолио|#portfolio\nКонтакты|#contacts', animation: 'fade-in', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '16px 24px', borderRadius: '12px' } }
+      { type: 'navbar', content: 'Главная|#hero\nО нас|#about\nУслуги|#services\nПортфолио|#portfolio\nКонтакты|#contacts', animation: 'fade-in', styles: { ...ds, backgroundColor: '#0e1015', padding: '16px 24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -470,9 +470,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Columns3 className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Как мы работаем', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'card', content: '01\nОбсуждение\nВыясняем ваши цели, задачи и пожелания', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
-      { type: 'card', content: '02\nРазработка\nСоздаём дизайн и программируем решение', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
-      { type: 'card', content: '03\nЗапуск\nТестируем, запускаем и обеспечиваем поддержку', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
+      { type: 'card', content: '01\nОбсуждение\nВыясняем ваши цели, задачи и пожелания', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+      { type: 'card', content: '02\nРазработка\nСоздаём дизайн и программируем решение', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+      { type: 'card', content: '03\nЗапуск\nТестируем, запускаем и обеспечиваем поддержку', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -482,9 +482,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Columns3 className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Наши преимущества', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'card', content: '⚡\nБыстро\nРезультат за 7 дней', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
-      { type: 'card', content: '🎯\nТочно\nПопадаем в цель с первого раза', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
-      { type: 'card', content: '🛡️\nНадёжно\nГарантия 12 месяцев', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
+      { type: 'card', content: '⚡\nБыстро\nРезультат за 7 дней', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'card', content: '🎯\nТочно\nПопадаем в цель с первого раза', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'card', content: '🛡️\nНадёжно\nГарантия 12 месяцев', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   },
   {
@@ -493,9 +493,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Услуги в карточках',
     icon: <Columns3 className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '🎨 Дизайн\nСоздаём уникальный визуальный стиль для вашего бренда', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '28px', borderRadius: '16px', textAlign: 'left' } },
-      { type: 'card', content: '💻 Разработка\nСовременные технологии и чистый код', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '28px', borderRadius: '16px', textAlign: 'left' } },
-      { type: 'card', content: '📈 Продвижение\nSEO, реклама и аналитика для роста', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '28px', borderRadius: '16px', textAlign: 'left' } }
+      { type: 'card', content: '🎨 Дизайн\nСоздаём уникальный визуальный стиль для вашего бренда', animation: 'fade-in-left', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '28px', borderRadius: '16px', textAlign: 'left', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+      { type: 'card', content: '💻 Разработка\nСовременные технологии и чистый код', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '28px', borderRadius: '16px', textAlign: 'left', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+      { type: 'card', content: '📈 Продвижение\nSEO, реклама и аналитика для роста', animation: 'fade-in-right', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '28px', borderRadius: '16px', textAlign: 'left', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   // === ГЕРОЙ-ЗАГОЛОВОК ===
@@ -537,7 +537,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Список с эмодзи',
     icon: <ListChecks className="w-4 h-4" />,
     blocks: [
-      { type: 'list', content: '✅ Быстрая загрузка страниц\n🎯 Адаптивный дизайн\n🔐 Защита данных\n💬 Поддержка 24/7\n📈 SEO оптимизация', animation: 'fade-in-up', styles: { ...ds, padding: '16px 32px', textAlign: 'left', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'list', content: '✅ Быстрая загрузка страниц\n🎯 Адаптивный дизайн\n🔐 Защита данных\n💬 Поддержка 24/7\n📈 SEO оптимизация', animation: 'fade-in-up', styles: { ...ds, padding: '16px 32px', textAlign: 'left', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -546,9 +546,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Карточки с описанием',
     icon: <ListChecks className="w-4 h-4" />,
     blocks: [
-      { type: 'icon-text', content: '🚀|Скорость|Загрузка менее 1 секунды', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'icon-text', content: '🎨|Дизайн|Уникальный стиль под ваш бренд', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'icon-text', content: '📱|Адаптивность|Идеально на любом экране', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+      { type: 'icon-text', content: '🚀|Скорость|Загрузка менее 1 секунды', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '🎨|Дизайн|Уникальный стиль под ваш бренд', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '📱|Адаптивность|Идеально на любом экране', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   },
   {
@@ -557,7 +557,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Нумерованный список',
     icon: <ListChecks className="w-4 h-4" />,
     blocks: [
-      { type: 'list', content: '1. Анализ бизнеса и конкурентов\n2. Разработка стратегии продвижения\n3. Создание уникального контента\n4. Настройка рекламных кампаний\n5. Ежемесячная аналитика и отчёты', animation: 'fade-in-up', styles: { ...ds, padding: '16px 32px', textAlign: 'left', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'list', content: '1. Анализ бизнеса и конкурентов\n2. Разработка стратегии продвижения\n3. Создание уникального контента\n4. Настройка рекламных кампаний\n5. Ежемесячная аналитика и отчёты', animation: 'fade-in-up', styles: { ...ds, padding: '16px 32px', textAlign: 'left', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   // === FAQ ===
@@ -567,7 +567,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Вопрос о цене',
     icon: <HelpCircle className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '❓ Сколько стоит разработка?\n\nСтоимость зависит от сложности проекта. Базовый лендинг — от 30 000₽, интернет-магазин — от 80 000₽. Точную стоимость рассчитаем после обсуждения задачи.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } }
+      { type: 'card', content: '❓ Сколько стоит разработка?\n\nСтоимость зависит от сложности проекта. Базовый лендинг — от 30 000₽, интернет-магазин — от 80 000₽. Точную стоимость рассчитаем после обсуждения задачи.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', textAlign: 'left', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -576,7 +576,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Вопрос о сроках',
     icon: <HelpCircle className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '⏰ Сколько времени занимает разработка?\n\nЛендинг — 5-10 рабочих дней. Корпоративный сайт — 2-4 недели. Интернет-магазин — 4-8 недель. Точные сроки зависят от объёма задач.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } }
+      { type: 'card', content: '⏰ Сколько времени занимает разработка?\n\nЛендинг — 5-10 рабочих дней. Корпоративный сайт — 2-4 недели. Интернет-магазин — 4-8 недель. Точные сроки зависят от объёма задач.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', textAlign: 'left', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -585,7 +585,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Вопрос о гарантиях',
     icon: <HelpCircle className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '🛡️ Какие гарантии вы даёте?\n\nГарантия 12 месяцев на все работы. Бесплатное исправление багов. Техническая поддержка включена. Договор и полный пакет документов.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', textAlign: 'left', borderRadius: '12px' } }
+      { type: 'card', content: '🛡️ Какие гарантии вы даёте?\n\nГарантия 12 месяцев на все работы. Бесплатное исправление багов. Техническая поддержка включена. Договор и полный пакет документов.', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', textAlign: 'left', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   // === ВИДЕО ===
@@ -707,7 +707,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Подробный отзыв',
     icon: <MessageSquareQuote className="w-4 h-4" />,
     blocks: [
-      { type: 'quote', content: 'Обратились за разработкой интернет-магазина. Ребята сделали всё качественно и в срок. Особенно порадовала адаптивная вёрстка и скорость загрузки. Рекомендую!|Андрей С., владелец магазина «ТехноМир»', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px 32px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'quote', content: 'Обратились за разработкой интернет-магазина. Ребята сделали всё качественно и в срок. Особенно порадовала адаптивная вёрстка и скорость загрузки. Рекомендую!|Андрей С., владелец магазина «ТехноМир»', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '24px 32px', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -838,7 +838,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Премиум план',
     icon: <DollarSign className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '⭐ Премиум\n\n4 990₽ / мес\n\n✅ Безлимитные проекты\n✅ Приоритетная поддержка\n✅ Индивидуальный дизайн\n✅ SEO-оптимизация\n✅ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '32px 24px', textAlign: 'center', borderRadius: '16px' } },
+      { type: 'card', content: '⭐ Премиум\n\n4 990₽ / мес\n\n✅ Безлимитные проекты\n✅ Приоритетная поддержка\n✅ Индивидуальный дизайн\n✅ SEO-оптимизация\n✅ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '32px 24px', textAlign: 'center', borderRadius: '16px', boxShadow: '0 8px 30px rgba(0,0,0,0.3)', borderColor: 'rgba(212,168,85,0.3)' } },
       { type: 'button', content: 'Выбрать тариф', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '12px' } }
     ]
   },
@@ -848,7 +848,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Стартовый план',
     icon: <DollarSign className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '🟢 Базовый\n\n990₽ / мес\n\n✅ 3 проекта\n✅ Базовая поддержка\n✅ Шаблонный дизайн\n❌ SEO\n❌ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '32px 24px', textAlign: 'center', borderRadius: '16px' } },
+      { type: 'card', content: '🟢 Базовый\n\n990₽ / мес\n\n✅ 3 проекта\n✅ Базовая поддержка\n✅ Шаблонный дизайн\n❌ SEO\n❌ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '32px 24px', textAlign: 'center', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
       { type: 'button', content: 'Начать бесплатно', animation: 'scale-in', hoverEffect: 'hover-lift', buttonStyle: 'outline', styles: { ...ds, padding: '12px' } }
     ]
   },
@@ -858,7 +858,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Профессиональный',
     icon: <DollarSign className="w-4 h-4" />,
     blocks: [
-      { type: 'card', content: '🔥 Про\n\n2 490₽ / мес\n\n✅ 10 проектов\n✅ Приоритетная поддержка\n✅ Кастомный дизайн\n✅ SEO-оптимизация\n❌ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '32px 24px', textAlign: 'center', borderRadius: '16px' } },
+      { type: 'card', content: '🔥 Про\n\n2 490₽ / мес\n\n✅ 10 проектов\n✅ Приоритетная поддержка\n✅ Кастомный дизайн\n✅ SEO-оптимизация\n❌ Аналитика', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '32px 24px', textAlign: 'center', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
       { type: 'button', content: 'Выбрать Про', animation: 'scale-in', hoverEffect: 'hover-lift', styles: { ...ds, padding: '12px' } }
     ]
   },
@@ -870,9 +870,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Users className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Наша команда', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'card', content: '👤 Алексей Иванов\nCEO & Основатель', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'card', content: '👤 Мария Петрова\nCTO & Архитектор', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'card', content: '👤 Дмитрий Козлов\nLead Designer', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+      { type: 'card', content: '👤 Алексей Иванов\nCEO & Основатель', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'card', content: '👤 Мария Петрова\nCTO & Архитектор', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'card', content: '👤 Дмитрий Козлов\nLead Designer', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   },
   {
@@ -882,8 +882,8 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Users className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Основатели', animation: 'fade-in-up', styles: { ...ds, fontSize: '28px', padding: '16px' } },
-      { type: 'card', content: '👨‍💻 Павел Морозов\nCEO — 10 лет в IT', animation: 'fade-in-left', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } },
-      { type: 'card', content: '👩‍🎨 Ольга Белова\nArt Director — Дизайн с душой', animation: 'fade-in-right', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
+      { type: 'card', content: '👨‍💻 Павел Морозов\nCEO — 10 лет в IT', animation: 'fade-in-left', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'card', content: '👩‍🎨 Ольга Белова\nArt Director — Дизайн с душой', animation: 'fade-in-right', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   },
   {
@@ -894,7 +894,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     blocks: [
       { type: 'heading', content: 'Кто стоит за проектом', animation: 'fade-in-up', styles: { ...ds, fontSize: '28px', padding: '16px' } },
       { type: 'text', content: 'Мы — команда профессионалов с 15-летним опытом в разработке и дизайне. Каждый проект — это наша гордость.', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#888888', padding: '4px 24px 16px' } },
-      { type: 'card', content: '👤 Иван Сидоров — Разработка\n👤 Анна Крылова — Дизайн\n👤 Сергей Попов — Маркетинг\n👤 Юлия Новак — Контент', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px', textAlign: 'left' } }
+      { type: 'card', content: '👤 Иван Сидоров — Разработка\n👤 Анна Крылова — Дизайн\n👤 Сергей Попов — Маркетинг\n👤 Юлия Новак — Контент', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', textAlign: 'left', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   // === ФОРМА ===
@@ -904,7 +904,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Имя + контакт + сообщение',
     icon: <FileText className="w-4 h-4" />,
     blocks: [
-      { type: 'form' as const, content: 'Оставьте заявку|Имя|Телефон или Email|Сообщение|Отправить', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '24px', borderRadius: '12px' } }
+      { type: 'form' as const, content: 'Оставьте заявку|Имя|Телефон или Email|Сообщение|Отправить', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#141418', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -913,7 +913,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     description: 'Только email + кнопка',
     icon: <FileText className="w-4 h-4" />,
     blocks: [
-      { type: 'form' as const, content: 'Подпишитесь на рассылку|Email|Подписаться', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+      { type: 'form' as const, content: 'Подпишитесь на рассылку|Email|Подписаться', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -923,7 +923,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <FileText className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: '📞 Перезвоним за 30 секунд', animation: 'fade-in-up', styles: { ...ds, fontSize: '24px', padding: '16px 16px 8px' } },
-      { type: 'form' as const, content: 'Закажите звонок|Ваше имя|Номер телефона|Позвоните мне', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+      { type: 'form' as const, content: 'Закажите звонок|Ваше имя|Номер телефона|Позвоните мне', animation: 'fade-in-up', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   // === СОЦСЕТИ ===
@@ -964,7 +964,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <HelpCircle className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Часто задаваемые вопросы', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'accordion', content: 'Как оформить заказ?|Выберите услугу, заполните форму и мы свяжемся с вами в течение часа\nСколько стоит?|Стоимость зависит от объёма задач. Базовый пакет — от 30 000₽\nКакие сроки выполнения?|Средний срок — 2-4 недели в зависимости от сложности\nЕсть ли гарантия?|Да, мы предоставляем гарантию 12 месяцев на все работы\nКак происходит оплата?|50% предоплата, 50% после сдачи проекта', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'accordion', content: 'Как оформить заказ?|Выберите услугу, заполните форму и мы свяжемся с вами в течение часа\nСколько стоит?|Стоимость зависит от объёма задач. Базовый пакет — от 30 000₽\nКакие сроки выполнения?|Средний срок — 2-4 недели в зависимости от сложности\nЕсть ли гарантия?|Да, мы предоставляем гарантию 12 месяцев на все работы\nКак происходит оплата?|50% предоплата, 50% после сдачи проекта', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -974,7 +974,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Layers className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Наши услуги', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'tabs', content: 'Дизайн|🎨 UI/UX дизайн, прототипирование, фирменный стиль и брендинг. Создаём уникальные визуальные решения.||Разработка|💻 Фронтенд и бэкенд разработка. React, TypeScript, Node.js. Современный стек технологий.||Маркетинг|📈 SEO продвижение, контекстная реклама, аналитика. Привлекаем целевых клиентов.', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'tabs', content: 'Дизайн|🎨 UI/UX дизайн, прототипирование, фирменный стиль и брендинг. Создаём уникальные визуальные решения.||Разработка|💻 Фронтенд и бэкенд разработка. React, TypeScript, Node.js. Современный стек технологий.||Маркетинг|📈 SEO продвижение, контекстная реклама, аналитика. Привлекаем целевых клиентов.', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -984,7 +984,7 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Users className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Наша команда', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'columns', content: '👨‍💻 Алексей|CEO & Founder||👩‍🎨 Мария|Lead Designer||🧑‍💻 Дмитрий|Senior Developer', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#1a1a1a', borderRadius: '12px' } }
+      { type: 'columns', content: '👨‍💻 Алексей|CEO & Founder||👩‍🎨 Мария|Lead Designer||🧑‍💻 Дмитрий|Senior Developer', animation: 'fade-in-up', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } }
     ]
   },
   {
@@ -994,9 +994,9 @@ export const BLOCK_EXAMPLES: BlockExample[] = [
     icon: <Zap className="w-4 h-4" />,
     blocks: [
       { type: 'heading', content: 'Как это работает', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '16px' } },
-      { type: 'icon-text', content: '1️⃣|Оставьте заявку|Заполните форму или напишите нам в мессенджер', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'icon-text', content: '2️⃣|Обсуждаем детали|Созвон, ТЗ, утверждение макетов и сроков', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } },
-      { type: 'icon-text', content: '3️⃣|Получаете результат|Готовый проект с документацией и поддержкой', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#1a1a1a', padding: '20px', borderRadius: '12px' } }
+      { type: 'icon-text', content: '1️⃣|Оставьте заявку|Заполните форму или напишите нам в мессенджер', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '2️⃣|Обсуждаем детали|Созвон, ТЗ, утверждение макетов и сроков', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '3️⃣|Получаете результат|Готовый проект с документацией и поддержкой', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } }
     ]
   }
 ];

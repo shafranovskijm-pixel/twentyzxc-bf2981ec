@@ -21,6 +21,7 @@ export interface BlockStyles {
   fontFamily?: string;
   boxShadow?: string;
   gradientText?: string;
+  borderColor?: string;
 }
 
 export type BgDecoration = 'none' | 'particles' | 'glow' | 'corner-lines' | 'vignette' | 'noise' | 'stars' | 'waves' | 'aurora';

@@ -180,12 +180,18 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       }
-      case 'image':
+      case 'image': {
+        const isFullWidth = block.styles.padding === '0px' && block.styles.borderRadius === '0px';
         return wrapWithLink(
-          <motion.div className={baseClasses} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
-            <img src={block.content} alt="Изображение" className="max-w-full h-auto" style={{ borderRadius: block.styles.borderRadius }} />
+          <motion.div className={baseClasses} style={{ 
+            padding: isFullWidth ? 0 : block.styles.padding, 
+            textAlign: block.styles.textAlign as React.CSSProperties['textAlign'],
+            ...(isFullWidth ? { margin: '0 -24px', width: 'calc(100% + 48px)' } : {})
+          }} onClick={onClick} {...animProps}>
+            <img src={block.content} alt="Изображение" className="max-w-full h-auto w-full" style={{ borderRadius: isFullWidth ? 0 : block.styles.borderRadius }} />
           </motion.div>
         );
+      }
       case 'divider':
         return (
           <motion.div className={cn(baseClasses, "py-4")} onClick={onClick} {...animProps}>
@@ -193,7 +199,7 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
           </motion.div>
         );
       case 'card':
-        return wrapWithLink(<motion.div className={cn(baseClasses, "border border-border")} style={style} onClick={onClick} {...animProps}>{block.content}</motion.div>);
+        return wrapWithLink(<motion.div className={cn(baseClasses, "border backdrop-blur-sm")} style={{ ...style, borderColor: block.styles.borderColor || 'rgba(255,255,255,0.1)', boxShadow: style.boxShadow || (style.backgroundColor && style.backgroundColor !== 'transparent' ? '0 4px 20px rgba(0,0,0,0.2)' : undefined) }} onClick={onClick} {...animProps}>{block.content}</motion.div>);
       case 'list': {
         const items = block.content.split('\n').filter(Boolean);
         return wrapWithLink(
@@ -330,13 +336,13 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         const [title, namePh, contactPh, messagePh, btnText] = parts;
         return (
           <motion.div className={cn(baseClasses, "border border-border/30")} style={style} onClick={onClick} {...animProps}>
-            <div className="font-semibold mb-3" style={{ color: block.styles.textColor }}>{title || 'Оставьте заявку'}</div>
-            <div className="space-y-2">
-              <div className="h-9 rounded bg-secondary/30 border border-border/20 px-3 flex items-center text-sm text-muted-foreground">{namePh || 'Имя'}</div>
-              <div className="h-9 rounded bg-secondary/30 border border-border/20 px-3 flex items-center text-sm text-muted-foreground">{contactPh || 'Телефон или Email'}</div>
-              <div className="h-16 rounded bg-secondary/30 border border-border/20 px-3 pt-2 text-sm text-muted-foreground">{messagePh || 'Сообщение'}</div>
+            <div className="font-semibold mb-4 text-lg" style={{ color: block.styles.textColor }}>{title || 'Оставьте заявку'}</div>
+            <div className="space-y-3">
+              <div className="h-10 rounded-md bg-background/50 border border-border/40 px-3 flex items-center text-sm text-muted-foreground hover:border-border/60 transition-colors">{namePh || 'Имя'}</div>
+              <div className="h-10 rounded-md bg-background/50 border border-border/40 px-3 flex items-center text-sm text-muted-foreground hover:border-border/60 transition-colors">{contactPh || 'Телефон или Email'}</div>
+              <div className="h-20 rounded-md bg-background/50 border border-border/40 px-3 pt-2.5 text-sm text-muted-foreground hover:border-border/60 transition-colors">{messagePh || 'Сообщение'}</div>
               <div className="pt-1">
-                <div className="bg-primary text-primary-foreground text-center py-2 rounded text-sm font-medium">{btnText || 'Отправить'}</div>
+                <div className="bg-primary text-primary-foreground text-center py-2.5 rounded-md text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer">{btnText || 'Отправить'}</div>
               </div>
             </div>
           </motion.div>
@@ -641,35 +647,87 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={blocks.filter(b => !b.hidden).map(b => b.id)} strategy={verticalListSortingStrategy}>
-              {blocks.filter(b => !b.hidden).map(block => (
-                <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
-                  <div className="relative group/block" id={block.anchorId || undefined}>
-                    {renderBlockContent(block)}
-                    {(onDeleteBlock || onDuplicateBlock) && (
-                      <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-20">
-                        {onDuplicateBlock && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onDuplicateBlock(block.id); }}
-                            className="p-1.5 rounded bg-secondary/90 border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                            title="Дублировать (Ctrl+D)"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {onDeleteBlock && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); onDeleteBlock(block.id); }}
-                            className="p-1.5 rounded bg-destructive/90 border border-destructive hover:bg-destructive text-destructive-foreground transition-colors"
-                            title="Удалить (Delete)"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+              {(() => {
+                const visibleBlocks = blocks.filter(b => !b.hidden);
+                const groupableTypes = ['counter', 'icon-text'];
+                const elements: React.ReactNode[] = [];
+                let i = 0;
+                while (i < visibleBlocks.length) {
+                  const block = visibleBlocks[i];
+                  if (groupableTypes.includes(block.type)) {
+                    // Collect consecutive blocks of same type
+                    const group: PlaygroundBlock[] = [block];
+                    let j = i + 1;
+                    while (j < visibleBlocks.length && visibleBlocks[j].type === block.type) {
+                      group.push(visibleBlocks[j]);
+                      j++;
+                    }
+                    if (group.length >= 2) {
+                      const cols = Math.min(group.length, 4);
+                      const gridClass = cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
+                      elements.push(
+                        <div key={`group-${group[0].id}`} className={`grid ${gridClass} gap-4`}>
+                          {group.map(gb => (
+                            <SortableBlock key={gb.id} id={gb.id} isSelected={gb.id === selectedBlockId}>
+                              <div className="relative group/block" id={gb.anchorId || undefined}>
+                                {renderBlockContent(gb)}
+                                {(onDeleteBlock || onDuplicateBlock) && (
+                                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-20">
+                                    {onDuplicateBlock && (
+                                      <button onClick={(e) => { e.stopPropagation(); onDuplicateBlock(gb.id); }} className="p-1.5 rounded bg-secondary/90 border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors" title="Дублировать (Ctrl+D)">
+                                        <Copy className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                    {onDeleteBlock && (
+                                      <button onClick={(e) => { e.stopPropagation(); onDeleteBlock(gb.id); }} className="p-1.5 rounded bg-destructive/90 border border-destructive hover:bg-destructive text-destructive-foreground transition-colors" title="Удалить (Delete)">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </SortableBlock>
+                          ))}
+                        </div>
+                      );
+                      i = j;
+                      continue;
+                    }
+                  }
+                  // Single block render
+                  elements.push(
+                    <SortableBlock key={block.id} id={block.id} isSelected={block.id === selectedBlockId}>
+                      <div className="relative group/block" id={block.anchorId || undefined}>
+                        {renderBlockContent(block)}
+                        {(onDeleteBlock || onDuplicateBlock) && (
+                          <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover/block:opacity-100 transition-opacity z-20">
+                            {onDuplicateBlock && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onDuplicateBlock(block.id); }}
+                                className="p-1.5 rounded bg-secondary/90 border border-border hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                                title="Дублировать (Ctrl+D)"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {onDeleteBlock && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onDeleteBlock(block.id); }}
+                                className="p-1.5 rounded bg-destructive/90 border border-destructive hover:bg-destructive text-destructive-foreground transition-colors"
+                                title="Удалить (Delete)"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
-                    )}
-                  </div>
-                </SortableBlock>
-              ))}
+                    </SortableBlock>
+                  );
+                  i++;
+                }
+                return elements;
+              })()}
             </SortableContext>
           </DndContext>
         )}

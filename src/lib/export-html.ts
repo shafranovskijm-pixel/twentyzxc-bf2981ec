@@ -44,14 +44,17 @@ function renderBlockHTML(block: PlaygroundBlock, globalFont?: string): string {
       btnStyle += 'padding: 12px 24px; cursor: pointer; font-weight: 500;';
       return `<div style="text-align: ${block.styles.textAlign || 'center'};"><button style="${btnStyle}">${escapeHtml(block.content)}</button></div>`;
     }
-    case 'image':
-      return `<div style="${style}"><img src="${escapeHtml(block.content)}" alt="" style="max-width: 100%; height: auto; border-radius: ${block.styles.borderRadius || '0'};"></div>`;
+    case 'image': {
+      const isFullWidth = block.styles.padding === '0px' && block.styles.borderRadius === '0px';
+      const imgContainerStyle = isFullWidth ? 'margin: 0 -24px; width: calc(100% + 48px);' : style;
+      return `<div style="${imgContainerStyle}"><img src="${escapeHtml(block.content)}" alt="" style="max-width: 100%; width: 100%; height: auto; border-radius: ${isFullWidth ? '0' : (block.styles.borderRadius || '0')};"></div>`;
+    }
     case 'divider':
       return `<div style="padding: 16px 0;"><hr style="border: none; height: 1px; background: ${block.styles.textColor || '#333'};"></div>`;
     case 'spacer':
       return `<div style="${style}"></div>`;
     case 'card':
-      return `<div style="${style} border: 1px solid rgba(255,255,255,0.1);">${escapeHtml(block.content)}</div>`;
+      return `<div style="${style} border: 1px solid ${block.styles.borderColor || 'rgba(255,255,255,0.1)'}; backdrop-filter: blur(4px);${block.styles.boxShadow ? '' : (block.styles.backgroundColor && block.styles.backgroundColor !== 'transparent' ? ' box-shadow: 0 4px 20px rgba(0,0,0,0.2);' : '')}">${escapeHtml(block.content)}</div>`;
     case 'list': {
       const items = block.content.split('\n').filter(Boolean);
       return `<div style="${style}"><ul style="list-style: disc; padding-left: 20px;">${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul></div>`;
@@ -130,7 +133,32 @@ export function exportToHTML(title: string, blocks: PlaygroundBlock[], settings:
   const globalFont = settings.globalFontFamily || '';
   const fontLink = globalFont ? `<link href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(globalFont)}:wght@400;500;600;700&display=swap" rel="stylesheet">` : '';
 
-  const blocksHTML = blocks.filter(b => !b.hidden).map(b => renderBlockHTML(b, globalFont)).join('\n    ');
+  // Group consecutive counter/icon-text blocks
+  const visibleBlocks = blocks.filter(b => !b.hidden);
+  const groupableTypes = ['counter', 'icon-text'];
+  let blocksHTML = '';
+  let i = 0;
+  while (i < visibleBlocks.length) {
+    const block = visibleBlocks[i];
+    if (groupableTypes.includes(block.type)) {
+      const group: PlaygroundBlock[] = [block];
+      let j = i + 1;
+      while (j < visibleBlocks.length && visibleBlocks[j].type === block.type) {
+        group.push(visibleBlocks[j]);
+        j++;
+      }
+      if (group.length >= 2) {
+        const cols = Math.min(group.length, 4);
+        blocksHTML += `\n    <div style="display: grid; grid-template-columns: repeat(${cols}, 1fr); gap: 16px;">`;
+        group.forEach(gb => { blocksHTML += `\n      ${renderBlockHTML(gb, globalFont)}`; });
+        blocksHTML += `\n    </div>`;
+        i = j;
+        continue;
+      }
+    }
+    blocksHTML += `\n    ${renderBlockHTML(block, globalFont)}`;
+    i++;
+  }
 
   return `<!DOCTYPE html>
 <html lang="ru">
