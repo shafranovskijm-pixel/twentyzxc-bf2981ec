@@ -41,7 +41,9 @@ function renderBlockHTML(block: PlaygroundBlock, globalFont?: string): string {
       if (bs === 'filled') btnStyle += 'background: #d4a855; color: #000; border: none;';
       if (bs === 'outline') btnStyle += 'background: transparent; border: 2px solid currentColor;';
       if (bs === 'gradient') btnStyle += 'background: linear-gradient(to right, #d4a855, #a855f7); color: #fff; border: none;';
-      btnStyle += 'padding: 12px 24px; cursor: pointer; font-weight: 500;';
+      if (bs === 'glass') btnStyle += 'background: rgba(255,255,255,0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); color: #fff;';
+      if (bs === 'neon') btnStyle += `background: transparent; border: 2px solid ${block.styles.textColor || '#a855f7'}; text-shadow: 0 0 10px ${block.styles.textColor || '#a855f7'};`;
+      btnStyle += 'padding: 12px 24px; cursor: pointer; font-weight: 500; transition: all 0.3s;';
       return `<div style="text-align: ${block.styles.textAlign || 'center'};"><button style="${btnStyle}">${escapeHtml(block.content)}</button></div>`;
     }
     case 'image': {
@@ -76,9 +78,11 @@ function renderBlockHTML(block: PlaygroundBlock, globalFont?: string): string {
     }
     case 'navbar': {
       const items = block.content.split('\n').filter(Boolean);
-      return `<nav style="${style} display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;"><div style="font-weight: bold; font-size: 1.2em;">☰</div><div style="display: flex; gap: 24px;">${items.map(item => {
+      const [logoItem, ...menuItems] = items;
+      const [logoLabel] = (logoItem || '').split('|');
+      return `<nav style="${style} display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; backdrop-filter: blur(12px);"><div style="font-weight: bold; font-size: 1.2em; letter-spacing: -0.02em;">${escapeHtml(logoLabel || '☰')}</div><div style="display: flex; gap: 24px;">${menuItems.map(item => {
         const [label] = item.split('|');
-        return `<span style="font-size: 0.875em;">${escapeHtml(label)}</span>`;
+        return `<span style="font-size: 0.875em; opacity: 0.7; transition: opacity 0.2s;">${escapeHtml(label)}</span>`;
       }).join('')}</div></nav>`;
     }
     case 'footer': {

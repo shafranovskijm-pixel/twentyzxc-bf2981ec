@@ -266,7 +266,7 @@ export const BlockEditor = ({
           <Label>Стиль кнопки</Label>
           <Select
             value={block.buttonStyle || 'filled'}
-            onValueChange={(value) => onUpdate({ buttonStyle: value as 'filled' | 'outline' | 'gradient' })}
+            onValueChange={(value) => onUpdate({ buttonStyle: value as 'filled' | 'outline' | 'gradient' | 'glass' | 'neon' })}
           >
             <SelectTrigger className="bg-secondary/50 border-border">
               <SelectValue />
@@ -275,6 +275,8 @@ export const BlockEditor = ({
               <SelectItem value="filled">Заполненная</SelectItem>
               <SelectItem value="outline">Контурная</SelectItem>
               <SelectItem value="gradient">Градиентная</SelectItem>
+              <SelectItem value="glass">Стеклянная</SelectItem>
+              <SelectItem value="neon">Неоновая</SelectItem>
             </SelectContent>
           </Select>
         </div>

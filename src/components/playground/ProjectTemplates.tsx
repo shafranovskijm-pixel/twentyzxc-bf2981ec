@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3, LayoutList, FileText, Share2, ChevronDown, Home, Heart, CreditCard, Layers } from "lucide-react";
+import { Briefcase, Rocket, Image, Sparkles, GraduationCap, UtensilsCrossed, CalendarDays, TrendingUp, BarChart3, MessageSquareQuote, ListChecks, HelpCircle, Play, Type, MousePointerClick, Images, Menu, PanelBottom, Dumbbell, BookOpen, Camera, Code2, DollarSign, Users, Zap, Columns3, LayoutList, FileText, Share2, ChevronDown, Home, Heart, CreditCard, Layers, Star, MessageCircle, Shield, Target, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PlaygroundBlock, BlockStyles } from "@/data/playground-effects";
+import { COLOR_SCHEMES, applyColorScheme, ColorScheme } from "@/data/playground-color-schemes";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface Template {
@@ -1062,6 +1064,93 @@ const BLOCK_EXAMPLE_CATEGORIES: { name: string; icon: React.ReactNode; groups: S
   }
 ];
 
+// ============= SECTION TEMPLATES =============
+
+export const SECTION_TEMPLATES: { id: string; name: string; description: string; icon: React.ReactNode; blocks: Omit<PlaygroundBlock, 'id'>[] }[] = [
+  {
+    id: 'section-hero-cta',
+    name: 'Hero с CTA',
+    description: 'Заголовок + описание + кнопка',
+    icon: <Target className="w-4 h-4" />,
+    blocks: [
+      { type: 'spacer', content: '', styles: { ...ds, padding: '32px' } },
+      { type: 'heading', content: 'Создавайте будущее вместе с нами', animation: 'fade-in-up', styles: { ...ds, fontSize: '48px', padding: '16px 24px 8px', gradientText: 'linear-gradient(135deg, #e2e8f0, #ffffff)' } },
+      { type: 'text', content: 'Инновационные решения для вашего бизнеса. Автоматизация, рост, результат.', animation: 'fade-in-up', styles: { ...ds, fontSize: '18px', textColor: '#94a3b8', padding: '4px 48px 24px' } },
+      { type: 'button', content: 'Начать бесплатно →', animation: 'scale-bounce', hoverEffect: 'hover-lift', buttonStyle: 'gradient', styles: { ...ds, fontSize: '18px', padding: '16px' } },
+      { type: 'spacer', content: '', styles: { ...ds, padding: '24px' } },
+    ]
+  },
+  {
+    id: 'section-features',
+    name: 'Блок преимуществ',
+    description: '3 карточки с иконками',
+    icon: <Star className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Почему выбирают нас', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '24px 16px 16px' } },
+      { type: 'icon-text', content: '🚀|Быстрый старт|Настройка за 5 минут без программирования', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '🔒|Безопасность|Шифрование данных на всех уровнях', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'icon-text', content: '📊|Аналитика|Подробные отчёты в реальном времени', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, backgroundColor: '#141418', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+    ]
+  },
+  {
+    id: 'section-testimonials',
+    name: 'Отзывы',
+    description: 'Цитаты клиентов',
+    icon: <MessageCircle className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Отзывы наших клиентов', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '24px 16px 16px' } },
+      { type: 'quote', content: 'Отличный сервис! За 2 недели получили сайт, который превзошёл все ожидания.|Мария К., CEO', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '20px 32px', textColor: '#a5b4fc', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' } },
+      { type: 'quote', content: 'Профессиональный подход и внимание к деталям. Рекомендую!|Дмитрий С., Founder', animation: 'fade-in-up', hoverEffect: 'hover-glow', styles: { ...ds, padding: '20px 32px', textColor: '#a5b4fc', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' } },
+    ]
+  },
+  {
+    id: 'section-cta-banner',
+    name: 'CTA-баннер',
+    description: 'Яркий призыв к действию',
+    icon: <Zap className="w-4 h-4" />,
+    blocks: [
+      { type: 'spacer', content: '', styles: { ...ds, padding: '16px' } },
+      { type: 'card', content: '', styles: { ...ds, backgroundColor: '#141418', padding: '48px 32px', borderRadius: '16px', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' } },
+      { type: 'heading', content: 'Готовы начать?', animation: 'fade-in-up', styles: { ...ds, fontSize: '36px', padding: '0 16px 8px', gradientText: 'linear-gradient(135deg, #a855f7, #ec4899)' } },
+      { type: 'text', content: 'Присоединяйтесь к 10 000+ клиентов по всему миру', animation: 'fade-in-up', styles: { ...ds, fontSize: '16px', textColor: '#94a3b8', padding: '0 16px 20px' } },
+      { type: 'button', content: 'Попробовать бесплатно', animation: 'scale-in', hoverEffect: 'hover-lift', buttonStyle: 'gradient', styles: { ...ds, fontSize: '16px', padding: '16px' } },
+      { type: 'spacer', content: '', styles: { ...ds, padding: '16px' } },
+    ]
+  },
+  {
+    id: 'section-faq',
+    name: 'FAQ секция',
+    description: 'Вопросы и ответы',
+    icon: <HelpCircle className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Часто задаваемые вопросы', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '24px 16px 16px' } },
+      { type: 'accordion', content: 'Как начать работу?|Зарегистрируйтесь и выберите подходящий тариф. Настройка займёт 5 минут.\nСколько стоит?|Базовый план бесплатный. Про-версия от 990₽/мес.\nЕсть ли пробный период?|Да, 14 дней бесплатного доступа ко всем функциям.\nКак связаться с поддержкой?|Напишите нам в Telegram или на email — ответим в течение часа.', animation: 'fade-in-up', styles: { ...ds, padding: '20px', backgroundColor: '#141418', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+    ]
+  },
+  {
+    id: 'section-pricing',
+    name: 'Тарифы',
+    description: 'Ценовые планы',
+    icon: <CreditCard className="w-4 h-4" />,
+    blocks: [
+      { type: 'heading', content: 'Тарифы', animation: 'fade-in-up', styles: { ...ds, fontSize: '32px', padding: '24px 16px 16px' } },
+      { type: 'columns', content: '⭐ Старт|5 000₽/мес\n• 1 проект\n• Базовый дизайн\n• Email-поддержка||🚀 Бизнес|15 000₽/мес\n• 5 проектов\n• Премиум дизайн\n• Приоритет-поддержка||💎 Премиум|30 000₽/мес\n• Безлимит\n• Уникальный дизайн\n• Личный менеджер', animation: 'fade-in-up', hoverEffect: 'hover-lift', styles: { ...ds, padding: '20px', backgroundColor: '#141418', borderRadius: '12px', textColor: '#e2e8f0', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' } },
+    ]
+  },
+  {
+    id: 'section-stats',
+    name: 'Статистика',
+    description: 'Счётчики в ряд',
+    icon: <BarChart3 className="w-4 h-4" />,
+    blocks: [
+      { type: 'counter', content: '10K+|Клиентов', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', textColor: '#22c55e', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'counter', content: '99.8%|Uptime', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', textColor: '#22c55e', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'counter', content: '24/7|Поддержка', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', textColor: '#22c55e', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+      { type: 'counter', content: '200+|Интеграций', animation: 'blur-in', hoverEffect: 'hover-glow', styles: { ...ds, padding: '16px', backgroundColor: '#141418', borderRadius: '12px', textColor: '#22c55e', boxShadow: '0 2px 15px rgba(0,0,0,0.2)' } },
+    ]
+  },
+];
+
 /* Separate components for page templates and block examples */
 
 interface PageTemplatesListProps {
@@ -1146,6 +1235,73 @@ export const BlockExamplesList = ({ onAddBlocks }: BlockExamplesListProps) => (
     ))}
   </Accordion>
 );
+
+// Section Templates List
+interface SectionTemplatesListProps {
+  onAddBlocks: (blocks: Omit<PlaygroundBlock, 'id'>[]) => void;
+}
+
+export const SectionTemplatesList = ({ onAddBlocks }: SectionTemplatesListProps) => (
+  <div className="grid grid-cols-2 gap-2">
+    {SECTION_TEMPLATES.map((section, index) => (
+      <motion.div
+        key={section.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.03 }}
+      >
+        <Button
+          variant="outline"
+          className="w-full h-auto py-3 px-3 flex flex-col items-center gap-1 hover:border-primary/50 hover:bg-primary/5"
+          onClick={() => onAddBlocks(section.blocks)}
+        >
+          <span className="text-primary">{section.icon}</span>
+          <span className="text-xs font-medium">{section.name}</span>
+          <span className="text-[10px] text-muted-foreground leading-tight">
+            {section.description}
+          </span>
+        </Button>
+      </motion.div>
+    ))}
+  </div>
+);
+
+// Color Scheme Picker
+interface ColorSchemePickerProps {
+  blocks: PlaygroundBlock[];
+  onApplyScheme: (updatedBlocks: PlaygroundBlock[], bgColor: string) => void;
+}
+
+export const ColorSchemePicker = ({ blocks, onApplyScheme }: ColorSchemePickerProps) => {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  
+  const handleApply = (scheme: ColorScheme) => {
+    const updated = applyColorScheme(blocks, scheme);
+    onApplyScheme(updated, scheme.background);
+    setSelectedId(scheme.id);
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {COLOR_SCHEMES.map((scheme) => (
+        <button
+          key={scheme.id}
+          className={`w-full text-left p-2.5 rounded-lg border transition-all duration-200 hover:border-primary/50 ${
+            selectedId === scheme.id ? 'border-primary bg-primary/5' : 'border-border'
+          }`}
+          onClick={() => handleApply(scheme)}
+        >
+          <div
+            className="w-full h-5 rounded-md mb-1.5"
+            style={{ background: scheme.preview }}
+          />
+          <div className="text-xs font-medium">{scheme.name}</div>
+          <div className="text-[10px] text-muted-foreground leading-tight">{scheme.description}</div>
+        </button>
+      ))}
+    </div>
+  );
+};
 
 /* Legacy combined component for backward compatibility */
 interface ProjectTemplatesProps {

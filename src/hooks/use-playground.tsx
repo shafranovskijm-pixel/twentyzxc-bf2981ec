@@ -251,6 +251,11 @@ export const usePlayground = () => {
     ));
   }, [setBlocksWithHistory]);
 
+  const replaceAllBlocks = useCallback((newBlocks: PlaygroundBlock[]) => {
+    setBlocksWithHistory(newBlocks);
+    setSelectedBlockId(null);
+  }, [setBlocksWithHistory]);
+
   return {
     blocks,
     selectedBlock,
@@ -274,6 +279,7 @@ export const usePlayground = () => {
     exportData,
     importData,
     toggleBlockHidden,
+    replaceAllBlocks,
     undo,
     redo,
     canUndo,

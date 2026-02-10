@@ -6,7 +6,7 @@ export interface PlaygroundBlock {
   anchorId?: string;
   animation?: string;
   hoverEffect?: string;
-  buttonStyle?: 'filled' | 'outline' | 'gradient';
+  buttonStyle?: 'filled' | 'outline' | 'gradient' | 'glass' | 'neon';
   hidden?: boolean;
   styles: BlockStyles;
 }
