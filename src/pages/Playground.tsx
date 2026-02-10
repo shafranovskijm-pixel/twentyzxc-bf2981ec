@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search, LayoutTemplate, Droplets, MoreHorizontal, MessageCircle } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
+import { AdminLoginDialog } from "@/components/portfolio/AdminLoginDialog";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,14 +41,32 @@ import {
 
 const Playground = () => {
   const { toast } = useToast();
-  const { isAdmin } = useAdminAuth();
+  const { isAdmin, signIn, signOut } = useAdminAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [savedSlug, setSavedSlug] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
   const [deviceMode, setDeviceMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isPreview, setIsPreview] = useState(false);
   const [copiedStyles, setCopiedStyles] = useState<BlockStyles | null>(null);
+
+  // Ctrl + Right-click to open admin login
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+        if (isAdmin) {
+          signOut();
+          toast({ title: "Вы вышли из режима администратора" });
+        } else {
+          setShowAdminLogin(true);
+        }
+      }
+    };
+    window.addEventListener('contextmenu', handleContextMenu);
+    return () => window.removeEventListener('contextmenu', handleContextMenu);
+  }, [isAdmin, signOut, toast]);
 
   const {
     blocks,
@@ -665,6 +684,12 @@ const Playground = () => {
         onSave={handleSave}
         isSaving={isSaving}
         existingSlug={savedSlug}
+      />
+
+      <AdminLoginDialog
+        onLogin={signIn}
+        open={showAdminLogin}
+        onOpenChange={setShowAdminLogin}
       />
     </>
   );

@@ -15,13 +15,18 @@ import { toast } from "sonner";
 
 interface AdminLoginDialogProps {
   onLogin: (email: string, password: string) => Promise<{ error: Error | null }>;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const AdminLoginDialog = ({ onLogin }: AdminLoginDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const AdminLoginDialog = ({ onLogin, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AdminLoginDialogProps) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = controlledOnOpenChange || setInternalOpen;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +49,14 @@ export const AdminLoginDialog = ({ onLogin }: AdminLoginDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Lock className="w-4 h-4" />
-          Админ
-        </Button>
-      </DialogTrigger>
+      {controlledOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Lock className="w-4 h-4" />
+            Админ
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Вход для администратора</DialogTitle>
