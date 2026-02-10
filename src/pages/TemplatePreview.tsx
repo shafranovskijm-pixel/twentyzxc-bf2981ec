@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { getTemplateById, getCategoryByTemplateId } from "@/data/templates";
 import { LandingPreview, CorporatePreview, EcommercePreview, WebAppPreview } from "@/components/templates/previews";
 import { 
@@ -118,6 +119,12 @@ const TemplatePreview = () => {
   const deviceWidth = getDeviceWidth(device);
 
   return (
+    <>
+    <Helmet>
+      <title>{template.name} — Превью шаблона | 24ZXC</title>
+      <meta name="description" content={template.description} />
+      <link rel="canonical" href={`https://24zxc.ru/templates/${id}/preview`} />
+    </Helmet>
     <div className="min-h-screen bg-zinc-950 relative">
       {/* Background pattern */}
       <div className="fixed inset-0 opacity-30 pointer-events-none">
@@ -227,6 +234,7 @@ const TemplatePreview = () => {
         </motion.div>
       </div>
     </div>
+    </>
   );
 };
 
