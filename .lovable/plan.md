@@ -1,87 +1,32 @@
 
-# Админка для управления SEO и настройками сайта
 
-## Что будет сделано
+# Исправление авторизации для отзывов (403 Forbidden)
 
-### Новая таблица `site_settings` в базе данных
+## Проблема
 
-Универсальная таблица "ключ-значение" для хранения настроек сайта:
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-| key | value (jsonb) |
-|---|---|
-| `seo_keywords` | `["веб-разработка", "24zxc", ...]` |
-| `seo_description` | `"24ZXC — веб-разработка..."` |
-| `seo_title` | `"24ZXC — Веб-разработка..."` |
-| `og_title` | `"24ZXC — Веб-разработка..."` |
-| `og_description` | `"Цифровые решения..."` |
-| `contact_email` | `"info@24zxc.ru"` |
-| `contact_phone` | `"+7..."` |
-| `contact_telegram` | `"@24zxc"` |
+## Решение
 
-RLS: чтение -- всем, запись -- только admin.
+### 1. Включить Google OAuth через настройки аутентификации
 
-### Новая страница `/admin`
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-Доступна только авторизованным админам (используется существующий `useAdminAuth`). Включает:
+### 2. Добавить redirect URL в список разрешённых
 
-1. **SEO-настройки** -- редактирование keywords (добавление/удаление тегами), title, description
-2. **OG-теги** -- заголовок и описание для соцсетей
-3. **Контактные данные** -- email, телефон, Telegram (используются в футере и на странице контактов)
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### Интеграция
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-- `index.html` останется со статичными значениями (для SSR/краулеров)
-- Helmet на главной странице будет подтягивать keywords из БД, если они заданы
-- Хук `useSiteSettings()` для получения настроек из БД
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
 
 ## Технические детали
 
-### Новые файлы
-- `src/pages/Admin.tsx` -- страница админки с табами (SEO, Контакты)
-- `src/hooks/use-site-settings.tsx` -- хук для CRUD настроек
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
 
-### Изменяемые файлы
-- `src/App.tsx` -- добавить роут `/admin`
-- `src/pages/Index.tsx` -- подтягивать keywords из БД через Helmet
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
-### Миграция БД
-
-```sql
-CREATE TABLE public.site_settings (
-  key text PRIMARY KEY,
-  value jsonb NOT NULL DEFAULT '{}',
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
-
--- Чтение для всех
-CREATE POLICY "Site settings readable by everyone"
-  ON public.site_settings FOR SELECT
-  USING (true);
-
--- Запись только для админов
-CREATE POLICY "Admins can update site settings"
-  ON public.site_settings FOR UPDATE
-  USING (has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Admins can insert site settings"
-  ON public.site_settings FOR INSERT
-  WITH CHECK (has_role(auth.uid(), 'admin'));
-
--- Начальные данные
-INSERT INTO public.site_settings (key, value) VALUES
-  ('seo_keywords', '"веб-разработка, создание сайтов, реклама яндекс директ, таргетированная реклама, 24zxc, конструктор сайтов, шаблоны сайтов, лендинг под ключ, сайт для бизнеса, фис фрдо, лицензия на образовательную деятельность, сайт для образовательной организации"'),
-  ('seo_title', '"24ZXC — Веб-разработка, реклама и услуги для бизнеса"'),
-  ('seo_description', '"Создаём современные сайты, настраиваем рекламу в Яндекс Директ и соцсетях. Полный спектр цифровых услуг для вашего бизнеса."'),
-  ('contact_email', '"info@24zxc.ru"'),
-  ('contact_telegram', '"@24zxc"');
-```
-
-### UI админки
-
-Страница с двумя секциями:
-- **SEO**: поле keywords с возможностью добавлять/удалять слова как теги (Badge + крестик), поля title и description
-- **Контакты**: email, телефон, Telegram
-
-Вход через существующий `useAdminAuth` -- если не админ, показываем диалог входа. Кнопка "Сохранить" для каждой секции.
