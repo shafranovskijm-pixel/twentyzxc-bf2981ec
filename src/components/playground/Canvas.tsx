@@ -143,14 +143,16 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
     switch (block.type) {
       case 'navbar': {
         const items = block.content.split('\n').filter(Boolean);
+        const [logoItem, ...menuItems] = items;
+        const [logoLabel] = (logoItem || '').split('|').map(s => s.trim());
         return wrapWithLink(
-          <motion.nav className={cn(baseClasses, "flex items-center justify-between flex-wrap gap-4")} style={{ ...style, textAlign: undefined }} onClick={onClick} {...animProps}>
-            <div className="font-bold text-lg" style={{ color: block.styles.textColor }}>☰</div>
+          <motion.nav className={cn(baseClasses, "flex items-center justify-between flex-wrap gap-4 backdrop-blur-md")} style={{ ...style, textAlign: undefined, backgroundColor: style.backgroundColor || 'rgba(0,0,0,0.5)' }} onClick={onClick} {...animProps}>
+            <div className="font-bold text-lg tracking-tight" style={{ color: block.styles.textColor }}>{logoLabel || '☰'}</div>
             <div className="flex items-center gap-6 flex-wrap">
-              {items.map((item, i) => {
+              {menuItems.map((item, i) => {
                 const [label, href] = item.split('|').map(s => s.trim());
                 return (
-                  <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>
+                  <span key={i} className="text-sm cursor-pointer transition-all duration-200 hover:opacity-100 opacity-70 hover:translate-y-[-1px]" style={{ color: block.styles.textColor }}>
                     {label}{href && <span className="text-[10px] text-muted-foreground ml-1">→{href}</span>}
                   </span>
                 );
@@ -166,16 +168,20 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
       case 'button': {
         const btnStyle = block.buttonStyle || 'filled';
         const btnClass = cn(
-          "px-6 py-3 font-medium hover:opacity-90 transition-opacity",
-          btnStyle === 'filled' && "bg-primary text-primary-foreground",
-          btnStyle === 'outline' && "bg-transparent border-2 border-current",
-          btnStyle === 'gradient' && "bg-gradient-to-r from-primary to-accent text-primary-foreground",
+          "px-6 py-3 font-medium transition-all duration-300 relative overflow-hidden",
+          btnStyle === 'filled' && "bg-primary text-primary-foreground hover:opacity-90",
+          btnStyle === 'outline' && "bg-transparent border-2 border-current hover:opacity-90",
+          btnStyle === 'gradient' && "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02]",
+          btnStyle === 'glass' && "backdrop-blur-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-white/30",
+          btnStyle === 'neon' && "bg-transparent border-2 hover:shadow-[0_0_20px_currentColor,0_0_40px_currentColor] hover:scale-[1.02]",
           block.hoverEffect
         );
+        const neonStyle = btnStyle === 'neon' ? { borderColor: block.styles.textColor || '#a855f7', textShadow: `0 0 10px ${block.styles.textColor || '#a855f7'}` } : {};
         return wrapWithLink(
           <motion.div className={cn(baseClasses, "inline-block")} style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} onClick={onClick} {...animProps}>
-            <button className={btnClass} style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius, color: btnStyle === 'outline' ? block.styles.textColor : undefined }}>
-              {block.content}
+            <button className={btnClass} style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius, color: btnStyle === 'outline' || btnStyle === 'neon' ? block.styles.textColor : undefined, ...neonStyle }}>
+              {btnStyle === 'gradient' && <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-700" />}
+              <span className="relative z-10">{block.content}</span>
             </button>
           </motion.div>
         );
@@ -271,10 +277,17 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         return wrapWithLink(
           <motion.div className={cn(baseClasses, "grid gap-4")} style={{ ...style, gridTemplateColumns: `repeat(${Math.min(cols.length, 4)}, 1fr)` }} onClick={onClick} {...animProps}>
             {cols.map((col, i) => {
-              const [title, desc] = col.split('|');
+              const parts = col.split('|');
+              const title = parts[0] || '';
+              const desc = parts[1] || '';
+              // Check if title starts with emoji
+              const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+              const emoji = emojiMatch ? emojiMatch[0].trim() : null;
+              const cleanTitle = emoji ? title.replace(emojiMatch![0], '') : title;
               return (
-                <div key={i} className="p-4 rounded-lg border border-border/30 text-center">
-                  <div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{title}</div>
+                <div key={i} className="p-4 rounded-lg border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" style={{ borderColor: block.styles.borderColor || 'rgba(255,255,255,0.1)', backgroundColor: block.styles.backgroundColor !== 'transparent' ? undefined : 'rgba(255,255,255,0.03)' }}>
+                  {emoji && <div className="text-3xl mb-2">{emoji}</div>}
+                  <div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{cleanTitle}</div>
                   {desc && <div className="text-sm opacity-70">{desc}</div>}
                 </div>
               );

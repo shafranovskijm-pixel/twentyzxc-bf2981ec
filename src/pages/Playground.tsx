@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Helmet } from "react-helmet-async";
-import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search } from "lucide-react";
+import { Save, Share2, RotateCcw, Settings, Layers, Palette, ExternalLink, Layout, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Puzzle, Type, Paintbrush, Download, ListTree, Upload, Copy, FileJson, Search, LayoutTemplate, Droplets } from "lucide-react";
 import { TelegramConnectButton } from "@/components/playground/TelegramConnectButton";
 import { FontSettings } from "@/components/playground/FontSettings";
 import Header from "@/components/Header";
@@ -15,7 +15,7 @@ import { BlockPalette } from "@/components/playground/BlockPalette";
 import { Canvas } from "@/components/playground/Canvas";
 import { BlockEditor } from "@/components/playground/BlockEditor";
 import { BlockStyles } from "@/data/playground-effects";
-import { ProjectTemplates, PageTemplatesList, BlockExamplesList } from "@/components/playground/ProjectTemplates";
+import { ProjectTemplates, PageTemplatesList, BlockExamplesList, SectionTemplatesList, ColorSchemePicker } from "@/components/playground/ProjectTemplates";
 import { PlaygroundCTA } from "@/components/playground/PlaygroundCTA";
 import { PublishedProjectsGallery } from "@/components/playground/PublishedProjectsGallery";
 import { FeedbackSection } from "@/components/playground/FeedbackSection";
@@ -66,6 +66,7 @@ const Playground = () => {
     exportData,
     importData,
     toggleBlockHidden,
+    replaceAllBlocks,
     undo,
     redo,
     canUndo,
@@ -388,6 +389,18 @@ const Playground = () => {
                     </AccordionContent>
                   </AccordionItem>
 
+                  <AccordionItem value="sections" className="border-border">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <LayoutTemplate className="w-4 h-4" />
+                        Готовые секции
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <SectionTemplatesList onAddBlocks={addBlocks} />
+                    </AccordionContent>
+                  </AccordionItem>
+
                   <AccordionItem value="blocks" className="border-border">
                     <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
                       <span className="flex items-center gap-2">
@@ -439,6 +452,25 @@ const Playground = () => {
                     </AccordionTrigger>
                     <AccordionContent>
                       <FontSettings settings={settings} onSettingsChange={setSettings} />
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="color-scheme" className="border-border">
+                    <AccordionTrigger className="text-sm font-medium text-muted-foreground hover:no-underline py-3">
+                      <span className="flex items-center gap-2">
+                        <Droplets className="w-4 h-4" />
+                        Цветовая схема
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <ColorSchemePicker
+                        blocks={blocks}
+                        onApplyScheme={(updatedBlocks, bgColor) => {
+                          replaceAllBlocks(updatedBlocks);
+                          setSettings({ ...settings, backgroundColor: bgColor });
+                          toast({ title: "Цветовая схема применена!" });
+                        }}
+                      />
                     </AccordionContent>
                   </AccordionItem>
 

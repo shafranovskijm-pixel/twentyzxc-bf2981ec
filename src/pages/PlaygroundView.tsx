@@ -174,11 +174,13 @@ const PlaygroundView = () => {
     switch (block.type) {
       case 'navbar': {
         const items = block.content.split('\n').filter(Boolean);
+        const [logoItem, ...menuItems] = items;
+        const [logoLabel] = (logoItem || '').split('|').map(s => s.trim());
         return wrapWithLink(block,
-          <motion.nav key={block.id} className={cn("flex items-center justify-between flex-wrap gap-4 sticky top-0 z-50", block.hoverEffect)} style={{ ...style, textAlign: undefined }} {...mp}>
-            <div className="font-bold text-lg" style={{ color: block.styles.textColor }}>☰</div>
+          <motion.nav key={block.id} className={cn("flex items-center justify-between flex-wrap gap-4 sticky top-0 z-50 backdrop-blur-md", block.hoverEffect)} style={{ ...style, textAlign: undefined, backgroundColor: style.backgroundColor || 'rgba(0,0,0,0.5)' }} {...mp}>
+            <div className="font-bold text-lg tracking-tight" style={{ color: block.styles.textColor }}>{logoLabel || '☰'}</div>
             <div className="flex items-center gap-6 flex-wrap">
-              {items.map((item, i) => {
+              {menuItems.map((item, i) => {
                 const [label, href] = item.split('|').map(s => s.trim());
                 if (href) {
                   const isAnchor = href.startsWith('#');
@@ -187,7 +189,7 @@ const PlaygroundView = () => {
                       key={i}
                       href={href}
                       {...(isAnchor ? {} : { target: "_blank", rel: "noopener noreferrer" })}
-                      className="text-sm hover:opacity-80 cursor-pointer transition-opacity no-underline"
+                      className="text-sm cursor-pointer transition-all duration-200 no-underline opacity-70 hover:opacity-100 hover:translate-y-[-1px]"
                       style={{ color: block.styles.textColor }}
                       onClick={isAnchor ? (e) => {
                         e.preventDefault();
@@ -198,7 +200,7 @@ const PlaygroundView = () => {
                     </a>
                   );
                 }
-                return <span key={i} className="text-sm hover:opacity-80 cursor-pointer transition-opacity" style={{ color: block.styles.textColor }}>{label}</span>;
+                return <span key={i} className="text-sm cursor-pointer transition-all duration-200 opacity-70 hover:opacity-100" style={{ color: block.styles.textColor }}>{label}</span>;
               })}
             </div>
           </motion.nav>
@@ -211,15 +213,20 @@ const PlaygroundView = () => {
       case 'button': {
         const bs = block.buttonStyle || 'filled';
         const btnCls = cn(
-          "px-6 py-3 font-medium hover:opacity-90 transition-opacity",
-          bs === 'filled' && "bg-primary text-primary-foreground",
-          bs === 'outline' && "bg-transparent border-2 border-current",
-          bs === 'gradient' && "bg-gradient-to-r from-primary to-accent text-primary-foreground",
+          "px-6 py-3 font-medium transition-all duration-300 relative overflow-hidden",
+          bs === 'filled' && "bg-primary text-primary-foreground hover:opacity-90",
+          bs === 'outline' && "bg-transparent border-2 border-current hover:opacity-90",
+          bs === 'gradient' && "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.02]",
+          bs === 'glass' && "backdrop-blur-md bg-white/10 border border-white/20 text-white hover:bg-white/20 hover:border-white/30",
+          bs === 'neon' && "bg-transparent border-2 hover:shadow-[0_0_20px_currentColor,0_0_40px_currentColor] hover:scale-[1.02]",
           block.hoverEffect
         );
+        const neonStyle = bs === 'neon' ? { borderColor: block.styles.textColor || '#a855f7', textShadow: `0 0 10px ${block.styles.textColor || '#a855f7'}` } : {};
         return wrapWithLink(block,
           <motion.div key={block.id} style={{ textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} {...mp}>
-            <button className={btnCls} style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius, color: bs === 'outline' ? block.styles.textColor : undefined }}>{block.content}</button>
+            <button className={btnCls} style={{ fontSize: block.styles.fontSize, borderRadius: block.styles.borderRadius, color: bs === 'outline' || bs === 'neon' ? block.styles.textColor : undefined, ...neonStyle }}>
+              <span className="relative z-10">{block.content}</span>
+            </button>
           </motion.div>
         );
       }
@@ -240,8 +247,19 @@ const PlaygroundView = () => {
         return wrapWithLink(block,
           <motion.div key={block.id} className={cn("grid gap-4", block.hoverEffect)} style={{ ...style, gridTemplateColumns: `repeat(${Math.min(cols.length, 4)}, 1fr)` }} {...mp}>
             {cols.map((col, i) => {
-              const [title, desc] = col.split('|');
-              return <div key={i} className="p-4 rounded-lg border border-border/30 text-center"><div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{title}</div>{desc && <div className="text-sm opacity-70">{desc}</div>}</div>;
+              const parts = col.split('|');
+              const title = parts[0] || '';
+              const desc = parts[1] || '';
+              const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+              const emoji = emojiMatch ? emojiMatch[0].trim() : null;
+              const cleanTitle = emoji ? title.replace(emojiMatch![0], '') : title;
+              return (
+                <div key={i} className="p-4 rounded-lg border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" style={{ borderColor: block.styles.borderColor || 'rgba(255,255,255,0.1)' }}>
+                  {emoji && <div className="text-3xl mb-2">{emoji}</div>}
+                  <div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{cleanTitle}</div>
+                  {desc && <div className="text-sm opacity-70">{desc}</div>}
+                </div>
+              );
             })}
           </motion.div>
         );
