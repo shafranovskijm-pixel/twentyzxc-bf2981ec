@@ -1,4 +1,4 @@
-import { Mail, Phone, Send, Diamond, Copy, ExternalLink } from "lucide-react";
+import { Mail, Phone, Send, Diamond, Copy, ExternalLink, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -178,7 +178,12 @@ const Footer = () => {
                 <Diamond className="w-3 h-3 text-primary" />
                 <span>© 2024 24ZXC. Все права защищены.</span>
               </div>
-              <div>Премиум решения по всей России</div>
+              <div className="flex items-center gap-4">
+                <span>Премиум решения по всей России</span>
+                <Link to="/admin" className="text-muted-foreground/50 hover:text-muted-foreground transition-colors" title="Админ-панель">
+                  <Lock className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
           </div>
         </div>
