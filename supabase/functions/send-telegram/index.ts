@@ -13,7 +13,6 @@ interface ContactFormData {
   phone?: string;
   company?: string;
   message?: string;
-  // Brief-specific fields
   projectType?: string;
   description?: string;
   features?: string;
@@ -25,6 +24,19 @@ interface ContactFormData {
   products?: string;
   payment?: string;
   delivery?: string;
+}
+
+// Simple in-memory rate limiter
+const recentSubmissions = new Map<string, number>();
+const RATE_LIMIT_MS = 10000; // 10 seconds between submissions
+
+function cleanupOldEntries() {
+  const now = Date.now();
+  for (const [key, timestamp] of recentSubmissions) {
+    if (now - timestamp > RATE_LIMIT_MS * 6) {
+      recentSubmissions.delete(key);
+    }
+  }
 }
 
 const escapeHtml = (text: string): string => {
@@ -97,14 +109,27 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting
+    cleanupOldEntries();
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const lastSubmit = recentSubmissions.get(ip) || 0;
+    if (Date.now() - lastSubmit < RATE_LIMIT_MS) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Please wait before submitting again' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    recentSubmissions.set(ip, Date.now());
+
     const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
-    if (!TELEGRAM_BOT_TOKEN) {
-      throw new Error('TELEGRAM_BOT_TOKEN is not configured');
-    }
-    if (!TELEGRAM_CHAT_ID) {
-      throw new Error('TELEGRAM_CHAT_ID is not configured');
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+      console.error('Missing Telegram configuration');
+      return new Response(
+        JSON.stringify({ success: false, error: 'Service temporarily unavailable' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data: ContactFormData = await req.json();
@@ -113,6 +138,14 @@ serve(async (req) => {
     if (!data.name || !data.email) {
       return new Response(
         JSON.stringify({ success: false, error: 'Name and email are required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Input length validation
+    if (data.name.length > 200 || data.email.length > 255) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Input too long' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -132,11 +165,10 @@ serve(async (req) => {
       }
     );
 
-    const telegramResult = await telegramResponse.json();
-
     if (!telegramResponse.ok) {
+      const telegramResult = await telegramResponse.json();
       console.error('Telegram API error:', telegramResult);
-      throw new Error(`Telegram API error: ${telegramResult.description || 'Unknown error'}`);
+      throw new Error('Message delivery failed');
     }
 
     return new Response(
@@ -146,7 +178,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error sending telegram message:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: 'Failed to send message. Please try again later.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -7,16 +7,49 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Simple in-memory rate limiter
+const recentSubmissions = new Map<string, number>();
+const RATE_LIMIT_MS = 10000; // 10 seconds between submissions
+
+function cleanupOldEntries() {
+  const now = Date.now();
+  for (const [key, timestamp] of recentSubmissions) {
+    if (now - timestamp > RATE_LIMIT_MS * 6) {
+      recentSubmissions.delete(key);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting
+    cleanupOldEntries();
+    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const lastSubmit = recentSubmissions.get(ip) || 0;
+    if (Date.now() - lastSubmit < RATE_LIMIT_MS) {
+      return new Response(JSON.stringify({ error: "Please wait before submitting again" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    recentSubmissions.set(ip, Date.now());
+
     const { slug, name, contact, message } = await req.json();
 
     if (!slug || !name || !contact) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Input length validation
+    if (slug.length > 100 || name.length > 200 || contact.length > 255 || (message && message.length > 2000)) {
+      return new Response(JSON.stringify({ error: "Input too long" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
