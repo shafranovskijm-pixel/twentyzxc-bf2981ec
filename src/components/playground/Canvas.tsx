@@ -6,6 +6,7 @@ import { PlaygroundBlock, ANIMATION_EFFECTS } from "@/data/playground-effects";
 import { cn } from "@/lib/utils";
 import { SortableBlock } from "./SortableBlock";
 import { Trash2, Copy, ImagePlus, Loader2 } from "lucide-react";
+import { isLucideIcon, getLucideIconName, LucideIconByName } from "./LucideIconPicker";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CanvasProps {
@@ -280,13 +281,23 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
               const parts = col.split('|');
               const title = parts[0] || '';
               const desc = parts[1] || '';
-              // Check if title starts with emoji
-              const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
-              const emoji = emojiMatch ? emojiMatch[0].trim() : null;
-              const cleanTitle = emoji ? title.replace(emojiMatch![0], '') : title;
+              // Check if title starts with lucide icon or emoji
+              let iconElement: React.ReactNode = null;
+              let cleanTitle = title;
+              const lucideMatch = title.match(/^lucide:([a-z0-9-]+)\s*/);
+              if (lucideMatch) {
+                iconElement = <LucideIconByName name={lucideMatch[1]} size={28} className="mx-auto" />;
+                cleanTitle = title.replace(lucideMatch[0], '');
+              } else {
+                const emojiMatch = title.match(/^(\p{Emoji_Presentation}|\p{Emoji}\uFE0F?)\s*/u);
+                if (emojiMatch) {
+                  iconElement = <span className="text-3xl">{emojiMatch[0].trim()}</span>;
+                  cleanTitle = title.replace(emojiMatch[0], '');
+                }
+              }
               return (
                 <div key={i} className="p-4 rounded-lg border text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg" style={{ borderColor: block.styles.borderColor || 'rgba(255,255,255,0.1)', backgroundColor: block.styles.backgroundColor !== 'transparent' ? undefined : 'rgba(255,255,255,0.03)' }}>
-                  {emoji && <div className="text-3xl mb-2">{emoji}</div>}
+                  {iconElement && <div className="mb-2 flex justify-center">{iconElement}</div>}
                   <div className="font-semibold mb-1" style={{ color: block.styles.textColor }}>{cleanTitle}</div>
                   {desc && <div className="text-sm opacity-70">{desc}</div>}
                 </div>
@@ -296,10 +307,17 @@ export const Canvas = ({ blocks, settings, selectedBlockId, onSelectBlock, onReo
         );
       }
       case 'icon-text': {
-        const [icon, title, desc] = block.content.split('|');
+        const [iconStr, title, desc] = block.content.split('|');
+        const isLucide = iconStr && isLucideIcon(iconStr);
         return wrapWithLink(
           <motion.div className={cn(baseClasses, "flex items-center gap-4")} style={style} onClick={onClick} {...animProps}>
-            <span className="text-4xl">{icon}</span>
+            {isLucide ? (
+              <div className="shrink-0" style={{ color: block.styles.textColor }}>
+                <LucideIconByName name={getLucideIconName(iconStr)} size={32} />
+              </div>
+            ) : (
+              <span className="text-4xl shrink-0">{iconStr}</span>
+            )}
             <div>
               <div className="font-semibold" style={{ color: block.styles.textColor }}>{title}</div>
               {desc && <div className="text-sm opacity-70">{desc}</div>}

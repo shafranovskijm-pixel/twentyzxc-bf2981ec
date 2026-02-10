@@ -73,7 +73,9 @@ function renderBlockHTML(block: PlaygroundBlock, globalFont?: string): string {
       const cols = block.content.split('||').filter(Boolean);
       return `<div style="${style} display: grid; grid-template-columns: repeat(${Math.min(cols.length, 4)}, 1fr); gap: 16px;">${cols.map(col => {
         const [title, desc] = col.split('|');
-        return `<div style="padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(title)}</div>${desc ? `<div style="font-size: 0.875em; opacity: 0.7;">${escapeHtml(desc)}</div>` : ''}</div>`;
+        const lucideMatch = title.match(/^lucide:([a-z0-9-]+)\s*/);
+        const cleanTitle = lucideMatch ? title.replace(lucideMatch[0], '') : title;
+        return `<div style="padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;"><div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(cleanTitle)}</div>${desc ? `<div style="font-size: 0.875em; opacity: 0.7;">${escapeHtml(desc)}</div>` : ''}</div>`;
       }).join('')}</div>`;
     }
     case 'navbar': {
@@ -90,8 +92,10 @@ function renderBlockHTML(block: PlaygroundBlock, globalFont?: string): string {
       return `<footer style="${style} border-top: 1px solid rgba(255,255,255,0.1);"><div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875em;"><span>${escapeHtml(parts[0] || '')}</span>${parts.length > 1 ? `<div style="display: flex; gap: 16px; opacity: 0.7;">${parts.slice(1).map(p => `<span>${escapeHtml(p)}</span>`).join('')}</div>` : ''}</div></footer>`;
     }
     case 'icon-text': {
-      const [icon, title, desc] = block.content.split('|');
-      return `<div style="${style} display: flex; align-items: center; gap: 16px;"><span style="font-size: 2.5em;">${icon}</span><div><div style="font-weight: 600;">${escapeHtml(title || '')}</div>${desc ? `<div style="font-size: 0.875em; opacity: 0.7;">${escapeHtml(desc)}</div>` : ''}</div></div>`;
+      const [iconStr, title, desc] = block.content.split('|');
+      const isLucide = iconStr && iconStr.startsWith('lucide:');
+      const iconHtml = isLucide ? `<span style="font-size: 2em;">●</span>` : `<span style="font-size: 2.5em;">${iconStr}</span>`;
+      return `<div style="${style} display: flex; align-items: center; gap: 16px;">${iconHtml}<div><div style="font-weight: 600;">${escapeHtml(title || '')}</div>${desc ? `<div style="font-size: 0.875em; opacity: 0.7;">${escapeHtml(desc)}</div>` : ''}</div></div>`;
     }
     case 'gallery': {
       const images = block.content.split('\n').filter(Boolean);
