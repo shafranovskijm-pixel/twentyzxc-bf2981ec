@@ -384,7 +384,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      playground_projects_public: {
+        Row: {
+          author_name: string | null
+          blocks: Json | null
+          created_at: string | null
+          id: string | null
+          is_featured: boolean | null
+          preview_image: string | null
+          settings: Json | null
+          slug: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          blocks?: Json | null
+          created_at?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          preview_image?: string | null
+          settings?: Json | null
+          slug?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          blocks?: Json | null
+          created_at?: string | null
+          id?: string | null
+          is_featured?: boolean | null
+          preview_image?: string | null
+          settings?: Json | null
+          slug?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_listing_contact_info: {

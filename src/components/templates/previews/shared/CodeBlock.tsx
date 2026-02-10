@@ -27,9 +27,17 @@ export const CodeBlock = ({
 
   // Simple syntax highlighting colors
   const highlightSyntax = (line: string) => {
-    return line
+    // First escape HTML entities to prevent XSS
+    const escaped = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+    
+    return escaped
       .replace(/(const|let|var|function|return|import|export|from|async|await)/g, '<span class="text-cyan-400">$1</span>')
-      .replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="text-emerald-400">$1</span>')
+      .replace(/(&quot;.*?&quot;|&#039;.*?&#039;|`.*?`)/g, '<span class="text-emerald-400">$1</span>')
       .replace(/(\d+)/g, '<span class="text-amber-400">$1</span>')
       .replace(/(\/\/.*$)/gm, '<span class="text-zinc-500">$1</span>')
       .replace(/(\{|\}|\(|\)|\[|\])/g, '<span class="text-zinc-400">$1</span>');
