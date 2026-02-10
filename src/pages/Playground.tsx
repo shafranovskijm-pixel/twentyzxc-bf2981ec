@@ -326,6 +326,7 @@ const Playground = () => {
                     {selectedBlock ? (
                       <BlockEditor
                         block={selectedBlock}
+                        allBlocks={blocks}
                         onUpdate={(updates) => updateBlock(selectedBlock.id, updates)}
                         onUpdateStyles={(styles) => updateBlockStyles(selectedBlock.id, styles)}
                         onDelete={() => deleteBlock(selectedBlock.id)}
@@ -505,6 +506,7 @@ const Playground = () => {
                 {selectedBlock ? (
                   <BlockEditor
                     block={selectedBlock}
+                    allBlocks={blocks}
                     onUpdate={(updates) => updateBlock(selectedBlock.id, updates)}
                     onUpdateStyles={(styles) => updateBlockStyles(selectedBlock.id, styles)}
                     onDelete={() => deleteBlock(selectedBlock.id)}

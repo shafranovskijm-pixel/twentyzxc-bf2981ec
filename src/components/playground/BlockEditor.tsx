@@ -22,6 +22,7 @@ const FONT_SIZE_PRESETS = [
 
 interface BlockEditorProps {
   block: PlaygroundBlock;
+  allBlocks: PlaygroundBlock[];
   onUpdate: (updates: Partial<PlaygroundBlock>) => void;
   onUpdateStyles: (styles: Partial<PlaygroundBlock['styles']>) => void;
   onDelete: () => void;
@@ -34,6 +35,7 @@ interface BlockEditorProps {
 
 export const BlockEditor = ({
   block,
+  allBlocks,
   onUpdate,
   onUpdateStyles,
   onDelete,
@@ -175,23 +177,50 @@ export const BlockEditor = ({
       })()}
 
       {/* Anchor ID */}
-      {block.type !== 'navbar' && (
-        <div className="space-y-2">
-          <Label className="flex items-center gap-1.5">
-            <span className="text-xs">⚓</span>
-            ID якоря
-          </Label>
-          <Input
-            value={block.anchorId || ''}
-            onChange={(e) => onUpdate({ anchorId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') || undefined })}
-            className="bg-secondary/50 border-border"
-            placeholder="например: about, services"
-          />
-          <p className="text-xs text-muted-foreground">
-            Используйте в навигации как <code className="bg-secondary px-1 rounded">#якорь</code>
-          </p>
-        </div>
-      )}
+      {block.type !== 'navbar' && (() => {
+        const existingAnchors = allBlocks
+          .filter(b => b.id !== block.id && b.anchorId)
+          .map(b => ({ id: b.anchorId!, type: b.type, content: b.content?.slice(0, 30) }));
+        return (
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1.5">
+              <span className="text-xs">⚓</span>
+              ID якоря
+            </Label>
+            <Input
+              value={block.anchorId || ''}
+              onChange={(e) => onUpdate({ anchorId: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') || undefined })}
+              className="bg-secondary/50 border-border"
+              placeholder="например: about, services"
+            />
+            {existingAnchors.length > 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Существующие якоря на странице:</p>
+                <div className="flex gap-1.5 flex-wrap">
+                  {existingAnchors.map(a => (
+                    <button
+                      key={a.id}
+                      onClick={() => onUpdate({ anchorId: a.id })}
+                      className={cn(
+                        "text-xs px-2 py-1 rounded border transition-colors",
+                        block.anchorId === a.id
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                      )}
+                      title={`${a.type}: ${a.content || ''}`}
+                    >
+                      #{a.id}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Используйте в навигации как <code className="bg-secondary px-1 rounded">#якорь</code>
+            </p>
+          </div>
+        );
+      })()}
 
       {/* Button Style */}
       {block.type === 'button' && (
