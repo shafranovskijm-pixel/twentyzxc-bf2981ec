@@ -223,12 +223,18 @@ const PlaygroundView = () => {
           </motion.div>
         );
       }
-      case 'image':
+      case 'image': {
+        const isFullWidth = block.styles.padding === '0px' && block.styles.borderRadius === '0px';
         return wrapWithLink(block,
-          <motion.div key={block.id} className={block.hoverEffect} style={{ padding: block.styles.padding, textAlign: block.styles.textAlign as React.CSSProperties['textAlign'] }} {...mp}>
-            <img src={block.content} alt="" className="max-w-full h-auto" style={{ borderRadius: block.styles.borderRadius }} />
+          <motion.div key={block.id} className={block.hoverEffect} style={{ 
+            padding: isFullWidth ? 0 : block.styles.padding, 
+            textAlign: block.styles.textAlign as React.CSSProperties['textAlign'],
+            ...(isFullWidth ? { margin: '0 -24px', width: 'calc(100% + 48px)' } : {})
+          }} {...mp}>
+            <img src={block.content} alt="" className="max-w-full h-auto w-full" style={{ borderRadius: isFullWidth ? 0 : block.styles.borderRadius }} />
           </motion.div>
         );
+      }
       case 'columns': {
         const cols = block.content.split('||').filter(Boolean);
         return wrapWithLink(block,
@@ -326,7 +332,7 @@ const PlaygroundView = () => {
       case 'divider':
         return <motion.div key={block.id} className="py-4" {...mp}><div className="h-px w-full" style={{ backgroundColor: block.styles.textColor || '#333' }} /></motion.div>;
       case 'card':
-        return wrapWithLink(block, <motion.div key={block.id} className={cn("border border-border", block.hoverEffect)} style={style} {...mp}>{block.content}</motion.div>);
+        return wrapWithLink(block, <motion.div key={block.id} className={cn("border backdrop-blur-sm", block.hoverEffect)} style={{ ...style, borderColor: block.styles.borderColor || 'rgba(255,255,255,0.1)', boxShadow: style.boxShadow || (style.backgroundColor && style.backgroundColor !== 'transparent' ? '0 4px 20px rgba(0,0,0,0.2)' : undefined) }} {...mp}>{block.content}</motion.div>);
       case 'spacer':
         return <motion.div key={block.id} style={{ padding: block.styles.padding }} {...mp} />;
       case 'form':
@@ -408,13 +414,50 @@ const PlaygroundView = () => {
           </a>
         </div>
         <div className="max-w-4xl mx-auto p-6 space-y-4">
-          {project.blocks.filter(b => !b.hidden).map((block, index) => {
-            const rendered = renderBlock(block, index);
-            if (!rendered) return null;
-            return block.anchorId && block.type !== 'navbar'
-              ? <div key={block.id} id={block.anchorId}>{rendered}</div>
-              : <div key={block.id}>{rendered}</div>;
-          })}
+          {(() => {
+            const visibleBlocks = project.blocks.filter(b => !b.hidden);
+            const groupableTypes = ['counter', 'icon-text'];
+            const elements: React.ReactNode[] = [];
+            let i = 0;
+            while (i < visibleBlocks.length) {
+              const block = visibleBlocks[i];
+              if (groupableTypes.includes(block.type)) {
+                const group: PlaygroundBlock[] = [block];
+                let j = i + 1;
+                while (j < visibleBlocks.length && visibleBlocks[j].type === block.type) {
+                  group.push(visibleBlocks[j]);
+                  j++;
+                }
+                if (group.length >= 2) {
+                  const cols = Math.min(group.length, 4);
+                  const gridClass = cols === 2 ? 'grid-cols-2' : cols === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4';
+                  elements.push(
+                    <div key={`group-${group[0].id}`} className={`grid ${gridClass} gap-4`}>
+                      {group.map((gb, gi) => {
+                        const rendered = renderBlock(gb, i + gi);
+                        if (!rendered) return null;
+                        return gb.anchorId && gb.type !== 'navbar'
+                          ? <div key={gb.id} id={gb.anchorId}>{rendered}</div>
+                          : <div key={gb.id}>{rendered}</div>;
+                      })}
+                    </div>
+                  );
+                  i = j;
+                  continue;
+                }
+              }
+              const rendered = renderBlock(block, i);
+              if (rendered) {
+                elements.push(
+                  block.anchorId && block.type !== 'navbar'
+                    ? <div key={block.id} id={block.anchorId}>{rendered}</div>
+                    : <div key={block.id}>{rendered}</div>
+                );
+              }
+              i++;
+            }
+            return elements;
+          })()}
         </div>
       </div>
     </>
