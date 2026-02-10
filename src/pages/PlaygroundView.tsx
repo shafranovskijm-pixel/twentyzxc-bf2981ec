@@ -437,6 +437,7 @@ const PlaygroundView = () => {
       <Helmet>
         <title>{project.settings.seoTitle || project.title} | 24ZXC Playground</title>
         {project.settings.seoDescription && <meta name="description" content={project.settings.seoDescription} />}
+        <link rel="canonical" href={`https://24zxc.ru/p/${slug}`} />
       </Helmet>
       <div style={getBackgroundStyle()}>
         {/* Back to editor button */}

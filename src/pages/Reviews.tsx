@@ -31,6 +31,7 @@ const Reviews = () => {
       <Helmet>
         <title>Отзывы клиентов | 24ZXC</title>
         <meta name="description" content="Отзывы наших клиентов о веб-разработке и рекламных услугах. Узнайте мнение тех, кто уже работал с нами." />
+        <link rel="canonical" href="https://24zxc.ru/reviews" />
       </Helmet>
 
       <div className="min-h-screen bg-background relative overflow-hidden">
