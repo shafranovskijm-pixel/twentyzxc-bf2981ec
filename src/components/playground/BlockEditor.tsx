@@ -181,6 +181,31 @@ export const BlockEditor = ({
         const existingAnchors = allBlocks
           .filter(b => b.id !== block.id && b.anchorId)
           .map(b => ({ id: b.anchorId!, type: b.type, content: b.content?.slice(0, 30) }));
+
+        const ANCHOR_SUGGESTIONS: Record<string, string[]> = {
+          heading: ['hero', 'about', 'title'],
+          text: ['about', 'description', 'info'],
+          form: ['contact', 'feedback', 'order'],
+          button: ['cta', 'action'],
+          image: ['banner', 'photo', 'gallery'],
+          gallery: ['gallery', 'portfolio', 'works'],
+          card: ['features', 'services', 'info'],
+          counter: ['stats', 'numbers', 'metrics'],
+          list: ['features', 'benefits', 'list'],
+          quote: ['testimonial', 'review', 'quote'],
+          video: ['video', 'demo'],
+          accordion: ['faq', 'details', 'info'],
+          tabs: ['pricing', 'plans', 'details'],
+          columns: ['team', 'features', 'grid'],
+          'icon-text': ['services', 'features', 'benefits'],
+          socials: ['social', 'links', 'contacts'],
+          countdown: ['timer', 'countdown', 'event'],
+          footer: ['footer', 'contacts'],
+        };
+
+        const suggestions = (ANCHOR_SUGGESTIONS[block.type] || ['section'])
+          .filter(s => !allBlocks.some(b => b.id !== block.id && b.anchorId === s));
+
         return (
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
@@ -193,6 +218,19 @@ export const BlockEditor = ({
               className="bg-secondary/50 border-border"
               placeholder="например: about, services"
             />
+            {!block.anchorId && suggestions.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap">
+                {suggestions.map(s => (
+                  <button
+                    key={s}
+                    onClick={() => onUpdate({ anchorId: s })}
+                    className="text-xs px-2 py-1 rounded border border-dashed border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    #{s}
+                  </button>
+                ))}
+              </div>
+            )}
             {existingAnchors.length > 0 && (
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground">Существующие якоря на странице:</p>
