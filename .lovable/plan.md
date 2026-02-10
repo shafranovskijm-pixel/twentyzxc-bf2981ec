@@ -1,42 +1,87 @@
 
+# Админка для управления SEO и настройками сайта
 
-# Исправление SEO-проблем + дополнительные ключевые слова
+## Что будет сделано
 
-## Все изменения
+### Новая таблица `site_settings` в базе данных
 
-### 1. Обновить keywords в index.html (строка 9)
+Универсальная таблица "ключ-значение" для хранения настроек сайта:
 
-Заменить текущие ключевые слова на:
-```
-веб-разработка, создание сайтов, реклама яндекс директ, таргетированная реклама, 24zxc, конструктор сайтов, шаблоны сайтов, лендинг под ключ, сайт для бизнеса, фис фрдо, лицензия на образовательную деятельность, сайт для образовательной организации
-```
+| key | value (jsonb) |
+|---|---|
+| `seo_keywords` | `["веб-разработка", "24zxc", ...]` |
+| `seo_description` | `"24ZXC — веб-разработка..."` |
+| `seo_title` | `"24ZXC — Веб-разработка..."` |
+| `og_title` | `"24ZXC — Веб-разработка..."` |
+| `og_description` | `"Цифровые решения..."` |
+| `contact_email` | `"info@24zxc.ru"` |
+| `contact_phone` | `"+7..."` |
+| `contact_telegram` | `"@24zxc"` |
 
-### 2. Добавить Helmet в TemplatePreview.tsx
+RLS: чтение -- всем, запись -- только admin.
 
-Динамические мета-теги:
-- title: "{template.name} -- Превью шаблона | 24ZXC"
-- description: "{template.description}"
-- canonical: "https://24zxc.ru/templates/{id}/preview"
+### Новая страница `/admin`
 
-### 3. Добавить canonical в три страницы
+Доступна только авторизованным админам (используется существующий `useAdminAuth`). Включает:
 
-- **Playground.tsx**: `<link rel="canonical" href="https://24zxc.ru/playground" />`
-- **Reviews.tsx**: `<link rel="canonical" href="https://24zxc.ru/reviews" />`
-- **PlaygroundView.tsx**: `<link rel="canonical" href="https://24zxc.ru/p/{slug}" />`
+1. **SEO-настройки** -- редактирование keywords (добавление/удаление тегами), title, description
+2. **OG-теги** -- заголовок и описание для соцсетей
+3. **Контактные данные** -- email, телефон, Telegram (используются в футере и на странице контактов)
 
-### 4. NotFound.tsx -- уже содержит description, не требует изменений
+### Интеграция
 
----
+- `index.html` останется со статичными значениями (для SSR/краулеров)
+- Helmet на главной странице будет подтягивать keywords из БД, если они заданы
+- Хук `useSiteSettings()` для получения настроек из БД
 
 ## Технические детали
 
-| Файл | Изменение |
-|---|---|
-| `index.html` (строка 9) | Заменить keywords |
-| `src/pages/TemplatePreview.tsx` | Добавить Helmet с title/description/canonical |
-| `src/pages/Playground.tsx` | Добавить canonical в Helmet |
-| `src/pages/Reviews.tsx` | Добавить canonical в Helmet |
-| `src/pages/PlaygroundView.tsx` | Добавить canonical в Helmet |
+### Новые файлы
+- `src/pages/Admin.tsx` -- страница админки с табами (SEO, Контакты)
+- `src/hooks/use-site-settings.tsx` -- хук для CRUD настроек
 
-Все правки минимальные -- 1-3 строки в каждом файле. Новых зависимостей не требуется.
+### Изменяемые файлы
+- `src/App.tsx` -- добавить роут `/admin`
+- `src/pages/Index.tsx` -- подтягивать keywords из БД через Helmet
 
+### Миграция БД
+
+```sql
+CREATE TABLE public.site_settings (
+  key text PRIMARY KEY,
+  value jsonb NOT NULL DEFAULT '{}',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
+
+-- Чтение для всех
+CREATE POLICY "Site settings readable by everyone"
+  ON public.site_settings FOR SELECT
+  USING (true);
+
+-- Запись только для админов
+CREATE POLICY "Admins can update site settings"
+  ON public.site_settings FOR UPDATE
+  USING (has_role(auth.uid(), 'admin'));
+
+CREATE POLICY "Admins can insert site settings"
+  ON public.site_settings FOR INSERT
+  WITH CHECK (has_role(auth.uid(), 'admin'));
+
+-- Начальные данные
+INSERT INTO public.site_settings (key, value) VALUES
+  ('seo_keywords', '"веб-разработка, создание сайтов, реклама яндекс директ, таргетированная реклама, 24zxc, конструктор сайтов, шаблоны сайтов, лендинг под ключ, сайт для бизнеса, фис фрдо, лицензия на образовательную деятельность, сайт для образовательной организации"'),
+  ('seo_title', '"24ZXC — Веб-разработка, реклама и услуги для бизнеса"'),
+  ('seo_description', '"Создаём современные сайты, настраиваем рекламу в Яндекс Директ и соцсетях. Полный спектр цифровых услуг для вашего бизнеса."'),
+  ('contact_email', '"info@24zxc.ru"'),
+  ('contact_telegram', '"@24zxc"');
+```
+
+### UI админки
+
+Страница с двумя секциями:
+- **SEO**: поле keywords с возможностью добавлять/удалять слова как теги (Badge + крестик), поля title и description
+- **Контакты**: email, телефон, Telegram
+
+Вход через существующий `useAdminAuth` -- если не админ, показываем диалог входа. Кнопка "Сохранить" для каждой секции.
