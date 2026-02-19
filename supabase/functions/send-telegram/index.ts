@@ -121,7 +121,7 @@ serve(async (req) => {
     }
     recentSubmissions.set(ip, Date.now());
 
-    const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    const TELEGRAM_BOT_TOKEN = Deno.env.get('ZXC_BOT_TOKEN');
     const TELEGRAM_CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID');
 
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
