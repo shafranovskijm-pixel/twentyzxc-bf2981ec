@@ -40,7 +40,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["doc-clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id, name").order("name");
+      const { data, error } = await supabase.from("clients").select("id, name, inn, kpp, ogrn, legal_address, director_name, director_post").order("name");
       if (error) throw error;
       return data;
     },
