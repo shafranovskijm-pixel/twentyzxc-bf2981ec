@@ -47,6 +47,12 @@ interface Client {
   name: string;
 }
 
+interface Contract {
+  id: string;
+  client_name: string;
+  contract_number: string | null;
+}
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; next: string }> = {
   todo: { label: "Сделать", color: "bg-muted text-muted-foreground", next: "in_progress" },
   in_progress: { label: "В работе", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400", next: "done" },
@@ -77,6 +83,7 @@ function TaskCard({
 
   const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
   const client = task.client_id ? clients.find((c) => c.id === task.client_id) : null;
+  const contract = task.contract_id ? contracts.find((c) => c.id === task.contract_id) : null;
 
   return (
     <div
@@ -92,6 +99,11 @@ function TaskCard({
         {client && (
           <Badge variant="outline" className="text-[10px] px-1 py-0">
             {client.name}
+          </Badge>
+        )}
+        {contract && (
+          <Badge variant="secondary" className="text-[10px] px-1 py-0">
+            №{contract.contract_number || "—"}
           </Badge>
         )}
         <button
@@ -129,14 +141,20 @@ function DayColumn({
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newClientId, setNewClientId] = useState<string>("");
+  const [newContractId, setNewContractId] = useState<string>("");
   const dateStr = format(date, "yyyy-MM-dd");
   const today = isToday(date);
 
+  const filteredContracts = newClientId && newClientId !== "none"
+    ? contracts.filter((c) => c.client_name === clients.find((cl) => cl.id === newClientId)?.name)
+    : contracts;
+
   const handleAdd = () => {
     if (!newTitle.trim()) return;
-    onAddTask(dateStr, newTitle.trim(), newClientId || undefined);
+    onAddTask(dateStr, newTitle.trim(), newClientId || undefined, newContractId || undefined);
     setNewTitle("");
     setNewClientId("");
+    setNewContractId("");
     setShowAdd(false);
   };
 
@@ -149,7 +167,7 @@ function DayColumn({
       <div className="flex-1 p-2 space-y-1.5 min-h-[120px]">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} clients={clients} onStatusChange={onStatusChange} onDelete={onDelete} />
+            <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} />
           ))}
         </SortableContext>
       </div>
@@ -175,9 +193,22 @@ function DayColumn({
                 ))}
               </SelectContent>
             </Select>
+            <Select value={newContractId} onValueChange={setNewContractId}>
+              <SelectTrigger className="h-7 text-xs">
+                <SelectValue placeholder="Договор (опц.)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Без договора</SelectItem>
+                {filteredContracts.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.contract_number ? `№${c.contract_number}` : c.client_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="flex gap-1">
               <Button size="sm" className="h-6 text-xs flex-1" onClick={handleAdd}>Добавить</Button>
-              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setShowAdd(false)}>✕</Button>
+              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => { setShowAdd(false); setNewContractId(""); }}>✕</Button>
             </div>
           </div>
         ) : (
