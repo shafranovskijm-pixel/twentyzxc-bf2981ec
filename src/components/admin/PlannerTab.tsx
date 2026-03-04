@@ -132,6 +132,8 @@ function DayColumn({
   tasks,
   clients,
   contracts,
+  isExpanded,
+  onSelect,
   onStatusChange,
   onDelete,
   onAddTask,
@@ -140,6 +142,8 @@ function DayColumn({
   tasks: Task[];
   clients: Client[];
   contracts: Contract[];
+  isExpanded: boolean;
+  onSelect: () => void;
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
@@ -174,8 +178,15 @@ function DayColumn({
   };
 
   return (
-    <div className={`flex flex-col rounded-lg border ${today ? "border-primary/50 bg-primary/5" : "bg-muted/30"}`}>
-      <div className={`px-3 py-2.5 text-center border-b ${today ? "bg-primary/10" : ""}`}>
+    <div
+      onClick={onSelect}
+      className={cn(
+        "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
+        today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
+        isExpanded && "border-primary/60 shadow-lg shadow-primary/10"
+      )}
+      style={{ flex: isExpanded ? 3 : 1 }}
+    >
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
         <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
