@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, FileText, UserPlus, TrendingUp, AlertTriangle, Clock, Bell,
-  Loader2,
+  Loader2, Users, PieChart,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line,
-  CartesianGrid,
+  CartesianGrid, PieChart as RePieChart, Pie, Cell,
 } from "recharts";
 import { motion } from "framer-motion";
 import { format, subMonths, startOfMonth, endOfMonth, isAfter, isBefore, addDays } from "date-fns";
@@ -55,7 +55,18 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
     },
   });
 
-  const isLoading = l1 || l2 || l3;
+  const { data: clients = [], isLoading: l4 } = useQuery({
+    queryKey: ["dashboard-clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name, service_type");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const isLoading = l1 || l2 || l3 || l4;
 
   const kpi = useMemo(() => {
     const paid = contracts.filter((c) => c.payment_status === "оплачено");
@@ -128,6 +139,38 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
       { label: "Оплата", count: paid, pct: total ? Math.round((paid / total) * 100) : 0 },
     ];
   }, [leads, contracts]);
+
+  // Top 5 clients by revenue
+  const topClients = useMemo(() => {
+    const revenueMap: Record<string, number> = {};
+    contracts.forEach((c) => {
+      if (c.payment_status === "оплачено") {
+        const amt = (Number(c.amount) || 0) + (Number(c.amount_extra) || 0);
+        revenueMap[c.client_name] = (revenueMap[c.client_name] || 0) + amt;
+      }
+    });
+    return Object.entries(revenueMap)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, revenue]) => ({ name, revenue }));
+  }, [contracts]);
+
+  // Service type stats
+  const serviceStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    clients.forEach((c) => {
+      const type = c.service_type || "Не указано";
+      counts[type] = (counts[type] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  }, [clients]);
+
+  const SERVICE_COLORS: Record<string, string> = {
+    "ФРДО": "hsl(210 80% 55%)",
+    "САЙТ": "hsl(150 60% 45%)",
+    "ПРОЧЕЕ": "hsl(40 70% 50%)",
+    "Не указано": "hsl(220 10% 45%)",
+  };
 
   if (isLoading) {
     return (
@@ -267,6 +310,104 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
           ))}
         </CardContent>
       </Card>
+
+      {/* Top Clients & Service Stats */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Топ-5 клиентов по выручке
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topClients.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Нет данных</p>
+            ) : (
+              topClients.map((c, i) => {
+                const maxRev = topClients[0]?.revenue || 1;
+                return (
+                  <motion.div
+                    key={c.name}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-3"
+                  >
+                    <span className="w-5 text-xs text-muted-foreground text-right shrink-0">{i + 1}.</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm truncate">{c.name}</span>
+                        <span className="text-xs font-medium shrink-0 ml-2">{c.revenue.toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                      <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-primary rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(c.revenue / maxRev) * 100}%` }}
+                          transition={{ delay: 0.3 + i * 0.05, duration: 0.5 }}
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-amber-400" />
+              Клиенты по типу услуг
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {serviceStats.length === 0 ? (
+              <p className="text-xs text-muted-foreground py-2">Нет данных</p>
+            ) : (
+              <div className="flex items-center gap-4">
+                <ResponsiveContainer width={140} height={140}>
+                  <RePieChart>
+                    <Pie
+                      data={serviceStats}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={35}
+                      outerRadius={60}
+                      strokeWidth={2}
+                      stroke="hsl(220 8% 12%)"
+                    >
+                      {serviceStats.map((s) => (
+                        <Cell key={s.name} fill={SERVICE_COLORS[s.name] || "hsl(220 10% 45%)"} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "hsl(220 8% 16%)", border: "1px solid hsl(220 8% 20%)", borderRadius: 8, fontSize: 12 }}
+                    />
+                  </RePieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2 flex-1">
+                  {serviceStats.map((s) => (
+                    <div key={s.name} className="flex items-center gap-2 text-sm">
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: SERVICE_COLORS[s.name] || "hsl(220 10% 45%)" }}
+                      />
+                      <span className="truncate flex-1">{s.name}</span>
+                      <span className="font-medium text-xs">{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
 
       {/* Urgent */}
       <div className="grid md:grid-cols-2 gap-4">
