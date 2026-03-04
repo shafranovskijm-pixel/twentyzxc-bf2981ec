@@ -320,6 +320,10 @@ const ClientsTab = () => {
               <Label>Заметки</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Доп. информация..." rows={2} />
             </div>
+
+            {/* Client History Section - only when editing */}
+            {editingId && <ClientHistory clientName={name} clientId={editingId} />}
+
             <Button onClick={saveClient} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingId ? "Обновить" : "Добавить"}
