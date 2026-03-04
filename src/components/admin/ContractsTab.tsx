@@ -100,6 +100,7 @@ const ContractsTab = () => {
         contract_type: contractType.trim() || null,
         responsible: responsible.trim() || null,
         notes: notes.trim() || null,
+        paid_until: paidUntil || null,
       };
       if (editingId) {
         if (file) { const fp = await uploadFile(editingId); if (fp) payload.file_path = fp; }
