@@ -377,8 +377,8 @@ const ContractsTab = () => {
               <div className="space-y-2">
                 <Label>Организация *</Label>
                 <div className="flex gap-2">
-                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" />
-                  <Button variant="outline" size="icon" className="shrink-0" disabled={innLoading || !clientName.trim()} onClick={() => { setInn(clientName.trim()); setTimeout(lookupInn, 0); }} title="Найти по названию">
+                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" onKeyDown={(e) => e.key === "Enter" && lookupByValue(clientName)} />
+                  <Button variant="outline" size="icon" className="shrink-0" disabled={innLoading || !clientName.trim()} onClick={() => lookupByValue(clientName)} title="Найти по названию">
                     {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                   </Button>
                 </div>
