@@ -408,4 +408,156 @@ const ClientsTab = () => {
   );
 };
 
+const DOC_TYPE_LABELS: Record<string, string> = {
+  contract: "Договор",
+  invoice: "Счёт",
+  act: "Акт",
+};
+
+const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
+  const { data: contracts = [], isLoading: loadingContracts } = useQuery({
+    queryKey: ["client-history-contracts", clientName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type")
+        .eq("client_name", clientName)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientName,
+  });
+
+  const { data: documents = [], isLoading: loadingDocs } = useQuery({
+    queryKey: ["client-history-docs", clientName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("generated_documents")
+        .select("id, doc_type, doc_number, doc_date, total_amount")
+        .eq("client_name", clientName)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientName,
+  });
+
+  const { data: tasks = [], isLoading: loadingTasks } = useQuery({
+    queryKey: ["client-history-tasks", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title, status, task_date")
+        .eq("client_id", clientId)
+        .order("task_date", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+
+  const isLoading = loadingContracts || loadingDocs || loadingTasks;
+  const isEmpty = contracts.length === 0 && documents.length === 0 && tasks.length === 0;
+
+  if (isLoading) {
+    return (
+      <div className="border-t pt-4 mt-4">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Загрузка истории...
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmpty) return null;
+
+  const formatDate = (d: string | null) => {
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const statusColor = (s: string | null) => {
+    if (s === "оплачено") return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+    if (s === "частично") return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+    return "bg-red-500/20 text-red-400 border-red-500/30";
+  };
+
+  const taskStatusLabel = (s: string) => {
+    if (s === "done") return { label: "Готово", cls: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
+    if (s === "in_progress") return { label: "В работе", cls: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+    return { label: "К выполнению", cls: "bg-muted text-muted-foreground" };
+  };
+
+  return (
+    <div className="border-t pt-4 mt-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <History className="w-4 h-4 text-muted-foreground" />
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">История взаимодействий</h3>
+      </div>
+
+      {contracts.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <FileText className="w-3.5 h-3.5" /> Договоры ({contracts.length})
+          </div>
+          <div className="space-y-1">
+            {contracts.map(c => (
+              <div key={c.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+                <span className="font-mono text-xs">№{c.contract_number || "—"}</span>
+                <span className="text-muted-foreground">{formatDate(c.contract_date)}</span>
+                {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
+                {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
+                <Badge variant="outline" className={`text-xs ml-auto ${statusColor(c.payment_status)}`}>
+                  {c.payment_status || "не оплачено"}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {documents.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <ClipboardList className="w-3.5 h-3.5" /> Документы ({documents.length})
+          </div>
+          <div className="space-y-1">
+            {documents.map(d => (
+              <div key={d.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+                <Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[d.doc_type] || d.doc_type}</Badge>
+                <span className="font-mono text-xs">№{d.doc_number}</span>
+                <span className="text-muted-foreground">{formatDate(d.doc_date)}</span>
+                {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tasks.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <ClipboardList className="w-3.5 h-3.5" /> Задачи ({tasks.length})
+          </div>
+          <div className="space-y-1">
+            {tasks.map(t => {
+              const st = taskStatusLabel(t.status);
+              return (
+                <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+                  <span className="truncate flex-1">{t.title}</span>
+                  <span className="text-muted-foreground text-xs">{formatDate(t.task_date)}</span>
+                  <Badge variant="outline" className={`text-xs ${st.cls}`}>{st.label}</Badge>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default ClientsTab;
