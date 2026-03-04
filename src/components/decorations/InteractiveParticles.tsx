@@ -101,14 +101,14 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         // Gold color: hsl(42, 80%, 50%) = rgb(230, 179, 25)
-        ctx.fillStyle = `rgba(230, 179, 25, ${p.opacity})`;
+        ctx.fillStyle = `rgba(212, 190, 55, ${p.opacity})`;
         ctx.fill();
 
         // Draw glow for larger/brighter particles
         if (p.opacity > 0.3 && p.size > 1.5) {
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(230, 179, 25, ${p.opacity * 0.15})`;
+          ctx.fillStyle = `rgba(212, 190, 55, ${p.opacity * 0.15})`;
           ctx.fill();
         }
       }
