@@ -314,6 +314,28 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     setPreviewHtml(html);
   };
 
+  const sendDocumentEmail = async () => {
+    if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
+    setEmailSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          to: emailTo.trim(),
+          subject: `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`,
+          html: previewHtml,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
+      toast.success(`Документ отправлен на ${emailTo}`);
+      setEmailDialogOpen(false);
+      setEmailTo("");
+    } catch (err: any) {
+      toast.error(err.message || "Не удалось отправить письмо");
+    }
+    setEmailSending(false);
+  };
+
   if (settingsLoading || clientsLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -524,6 +546,20 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
               >
                 <Printer className="w-4 h-4 mr-2" />
                 Печать
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Pre-fill email from client data
+                  const client = clients.find(c => c.name === clientName);
+                  // Try client email from clients table (not in current select, use empty)
+                  setEmailTo("");
+                  setEmailDialogOpen(true);
+                }}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                На почту
               </Button>
               <Button
                 variant="outline"
