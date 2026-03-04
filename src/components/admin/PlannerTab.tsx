@@ -187,6 +187,7 @@ function DayColumn({
       )}
       style={{ flex: isExpanded ? 3 : 1 }}
     >
+      <div className={`px-3 py-2.5 text-center border-b transition-all duration-500 ${today ? "bg-primary/10" : ""}`}>
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
         <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
