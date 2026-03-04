@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
@@ -7,22 +6,65 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-/** RFC 2047 Base64 encode, split into 48-byte chunks to stay under 75-char limit */
-function mimeB64(text: string): string {
+/** RFC 2047 B-encoding, chunked to stay under 75-char encoded words */
+function mimeEncode(text: string): string {
   const bytes = new TextEncoder().encode(text);
-  // Split into chunks of 30 bytes (produces ~40 base64 chars + overhead = ~60 chars per encoded word)
   const chunks: string[] = [];
   for (let i = 0; i < bytes.length; i += 30) {
     const chunk = bytes.slice(i, i + 30);
     chunks.push(`=?UTF-8?B?${base64Encode(chunk)}?=`);
   }
-  return chunks.join(" ");
+  return chunks.join("\r\n ");
+}
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+async function readResponse(conn: Deno.TlsConn): Promise<string> {
+  let result = "";
+  const buf = new Uint8Array(4096);
+  // Read until we get a complete response (line starting with "XXX " not "XXX-")
+  while (true) {
+    const n = await conn.read(buf);
+    if (n === null) break;
+    result += decoder.decode(buf.subarray(0, n));
+    // Check if last line is a final response (code + space)
+    const lines = result.split("\r\n").filter(l => l.length > 0);
+    if (lines.length > 0) {
+      const last = lines[lines.length - 1];
+      // Final line has format "250 OK" (space after code), continuation has "250-..."
+      if (/^\d{3} /.test(last) || result.endsWith("\r\n")) {
+        // Check the actual last non-empty line
+        const finalLine = lines[lines.length - 1];
+        if (/^\d{3} /.test(finalLine)) break;
+      }
+    }
+    // Safety: if we've been reading for a while and have data, check if it's complete
+    if (result.includes("\r\n") && /^\d{3} /m.test(result)) {
+      // Has at least one final response line
+      const allLines = result.trim().split("\r\n");
+      const lastLine = allLines[allLines.length - 1];
+      if (/^\d{3} /.test(lastLine)) break;
+    }
+  }
+  return result.trim();
+}
+
+async function writeLine(conn: Deno.TlsConn, line: string): Promise<void> {
+  await conn.write(encoder.encode(line + "\r\n"));
+}
+
+async function command(conn: Deno.TlsConn, cmd: string): Promise<string> {
+  await writeLine(conn, cmd);
+  return await readResponse(conn);
 }
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  let conn: Deno.TlsConn | null = null;
 
   try {
     const { to, subject, html } = await req.json();
@@ -34,62 +76,82 @@ serve(async (req) => {
       );
     }
 
-    const SMTP_HOST = Deno.env.get('SMTP_HOST')!;
-    const SMTP_PORT = parseInt(Deno.env.get('SMTP_PORT') || '465');
-    const SMTP_USER = Deno.env.get('SMTP_USER')!;
-    const SMTP_PASS = Deno.env.get('SMTP_PASS')!;
-    const SMTP_FROM_EMAIL = Deno.env.get('SMTP_FROM') || SMTP_USER;
+    const host = Deno.env.get('SMTP_HOST')!;
+    const port = parseInt(Deno.env.get('SMTP_PORT') || '465');
+    const user = Deno.env.get('SMTP_USER')!;
+    const pass = Deno.env.get('SMTP_PASS')!;
+    const fromEmail = Deno.env.get('SMTP_FROM') || user;
+    const fromName = Deno.env.get('SMTP_FROM_NAME') || 'Sintagma';
 
-    if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    if (!host || !user || !pass) {
       return new Response(
         JSON.stringify({ success: false, error: 'SMTP not configured' }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true,
-        auth: {
-          username: SMTP_USER,
-          password: SMTP_PASS,
-        },
-      },
-    });
+    console.log(`Connecting to ${host}:${port}...`);
+    conn = await Deno.connectTls({ hostname: host, port });
 
-    // Build raw email with proper RFC 2047 B-encoding for Subject and From name
-    const fromName = Deno.env.get('SMTP_FROM_NAME') || 'Sintagma';
-    const boundary = `----=_Part_${Date.now()}`;
-    const encodedSubject = mimeB64(subject);
-    const encodedFromName = mimeB64(fromName);
-    const htmlBase64 = base64Encode(new TextEncoder().encode(html));
-    const htmlLines = htmlBase64.match(/.{1,76}/g)?.join("\r\n") || htmlBase64;
+    // Read greeting
+    const greeting = await readResponse(conn);
+    console.log("Greeting:", greeting);
 
-    const rawMessage = [
-      `From: ${encodedFromName} <${SMTP_FROM_EMAIL}>`,
+    // EHLO
+    const ehlo = await command(conn, `EHLO lovable.dev`);
+    console.log("EHLO:", ehlo.substring(0, 100));
+
+    // AUTH LOGIN
+    const authStart = await command(conn, "AUTH LOGIN");
+    console.log("AUTH:", authStart);
+    
+    const userResp = await command(conn, base64Encode(encoder.encode(user)));
+    console.log("USER:", userResp);
+    
+    const passResp = await command(conn, base64Encode(encoder.encode(pass)));
+    console.log("PASS:", passResp);
+    
+    if (!passResp.startsWith("235")) {
+      throw new Error(`SMTP auth failed: ${passResp}`);
+    }
+
+    // MAIL FROM
+    const mailFrom = await command(conn, `MAIL FROM:<${fromEmail}>`);
+    console.log("MAIL FROM:", mailFrom);
+
+    // RCPT TO
+    const rcptTo = await command(conn, `RCPT TO:<${to}>`);
+    console.log("RCPT TO:", rcptTo);
+
+    // DATA
+    const dataResp = await command(conn, "DATA");
+    console.log("DATA:", dataResp);
+
+    // Build MIME message
+    const encodedSubject = mimeEncode(subject);
+    const encodedFrom = `${mimeEncode(fromName)} <${fromEmail}>`;
+    const htmlB64 = base64Encode(encoder.encode(html));
+    const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
+
+    const message = [
+      `From: ${encodedFrom}`,
       `To: <${to}>`,
       `Subject: ${encodedSubject}`,
+      `Date: ${new Date().toUTCString()}`,
       `MIME-Version: 1.0`,
       `Content-Type: text/html; charset="UTF-8"`,
       `Content-Transfer-Encoding: base64`,
       ``,
-      htmlLines,
+      htmlChunked,
+      ``,
+      `.`,  // End of message
     ].join("\r\n");
 
-    // Use denomailer's internal send with raw content
-    // Since denomailer doesn't support raw mode, send with ASCII placeholders
-    // and manually override via the connection
-    await client.send({
-      from: SMTP_FROM_EMAIL,
-      to,
-      subject: "doc", // ASCII placeholder - denomailer won't mangle this
-      content: rawMessage,
-      html: undefined as any,
-    });
+    const endResp = await command(conn, message);
+    console.log("Message sent:", endResp);
 
-    await client.close();
+    // QUIT
+    await command(conn, "QUIT");
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -101,5 +163,7 @@ serve(async (req) => {
       JSON.stringify({ success: false, error: error.message || 'Failed to send email' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
+  } finally {
+    try { conn?.close(); } catch {}
   }
 });
