@@ -132,6 +132,8 @@ function DayColumn({
   tasks,
   clients,
   contracts,
+  isExpanded,
+  onSelect,
   onStatusChange,
   onDelete,
   onAddTask,
@@ -140,6 +142,8 @@ function DayColumn({
   tasks: Task[];
   clients: Client[];
   contracts: Contract[];
+  isExpanded: boolean;
+  onSelect: () => void;
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
@@ -174,8 +178,16 @@ function DayColumn({
   };
 
   return (
-    <div className={`flex flex-col rounded-lg border ${today ? "border-primary/50 bg-primary/5" : "bg-muted/30"}`}>
-      <div className={`px-3 py-2.5 text-center border-b ${today ? "bg-primary/10" : ""}`}>
+    <div
+      onClick={onSelect}
+      className={cn(
+        "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
+        today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
+        isExpanded && "border-primary/60 shadow-lg shadow-primary/10"
+      )}
+      style={{ flex: isExpanded ? 3 : 1 }}
+    >
+      <div className={`px-3 py-2.5 text-center border-b transition-all duration-500 ${today ? "bg-primary/10" : ""}`}>
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
         <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
@@ -280,7 +292,7 @@ const PlannerTab = () => {
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
-
+  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const weekEnd = addDays(weekStart, 6);
 
@@ -418,7 +430,7 @@ const PlannerTab = () => {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-7 gap-2 h-[calc(100vh-12rem)]">
+          <div className="flex gap-2 h-[calc(100vh-12rem)]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -429,6 +441,8 @@ const PlannerTab = () => {
                   tasks={dayTasks}
                   clients={clients}
                   contracts={contracts}
+                  isExpanded={selectedDate === dateStr}
+                  onSelect={() => setSelectedDate(dateStr)}
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
