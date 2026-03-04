@@ -279,13 +279,13 @@ export function generateActHtml(data: DocumentData): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}</head><body>
     <h1>АКТ №${num}<br/>выполненных работ (оказанных услуг)</h1>
     <div class="header-row">
-      <span>г. Москва</span>
+      <span>г. Владивосток</span>
       <span>${date}</span>
     </div>
     ${data.contractNumber ? `<p class="section">К Договору №${data.contractNumber}${data.contractDate ? ` от ${data.contractDate}` : ""}</p>` : ""}
     <div class="section">
-      <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», в лице ${c.company_director_post} ${c.company_director_name}, с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${cl.director_post || "Директора"} ${cl.director_name}, с другой стороны,</p>
+      <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
+      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${cl.director_post || "Директора"} ${cl.director_name}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
     ${servicesTableHtml(services)}
