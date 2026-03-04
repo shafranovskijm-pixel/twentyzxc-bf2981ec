@@ -5,7 +5,7 @@ import WebDevSection from "@/components/WebDevSection";
 import PromotionSection from "@/components/PromotionSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
-import { FloatingParticles, GeometricShapes, GradientGlows, SectionDivider } from "@/components/decorations";
+import { InteractiveParticles, GeometricShapes, GradientGlows, SectionDivider } from "@/components/decorations";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 
 const Index = () => {
@@ -21,9 +21,9 @@ const Index = () => {
       </Helmet>
       <div className="min-h-screen bg-background relative">
       {/* Background decorations */}
+      <InteractiveParticles count={50} />
       <GradientGlows />
       <GeometricShapes />
-      <FloatingParticles count={25} />
       
       <Header />
       <main className="relative z-10">
