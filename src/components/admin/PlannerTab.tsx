@@ -91,8 +91,9 @@ function TaskCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+    transition: transition || "transform 200ms cubic-bezier(0.25, 1, 0.5, 1), opacity 200ms ease",
+    opacity: isDragging ? 0.3 : 1,
+    scale: isDragging ? "0.95" : "1",
   };
 
   const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
@@ -374,10 +375,10 @@ function DayColumn({
       ref={setDroppableRef}
       onClick={onSelect}
       className={cn(
-        "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
+        "flex flex-col rounded-lg border cursor-pointer transition-all duration-300 ease-out min-w-0",
         today ? "border-primary/60 bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20" : "bg-muted/30",
         isExpanded && "border-primary/60 shadow-lg shadow-primary/10",
-        isOver && "ring-2 ring-primary/50 bg-primary/10"
+        isOver && "ring-2 ring-primary/50 bg-primary/10 scale-[1.02] shadow-lg shadow-primary/20"
       )}
       style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
     >
@@ -777,10 +778,17 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
             })}
             {isDragging && <EdgeDropZone id="edge-next-week" side="right" isCharging={chargingEdge === "edge-next-week"} />}
           </div>
-          <DragOverlay>
+          <DragOverlay dropAnimation={{
+            duration: 250,
+            easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+          }}>
             {activeTask && (
-              <div className="p-2 rounded-md border bg-card shadow-lg text-sm font-medium">
-                {activeTask.title}
+              <div className="p-3 rounded-lg border-2 border-primary/40 bg-card shadow-2xl shadow-primary/20 text-sm font-medium max-w-[200px] rotate-[2deg] scale-105 transition-transform">
+                <p className="line-clamp-2">{activeTask.title}</p>
+                {activeTask.client_id && (() => {
+                  const c = clients.find(cl => cl.id === activeTask.client_id);
+                  return c ? <span className="text-xs text-muted-foreground mt-1 block">{c.name}</span> : null;
+                })()}
               </div>
             )}
           </DragOverlay>
