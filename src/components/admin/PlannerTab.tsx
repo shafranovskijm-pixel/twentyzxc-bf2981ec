@@ -93,26 +93,26 @@ function TaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group flex items-start gap-1 p-2 rounded-md border bg-card hover:shadow-sm transition-shadow"
+      className="group flex items-start gap-2 p-3 rounded-md border bg-card hover:shadow-sm transition-shadow"
     >
-      <span {...attributes} {...listeners} className="mt-0.5 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
-        <GripVertical className="h-3 w-3" />
+      <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
+        <GripVertical className="h-4 w-4" />
       </span>
-      <div className="flex-1 min-w-0 space-y-1">
-        <p className="text-sm font-medium leading-tight truncate">{task.title}</p>
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <p className="text-base font-medium leading-tight truncate">{task.title}</p>
         {client && (
-          <Badge variant="outline" className="text-[10px] px-1 py-0">
+          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
             {client.name}
           </Badge>
         )}
         {contract && (
-          <Badge variant="secondary" className="text-[10px] px-1 py-0">
+          <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
             №{contract.contract_number || "—"}
           </Badge>
         )}
         <button
           onClick={() => onStatusChange(task.id, statusCfg.next)}
-          className={`inline-block text-[10px] font-medium rounded px-1.5 py-0.5 ${statusCfg.color} cursor-pointer hover:opacity-80 transition-opacity`}
+          className={`inline-block text-xs font-medium rounded px-2 py-0.5 ${statusCfg.color} cursor-pointer hover:opacity-80 transition-opacity`}
         >
           {statusCfg.label}
         </button>
@@ -121,7 +121,7 @@ function TaskCard({
         onClick={() => onDelete(task.id)}
         className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 text-destructive"
       >
-        <Trash2 className="h-3 w-3" />
+        <Trash2 className="h-4 w-4" />
       </button>
     </div>
   );
@@ -174,12 +174,12 @@ function DayColumn({
   };
 
   return (
-    <div className={`flex flex-col min-w-[160px] flex-1 rounded-lg border ${today ? "border-primary/50 bg-primary/5" : "bg-muted/30"}`}>
-      <div className={`px-3 py-2 text-center border-b ${today ? "bg-primary/10" : ""}`}>
-        <div className="text-xs text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
-        <div className={`text-lg font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
+    <div className={`flex flex-col rounded-lg border ${today ? "border-primary/50 bg-primary/5" : "bg-muted/30"}`}>
+      <div className={`px-3 py-2.5 text-center border-b ${today ? "bg-primary/10" : ""}`}>
+        <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
+        <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
-      <div className="flex-1 p-2 space-y-1.5 min-h-[120px]">
+      <div className="flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} />
@@ -418,7 +418,7 @@ const PlannerTab = () => {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-2 overflow-x-auto pb-4">
+          <div className="grid grid-cols-7 gap-2 h-[calc(100vh-12rem)]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
