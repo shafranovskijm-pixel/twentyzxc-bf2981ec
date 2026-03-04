@@ -18,15 +18,22 @@ serve(async (req) => {
       throw new Error('DaData credentials not configured');
     }
 
-    const { inn } = await req.json();
-    if (!inn || typeof inn !== 'string') {
-      return new Response(JSON.stringify({ error: 'INN is required' }), {
+    const { inn, query } = await req.json();
+    const searchValue = inn || query;
+    if (!searchValue || typeof searchValue !== 'string') {
+      return new Response(JSON.stringify({ error: 'INN or query is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const response = await fetch('https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party', {
+    // If it looks like an INN (digits only), use findById; otherwise use suggest
+    const isInn = /^\d{10,12}$/.test(searchValue.trim());
+    const url = isInn
+      ? 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party'
+      : 'https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party';
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +41,7 @@ serve(async (req) => {
         'Authorization': `Token ${DADATA_API_KEY}`,
         'X-Secret': DADATA_SECRET_KEY,
       },
-      body: JSON.stringify({ query: inn, count: 1 }),
+      body: JSON.stringify({ query: searchValue.trim(), count: 1 }),
     });
 
     const data = await response.json();
