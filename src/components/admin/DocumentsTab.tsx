@@ -130,7 +130,7 @@ const DocumentsTab = () => {
     return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
   };
 
-  const generate = () => {
+  const generate = async () => {
     if (!docNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
     if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
