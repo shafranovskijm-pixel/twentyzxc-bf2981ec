@@ -23,6 +23,7 @@ interface Promotion {
   price: string | null;
   old_price: string | null;
   badge: string | null;
+  icon: string | null;
   is_active: boolean;
   sort_order: number;
 }
