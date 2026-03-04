@@ -372,17 +372,11 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
     try {
-      toast.info("Генерация PDF...");
-      const pdfBase64 = await generatePdfBase64(previewHtml);
-      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-      
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
           to: emailTo.trim(),
           subject: `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`,
-          html: `<p>Добрый день! Во вложении ${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}.</p>`,
-          pdfBase64,
-          pdfFilename,
+          html: previewHtml,
         },
       });
       if (error) throw error;
@@ -396,7 +390,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       }
       
-      toast.success(`PDF отправлен на ${emailTo}`);
+      toast.success(`Документ отправлен на ${emailTo}`);
       setEmailDialogOpen(false);
       setEmailTo("");
     } catch (err: any) {
