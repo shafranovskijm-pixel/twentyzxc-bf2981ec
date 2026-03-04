@@ -169,10 +169,10 @@ const SalesAssistant = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const send = async () => {
-    const text = input.trim();
+  const send = async (directText?: string) => {
+    const text = (directText || input).trim();
     if (!text || isLoading) return;
-    setInput("");
+    if (!directText) setInput("");
 
     const userMsg: Msg = { role: "user", content: text };
     setMessages(prev => [...prev, userMsg]);
