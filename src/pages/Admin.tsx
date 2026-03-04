@@ -16,6 +16,8 @@ import ClientsTab from "@/components/admin/ClientsTab";
 import ContractsTab from "@/components/admin/ContractsTab";
 import FilesTab from "@/components/admin/FilesTab";
 import PlannerTab from "@/components/admin/PlannerTab";
+import DocumentsTab from "@/components/admin/DocumentsTab";
+import RequisitesTab from "@/components/admin/RequisitesTab";
 import { toast } from "sonner";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -192,6 +194,8 @@ const Admin = () => {
     contracts: "Договоры",
     files: "Файлы договоров",
     planner: "Планер",
+    documents: "Конструктор документов",
+    requisites: "Реквизиты компании",
   };
 
   return (
@@ -323,6 +327,8 @@ const Admin = () => {
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
               {activeSection === "planner" && <PlannerTab />}
+              {activeSection === "documents" && <DocumentsTab />}
+              {activeSection === "requisites" && <RequisitesTab />}
             </main>
           </div>
         </div>
