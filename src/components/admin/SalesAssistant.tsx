@@ -1,18 +1,27 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { TrendingUp, AlertTriangle, DollarSign, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, isBefore } from "date-fns";
-import { ru } from "date-fns/locale";
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, isBefore } from "date-fns";
+import LeadsPanel from "./LeadsPanel";
 
-type Msg = { role: "user" | "assistant"; content: string };
+interface Contract {
+  id: string;
+  client_name: string;
+  contract_number: string | null;
+  contract_date: string | null;
+  amount: number | null;
+  amount_extra: number | null;
+  payment_status: string | null;
+  paid_until: string | null;
+  is_archived: boolean;
+  created_at: string;
+}
 
 function ForecastCards({ contracts }: { contracts: Contract[] }) {
   const queryClient = useQueryClient();
@@ -153,11 +162,6 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
 }
 
 const SalesAssistant = () => {
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-
   const { data: contracts = [] } = useQuery({
     queryKey: ["sales-contracts"],
     queryFn: async () => {
@@ -169,153 +173,20 @@ const SalesAssistant = () => {
     },
   });
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const send = async (directText?: string) => {
-    const text = (directText || input).trim();
-    if (!text || isLoading) return;
-    if (!directText) setInput("");
-
-    const userMsg: Msg = { role: "user", content: text };
-    setMessages(prev => [...prev, userMsg]);
-    setIsLoading(true);
-
-    let assistantSoFar = "";
-    const upsert = (chunk: string) => {
-      assistantSoFar += chunk;
-      setMessages(prev => {
-        const last = prev[prev.length - 1];
-        if (last?.role === "assistant") {
-          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
-        }
-        return [...prev, { role: "assistant", content: assistantSoFar }];
-      });
-    };
-
-    try {
-      await streamChat({
-        messages: [...messages, userMsg],
-        onDelta: upsert,
-        onDone: () => setIsLoading(false),
-      });
-    } catch (e: any) {
-      setIsLoading(false);
-      toast.error(e.message || "Ошибка AI-ассистента");
-    }
-  };
-
-  const quickQuestions = [
-    { text: "Покажи прогноз поступлений", icon: TrendingUp },
-    { text: "Кто из клиентов просрочил оплату?", icon: AlertTriangle },
-    { text: "Что можно допродать текущим клиентам?", icon: ShoppingCart },
-    { text: "Кто из клиентов неактивен?", icon: UserX },
-  ];
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
-      {/* Left: Forecast + Leads */}
-      <div className="space-y-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Прогноз поступлений
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ForecastCards contracts={contracts} />
-          </CardContent>
-        </Card>
-        <LeadsPanel />
-      </div>
-
-      {/* Right: AI Chat */}
-      <div className="lg:col-span-2">
-        <Card className="flex flex-col h-[300px] sm:h-[400px]">
-          <CardHeader className="pb-2 shrink-0">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Bot className="w-4 h-4" />
-              AI-ассистент продаж
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col overflow-hidden p-4 pt-0">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
-              {messages.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full gap-4 py-6">
-                  <Bot className="w-8 h-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    Задай вопрос о клиентах, продажах или прогнозах
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
-                    {quickQuestions.map((q, i) => {
-                      const Icon = q.icon;
-                      return (
-                        <button
-                          key={q.text}
-                          className="group relative flex items-start gap-2 text-left text-xs px-3 py-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 animate-fade-in"
-                          style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
-                          onClick={() => send(q.text)}
-                        >
-                          <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/60 group-hover:text-primary transition-colors" />
-                          <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-200">{q.text}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              {messages.map((msg, i) => (
-                <div
-                  key={i}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                    }`}
-                  >
-                    {msg.role === "assistant" ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none [&>p]:my-1 [&>ul]:my-1 [&>ol]:my-1">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      msg.content
-                    )}
-                  </div>
-                </div>
-              ))}
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg px-3 py-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Input */}
-            <div className="flex gap-2 shrink-0">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
-                placeholder="Спросите об оплатах, клиентах, допродажах..."
-                className="text-sm"
-                disabled={isLoading}
-              />
-              <Button size="icon" onClick={() => send()} disabled={isLoading || !input.trim()}>
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-4 mt-6">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            Прогноз поступлений
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ForecastCards contracts={contracts} />
+        </CardContent>
+      </Card>
+      <LeadsPanel />
     </div>
   );
 };
