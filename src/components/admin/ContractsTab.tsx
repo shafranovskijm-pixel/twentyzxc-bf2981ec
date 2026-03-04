@@ -225,6 +225,15 @@ const ContractsTab = () => {
                     <TableCell>{c.contract_number || "—"}</TableCell>
                     <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
                     <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                    <TableCell>
+                      {c.paid_until ? (
+                        <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
+                          {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                          {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                          {new Date(c.paid_until).toLocaleDateString("ru-RU")}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>{formatAmount(c.amount)}</TableCell>
                     <TableCell>{c.contract_type || "—"}</TableCell>
                     <TableCell>{c.responsible || "—"}</TableCell>
