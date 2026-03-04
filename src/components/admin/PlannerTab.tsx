@@ -78,6 +78,8 @@ function TaskCard({
   onCreateDocument?: (task: Task, docType?: string) => void;
 }) {
   const [taskPopoverOpen, setTaskPopoverOpen] = useState(false);
+  const [reminderTime, setReminderTime] = useState("");
+  const [reminderSending, setReminderSending] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { task },
@@ -92,6 +94,62 @@ function TaskCard({
   const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
   const client = task.client_id ? clients.find((c) => c.id === task.client_id) : null;
   const contract = task.contract_id ? contracts.find((c) => c.id === task.contract_id) : null;
+
+  const sendReminder = async (immediate: boolean) => {
+    setReminderSending(true);
+    try {
+      const timeStr = immediate ? "сейчас" : reminderTime;
+      const clientName = client?.name || "";
+      const contractNum = contract?.contract_number ? ` (договор №${contract.contract_number})` : "";
+      
+      let text = `🔔 <b>Напоминание</b>\n\n`;
+      text += `📋 <b>${task.title}</b>\n`;
+      if (task.description) text += `${task.description}\n`;
+      if (clientName) text += `👤 ${clientName}${contractNum}\n`;
+      text += `📅 ${new Date(task.task_date).toLocaleDateString("ru-RU")}`;
+      if (!immediate && reminderTime) text += ` в ${reminderTime}`;
+      
+      if (!immediate && reminderTime) {
+        // Schedule: calculate delay and use setTimeout
+        const [hours, minutes] = reminderTime.split(":").map(Number);
+        const now = new Date();
+        const target = new Date(task.task_date);
+        target.setHours(hours, minutes, 0, 0);
+        const delay = target.getTime() - now.getTime();
+        
+        if (delay <= 0) {
+          // Time already passed, send immediately
+          const { data: session } = await supabase.auth.getSession();
+          await supabase.functions.invoke("send-bot-message", {
+            body: { chat_id: 1248037753, text },
+          });
+          toast.success("Напоминание отправлено (время уже прошло)");
+        } else {
+          // Schedule the send
+          setTimeout(async () => {
+            try {
+              await supabase.functions.invoke("send-bot-message", {
+                body: { chat_id: 1248037753, text },
+              });
+            } catch (e) {
+              console.error("Scheduled reminder failed:", e);
+            }
+          }, delay);
+          const mins = Math.round(delay / 60000);
+          toast.success(`Напоминание запланировано через ${mins} мин.`);
+        }
+      } else {
+        await supabase.functions.invoke("send-bot-message", {
+          body: { chat_id: 1248037753, text },
+        });
+        toast.success("Напоминание отправлено в Telegram");
+      }
+    } catch (e) {
+      toast.error("Ошибка отправки напоминания");
+      console.error(e);
+    }
+    setReminderSending(false);
+  };
 
   return (
     <Popover open={taskPopoverOpen} onOpenChange={setTaskPopoverOpen}>
@@ -196,6 +254,41 @@ function TaskCard({
             Создать документ
           </Button>
         ) : null}
+
+        {/* Telegram Reminder */}
+        <div className="space-y-1.5 border-t pt-3">
+          <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <Bell className="w-3.5 h-3.5" /> Напомнить в Telegram
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              type="time"
+              value={reminderTime}
+              onChange={(e) => setReminderTime(e.target.value)}
+              className="h-8 text-xs flex-1"
+              placeholder="Время"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2.5 shrink-0"
+              disabled={reminderSending}
+              onClick={() => sendReminder(false)}
+              title={reminderTime ? `Отправить в ${reminderTime}` : "Укажите время"}
+            >
+              {reminderSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full h-7 text-xs"
+            disabled={reminderSending}
+            onClick={() => sendReminder(true)}
+          >
+            Отправить сейчас
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
