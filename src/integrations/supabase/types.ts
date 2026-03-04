@@ -44,6 +44,38 @@ export type Database = {
         }
         Relationships: []
       }
+      client_interactions: {
+        Row: {
+          client_id: string
+          content: string
+          created_at: string
+          id: string
+          interaction_type: string
+        }
+        Insert: {
+          client_id: string
+          content: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+        }
+        Update: {
+          client_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_interactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           contact_person: string | null

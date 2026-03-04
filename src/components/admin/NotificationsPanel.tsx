@@ -1,0 +1,137 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Bell, AlertTriangle, Clock, UserPlus, CalendarClock } from "lucide-react";
+import { isBefore, addDays, subHours } from "date-fns";
+
+interface NotificationsPanelProps {
+  onNavigate: (section: string) => void;
+}
+
+const NotificationsPanel = ({ onNavigate }: NotificationsPanelProps) => {
+  const { data: contracts = [] } = useQuery({
+    queryKey: ["notif-contracts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, client_name, paid_until, payment_status")
+        .eq("is_archived", false);
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 60000,
+  });
+
+  const { data: todayTasks = [] } = useQuery({
+    queryKey: ["notif-tasks"],
+    queryFn: async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title")
+        .eq("task_date", today)
+        .neq("status", "done");
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 60000,
+  });
+
+  const { data: recentLeads = [] } = useQuery({
+    queryKey: ["notif-leads"],
+    queryFn: async () => {
+      const since = subHours(new Date(), 24).toISOString();
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id, name, created_at")
+        .gte("created_at", since)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    refetchInterval: 60000,
+  });
+
+  const notifications = useMemo(() => {
+    const items: { id: string; icon: typeof AlertTriangle; label: string; section: string; color: string }[] = [];
+    const now = new Date();
+
+    // Overdue
+    contracts
+      .filter((c) => c.paid_until && isBefore(new Date(c.paid_until), now) && c.payment_status !== "оплачено")
+      .forEach((c) =>
+        items.push({ id: `overdue-${c.id}`, icon: AlertTriangle, label: `Просрочено: ${c.client_name}`, section: "contracts", color: "text-destructive" })
+      );
+
+    // Expiring in 7 days
+    contracts
+      .filter(
+        (c) =>
+          c.paid_until &&
+          !isBefore(new Date(c.paid_until), now) &&
+          isBefore(new Date(c.paid_until), addDays(now, 7)) &&
+          c.payment_status !== "оплачено"
+      )
+      .forEach((c) =>
+        items.push({ id: `exp-${c.id}`, icon: CalendarClock, label: `Истекает: ${c.client_name}`, section: "contracts", color: "text-amber-400" })
+      );
+
+    // Today tasks
+    todayTasks.forEach((t) =>
+      items.push({ id: `task-${t.id}`, icon: Clock, label: t.title, section: "planner", color: "text-blue-400" })
+    );
+
+    // New leads
+    recentLeads.forEach((l) =>
+      items.push({ id: `lead-${l.id}`, icon: UserPlus, label: `Новый лид: ${l.name || "Без имени"}`, section: "clients", color: "text-emerald-400" })
+    );
+
+    return items;
+  }, [contracts, todayTasks, recentLeads]);
+
+  const count = notifications.length;
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="w-4 h-4" />
+          {count > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
+              {count > 9 ? "9+" : count}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-80 p-0 max-h-96 overflow-y-auto">
+        <div className="p-3 border-b">
+          <h4 className="text-sm font-semibold">Уведомления</h4>
+        </div>
+        {count === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Всё в порядке ✓</p>
+        ) : (
+          <div className="divide-y">
+            {notifications.map((n) => (
+              <button
+                key={n.id}
+                onClick={() => onNavigate(n.section)}
+                className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
+              >
+                <n.icon className={`w-4 h-4 mt-0.5 shrink-0 ${n.color}`} />
+                <span className="text-sm leading-tight">{n.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+export default NotificationsPanel;
