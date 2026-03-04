@@ -90,7 +90,7 @@ const ClientsTab = () => {
       const { data, error } = await supabase
         .from("clients")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("updated_at", { ascending: false });
       if (error) throw error;
       return data as Client[];
     },
