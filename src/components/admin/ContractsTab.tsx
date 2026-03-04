@@ -82,14 +82,14 @@ const ContractsTab = () => {
     setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
   };
 
-  const lookupInn = async () => {
-    const value = inn.trim();
-    if (!value) return toast.error("Введите ИНН или название организации");
+  const lookupByValue = async (searchValue: string) => {
+    if (!searchValue.trim()) return toast.error("Введите ИНН или название организации");
     setInnLoading(true);
     try {
-      const isInn = /^\d{10,12}$/.test(value);
+      const val = searchValue.trim();
+      const isInn = /^\d{10,12}$/.test(val);
       const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-        body: isInn ? { inn: value } : { query: value },
+        body: isInn ? { inn: val } : { query: val },
       });
       if (error) throw error;
       if (!data?.found) {
@@ -111,6 +111,8 @@ const ContractsTab = () => {
       setInnLoading(false);
     }
   };
+
+  const lookupInn = () => lookupByValue(inn);
 
   const startEdit = (c: Contract) => {
     setEditingId(c.id); setClientName(c.client_name); setContractNumber(c.contract_number || "");
