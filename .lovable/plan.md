@@ -1,32 +1,41 @@
 
+## Проблемы и решения
 
-# Исправление авторизации для отзывов (403 Forbidden)
+### 1. Порядок сайдбара не сохраняется на телефоне
+**Причина**: Используется только `PointerSensor` из `@dnd-kit`, который на мобильных устройствах конфликтует со скроллом. Нужно добавить `TouchSensor` с задержкой активации (`delay: 250ms, tolerance: 5px`), чтобы drag-and-drop корректно срабатывал на touch-устройствах и не мешал обычному скроллу.
 
-## Проблема
+**Файл**: `src/components/admin/AdminSidebar.tsx`
+- Импортировать `TouchSensor` из `@dnd-kit/core`
+- Добавить `useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } })` в `useSensors`
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+### 2. Закрепить строку чата AI-ассистента на всех вкладках
+Сейчас чат доступен только на вкладке "Дашборд" внутри `SalesAssistant`. Нужно вынести строку ввода в фиксированный элемент внизу экрана (`fixed bottom-0`), который виден на всех вкладках.
 
-## Решение
+**Подход**: Извлечь чат-логику (messages, input, send, streamChat) в отдельный компонент `FloatingAIChat`, который:
+- Рендерится в `Admin.tsx` вне `<main>`, как `fixed` элемент внизу
+- На мобильном: компактная строка ввода с иконкой бота, при фокусе/клике раскрывается в полноэкранный чат
+- На десктопе: компактная полоса внизу, раскрывается в панель ~400px
+- Кнопка сворачивания/разворачивания
+- Quick questions показываются только когда чат развёрнут и пуст
 
-### 1. Включить Google OAuth через настройки аутентификации
+**Файлы**:
+- Создать `src/components/admin/FloatingAIChat.tsx` — новый компонент с фиксированным позиционированием
+- `src/pages/Admin.tsx` — добавить `<FloatingAIChat />` рядом с `SidebarProvider`, добавить `pb-14` к `<main>` чтобы контент не перекрывался
+- `src/components/admin/SalesAssistant.tsx` — убрать AI-чат из этого компонента, оставить только ForecastCards + LeadsPanel
+- `src/components/admin/DashboardTab.tsx` — проверить, рендерит ли он SalesAssistant, адаптировать
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+### 3. Адаптация чата под телефон
+В `FloatingAIChat`:
+- Свёрнутое состояние: тонкая полоска `h-12` с input и кнопкой отправки
+- Развёрнутое состояние на мобильном: `fixed inset-0 z-50` полноэкранный оверлей с историей сообщений
+- Развёрнутое на десктопе: `fixed bottom-0 right-4 w-96 h-[450px]`
 
-### 2. Добавить redirect URL в список разрешённых
+### Файлы для изменения
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
-
-### 3. Обновить GoogleAuthButton (если потребуется)
-
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
+| Файл | Изменение |
 |---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
-
+| `src/components/admin/AdminSidebar.tsx` | Добавить `TouchSensor` для мобильного drag-and-drop |
+| `src/components/admin/FloatingAIChat.tsx` | Новый: фиксированный чат-виджет |
+| `src/pages/Admin.tsx` | Подключить FloatingAIChat, padding-bottom для main |
+| `src/components/admin/SalesAssistant.tsx` | Убрать секцию AI-чата, оставить прогноз + лиды |
+| `src/components/admin/DashboardTab.tsx` | Проверить/адаптировать под изменения |
