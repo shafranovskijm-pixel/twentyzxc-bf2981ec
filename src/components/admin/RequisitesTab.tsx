@@ -34,13 +34,27 @@ const RequisitesTab = () => {
 
   const lookupInn = async () => {
     const inn = values.company_inn?.trim();
-    if (!inn || inn.length < 10) return toast.error("Введите корректный ИНН (10 или 12 цифр)");
+    if (!inn || inn.length < 10) { toast.error("Введите корректный ИНН (10 или 12 цифр)"); return; }
     setLookingUp(true);
     try {
-      const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-        body: { inn },
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dadata-lookup`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ inn }),
+        signal: controller.signal,
       });
-      if (error) throw error;
+      clearTimeout(timeout);
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Request failed");
       if (!data?.found) { toast.error("Организация не найдена"); return; }
       setValues(prev => ({
         ...prev,
@@ -53,10 +67,11 @@ const RequisitesTab = () => {
         company_director_post: data.management_post || prev.company_director_post,
       }));
       toast.success("Реквизиты заполнены по ИНН");
-    } catch {
-      toast.error("Ошибка запроса DaData");
+    } catch (e: any) {
+      toast.error(e?.name === "AbortError" ? "Таймаут запроса" : "Ошибка запроса DaData");
+    } finally {
+      setLookingUp(false);
     }
-    setLookingUp(false);
   };
 
   useEffect(() => {
