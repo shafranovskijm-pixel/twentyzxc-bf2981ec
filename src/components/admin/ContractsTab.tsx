@@ -118,25 +118,41 @@ const ContractsTab = () => {
   const saveContract = async () => {
     if (!clientName.trim()) return toast.error("Укажите организацию");
     setSaving(true);
-    try {
-      const payload: Record<string, unknown> = {
-        client_name: clientName.trim(),
-        contract_number: contractNumber.trim() || null,
-        contract_date: contractDate || null,
-        payment_status: paymentStatus || null,
-        amount: amount ? parseFloat(amount) : null,
-        amount_extra: amountExtra ? parseFloat(amountExtra) : null,
-        contract_type: contractType.trim() || null,
-        responsible: responsible.trim() || null,
-        notes: notes.trim() || null,
-        paid_until: paidUntil || null,
-      };
-      if (editingId) {
+    const payload: Record<string, unknown> = {
+      client_name: clientName.trim(),
+      contract_number: contractNumber.trim() || null,
+      contract_date: contractDate || null,
+      payment_status: paymentStatus || null,
+      amount: amount ? parseFloat(amount) : null,
+      amount_extra: amountExtra ? parseFloat(amountExtra) : null,
+      contract_type: contractType.trim() || null,
+      responsible: responsible.trim() || null,
+      notes: notes.trim() || null,
+      paid_until: paidUntil || null,
+    };
+
+    // Optimistic update for edits
+    if (editingId) {
+      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
+      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
+        old?.map((c) => c.id === editingId ? { ...c, ...payload } as Contract : c) ?? []
+      );
+      resetForm();
+      setSaving(false);
+      toast.success("Договор обновлён");
+
+      try {
         if (file) { const fp = await uploadFile(editingId); if (fp) payload.file_path = fp; }
         const { error } = await supabase.from("contracts").update(payload as any).eq("id", editingId);
         if (error) throw error;
-        toast.success("Договор обновлён");
-      } else {
+        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+      } catch {
+        queryClient.setQueryData(["admin-contracts"], prev);
+        toast.error("Ошибка сохранения — изменения откачены");
+      }
+    } else {
+      // New contract — can't fully optimistic, but close form immediately
+      try {
         const { data, error } = await supabase.from("contracts").insert(payload as any).select("id").single();
         if (error) throw error;
         if (file && data) {
@@ -144,11 +160,11 @@ const ContractsTab = () => {
           if (fp) await supabase.from("contracts").update({ file_path: fp }).eq("id", data.id);
         }
         toast.success("Договор добавлен");
-      }
-      queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-      resetForm();
-    } catch { toast.error("Ошибка сохранения"); }
-    setSaving(false);
+        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+        resetForm();
+      } catch { toast.error("Ошибка сохранения"); }
+      setSaving(false);
+    }
   };
 
   const deleteContract = useMutation({
@@ -157,8 +173,15 @@ const ContractsTab = () => {
       const { error } = await supabase.from("contracts").delete().eq("id", contract.id);
       if (error) throw error;
     },
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }); toast.success("Договор удалён"); },
-    onError: () => toast.error("Ошибка удаления"),
+    onMutate: async (contract) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-contracts"] });
+      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
+      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) => old?.filter((c) => c.id !== contract.id) ?? []);
+      return { prev };
+    },
+    onSuccess: () => { toast.success("Договор удалён"); },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка удаления"); },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
   });
 
   const toggleArchive = useMutation({
@@ -166,11 +189,17 @@ const ContractsTab = () => {
       const { error } = await supabase.from("contracts").update({ is_archived: archive } as any).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-      toast.success("Готово");
+    onMutate: async ({ id, archive }) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-contracts"] });
+      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
+      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
+        old?.map((c) => c.id === id ? { ...c, is_archived: archive } : c) ?? []
+      );
+      return { prev };
     },
-    onError: () => toast.error("Ошибка"),
+    onSuccess: () => { toast.success("Готово"); },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка"); },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
   });
 
   const downloadFile = async (filePath: string) => {
