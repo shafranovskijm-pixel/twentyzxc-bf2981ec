@@ -63,6 +63,19 @@ const ContractsTab = () => {
     },
   });
 
+  const getNextContractNumber = () => {
+    const year = new Date().getFullYear();
+    let maxNum = 0;
+    contracts.forEach((c) => {
+      const match = c.contract_number?.match(/^(\d+)-(\d{4})$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    return `${maxNum + 1}-${year}`;
+  };
+
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
@@ -318,7 +331,7 @@ const ContractsTab = () => {
               </Table>
             </div>
             <div className="flex justify-center py-4 border-t">
-              <Button variant="outline" onClick={() => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <Button variant="outline" onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 <Plus className="w-4 h-4 mr-2" />Добавить договор
               </Button>
             </div>
@@ -332,7 +345,7 @@ const ContractsTab = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Input placeholder="Поиск договоров..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
-        <Button onClick={() => { resetForm(); setShowForm(true); }}>
+        <Button onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
           <Plus className="w-4 h-4 mr-2" />Добавить
         </Button>
       </div>
