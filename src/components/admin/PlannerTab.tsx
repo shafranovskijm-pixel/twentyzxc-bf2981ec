@@ -477,6 +477,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       if (error) throw error;
       return data as Task[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: clients = [] } = useQuery({
@@ -486,6 +487,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       if (error) throw error;
       return data as Client[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: contracts = [] } = useQuery({
@@ -495,6 +497,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       if (error) throw error;
       return data as Contract[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateTask = useMutation({
