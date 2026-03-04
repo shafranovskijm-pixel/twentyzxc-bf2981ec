@@ -24,8 +24,10 @@ const HeroSection = () => {
       <div className="absolute top-1/3 left-1/3 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-float" style={{ animationDelay: '4s' }} />
       <div className="absolute bottom-1/4 right-1/3 w-24 h-24 rounded-full bg-primary/8 blur-xl animate-float" style={{ animationDelay: '1s' }} />
       
-      {/* Gold glow - enhanced for dark */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/15 blur-3xl" />
+      {/* Large central radial glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-primary/10 blur-[120px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/15 blur-[80px]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/20 blur-[60px]" />
 
       {/* Decorative diamonds scattered */}
       <div className="absolute top-[15%] left-[10%] w-2 h-2 bg-primary/20 rotate-45" />
