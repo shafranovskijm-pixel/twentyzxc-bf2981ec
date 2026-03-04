@@ -200,7 +200,7 @@ const Admin = () => {
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="min-h-screen bg-background">
-        <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-bold text-foreground">Настройки сайта</h1>
             <Button variant="outline" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-2" />Выйти</Button>
