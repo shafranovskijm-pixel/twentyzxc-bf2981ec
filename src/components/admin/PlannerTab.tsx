@@ -177,6 +177,7 @@ function DayColumn({
   onStatusChange,
   onDelete,
   onAddTask,
+  onCreateDocument,
 }: {
   date: Date;
   tasks: Task[];
@@ -187,6 +188,7 @@ function DayColumn({
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
+  onCreateDocument?: (task: Task) => void;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
