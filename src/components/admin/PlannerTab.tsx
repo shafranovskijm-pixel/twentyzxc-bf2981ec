@@ -530,6 +530,9 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const [isDragging, setIsDragging] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [chargingEdge, setChargingEdge] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterClientId, setFilterClientId] = useState<string>("all");
+  const [filterClientOpen, setFilterClientOpen] = useState(false);
   const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const edgeHoverIdRef = useRef<string | null>(null);
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
