@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-document-email]
 verify_jwt = false
+
+[functions.sales-assistant]
+verify_jwt = false
