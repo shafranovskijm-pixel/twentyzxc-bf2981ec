@@ -62,11 +62,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; next: string
 function TaskCard({
   task,
   clients,
+  contracts,
   onStatusChange,
   onDelete,
 }: {
   task: Task;
   clients: Client[];
+  contracts: Contract[];
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -127,6 +129,7 @@ function DayColumn({
   date,
   tasks,
   clients,
+  contracts,
   onStatusChange,
   onDelete,
   onAddTask,
@@ -134,9 +137,10 @@ function DayColumn({
   date: Date;
   tasks: Task[];
   clients: Client[];
+  contracts: Contract[];
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
-  onAddTask: (date: string, title: string, clientId?: string) => void;
+  onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
 }) {
   const [showAdd, setShowAdd] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -252,6 +256,15 @@ const PlannerTab = () => {
     },
   });
 
+  const { data: contracts = [] } = useQuery({
+    queryKey: ["planner-contracts"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("contracts").select("id, client_name, contract_number").eq("is_archived", false).order("contract_number", { ascending: false });
+      if (error) throw error;
+      return data as Contract[];
+    },
+  });
+
   const updateTask = useMutation({
     mutationFn: async (updates: { id: string } & Partial<Task>) => {
       const { id, ...rest } = updates;
@@ -262,12 +275,13 @@ const PlannerTab = () => {
   });
 
   const addTask = useMutation({
-    mutationFn: async ({ task_date, title, client_id }: { task_date: string; title: string; client_id?: string }) => {
+    mutationFn: async ({ task_date, title, client_id, contract_id }: { task_date: string; title: string; client_id?: string; contract_id?: string }) => {
       const maxOrder = tasks.filter((t) => t.task_date === task_date).reduce((m, t) => Math.max(m, t.sort_order), -1);
       const { error } = await supabase.from("tasks").insert({
         title,
         task_date,
         client_id: client_id || null,
+        contract_id: contract_id || null,
         sort_order: maxOrder + 1,
       });
       if (error) throw error;
@@ -326,8 +340,8 @@ const PlannerTab = () => {
     updateTask.mutate({ id, status });
   };
 
-  const handleAddTask = (date: string, title: string, clientId?: string) => {
-    addTask.mutate({ task_date: date, title, client_id: clientId });
+  const handleAddTask = (date: string, title: string, clientId?: string, contractId?: string) => {
+    addTask.mutate({ task_date: date, title, client_id: clientId, contract_id: contractId });
   };
 
   const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
@@ -363,6 +377,7 @@ const PlannerTab = () => {
                   date={date}
                   tasks={dayTasks}
                   clients={clients}
+                  contracts={contracts}
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
