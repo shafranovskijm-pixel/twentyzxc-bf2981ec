@@ -1,32 +1,47 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Diagnosis
 
-## Проблема
+The save operation hangs because `updateMultiple` fires **18 parallel individual upsert requests** to the database. Each request goes through the network independently, and if any single one stalls or fails silently, the entire `Promise.all` never resolves, leaving the spinner spinning indefinitely.
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+Additionally, the `value` column is `jsonb`, but the code does `JSON.stringify(value)` which double-encodes strings that are already plain text (e.g. `"text"` becomes `"\"text\""` in the DB).
 
-## Решение
+## Plan
 
-### 1. Включить Google OAuth через настройки аутентификации
+### 1. Replace parallel requests with a single batch upsert
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+Refactor `updateMultiple` in `use-site-settings.tsx` to send **one** upsert call with an array of all rows, instead of 18 individual calls:
 
-### 2. Добавить redirect URL в список разрешённых
+```typescript
+mutationFn: async (entries) => {
+  const rows = entries.map(e => ({
+    key: e.key,
+    value: e.value, // pass raw value, jsonb column handles it
+    updated_at: new Date().toISOString(),
+  }));
+  const { error } = await supabase
+    .from("site_settings" as any)
+    .upsert(rows as any, { onConflict: "key" });
+  if (error) throw error;
+}
+```
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+### 2. Fix double JSON encoding
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+Since the `value` column is `jsonb`, passing a plain string directly works — PostgREST wraps it as a JSON string automatically. Remove `JSON.stringify()` wrapping from both `updateSetting` and `updateMultiple` to prevent double-encoding like `"\"text\""`.
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+### 3. Add timeout protection to handleSave
 
-## Технические детали
+Wrap the save call with a timeout in `RequisitesTab.tsx` so the spinner can't hang indefinitely:
 
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+```typescript
+const timeoutPromise = new Promise((_, reject) => 
+  setTimeout(() => reject(new Error('timeout')), 10000)
+);
+await Promise.race([updateMultiple.mutateAsync(entries), timeoutPromise]);
+```
 
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Files to modify
+- `src/hooks/use-site-settings.tsx` — batch upsert + remove JSON.stringify
+- `src/components/admin/RequisitesTab.tsx` — add save timeout
 
