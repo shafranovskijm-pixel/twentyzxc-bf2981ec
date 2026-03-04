@@ -375,7 +375,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
       ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
       
-      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.65);
       pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
       
       srcY += sliceCanvasHeight;
