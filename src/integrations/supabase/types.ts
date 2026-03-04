@@ -49,10 +49,14 @@ export type Database = {
           contact_person: string | null
           created_at: string
           email: string | null
+          frdo_login: string | null
+          frdo_password: string | null
           id: string
           name: string
           notes: string | null
+          payment_date: string | null
           phone: string | null
+          service_type: string | null
           telegram: string | null
           updated_at: string
         }
@@ -60,10 +64,14 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           email?: string | null
+          frdo_login?: string | null
+          frdo_password?: string | null
           id?: string
           name: string
           notes?: string | null
+          payment_date?: string | null
           phone?: string | null
+          service_type?: string | null
           telegram?: string | null
           updated_at?: string
         }
@@ -71,10 +79,14 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           email?: string | null
+          frdo_login?: string | null
+          frdo_password?: string | null
           id?: string
           name?: string
           notes?: string | null
+          payment_date?: string | null
           phone?: string | null
+          service_type?: string | null
           telegram?: string | null
           updated_at?: string
         }
