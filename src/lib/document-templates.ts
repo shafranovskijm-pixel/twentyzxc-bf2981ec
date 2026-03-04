@@ -56,6 +56,22 @@ function totalSum(services: ServiceItem[]): number {
   return services.reduce((s, i) => s + i.qty * i.price, 0);
 }
 
+function isFeminineName(fullName: string): boolean {
+  if (!fullName) return false;
+  const parts = fullName.trim().split(/\s+/);
+  // Check patronymic (отчество) ending — most reliable
+  const patronymic = parts.length >= 3 ? parts[2] : parts.length >= 2 ? parts[1] : "";
+  if (patronymic.endsWith("вна") || patronymic.endsWith("чна") || patronymic.endsWith("шна")) return true;
+  // Fallback: check last name ending
+  const lastName = parts[0] || "";
+  if (lastName.endsWith("ва") || lastName.endsWith("на") || lastName.endsWith("ая") || lastName.endsWith("яя")) return true;
+  return false;
+}
+
+function getActingPhrase(directorName: string): string {
+  return isFeminineName(directorName) ? "действующей" : "действующего";
+}
+
 const baseStyles = `
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -127,12 +143,12 @@ export function generateContractHtml(data: DocumentData): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Договор №${num}</title>${baseStyles}</head><body>
     <h1>ДОГОВОР №${num}</h1>
     <div class="header-row">
-      <span>г. Москва</span>
+      <span>г. Владивосток</span>
       <span>${date}</span>
     </div>
     <div class="section">
-      <p><strong>${c.company_short_name || c.company_name}</strong>, ИНН ${c.company_inn}, в лице ${c.company_director_post} ${c.company_director_name}, действующего на основании Устава, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${cl.director_post || "Директора"} ${cl.director_name}, именуемое в дальнейшем «Заказчик», с другой стороны,</p>
+      <p><strong>${c.company_short_name || c.company_name}</strong>, ИНН ${c.company_inn}, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
+      <p><strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${cl.director_post || "Директора"} ${cl.director_name}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,</p>
       <p>заключили настоящий Договор о нижеследующем:</p>
     </div>
     <div class="section">
@@ -263,13 +279,13 @@ export function generateActHtml(data: DocumentData): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}</head><body>
     <h1>АКТ №${num}<br/>выполненных работ (оказанных услуг)</h1>
     <div class="header-row">
-      <span>г. Москва</span>
+      <span>г. Владивосток</span>
       <span>${date}</span>
     </div>
     ${data.contractNumber ? `<p class="section">К Договору №${data.contractNumber}${data.contractDate ? ` от ${data.contractDate}` : ""}</p>` : ""}
     <div class="section">
-      <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», в лице ${c.company_director_post} ${c.company_director_name}, с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${cl.director_post || "Директора"} ${cl.director_name}, с другой стороны,</p>
+      <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
+      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${cl.director_post || "Директора"} ${cl.director_name}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
     ${servicesTableHtml(services)}
