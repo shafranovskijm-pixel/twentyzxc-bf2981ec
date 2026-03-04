@@ -249,6 +249,53 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          converted_client_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          message: string | null
+          name: string | null
+          phone: string | null
+          source: string | null
+          status: string | null
+          telegram_chat_id: number | null
+        }
+        Insert: {
+          converted_client_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          telegram_chat_id?: number | null
+        }
+        Update: {
+          converted_client_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          message?: string | null
+          name?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string | null
+          telegram_chat_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_converted_client_id_fkey"
+            columns: ["converted_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category_id: string
@@ -559,6 +606,38 @@ export type Database = {
           user_name?: string
         }
         Relationships: []
+      }
+      sales_notes: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          note_type: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          note_type?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          note_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {
