@@ -214,7 +214,7 @@ export function generateContractHtml(data: DocumentData): string {
     </div>
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, ИНН ${c.company_inn}, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${cl.director_post || "Директора"} ${cl.director_name}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,</p>
+      <p><strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,</p>
       <p>заключили настоящий Договор о нижеследующем:</p>
     </div>
     <div class="section">
@@ -351,7 +351,7 @@ export function generateActHtml(data: DocumentData): string {
     ${data.contractNumber ? `<p class="section">К Договору №${data.contractNumber}${data.contractDate ? ` от ${data.contractDate}` : ""}</p>` : ""}
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${cl.director_post || "Директора"} ${cl.director_name}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны,</p>
+      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
     ${servicesTableHtml(services)}
