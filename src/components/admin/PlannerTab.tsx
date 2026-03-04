@@ -737,9 +737,22 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
 
   const goToday = () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
+  const filteredTasks = useMemo(() => {
+    let result = tasks;
+    if (filterStatus !== "all") result = result.filter(t => t.status === filterStatus);
+    if (filterClientId !== "all") {
+      if (filterClientId === "__none__") result = result.filter(t => !t.client_id);
+      else result = result.filter(t => t.client_id === filterClientId);
+    }
+    return result;
+  }, [tasks, filterStatus, filterClientId]);
+
+  const hasFilters = filterStatus !== "all" || filterClientId !== "all";
+  const selectedFilterClient = clients.find(c => c.id === filterClientId);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
             <ChevronLeft className="h-4 w-4" />
@@ -749,8 +762,67 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-8 w-[130px] text-xs">
+                <SelectValue placeholder="Статус" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Все статусы</SelectItem>
+                <SelectItem value="todo">Сделать</SelectItem>
+                <SelectItem value="in_progress">В работе</SelectItem>
+                <SelectItem value="done">Готово</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Popover open={filterClientOpen} onOpenChange={setFilterClientOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8 text-xs font-normal gap-1.5 max-w-[180px]">
+                {filterClientId === "all" ? "Все клиенты" : filterClientId === "__none__" ? "Без клиента" : (selectedFilterClient?.name || "Клиент")}
+                <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" side="bottom" align="end">
+              <Command>
+                <CommandInput placeholder="Поиск клиента..." className="h-9" />
+                <CommandList>
+                  <CommandEmpty>Не найдено</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem value="__all__" onSelect={() => { setFilterClientId("all"); setFilterClientOpen(false); }}>
+                      <Check className={cn("mr-2 h-4 w-4", filterClientId === "all" ? "opacity-100" : "opacity-0")} />
+                      Все клиенты
+                    </CommandItem>
+                    <CommandItem value="__none__" onSelect={() => { setFilterClientId("__none__"); setFilterClientOpen(false); }}>
+                      <Check className={cn("mr-2 h-4 w-4", filterClientId === "__none__" ? "opacity-100" : "opacity-0")} />
+                      Без клиента
+                    </CommandItem>
+                    {clients.map(c => (
+                      <CommandItem key={c.id} value={c.name} onSelect={() => { setFilterClientId(c.id); setFilterClientOpen(false); }}>
+                        <Check className={cn("mr-2 h-4 w-4", filterClientId === c.id ? "opacity-100" : "opacity-0")} />
+                        {c.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {hasFilters && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs px-2" onClick={() => { setFilterStatus("all"); setFilterClientId("all"); }}>
+              <X className="h-3.5 w-3.5 mr-1" /> Сбросить
+            </Button>
+          )}
+        </div>
+
         <h2 className="text-sm font-medium text-muted-foreground">
           {format(weekStart, "d MMM", { locale: ru })} — {format(weekEnd, "d MMM yyyy", { locale: ru })}
+          {hasFilters && <span className="ml-2 text-xs text-primary">({filteredTasks.length} из {tasks.length})</span>}
         </h2>
       </div>
 
@@ -762,7 +834,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
             {isDragging && <EdgeDropZone id="edge-prev-week" side="left" isCharging={chargingEdge === "edge-prev-week"} />}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
-              const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
+              const dayTasks = filteredTasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
               return (
                 <DayColumn
                   key={dateStr}
