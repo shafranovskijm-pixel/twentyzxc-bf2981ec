@@ -752,15 +752,19 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
+          <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setWeekStart((w) => subWeeks(w, 1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="sm" onClick={goToday}>Сегодня</Button>
-          <Button variant="outline" size="icon" onClick={() => setWeekStart((w) => addWeeks(w, 1))}>
+          <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm" onClick={goToday}>Сегодня</Button>
+          <Button variant="outline" size="icon" className="h-8 w-8 sm:h-9 sm:w-9" onClick={() => setWeekStart((w) => addWeeks(w, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
+          <h2 className="text-xs sm:text-sm font-medium text-muted-foreground ml-1">
+            {format(weekStart, "d MMM", { locale: ru })} — {format(weekEnd, "d MMM yyyy", { locale: ru })}
+            {hasFilters && <span className="ml-2 text-xs text-primary">({filteredTasks.length} из {tasks.length})</span>}
+          </h2>
         </div>
 
         {/* Filters */}
@@ -768,7 +772,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
           <div className="flex items-center gap-1.5">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="h-8 w-[130px] text-xs">
+              <SelectTrigger className="h-8 w-[120px] sm:w-[130px] text-xs">
                 <SelectValue placeholder="Статус" />
               </SelectTrigger>
               <SelectContent>
@@ -782,7 +786,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
 
           <Popover open={filterClientOpen} onOpenChange={setFilterClientOpen}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8 text-xs font-normal gap-1.5 max-w-[180px]">
+              <Button variant="outline" size="sm" className="h-8 text-xs font-normal gap-1.5 max-w-[160px] sm:max-w-[180px]">
                 {filterClientId === "all" ? "Все клиенты" : filterClientId === "__none__" ? "Без клиента" : (selectedFilterClient?.name || "Клиент")}
                 <ChevronsUpDown className="h-3.5 w-3.5 opacity-50" />
               </Button>
@@ -819,19 +823,14 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
             </Button>
           )}
         </div>
-
-        <h2 className="text-sm font-medium text-muted-foreground">
-          {format(weekStart, "d MMM", { locale: ru })} — {format(weekEnd, "d MMM yyyy", { locale: ru })}
-          {hasFilters && <span className="ml-2 text-xs text-primary">({filteredTasks.length} из {tasks.length})</span>}
-        </h2>
       </div>
 
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-          <div className="flex gap-2 min-h-[120px]">
-            {isDragging && <EdgeDropZone id="edge-prev-week" side="left" isCharging={chargingEdge === "edge-prev-week"} />}
+          <div className="flex flex-col sm:flex-row gap-2 min-h-[120px]">
+            {isDragging && <div className="hidden sm:block"><EdgeDropZone id="edge-prev-week" side="left" isCharging={chargingEdge === "edge-prev-week"} /></div>}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = filteredTasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -851,7 +850,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                 />
               );
             })}
-            {isDragging && <EdgeDropZone id="edge-next-week" side="right" isCharging={chargingEdge === "edge-next-week"} />}
+            {isDragging && <div className="hidden sm:block"><EdgeDropZone id="edge-next-week" side="right" isCharging={chargingEdge === "edge-next-week"} /></div>}
           </div>
           <DragOverlay dropAnimation={{
             duration: 250,
