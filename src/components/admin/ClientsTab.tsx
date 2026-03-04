@@ -240,14 +240,14 @@ const ClientsTab = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
-        <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0}>
-          {syncingAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-          Синхр. все реквизиты
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 min-w-[150px]" />
+        <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
+          {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
+          <span className="hidden sm:inline">Синхр. все реквизиты</span>
         </Button>
-        <Button onClick={() => { resetForm(); setShowForm(true); }}>
-          <Plus className="w-4 h-4 mr-2" />Добавить
+        <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
+          <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Добавить</span>
         </Button>
       </div>
 
@@ -260,7 +260,7 @@ const ClientsTab = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Название организации *</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
@@ -277,20 +277,20 @@ const ClientsTab = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Контактное лицо</Label><Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Иванов И.И." /></div>
               <div className="space-y-2"><Label>Телефон</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 123-45-67" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@company.ru" /></div>
               <div className="space-y-2"><Label>Telegram</Label><Input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" /></div>
             </div>
             <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={frdoLogin} onChange={(e) => setFrdoLogin(e.target.value)} placeholder="login" /></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Пароль ДПО</Label><Input value={frdoPassword} onChange={(e) => setFrdoPassword(e.target.value)} placeholder="пароль ДПО" /></div>
               <div className="space-y-2"><Label>Пароль ПО</Label><Input value={frdoPasswordPo} onChange={(e) => setFrdoPasswordPo(e.target.value)} placeholder="пароль ПО" /></div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Дата оплаты</Label>
                 <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
@@ -306,7 +306,7 @@ const ClientsTab = () => {
                   Синхронизировать
                 </Button>
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2"><Label>ИНН</Label><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /></div>
                 <div className="space-y-2"><Label>КПП</Label><Input value={kpp} onChange={(e) => setKpp(e.target.value)} placeholder="123456789" /></div>
                 <div className="space-y-2"><Label>ОГРН</Label><Input value={ogrn} onChange={(e) => setOgrn(e.target.value)} placeholder="1234567890123" /></div>
@@ -315,7 +315,7 @@ const ClientsTab = () => {
                 <Label>Юридический адрес</Label>
                 <Input value={legalAddress} onChange={(e) => setLegalAddress(e.target.value)} placeholder="г. Москва, ул. ..." />
               </div>
-              <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                 <div className="space-y-2"><Label>ФИО руководителя</Label><Input value={directorName} onChange={(e) => setDirectorName(e.target.value)} placeholder="Иванов Иван Иванович" /></div>
                 <div className="space-y-2"><Label>Должность руководителя</Label><Input value={directorPost} onChange={(e) => setDirectorPost(e.target.value)} placeholder="Директор" /></div>
               </div>
@@ -354,58 +354,90 @@ const ClientsTab = () => {
               {search ? "Ничего не найдено" : "Нет клиентов"}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Организация</TableHead>
-                  <TableHead>ИНН</TableHead>
-                  <TableHead>Услуга</TableHead>
-                  <TableHead>Контактное лицо</TableHead>
-                  <TableHead>Телефон</TableHead>
-                  <TableHead>Оплата</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Mobile cards */}
+              <div className="sm:hidden divide-y">
                 {filtered.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
+                  <div key={c.id} className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
                       <button
                         onClick={() => startEdit(c)}
-                        className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors"
+                        className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm"
                       >
                         {c.name}
                       </button>
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{c.inn || "—"}</TableCell>
-                    <TableCell>
-                      <Select value={c.service_type || ""} onValueChange={(v) => updateServiceType(c.id, v)}>
-                        <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none focus:ring-0">
-                          <SelectValue>{getServiceBadge(c.service_type)}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SERVICE_OPTIONS.map(o => (
-                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>{c.contact_person || "—"}</TableCell>
-                    <TableCell>{c.phone || "—"}</TableCell>
-                    <TableCell className="text-xs">
-                      {c.payment_date
-                        ? new Date(c.payment_date).toLocaleDateString("ru-RU")
-                        : "—"}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => deleteClient(c.id)} className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {getServiceBadge(c.service_type)}
+                        <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteClient(c.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      {c.inn && <span className="font-mono">ИНН: {c.inn}</span>}
+                      {c.contact_person && <span>{c.contact_person}</span>}
+                      {c.phone && <span>{c.phone}</span>}
+                      {c.payment_date && <span>Оплата: {new Date(c.payment_date).toLocaleDateString("ru-RU")}</span>}
+                    </div>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+              {/* Desktop table */}
+              <div className="hidden sm:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Организация</TableHead>
+                      <TableHead>ИНН</TableHead>
+                      <TableHead>Услуга</TableHead>
+                      <TableHead>Контактное лицо</TableHead>
+                      <TableHead>Телефон</TableHead>
+                      <TableHead>Оплата</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.map((c) => (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <button
+                            onClick={() => startEdit(c)}
+                            className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors"
+                          >
+                            {c.name}
+                          </button>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{c.inn || "—"}</TableCell>
+                        <TableCell>
+                          <Select value={c.service_type || ""} onValueChange={(v) => updateServiceType(c.id, v)}>
+                            <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none focus:ring-0">
+                              <SelectValue>{getServiceBadge(c.service_type)}</SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SERVICE_OPTIONS.map(o => (
+                                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>{c.contact_person || "—"}</TableCell>
+                        <TableCell>{c.phone || "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {c.payment_date
+                            ? new Date(c.payment_date).toLocaleDateString("ru-RU")
+                            : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" onClick={() => deleteClient(c.id)} className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

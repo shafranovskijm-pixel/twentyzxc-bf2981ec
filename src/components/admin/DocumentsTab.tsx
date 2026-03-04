@@ -813,22 +813,27 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         <CardContent>
           <div className="space-y-3">
             {services.map((s, i) => (
-              <div key={i} className="grid grid-cols-[1fr_80px_120px_auto] gap-2 items-end">
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_80px_120px_auto] gap-2 items-end">
                 <div className="space-y-1">
-                  {i === 0 && <Label>Наименование</Label>}
+                  <Label className="sm:hidden">Наименование</Label>
+                  {i === 0 && <Label className="hidden sm:block">Наименование</Label>}
                   <Input value={s.name} onChange={e => updateService(i, "name", e.target.value)} placeholder="Услуга..." />
                 </div>
-                <div className="space-y-1">
-                  {i === 0 && <Label>Кол-во</Label>}
-                  <Input type="number" min={1} value={s.qty} onChange={e => updateService(i, "qty", parseInt(e.target.value) || 1)} />
+                <div className="grid grid-cols-[1fr_1fr_auto] sm:contents gap-2">
+                  <div className="space-y-1">
+                    <Label className="sm:hidden">Кол-во</Label>
+                    {i === 0 && <Label className="hidden sm:block">Кол-во</Label>}
+                    <Input type="number" min={1} value={s.qty} onChange={e => updateService(i, "qty", parseInt(e.target.value) || 1)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="sm:hidden">Цена, ₽</Label>
+                    {i === 0 && <Label className="hidden sm:block">Цена, ₽</Label>}
+                    <Input type="number" min={0} value={s.price} onChange={e => updateService(i, "price", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeService(i)} disabled={services.length <= 1} className="self-end">
+                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                  </Button>
                 </div>
-                <div className="space-y-1">
-                  {i === 0 && <Label>Цена, ₽</Label>}
-                  <Input type="number" min={0} value={s.price} onChange={e => updateService(i, "price", parseFloat(e.target.value) || 0)} />
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => removeService(i)} disabled={services.length <= 1}>
-                  <Trash2 className="w-4 h-4 text-muted-foreground" />
-                </Button>
               </div>
             ))}
           </div>
@@ -850,116 +855,118 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
         <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
-          <DialogHeader className="px-6 py-4 border-b flex flex-row items-center justify-between shrink-0">
-            <DialogTitle>Предпросмотр документа</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.print();
-                  }
-                }}
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Печать
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const client = clients.find(c => c.name === clientName);
-                  setEmailTo(client?.email || "");
-                  setEmailDialogOpen(true);
-                }}
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                На почту
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={emailSending}
-                onClick={async () => {
-                  if (!previewHtml) return;
-                  const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-                  try {
-                    toast.info("Генерация PDF...");
-                    const html2canvas = (await import('html2canvas')).default;
-                    const { jsPDF } = await import('jspdf');
-
-                    const iframe = document.createElement('iframe');
-                    iframe.style.position = 'absolute';
-                    iframe.style.left = '-9999px';
-                    iframe.style.width = '794px';
-                    iframe.style.border = 'none';
-                    document.body.appendChild(iframe);
-
-                    iframe.srcdoc = previewHtml;
-                    await new Promise<void>((resolve, reject) => {
-                      const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
-                      iframe.onload = () => { clearTimeout(timeout); resolve(); };
-                    });
-                    await new Promise(r => setTimeout(r, 500));
-
-                    const body = iframe.contentDocument!.body;
-                    iframe.style.height = body.scrollHeight + 'px';
-
-                    const canvas = await Promise.race([
-                      html2canvas(body, {
-                        scale: 2, useCORS: true, width: 794,
-                        height: body.scrollHeight, windowWidth: 794,
-                        windowHeight: body.scrollHeight, logging: false,
-                      }),
-                      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000)),
-                    ]);
-                    document.body.removeChild(iframe);
-
-                    const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                    const pdf = new jsPDF('p', 'mm', 'a4');
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = pdf.internal.pageSize.getHeight();
-                    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                    const margin = 10; // mm margins top/bottom
-                    const usableHeight = pdfHeight - margin * 2;
-                    let heightLeft = imgHeight;
-                    let srcY = 0;
-                    let page = 0;
-
-                    while (heightLeft > 0) {
-                      if (page > 0) pdf.addPage();
-                      const sliceHeight = Math.min(usableHeight, heightLeft);
-                      const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
-                      
-                      const sliceCanvas = document.createElement('canvas');
-                      sliceCanvas.width = canvas.width;
-                      sliceCanvas.height = sliceCanvasHeight;
-                      const ctx = sliceCanvas.getContext('2d')!;
-                      ctx.fillStyle = '#ffffff';
-                      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-                      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
-                      
-                      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
-                      pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
-                      
-                      srcY += sliceCanvasHeight;
-                      heightLeft -= sliceHeight;
-                      page++;
+          <DialogHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <DialogTitle className="text-base sm:text-lg">Предпросмотр</DialogTitle>
+              <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (iframeRef.current?.contentWindow) {
+                      iframeRef.current.contentWindow.print();
                     }
+                  }}
+                >
+                  <Printer className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Печать</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const client = clients.find(c => c.name === clientName);
+                    setEmailTo(client?.email || "");
+                    setEmailDialogOpen(true);
+                  }}
+                >
+                  <Mail className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">На почту</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={emailSending}
+                  onClick={async () => {
+                    if (!previewHtml) return;
+                    const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+                    try {
+                      toast.info("Генерация PDF...");
+                      const html2canvas = (await import('html2canvas')).default;
+                      const { jsPDF } = await import('jspdf');
 
-                    pdf.save(fileName);
-                    toast.success("PDF скачан");
-                  } catch (e) {
-                    console.error('PDF download error:', e);
-                    toast.error("Не удалось сгенерировать PDF");
-                  }
-                }}
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Скачать PDF
-              </Button>
+                      const iframe = document.createElement('iframe');
+                      iframe.style.position = 'absolute';
+                      iframe.style.left = '-9999px';
+                      iframe.style.width = '794px';
+                      iframe.style.border = 'none';
+                      document.body.appendChild(iframe);
+
+                      iframe.srcdoc = previewHtml;
+                      await new Promise<void>((resolve, reject) => {
+                        const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
+                        iframe.onload = () => { clearTimeout(timeout); resolve(); };
+                      });
+                      await new Promise(r => setTimeout(r, 500));
+
+                      const body = iframe.contentDocument!.body;
+                      iframe.style.height = body.scrollHeight + 'px';
+
+                      const canvas = await Promise.race([
+                        html2canvas(body, {
+                          scale: 2, useCORS: true, width: 794,
+                          height: body.scrollHeight, windowWidth: 794,
+                          windowHeight: body.scrollHeight, logging: false,
+                        }),
+                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000)),
+                      ]);
+                      document.body.removeChild(iframe);
+
+                      const imgData = canvas.toDataURL('image/jpeg', 0.85);
+                      const pdf = new jsPDF('p', 'mm', 'a4');
+                      const pdfWidth = pdf.internal.pageSize.getWidth();
+                      const pdfHeight = pdf.internal.pageSize.getHeight();
+                      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                      const margin = 10;
+                      const usableHeight = pdfHeight - margin * 2;
+                      let heightLeft = imgHeight;
+                      let srcY = 0;
+                      let page = 0;
+
+                      while (heightLeft > 0) {
+                        if (page > 0) pdf.addPage();
+                        const sliceHeight = Math.min(usableHeight, heightLeft);
+                        const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
+                        
+                        const sliceCanvas = document.createElement('canvas');
+                        sliceCanvas.width = canvas.width;
+                        sliceCanvas.height = sliceCanvasHeight;
+                        const ctx = sliceCanvas.getContext('2d')!;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+                        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
+                        
+                        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+                        pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
+                        
+                        srcY += sliceCanvasHeight;
+                        heightLeft -= sliceHeight;
+                        page++;
+                      }
+
+                      pdf.save(fileName);
+                      toast.success("PDF скачан");
+                    } catch (e) {
+                      console.error('PDF download error:', e);
+                      toast.error("Не удалось сгенерировать PDF");
+                    }
+                  }}
+                >
+                  <Download className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Скачать PDF</span>
+                </Button>
+              </div>
             </div>
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
@@ -1054,44 +1061,72 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
         <CardTitle className="flex items-center gap-2"><History className="w-5 h-5" />История документов</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Тип</TableHead>
-              <TableHead>Номер</TableHead>
-              <TableHead>Дата</TableHead>
-              <TableHead>Клиент</TableHead>
-              <TableHead>Сумма</TableHead>
-              <TableHead className="w-24"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {docs.map((doc: any) => {
-              const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
-              return (
-                <TableRow key={doc.id}>
-                  <TableCell>
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y">
+          {docs.map((doc: any) => {
+            const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
+            return (
+              <div key={doc.id} className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1">
                     <Badge variant="outline" className={typeInfo.color}>{typeInfo.label}</Badge>
-                  </TableCell>
-                  <TableCell className="font-mono">№{doc.doc_number}</TableCell>
-                  <TableCell>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</TableCell>
-                  <TableCell>{doc.client_name}</TableCell>
-                  <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => viewDoc(doc.html_content)} title="Открыть">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteDoc(doc.id)} className="text-destructive hover:text-destructive" title="Удалить">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                    <span className="font-mono text-xs ml-2">№{doc.doc_number}</span>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => viewDoc(doc.html_content)}><Eye className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteDoc(doc.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</span>
+                  <span>{doc.client_name}</span>
+                  {doc.total_amount && <span className="font-medium text-foreground">{Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {/* Desktop table */}
+        <div className="hidden sm:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Тип</TableHead>
+                <TableHead>Номер</TableHead>
+                <TableHead>Дата</TableHead>
+                <TableHead>Клиент</TableHead>
+                <TableHead>Сумма</TableHead>
+                <TableHead className="w-24"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {docs.map((doc: any) => {
+                const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
+                return (
+                  <TableRow key={doc.id}>
+                    <TableCell>
+                      <Badge variant="outline" className={typeInfo.color}>{typeInfo.label}</Badge>
+                    </TableCell>
+                    <TableCell className="font-mono">№{doc.doc_number}</TableCell>
+                    <TableCell>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</TableCell>
+                    <TableCell>{doc.client_name}</TableCell>
+                    <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => viewDoc(doc.html_content)} title="Открыть">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteDoc(doc.id)} className="text-destructive hover:text-destructive" title="Удалить">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
