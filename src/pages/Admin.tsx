@@ -322,6 +322,7 @@ const Admin = () => {
               {activeSection === "clients" && <ClientsTab />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
+              {activeSection === "planner" && <PlannerTab />}
             </main>
           </div>
         </div>
