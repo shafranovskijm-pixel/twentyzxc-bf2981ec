@@ -378,9 +378,9 @@ function DayColumn({
         "flex flex-col rounded-lg border cursor-pointer transition-all duration-300 ease-out min-w-0",
         today ? "border-primary/60 bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20" : "bg-muted/30",
         isExpanded && "border-primary/60 shadow-lg shadow-primary/10",
-        isOver && "ring-2 ring-primary/50 bg-primary/10 scale-[1.02] shadow-lg shadow-primary/20"
+        isOver && "ring-2 ring-primary/50 bg-primary/10 sm:scale-[1.02] shadow-lg shadow-primary/20"
       )}
-      style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
+      style={{ flex: window.innerWidth >= 640 ? (isExpanded ? 3 : (tasks.length > 0 ? 2 : 1)) : undefined }}
     >
       <div className={cn(
         "px-3 py-2.5 text-center border-b transition-all duration-500",
