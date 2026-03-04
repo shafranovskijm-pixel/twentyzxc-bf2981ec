@@ -280,6 +280,45 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          badge: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          old_price: string | null
+          price: string | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          old_price?: string | null
+          price?: string | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          old_price?: string | null
+          price?: string | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           content: string

@@ -13,20 +13,14 @@ export function GeometricShapes() {
       {/* Medium floating square - left side */}
       <motion.div
         className="absolute top-1/3 left-8 w-20 h-20 border border-primary/5"
-        animate={{ 
-          y: [0, -20, 0],
-          rotate: [0, 90, 0],
-        }}
+        animate={{ y: [0, -20, 0], rotate: [0, 90, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
       
       {/* Small diamond - bottom left */}
       <motion.div
         className="absolute bottom-1/4 left-1/4 w-12 h-12 border border-primary/8 rotate-45"
-        animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.15, 0.3, 0.15],
-        }}
+        animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       
@@ -53,29 +47,65 @@ export function GeometricShapes() {
       {/* Floating frame - center right */}
       <motion.div
         className="absolute top-[60%] right-16 w-16 h-24 border border-primary/5"
-        animate={{ 
-          y: [0, 15, 0],
-          rotateZ: [-5, 5, -5],
-        }}
+        animate={{ y: [0, 15, 0], rotateZ: [-5, 5, -5] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       
-      {/* Small accent diamonds */}
+      {/* Gold accent dots */}
       <motion.div
-        className="absolute top-1/2 left-20 w-3 h-3 bg-primary/10 rotate-45"
+        className="absolute top-1/2 left-20 w-3 h-3 bg-primary/15 rotate-45"
         animate={{ opacity: [0.1, 0.3, 0.1] }}
         transition={{ duration: 4, repeat: Infinity }}
       />
       <motion.div
-        className="absolute top-[70%] right-1/3 w-2 h-2 bg-primary/8 rotate-45"
-        animate={{ opacity: [0.08, 0.2, 0.08] }}
+        className="absolute top-[70%] right-1/3 w-2 h-2 bg-primary/10 rotate-45"
+        animate={{ opacity: [0.08, 0.25, 0.08] }}
         transition={{ duration: 5, repeat: Infinity, delay: 1 }}
       />
       <motion.div
-        className="absolute top-[85%] left-1/3 w-2.5 h-2.5 bg-primary/5 rotate-45"
-        animate={{ opacity: [0.05, 0.15, 0.05] }}
+        className="absolute top-[85%] left-1/3 w-2.5 h-2.5 bg-primary/8 rotate-45"
+        animate={{ opacity: [0.05, 0.2, 0.05] }}
         transition={{ duration: 6, repeat: Infinity, delay: 2 }}
       />
+
+      {/* Additional gold dots */}
+      <motion.div
+        className="absolute top-[20%] left-[45%] w-1.5 h-1.5 rounded-full bg-primary/20"
+        animate={{ opacity: [0.1, 0.35, 0.1], scale: [1, 1.3, 1] }}
+        transition={{ duration: 3, repeat: Infinity }}
+      />
+      <motion.div
+        className="absolute top-[40%] right-[12%] w-2 h-2 rounded-full bg-primary/15"
+        animate={{ opacity: [0.08, 0.25, 0.08] }}
+        transition={{ duration: 4.5, repeat: Infinity, delay: 0.5 }}
+      />
+      <motion.div
+        className="absolute bottom-[15%] left-[20%] w-1.5 h-1.5 rounded-full bg-primary/12"
+        animate={{ opacity: [0.1, 0.3, 0.1] }}
+        transition={{ duration: 5, repeat: Infinity, delay: 1.5 }}
+      />
+      <motion.div
+        className="absolute top-[55%] left-[8%] w-2 h-2 rounded-full bg-primary/10"
+        animate={{ opacity: [0.05, 0.2, 0.05], y: [0, -5, 0] }}
+        transition={{ duration: 7, repeat: Infinity }}
+      />
+
+      {/* Horizontal gold lines */}
+      <div className="absolute top-[45%] left-0 w-24 h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
+      <div className="absolute top-[75%] right-0 w-32 h-px bg-gradient-to-l from-transparent via-primary/10 to-transparent" />
+      <div className="absolute top-[15%] left-[30%] w-16 h-px bg-gradient-to-r from-primary/8 to-transparent" />
+
+      {/* Corner ornament - bottom left */}
+      <div className="absolute bottom-12 left-12">
+        <div className="w-20 h-20 border-b border-l border-primary/8" />
+        <div className="absolute bottom-0 left-0 w-2 h-2 bg-primary/15 rotate-45 -translate-x-0.5 translate-y-0.5" />
+      </div>
+
+      {/* Corner ornament - top right */}
+      <div className="absolute top-12 right-12">
+        <div className="w-16 h-16 border-t border-r border-primary/8" />
+        <div className="absolute top-0 right-0 w-2 h-2 bg-primary/15 rotate-45 translate-x-0.5 -translate-y-0.5" />
+      </div>
     </div>
   );
 }
