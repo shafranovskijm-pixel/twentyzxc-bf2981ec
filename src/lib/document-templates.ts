@@ -140,6 +140,7 @@ function getActingPhrase(directorName: string): string {
 
 const baseStyles = `
   <style>
+    @page { size: A4; margin: 10mm; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.4; color: #000; padding: 20mm; }
     table { width: 100%; border-collapse: collapse; }
@@ -160,8 +161,7 @@ const baseStyles = `
     .bank-header td { padding: 4px 8px; border: 1px solid #000; font-size: 10pt; }
     p { margin: 5px 0; }
     @media print {
-      body { padding: 10mm; }
-      @page { margin: 10mm; }
+      body { padding: 10mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
 `;
