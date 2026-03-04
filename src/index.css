@@ -2,69 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 24ZXC Premium Luxury Design System */
+/* 24ZXC Warm Cream Premium Design System */
 
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 3%;
-    --foreground: 45 20% 95%;
+    --background: 40 30% 96%;
+    --foreground: 30 10% 15%;
 
-    --card: 0 0% 6%;
-    --card-foreground: 45 20% 95%;
+    --card: 40 25% 98%;
+    --card-foreground: 30 10% 15%;
 
-    --popover: 0 0% 6%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 40 25% 98%;
+    --popover-foreground: 30 10% 15%;
 
-    --primary: 45 80% 55%;
-    --primary-foreground: 0 0% 3%;
+    --primary: 42 75% 42%;
+    --primary-foreground: 40 30% 96%;
 
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 45 20% 95%;
+    --secondary: 35 20% 92%;
+    --secondary-foreground: 30 10% 20%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 35 15% 88%;
+    --muted-foreground: 30 5% 45%;
 
-    --accent: 45 80% 55%;
-    --accent-foreground: 0 0% 3%;
+    --accent: 42 75% 42%;
+    --accent-foreground: 40 30% 96%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 45 20% 95%;
+    --destructive-foreground: 40 30% 96%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
-    --ring: 45 80% 55%;
+    --border: 35 15% 85%;
+    --input: 35 15% 85%;
+    --ring: 42 75% 42%;
 
     --radius: 0.5rem;
 
     /* Luxury tokens */
-    --gold: 45 80% 55%;
-    --gold-light: 45 70% 70%;
-    --gold-dark: 45 90% 40%;
+    --gold: 42 75% 42%;
+    --gold-light: 42 60% 55%;
+    --gold-dark: 42 85% 32%;
     
-    --gradient-gold: linear-gradient(135deg, hsl(45 80% 55%) 0%, hsl(38 70% 45%) 50%, hsl(45 80% 55%) 100%);
-    --gradient-gold-text: linear-gradient(135deg, hsl(45 80% 65%) 0%, hsl(45 90% 75%) 50%, hsl(38 70% 50%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(0 0% 5%) 0%, hsl(0 0% 2%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(42 75% 42%) 0%, hsl(38 65% 35%) 50%, hsl(42 75% 42%) 100%);
+    --gradient-gold-text: linear-gradient(135deg, hsl(42 75% 38%) 0%, hsl(38 80% 30%) 50%, hsl(42 70% 42%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(40 30% 96%) 0%, hsl(40 25% 92%) 100%);
     
-    --glow-gold: 0 0 80px hsl(45 80% 55% / 0.3);
-    --glow-subtle: 0 4px 60px hsl(45 80% 55% / 0.15);
+    --glow-gold: 0 0 60px hsl(42 75% 42% / 0.15);
+    --glow-subtle: 0 4px 40px hsl(42 75% 42% / 0.08);
     
-    --border-gold: 1px solid hsl(45 80% 55% / 0.3);
+    --border-gold: 1px solid hsl(42 75% 42% / 0.25);
 
-    --sidebar-background: 0 0% 5%;
-    --sidebar-foreground: 45 20% 95%;
-    --sidebar-primary: 45 80% 55%;
-    --sidebar-primary-foreground: 0 0% 3%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 45 20% 95%;
-    --sidebar-border: 0 0% 15%;
-    --sidebar-ring: 45 80% 55%;
+    --sidebar-background: 40 25% 95%;
+    --sidebar-foreground: 30 10% 15%;
+    --sidebar-primary: 42 75% 42%;
+    --sidebar-primary-foreground: 40 30% 96%;
+    --sidebar-accent: 35 20% 90%;
+    --sidebar-accent-foreground: 30 10% 20%;
+    --sidebar-border: 35 15% 85%;
+    --sidebar-ring: 42 75% 42%;
   }
 
   .dark {
-    --background: 0 0% 3%;
-    --foreground: 45 20% 95%;
+    --background: 40 30% 96%;
+    --foreground: 30 10% 15%;
   }
 }
 
@@ -84,11 +84,11 @@
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.3);
+    background: hsl(var(--primary) / 0.2);
     color: hsl(var(--foreground));
   }
 
-  /* Gold premium scrollbar */
+  /* Warm cream scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -99,18 +99,18 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--gold-dark) / 0.4);
+    background: hsl(var(--gold) / 0.35);
     border-radius: 999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--gold) / 0.6);
+    background: hsl(var(--gold) / 0.55);
   }
 
   /* Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--gold-dark) / 0.4) hsl(var(--background));
+    scrollbar-color: hsl(var(--gold) / 0.35) hsl(var(--background));
   }
 }
 
@@ -136,7 +136,7 @@
     .gradient-gold-text {
       background: none;
       -webkit-text-fill-color: unset;
-      color: hsl(45 80% 65%);
+      color: hsl(42 75% 38%);
     }
   }
 
@@ -153,13 +153,14 @@
   }
 
   .luxury-card {
-    background: linear-gradient(145deg, hsl(0 0% 8% / 0.9) 0%, hsl(0 0% 4% / 0.95) 100%);
-    border: 1px solid hsl(45 80% 55% / 0.15);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(145deg, hsl(40 30% 99% / 0.95) 0%, hsl(40 25% 96% / 0.98) 100%);
+    border: 1px solid hsl(42 75% 42% / 0.12);
+    box-shadow: 0 4px 24px hsl(30 10% 15% / 0.06);
   }
 
   .luxury-card:hover {
-    border-color: hsl(45 80% 55% / 0.4);
+    border-color: hsl(42 75% 42% / 0.3);
+    box-shadow: 0 8px 40px hsl(30 10% 15% / 0.1);
   }
 
   .text-gold {
@@ -168,7 +169,7 @@
 
   .divider-gold {
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, hsl(45 80% 55% / 0.5) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, hsl(42 75% 42% / 0.4) 50%, transparent 100%);
   }
 
   .line-reveal {
@@ -197,9 +198,9 @@
     background: linear-gradient(
       110deg,
       transparent 20%,
-      hsl(45 80% 55% / 0.1) 40%,
-      hsl(45 80% 55% / 0.2) 50%,
-      hsl(45 80% 55% / 0.1) 60%,
+      hsl(42 75% 42% / 0.08) 40%,
+      hsl(42 75% 42% / 0.15) 50%,
+      hsl(42 75% 42% / 0.08) 60%,
       transparent 80%
     );
     background-size: 200% 100%;
@@ -223,7 +224,7 @@
     position: absolute;
     inset: -4px;
     border-radius: 9999px;
-    background: hsl(45 80% 55% / 0.2);
+    background: hsl(42 75% 42% / 0.15);
     animation: pulse-glow 2s ease-in-out infinite;
   }
 
@@ -232,7 +233,7 @@
     position: absolute;
     inset: -8px;
     border-radius: 9999px;
-    background: hsl(45 80% 55% / 0.1);
+    background: hsl(42 75% 42% / 0.08);
     animation: pulse-glow 2s ease-in-out infinite;
     animation-delay: 0.5s;
   }

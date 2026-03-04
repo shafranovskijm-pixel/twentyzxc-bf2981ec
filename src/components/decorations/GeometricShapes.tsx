@@ -5,14 +5,14 @@ export function GeometricShapes() {
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {/* Large rotating diamond - top right */}
       <motion.div
-        className="absolute top-20 right-10 w-32 h-32 border border-primary/20 rotate-45"
+        className="absolute top-20 right-10 w-32 h-32 border border-primary/10 rotate-45"
         animate={{ rotate: [45, 135, 45] }}
         transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
       />
       
       {/* Medium floating square - left side */}
       <motion.div
-        className="absolute top-1/3 left-8 w-20 h-20 border border-primary/10"
+        className="absolute top-1/3 left-8 w-20 h-20 border border-primary/5"
         animate={{ 
           y: [0, -20, 0],
           rotate: [0, 90, 0],
@@ -22,7 +22,7 @@ export function GeometricShapes() {
       
       {/* Small diamond - bottom left */}
       <motion.div
-        className="absolute bottom-1/4 left-1/4 w-12 h-12 border border-primary/15 rotate-45"
+        className="absolute bottom-1/4 left-1/4 w-12 h-12 border border-primary/8 rotate-45"
         animate={{ 
           scale: [1, 1.2, 1],
           opacity: [0.15, 0.3, 0.15],
@@ -31,7 +31,7 @@ export function GeometricShapes() {
       />
       
       {/* Elegant lines - top left corner */}
-      <svg className="absolute top-40 left-12 w-24 h-24 text-primary/10" viewBox="0 0 100 100">
+      <svg className="absolute top-40 left-12 w-24 h-24 text-primary/5" viewBox="0 0 100 100">
         <motion.path
           d="M0 50 L50 0 L50 20 L20 50 L50 50 L50 100 L0 50"
           fill="none"
@@ -44,7 +44,7 @@ export function GeometricShapes() {
       </svg>
       
       {/* Diagonal lines - right side */}
-      <svg className="absolute top-1/2 right-20 w-32 h-32 text-primary/5" viewBox="0 0 100 100">
+      <svg className="absolute top-1/2 right-20 w-32 h-32 text-primary/3" viewBox="0 0 100 100">
         <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="0.5" />
         <line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="0.5" />
         <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="0.5" />
@@ -52,7 +52,7 @@ export function GeometricShapes() {
       
       {/* Floating frame - center right */}
       <motion.div
-        className="absolute top-[60%] right-16 w-16 h-24 border border-primary/10"
+        className="absolute top-[60%] right-16 w-16 h-24 border border-primary/5"
         animate={{ 
           y: [0, 15, 0],
           rotateZ: [-5, 5, -5],
@@ -62,18 +62,18 @@ export function GeometricShapes() {
       
       {/* Small accent diamonds */}
       <motion.div
-        className="absolute top-1/2 left-20 w-3 h-3 bg-primary/20 rotate-45"
-        animate={{ opacity: [0.2, 0.5, 0.2] }}
+        className="absolute top-1/2 left-20 w-3 h-3 bg-primary/10 rotate-45"
+        animate={{ opacity: [0.1, 0.3, 0.1] }}
         transition={{ duration: 4, repeat: Infinity }}
       />
       <motion.div
-        className="absolute top-[70%] right-1/3 w-2 h-2 bg-primary/15 rotate-45"
-        animate={{ opacity: [0.15, 0.4, 0.15] }}
+        className="absolute top-[70%] right-1/3 w-2 h-2 bg-primary/8 rotate-45"
+        animate={{ opacity: [0.08, 0.2, 0.08] }}
         transition={{ duration: 5, repeat: Infinity, delay: 1 }}
       />
       <motion.div
-        className="absolute top-[85%] left-1/3 w-2.5 h-2.5 bg-primary/10 rotate-45"
-        animate={{ opacity: [0.1, 0.3, 0.1] }}
+        className="absolute top-[85%] left-1/3 w-2.5 h-2.5 bg-primary/5 rotate-45"
+        animate={{ opacity: [0.05, 0.15, 0.05] }}
         transition={{ duration: 6, repeat: Infinity, delay: 2 }}
       />
     </div>
