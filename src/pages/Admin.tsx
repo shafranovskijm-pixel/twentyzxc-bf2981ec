@@ -37,7 +37,7 @@ interface Promotion {
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
-  const { settings, isLoading: settingsLoading, updateMultiple } = useSiteSettings();
+  const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
   const [activeSection, setActiveSection] = useState("seo");
   const queryClient = useQueryClient();
@@ -128,14 +128,14 @@ const Admin = () => {
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
 
   useEffect(() => {
-    if (settings.seo_keywords) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
-    if (settings.seo_title) setSeoTitle(settings.seo_title);
-    if (settings.seo_description) setSeoDescription(settings.seo_description);
-    if (settings.og_title) setOgTitle(settings.og_title);
-    if (settings.og_description) setOgDescription(settings.og_description);
-    if (settings.contact_email) setContactEmail(settings.contact_email);
-    if (settings.contact_phone) setContactPhone(settings.contact_phone);
-    if (settings.contact_telegram) setContactTelegram(settings.contact_telegram);
+    if (settings.seo_keywords !== undefined) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
+    if (settings.seo_title !== undefined) setSeoTitle(settings.seo_title);
+    if (settings.seo_description !== undefined) setSeoDescription(settings.seo_description);
+    if (settings.og_title !== undefined) setOgTitle(settings.og_title);
+    if (settings.og_description !== undefined) setOgDescription(settings.og_description);
+    if (settings.contact_email !== undefined) setContactEmail(settings.contact_email);
+    if (settings.contact_phone !== undefined) setContactPhone(settings.contact_phone);
+    if (settings.contact_telegram !== undefined) setContactTelegram(settings.contact_telegram);
   }, [settings]);
 
   const addKeyword = () => { const w = newKeyword.trim(); if (w && !keywords.includes(w)) { setKeywords([...keywords, w]); setNewKeyword(""); } };
@@ -170,7 +170,7 @@ const Admin = () => {
     setSaving(false);
   };
 
-  if (authLoading || settingsLoading) {
+  if (authLoading || (settingsLoading && !settingsError)) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
   }
 
