@@ -337,7 +337,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     
     const canvas = await Promise.race([
       html2canvas(body, {
-        scale: 2,
+        scale: 1.5,
         useCORS: true,
         width: 794,
         height: body.scrollHeight,
@@ -349,7 +349,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     ]);
     document.body.removeChild(iframe);
     
-    const imgData = canvas.toDataURL('image/jpeg', 0.85);
+    const imgData = canvas.toDataURL('image/jpeg', 0.65);
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
