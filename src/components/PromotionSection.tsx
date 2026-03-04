@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Diamond, Sparkles } from "lucide-react";
+import { ArrowRight, Diamond, Sparkles, icons } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,9 +11,16 @@ interface Promotion {
   price: string | null;
   old_price: string | null;
   badge: string | null;
+  icon: string | null;
   is_active: boolean;
   sort_order: number;
 }
+
+const DynamicIcon = ({ name, className }: { name: string; className?: string }) => {
+  const LucideIcon = (icons as Record<string, any>)[name];
+  if (!LucideIcon) return null;
+  return <LucideIcon className={className} />;
+};
 
 const PromotionSection = () => {
   const { data: promotions = [] } = useQuery({
@@ -39,7 +46,7 @@ const PromotionSection = () => {
       </div>
 
       <div className="container relative z-10 px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Section header */}
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-4 mb-6">
@@ -52,12 +59,12 @@ const PromotionSection = () => {
             </h2>
           </div>
 
-          {/* Promotion cards */}
-          <div className="space-y-8">
+          {/* Promotion cards grid */}
+          <div className={`grid gap-8 ${promotions.length >= 2 ? 'md:grid-cols-2' : ''}`}>
             {promotions.map((promo) => (
               <div
                 key={promo.id}
-                className="relative luxury-card rounded-sm p-8 md:p-12 text-center border border-primary/20 hover:border-primary/40 transition-all group"
+                className="relative luxury-card rounded-sm p-8 md:p-10 border border-primary/20 hover:border-primary/40 transition-all group"
               >
                 {/* Glow behind card */}
                 <div className="absolute inset-0 rounded-sm bg-primary/3 blur-xl -z-10 group-hover:bg-primary/5 transition-colors" />
@@ -68,53 +75,65 @@ const PromotionSection = () => {
                 <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-primary/25" />
                 <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-primary/25" />
 
-                {/* Badge */}
-                {promo.badge && (
-                  <Badge className="mb-6 bg-primary/10 text-primary border-primary/30 hover:bg-primary/15 text-sm px-4 py-1">
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                    {promo.badge}
-                  </Badge>
-                )}
-
-                {/* Title */}
-                <h3 className="text-2xl md:text-3xl font-display font-bold mb-4">{promo.title}</h3>
-
-                {/* Description */}
-                {promo.description && (
-                  <p className="text-muted-foreground max-w-lg mx-auto mb-8 leading-relaxed">
-                    {promo.description}
-                  </p>
-                )}
-
-                {/* Price */}
-                <div className="flex items-center justify-center gap-4 mb-8">
-                  {promo.old_price && (
-                    <span className="text-xl text-muted-foreground line-through">{promo.old_price}</span>
+                <div className="flex flex-col items-center text-center gap-6">
+                  {/* Icon */}
+                  {promo.icon && (
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl scale-150" />
+                      <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+                        <DynamicIcon name={promo.icon} className="w-9 h-9 text-primary" />
+                      </div>
+                    </div>
                   )}
-                  {promo.price && (
-                    <span className="text-4xl md:text-5xl font-display font-bold gradient-gold-text gold-glow-text">
-                      {promo.price}
-                    </span>
+
+                  {/* Badge */}
+                  {promo.badge && (
+                    <Badge className="bg-primary/10 text-primary border-primary/30 hover:bg-primary/15 text-sm px-4 py-1">
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      {promo.badge}
+                    </Badge>
                   )}
+
+                  {/* Title */}
+                  <h3 className="text-xl md:text-2xl font-display font-bold">{promo.title}</h3>
+
+                  {/* Description */}
+                  {promo.description && (
+                    <p className="text-muted-foreground leading-relaxed text-sm">
+                      {promo.description}
+                    </p>
+                  )}
+
+                  {/* Price */}
+                  <div className="flex items-center justify-center gap-3">
+                    {promo.old_price && (
+                      <span className="text-lg text-muted-foreground line-through">{promo.old_price}</span>
+                    )}
+                    {promo.price && (
+                      <span className="text-3xl md:text-4xl font-display font-bold gradient-gold-text gold-glow-text">
+                        {promo.price}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Divider */}
+                  <div className="divider-gold w-24 mx-auto" />
+
+                  {/* CTA */}
+                  <Button
+                    variant="hero"
+                    size="default"
+                    onClick={() => {
+                      const contactSection = document.getElementById("contact");
+                      if (contactSection) {
+                        contactSection.scrollIntoView({ behavior: "smooth" });
+                      }
+                    }}
+                  >
+                    Оставить заявку
+                    <ArrowRight className="w-5 h-5" />
+                  </Button>
                 </div>
-
-                {/* Divider */}
-                <div className="divider-gold w-32 mx-auto mb-8" />
-
-                {/* CTA */}
-                <Button
-                  variant="hero"
-                  size="lg"
-                  onClick={() => {
-                    const contactSection = document.getElementById("contact");
-                    if (contactSection) {
-                      contactSection.scrollIntoView({ behavior: "smooth" });
-                    }
-                  }}
-                >
-                  Оставить заявку
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
               </div>
             ))}
           </div>
