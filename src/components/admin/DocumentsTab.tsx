@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/use-site-settings";
@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -20,7 +21,6 @@ import {
   generateContractHtml,
   generateInvoiceHtml,
   generateActHtml,
-  openDocumentPrint,
 } from "@/lib/document-templates";
 
 type DocType = "contract" | "invoice" | "act";
@@ -34,6 +34,8 @@ const DOC_LABELS: Record<DocType, string> = {
 const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: string; onMounted?: () => void }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["doc-clients"],
@@ -275,7 +277,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       toast.error("Не удалось сохранить документ");
     }
 
-    openDocumentPrint(html);
+    setPreviewHtml(html);
   };
 
   if (settingsLoading || clientsLoading) {
@@ -469,7 +471,59 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       </Button>
 
       {/* History */}
-      <DocumentHistory />
+      <DocumentHistory onView={setPreviewHtml} />
+
+      {/* Document Preview Modal */}
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-6 py-4 border-b flex flex-row items-center justify-between shrink-0">
+            <DialogTitle>Предпросмотр документа</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (iframeRef.current?.contentWindow) {
+                    iframeRef.current.contentWindow.print();
+                  }
+                }}
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                Печать
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!previewHtml) return;
+                  const blob = new Blob([previewHtml], { type: "text/html;charset=utf-8" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "document.html";
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Скачать
+              </Button>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden">
+            {previewHtml && (
+              <iframe
+                ref={iframeRef}
+                srcDoc={previewHtml}
+                className="w-full h-full border-0 bg-white"
+                title="Предпросмотр документа"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -480,7 +534,7 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 };
 
-const DocumentHistory = () => {
+const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
   const queryClient = useQueryClient();
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["generated-documents"],
@@ -496,7 +550,7 @@ const DocumentHistory = () => {
   });
 
   const viewDoc = (html: string) => {
-    openDocumentPrint(html);
+    onView(html);
   };
 
   const deleteDoc = async (id: string) => {
