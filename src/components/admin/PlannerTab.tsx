@@ -228,7 +228,7 @@ function DayColumn({
         today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
         isExpanded && "border-primary/60 shadow-lg shadow-primary/10"
       )}
-      style={{ flex: isExpanded ? 3 : 1 }}
+      style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
     >
       <div className={`px-3 py-2.5 text-center border-b transition-all duration-500 ${today ? "bg-primary/10" : ""}`}>
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
