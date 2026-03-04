@@ -42,6 +42,7 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState("seo");
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
+  const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
 
   // SEO state
@@ -328,11 +329,12 @@ const Admin = () => {
               {activeSection === "clients" && <ClientsTab />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
-              {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any) => {
+              {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
                 setDocInitialContractId(task.contract_id || "");
+                setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} onMounted={() => { setDocInitialContractId(""); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
             </main>
           </div>

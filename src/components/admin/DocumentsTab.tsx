@@ -40,7 +40,7 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
-const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: string; onMounted?: () => void }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initialContractId?: string; initialDocType?: string; onMounted?: () => void }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -135,6 +135,12 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       if (contract) {
         setLinkedContractId(contract.id);
         setClientName(contract.client_name || "");
+      }
+      if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
+        setDocType(initialDocType as DocType);
+        if (lastDocNumbers) {
+          setDocNumber(lastDocNumbers[initialDocType] || "001");
+        }
       }
       onMounted?.();
     }
