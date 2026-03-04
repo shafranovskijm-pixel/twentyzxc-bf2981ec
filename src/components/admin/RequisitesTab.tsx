@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSiteSettings } from "@/hooks/use-site-settings";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, Loader2, Building2, Landmark, User } from "lucide-react";
+import { Save, Loader2, Building2, Landmark, User, Search } from "lucide-react";
 
 const FIELDS = [
   { section: "org", label: "Полное название", key: "company_name", placeholder: "ООО «Компания»" },
