@@ -1,32 +1,38 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Plan: Admin sidebar + file manager for contracts
 
-## Проблема
+### What changes
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+1. **Replace top tabs with a collapsible sidebar** in the Admin page
+   - Use the existing `Sidebar` component from shadcn (`src/components/ui/sidebar.tsx`)
+   - Wrap Admin in `SidebarProvider` with `collapsible="icon"` mode
+   - Menu items: SEO, Contacts, Promotions, Clients, Contracts, **Files** (new)
+   - Sidebar starts collapsed; clicking items expands and shows the corresponding content
+   - Keep the logout button in the sidebar footer
 
-## Решение
+2. **Create a new "Files" tab (contract file manager)**
+   - New component `src/components/admin/FilesTab.tsx`
+   - Displays contract files organized as folder cards (one folder per client/contract)
+   - Each folder shows client name, contract number, file count
+   - Click a folder to expand and see uploaded files inside
+   - Support drag-and-drop file upload into folders (using native HTML5 drag events)
+   - Files stored in the existing `contracts` private storage bucket
+   - Each contract's `file_path` field already exists; we'll extend to support multiple files by storing paths as JSON array or using a naming convention in storage
 
-### 1. Включить Google OAuth через настройки аутентификации
+3. **Database consideration**
+   - The `contracts` table already has `file_path` (single text). To support multiple files per contract, we'll create a new `contract_files` table:
+     - `id`, `contract_id` (FK to contracts), `file_name`, `file_path`, `file_size`, `created_at`
+     - RLS: admin-only access (same as contracts)
+   - This lets each contract folder contain multiple files
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+4. **Admin page restructure**
+   - Move all existing tab content (SEO, Contacts, Promotions, Clients, Contracts) into sidebar-driven sections
+   - Active section stored in state, rendered in the main content area
+   - Sidebar uses icons from lucide-react matching current tab icons
 
-### 2. Добавить redirect URL в список разрешённых
-
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
-
-### 3. Обновить GoogleAuthButton (если потребуется)
-
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Files to create/modify
+- `src/pages/Admin.tsx` — restructure layout with Sidebar
+- `src/components/admin/FilesTab.tsx` — new file manager component
+- Database migration — `contract_files` table + RLS policies
 
