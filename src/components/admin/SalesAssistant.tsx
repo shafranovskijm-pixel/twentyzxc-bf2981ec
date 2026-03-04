@@ -17,11 +17,13 @@ interface Contract {
   id: string;
   client_name: string;
   contract_number: string | null;
+  contract_date: string | null;
   amount: number | null;
   amount_extra: number | null;
   payment_status: string | null;
   paid_until: string | null;
   is_archived: boolean;
+  created_at: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sales-assistant`;
@@ -104,10 +106,23 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
 
   const calcForecast = (start: Date, end: Date) => {
     return active.reduce((sum, c) => {
+      const amount = (c.amount || 0) + (c.amount_extra || 0);
+      if (!amount) return sum;
+
+      // Unpaid contracts without paid_until — expected income this month
+      if (!c.paid_until && c.payment_status === "не оплачено") {
+        // Show in current month and this week forecasts
+        const contractDate = c.contract_date ? new Date(c.contract_date) : new Date(c.created_at || now);
+        if (isWithinInterval(contractDate, { start, end }) || isWithinInterval(now, { start, end })) {
+          return sum + amount;
+        }
+        return sum;
+      }
+
       if (!c.paid_until) return sum;
       const paidUntil = new Date(c.paid_until);
       if (isWithinInterval(paidUntil, { start, end }) || isBefore(paidUntil, start)) {
-        return sum + (c.amount || 0) + (c.amount_extra || 0);
+        return sum + amount;
       }
       return sum;
     }, 0);
@@ -158,7 +173,7 @@ const SalesAssistant = () => {
     queryKey: ["sales-contracts"],
     queryFn: async () => {
       const { data, error } = await supabase.from("contracts")
-        .select("id, client_name, contract_number, amount, amount_extra, payment_status, paid_until, is_archived")
+        .select("id, client_name, contract_number, contract_date, amount, amount_extra, payment_status, paid_until, is_archived, created_at")
         .order("contract_number", { ascending: false });
       if (error) throw error;
       return data as Contract[];
