@@ -40,6 +40,7 @@ const FilesTab = () => {
       if (error) throw error;
       return data as ContractFolder[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: files = [], isLoading: loadingFiles } = useQuery({
@@ -52,6 +53,7 @@ const FilesTab = () => {
       if (error) throw error;
       return data as ContractFile[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const filesByContract = files.reduce<Record<string, ContractFile[]>>((acc, f) => {
