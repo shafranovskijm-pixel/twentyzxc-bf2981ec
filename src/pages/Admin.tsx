@@ -18,6 +18,8 @@ import FilesTab from "@/components/admin/FilesTab";
 import PlannerTab from "@/components/admin/PlannerTab";
 import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
+import DashboardTab from "@/components/admin/DashboardTab";
+import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import { toast } from "sonner";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,7 +41,7 @@ const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
-  const [activeSection, setActiveSection] = useState("seo");
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
@@ -190,6 +192,7 @@ const Admin = () => {
   }
 
   const sectionTitles: Record<string, string> = {
+    dashboard: "Дашборд",
     seo: "SEO-настройки",
     contacts: "Контакты",
     promotions: "Акции",
@@ -210,9 +213,11 @@ const Admin = () => {
           <div className="flex-1 flex flex-col">
             <header className="h-12 flex items-center border-b px-4 gap-3">
               <SidebarTrigger />
-              <h1 className="text-lg font-semibold text-foreground">{sectionTitles[activeSection]}</h1>
+              <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
+              <NotificationsPanel onNavigate={setActiveSection} />
             </header>
             <main className="flex-1 p-6 max-w-5xl">
+              {activeSection === "dashboard" && <DashboardTab onNavigate={setActiveSection} />}
               {activeSection === "seo" && (
                 <div className="space-y-6">
                   <Card>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send } from "lucide-react";
 
 interface Client {
   id: string;
@@ -503,6 +503,9 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">История взаимодействий</h3>
       </div>
 
+      {/* Interaction log */}
+      <InteractionLog clientId={clientId} />
+
       {contracts.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -559,6 +562,131 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
               );
             })}
           </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const INTERACTION_TYPES = [
+  { value: "call", label: "Звонок", icon: Phone },
+  { value: "email", label: "Письмо", icon: Mail },
+  { value: "meeting", label: "Встреча", icon: MessageSquare },
+  { value: "note", label: "Заметка", icon: StickyNote },
+];
+
+const InteractionLog = ({ clientId }: { clientId: string }) => {
+  const queryClient = useQueryClient();
+  const [newType, setNewType] = useState("note");
+  const [newContent, setNewContent] = useState("");
+
+  const { data: interactions = [], isLoading } = useQuery({
+    queryKey: ["client-interactions", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_interactions")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+
+  const addInteraction = useMutation({
+    mutationFn: async () => {
+      if (!newContent.trim()) throw new Error("empty");
+      const { error } = await supabase.from("client_interactions").insert({
+        client_id: clientId,
+        interaction_type: newType,
+        content: newContent.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-interactions", clientId] });
+      setNewContent("");
+      toast.success("Запись добавлена");
+    },
+    onError: () => toast.error("Ошибка добавления"),
+  });
+
+  const deleteInteraction = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("client_interactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["client-interactions", clientId] });
+    },
+  });
+
+  const getTypeInfo = (type: string) => INTERACTION_TYPES.find((t) => t.value === type) || INTERACTION_TYPES[3];
+
+  return (
+    <div className="space-y-3">
+      {/* Add new */}
+      <div className="flex gap-2">
+        <Select value={newType} onValueChange={setNewType}>
+          <SelectTrigger className="w-[130px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {INTERACTION_TYPES.map((t) => (
+              <SelectItem key={t.value} value={t.value}>
+                <span className="flex items-center gap-1.5">
+                  <t.icon className="w-3 h-3" /> {t.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          value={newContent}
+          onChange={(e) => setNewContent(e.target.value)}
+          placeholder="Описание..."
+          className="flex-1 h-8 text-sm"
+          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && addInteraction.mutate()}
+        />
+        <Button size="sm" variant="outline" onClick={() => addInteraction.mutate()} disabled={!newContent.trim() || addInteraction.isPending}>
+          <Send className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+
+      {/* Timeline */}
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+          <Loader2 className="w-3 h-3 animate-spin" /> Загрузка...
+        </div>
+      ) : interactions.length === 0 ? (
+        <p className="text-xs text-muted-foreground py-1">Нет записей</p>
+      ) : (
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {interactions.map((item: any) => {
+            const info = getTypeInfo(item.interaction_type);
+            const Icon = info.icon;
+            return (
+              <div key={item.id} className="flex items-start gap-2 px-3 py-2 rounded-md bg-muted/30 text-sm group">
+                <Icon className="w-3.5 h-3.5 mt-0.5 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm leading-snug">{item.content}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {info.label} · {new Date(item.created_at).toLocaleDateString("ru-RU")} {new Date(item.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive"
+                  onClick={() => deleteInteraction.mutate(item.id)}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
