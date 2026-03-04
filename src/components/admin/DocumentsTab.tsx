@@ -355,15 +355,32 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     const pdfHeight = pdf.internal.pageSize.getHeight();
     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
     
+    const margin = 10; // mm margins top/bottom
+    const usableHeight = pdfHeight - margin * 2;
     let heightLeft = imgHeight;
-    let position = 0;
-    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-    heightLeft -= pdfHeight;
+    let srcY = 0;
+    let page = 0;
+
     while (heightLeft > 0) {
-      position -= pdfHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
+      if (page > 0) pdf.addPage();
+      const sliceHeight = Math.min(usableHeight, heightLeft);
+      const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
+      
+      // Create a slice canvas for this page
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceCanvasHeight;
+      const ctx = sliceCanvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
+      
+      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+      pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
+      
+      srcY += sliceCanvasHeight;
+      heightLeft -= sliceHeight;
+      page++;
     }
     
     const pdfOutput = pdf.output('datauristring');
@@ -682,15 +699,31 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                     const pdfHeight = pdf.internal.pageSize.getHeight();
                     const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
+                    const margin = 10; // mm margins top/bottom
+                    const usableHeight = pdfHeight - margin * 2;
                     let heightLeft = imgHeight;
-                    let position = 0;
-                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdfHeight;
+                    let srcY = 0;
+                    let page = 0;
+
                     while (heightLeft > 0) {
-                      position -= pdfHeight;
-                      pdf.addPage();
-                      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
-                      heightLeft -= pdfHeight;
+                      if (page > 0) pdf.addPage();
+                      const sliceHeight = Math.min(usableHeight, heightLeft);
+                      const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
+                      
+                      const sliceCanvas = document.createElement('canvas');
+                      sliceCanvas.width = canvas.width;
+                      sliceCanvas.height = sliceCanvasHeight;
+                      const ctx = sliceCanvas.getContext('2d')!;
+                      ctx.fillStyle = '#ffffff';
+                      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+                      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
+                      
+                      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
+                      pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
+                      
+                      srcY += sliceCanvasHeight;
+                      heightLeft -= sliceHeight;
+                      page++;
                     }
 
                     pdf.save(fileName);
