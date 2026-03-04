@@ -128,13 +128,62 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
 
   const [lookingUp, setLookingUp] = useState(false);
 
+  // Helper: fill client requisites from clients array by client_name
+  const fillClientFromName = useCallback((name: string) => {
+    const client = clients.find(c => c.name === name);
+    if (client) {
+      setClientInn(client.inn || "");
+      setClientKpp(client.kpp || "");
+      setClientOgrn(client.ogrn || "");
+      setClientAddress(client.legal_address || "");
+      setClientDirectorName(client.director_name || "");
+      setClientDirectorPost(client.director_post || "Директор");
+    }
+    return client;
+  }, [clients]);
+
+  // Helper: fill services from a contract's generated document or amount
+  const fillServicesFromContract = useCallback(async (contractId: string, contract: { contract_number?: string | null; amount?: number | null }) => {
+    // Try to find existing generated contract document for this contract_id
+    const { data: existingDocs } = await supabase
+      .from("generated_documents")
+      .select("services")
+      .eq("contract_id", contractId)
+      .eq("doc_type", "contract")
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (existingDocs && existingDocs.length > 0) {
+      try {
+        const parsed = typeof existingDocs[0].services === 'string'
+          ? JSON.parse(existingDocs[0].services as string)
+          : existingDocs[0].services;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setServices(parsed);
+          return;
+        }
+      } catch { /* fallthrough */ }
+    }
+
+    // Fallback: use contract amount
+    if (contract.amount) {
+      setServices([{
+        name: `Услуги по договору №${contract.contract_number || ''}`,
+        qty: 1,
+        price: Number(contract.amount),
+      }]);
+    }
+  }, []);
+
   // Pre-fill from planner task
   useEffect(() => {
-    if (initialContractId && contracts.length > 0) {
+    if (initialContractId && contracts.length > 0 && clients.length > 0) {
       const contract = contracts.find(c => c.id === initialContractId);
       if (contract) {
         setLinkedContractId(contract.id);
         setClientName(contract.client_name || "");
+        fillClientFromName(contract.client_name || "");
+        fillServicesFromContract(contract.id, contract);
       }
       if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
         setDocType(initialDocType as DocType);
@@ -144,7 +193,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       }
       onMounted?.();
     }
-  }, [initialContractId, contracts]);
+  }, [initialContractId, contracts, clients]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
