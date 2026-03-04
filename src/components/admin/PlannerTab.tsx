@@ -234,7 +234,7 @@ function DayColumn({
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
         <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
-      <div className="flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto">
+      <div className="p-2 space-y-2 min-h-[60px] overflow-y-auto">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} onCreateDocument={onCreateDocument} />
@@ -473,7 +473,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => v
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-2 h-[calc(100vh-12rem)]">
+          <div className="flex gap-2 min-h-[120px]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);

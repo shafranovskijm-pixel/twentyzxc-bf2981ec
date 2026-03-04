@@ -1,16 +1,32 @@
 
 
-## Plan: Compact Planner Layout
+# Исправление авторизации для отзывов (403 Forbidden)
 
-**Problem**: The planner calendar takes up the full viewport height (`h-[calc(100vh-12rem)]`) with large empty spaces in day columns. The Sales Assistant buttons below are pushed off-screen.
+## Проблема
 
-**Changes** (single file: `src/components/admin/PlannerTab.tsx`):
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-1. **Remove fixed height** from the calendar container — change `h-[calc(100vh-12rem)]` to `min-h-[120px]` so it grows naturally with task content.
+## Решение
 
-2. **Remove `min-h-[200px]`** from the task area inside `DayColumn` — replace with `min-h-[60px]` so empty days are compact.
+### 1. Включить Google OAuth через настройки аутентификации
 
-3. **Remove `flex-1`** from the task area so it doesn't stretch to fill available space — just use natural height.
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-This way the calendar is compact when there are few tasks, and grows automatically as tasks are added. The Sales Assistant panel and forecast buttons will always be visible below.
+### 2. Добавить redirect URL в список разрешённых
+
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
