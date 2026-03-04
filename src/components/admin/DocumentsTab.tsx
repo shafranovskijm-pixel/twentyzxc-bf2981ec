@@ -391,17 +391,20 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
     try {
+      console.log('[Email] Starting PDF generation...');
       toast.info("Генерация PDF для вложения...");
       let pdfBase64: string | undefined;
       let pdfFilename: string | undefined;
       try {
         pdfBase64 = await generatePdfBase64(previewHtml);
         pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+        console.log('[Email] PDF generated, size:', pdfBase64.length);
       } catch (pdfErr) {
-        console.warn('PDF generation failed, sending as HTML:', pdfErr);
+        console.warn('[Email] PDF generation failed, sending as HTML:', pdfErr);
         toast.warning("PDF не удалось сгенерировать, отправляю как HTML");
       }
 
+      console.log('[Email] Invoking edge function...');
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
           to: emailTo.trim(),
@@ -412,6 +415,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
           ...(pdfBase64 && { pdfBase64, pdfFilename }),
         },
       });
+      console.log('[Email] Edge function response:', { data, error });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
       
@@ -426,6 +430,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       setEmailDialogOpen(false);
       setEmailTo("");
     } catch (err: any) {
+      console.error('[Email] Error:', err);
       toast.error(err.message || "Не удалось отправить письмо");
     }
     setEmailSending(false);
