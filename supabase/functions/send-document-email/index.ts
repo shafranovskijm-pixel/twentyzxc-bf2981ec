@@ -17,45 +17,37 @@ function mimeEncode(text: string): string {
   return chunks.join("\r\n ");
 }
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+/** Extract pure email from "Name <email>" or just "email" */
+function extractEmail(raw: string): string {
+  const match = raw.match(/<([^>]+)>/);
+  return match ? match[1] : raw.trim();
+}
+
+/** Extract display name from "Name <email>" */
+function extractName(raw: string): string | null {
+  const match = raw.match(/^(.+?)\s*<[^>]+>$/);
+  return match ? match[1].replace(/^"|"$/g, '').trim() : null;
+}
+
+const enc = new TextEncoder();
+const dec = new TextDecoder();
 
 async function readResponse(conn: Deno.TlsConn): Promise<string> {
   let result = "";
   const buf = new Uint8Array(4096);
-  // Read until we get a complete response (line starting with "XXX " not "XXX-")
   while (true) {
     const n = await conn.read(buf);
     if (n === null) break;
-    result += decoder.decode(buf.subarray(0, n));
-    // Check if last line is a final response (code + space)
-    const lines = result.split("\r\n").filter(l => l.length > 0);
-    if (lines.length > 0) {
-      const last = lines[lines.length - 1];
-      // Final line has format "250 OK" (space after code), continuation has "250-..."
-      if (/^\d{3} /.test(last) || result.endsWith("\r\n")) {
-        // Check the actual last non-empty line
-        const finalLine = lines[lines.length - 1];
-        if (/^\d{3} /.test(finalLine)) break;
-      }
-    }
-    // Safety: if we've been reading for a while and have data, check if it's complete
-    if (result.includes("\r\n") && /^\d{3} /m.test(result)) {
-      // Has at least one final response line
-      const allLines = result.trim().split("\r\n");
-      const lastLine = allLines[allLines.length - 1];
-      if (/^\d{3} /.test(lastLine)) break;
-    }
+    result += dec.decode(buf.subarray(0, n));
+    const lines = result.trim().split("\r\n");
+    const lastLine = lines[lines.length - 1];
+    if (/^\d{3} /.test(lastLine)) break;
   }
   return result.trim();
 }
 
-async function writeLine(conn: Deno.TlsConn, line: string): Promise<void> {
-  await conn.write(encoder.encode(line + "\r\n"));
-}
-
-async function command(conn: Deno.TlsConn, cmd: string): Promise<string> {
-  await writeLine(conn, cmd);
+async function cmd(conn: Deno.TlsConn, line: string): Promise<string> {
+  await conn.write(enc.encode(line + "\r\n"));
   return await readResponse(conn);
 }
 
@@ -80,8 +72,7 @@ serve(async (req) => {
     const port = parseInt(Deno.env.get('SMTP_PORT') || '465');
     const user = Deno.env.get('SMTP_USER')!;
     const pass = Deno.env.get('SMTP_PASS')!;
-    const fromEmail = Deno.env.get('SMTP_FROM') || user;
-    const fromName = Deno.env.get('SMTP_FROM_NAME') || 'Sintagma';
+    const smtpFrom = Deno.env.get('SMTP_FROM') || user;
 
     if (!host || !user || !pass) {
       return new Response(
@@ -90,47 +81,38 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Connecting to ${host}:${port}...`);
+    // Parse from: extract pure email and display name
+    const fromEmail = extractEmail(smtpFrom);
+    const fromName = extractName(smtpFrom) || Deno.env.get('SMTP_FROM_NAME') || 'Sintagma';
+
+    console.log(`Connecting to ${host}:${port}, from=${fromEmail}, name=${fromName}`);
     conn = await Deno.connectTls({ hostname: host, port });
 
-    // Read greeting
     const greeting = await readResponse(conn);
-    console.log("Greeting:", greeting);
+    console.log("SMTP greeting OK");
 
-    // EHLO
-    const ehlo = await command(conn, `EHLO lovable.dev`);
-    console.log("EHLO:", ehlo.substring(0, 100));
+    let resp = await cmd(conn, "EHLO lovable.dev");
+    if (!resp.startsWith("250")) throw new Error(`EHLO failed: ${resp}`);
 
-    // AUTH LOGIN
-    const authStart = await command(conn, "AUTH LOGIN");
-    console.log("AUTH:", authStart);
-    
-    const userResp = await command(conn, base64Encode(encoder.encode(user)));
-    console.log("USER:", userResp);
-    
-    const passResp = await command(conn, base64Encode(encoder.encode(pass)));
-    console.log("PASS:", passResp);
-    
-    if (!passResp.startsWith("235")) {
-      throw new Error(`SMTP auth failed: ${passResp}`);
-    }
+    resp = await cmd(conn, "AUTH LOGIN");
+    resp = await cmd(conn, base64Encode(enc.encode(user)));
+    resp = await cmd(conn, base64Encode(enc.encode(pass)));
+    if (!resp.startsWith("235")) throw new Error(`Auth failed: ${resp}`);
+    console.log("SMTP auth OK");
 
-    // MAIL FROM
-    const mailFrom = await command(conn, `MAIL FROM:<${fromEmail}>`);
-    console.log("MAIL FROM:", mailFrom);
+    resp = await cmd(conn, `MAIL FROM:<${fromEmail}>`);
+    if (!resp.startsWith("250")) throw new Error(`MAIL FROM failed: ${resp}`);
 
-    // RCPT TO
-    const rcptTo = await command(conn, `RCPT TO:<${to}>`);
-    console.log("RCPT TO:", rcptTo);
+    resp = await cmd(conn, `RCPT TO:<${to}>`);
+    if (!resp.startsWith("250")) throw new Error(`RCPT TO failed: ${resp}`);
 
-    // DATA
-    const dataResp = await command(conn, "DATA");
-    console.log("DATA:", dataResp);
+    resp = await cmd(conn, "DATA");
+    if (!resp.startsWith("354")) throw new Error(`DATA failed: ${resp}`);
 
-    // Build MIME message
+    // Build MIME message with properly encoded UTF-8 headers
     const encodedSubject = mimeEncode(subject);
     const encodedFrom = `${mimeEncode(fromName)} <${fromEmail}>`;
-    const htmlB64 = base64Encode(encoder.encode(html));
+    const htmlB64 = base64Encode(enc.encode(html));
     const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
 
     const message = [
@@ -143,15 +125,16 @@ serve(async (req) => {
       `Content-Transfer-Encoding: base64`,
       ``,
       htmlChunked,
-      ``,
-      `.`,  // End of message
     ].join("\r\n");
 
-    const endResp = await command(conn, message);
-    console.log("Message sent:", endResp);
+    // Send message body, then "." on its own line to end
+    await conn.write(enc.encode(message + "\r\n.\r\n"));
+    resp = await readResponse(conn);
+    console.log("Message sent:", resp);
 
-    // QUIT
-    await command(conn, "QUIT");
+    if (!resp.startsWith("250")) throw new Error(`Send failed: ${resp}`);
+
+    await cmd(conn, "QUIT");
 
     return new Response(
       JSON.stringify({ success: true }),
