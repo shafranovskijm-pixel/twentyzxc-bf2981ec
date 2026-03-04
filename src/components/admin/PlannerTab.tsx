@@ -13,6 +13,7 @@ import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday } from "date-
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown, FileOutput } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SalesAssistant from "./SalesAssistant";
 import {
   DndContext,
   closestCenter,
@@ -502,6 +503,8 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => v
           </DragOverlay>
         </DndContext>
       )}
+
+      <SalesAssistant />
     </div>
   );
 };

@@ -186,6 +186,18 @@ serve(async (req) => {
     } else {
       const name = [from.first_name, from.last_name].filter(Boolean).join(" ");
       const username = from.username ? ` (@${from.username})` : "";
+
+      // Save as lead
+      if (text) {
+        await supabase.from("leads").insert({
+          source: "telegram",
+          name: name || (from.username ? `@${from.username}` : null),
+          message: text,
+          telegram_chat_id: chatId,
+          status: "new",
+        });
+      }
+
       await sendMessage(
         Number(OWNER_CHAT_ID),
         `💬 Сообщение от ${name}${username}\n🆔 <code>${chatId}</code>\n\n${escapeHtml(text)}`
