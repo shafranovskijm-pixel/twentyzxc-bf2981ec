@@ -234,7 +234,7 @@ function DayColumn({
         <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
         <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
       </div>
-      <div className="flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto">
+      <div className="p-2 space-y-2 min-h-[60px] overflow-y-auto">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} onCreateDocument={onCreateDocument} />
