@@ -42,6 +42,7 @@ const ContractsTab = () => {
   const [contractType, setContractType] = useState("");
   const [responsible, setResponsible] = useState("");
   const [notes, setNotes] = useState("");
+  const [paidUntil, setPaidUntil] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
