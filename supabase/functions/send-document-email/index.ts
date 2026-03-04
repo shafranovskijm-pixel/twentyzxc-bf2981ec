@@ -59,7 +59,7 @@ serve(async (req) => {
   let conn: Deno.TlsConn | null = null;
 
   try {
-    const { to, subject, html } = await req.json();
+    const { to, subject, html, pdfBase64, pdfFilename } = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -112,20 +112,55 @@ serve(async (req) => {
     // Build MIME message with properly encoded UTF-8 headers
     const encodedSubject = mimeEncode(subject);
     const encodedFrom = `${mimeEncode(fromName)} <${fromEmail}>`;
-    const htmlB64 = base64Encode(enc.encode(html));
-    const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
-
-    const message = [
-      `From: ${encodedFrom}`,
-      `To: <${to}>`,
-      `Subject: ${encodedSubject}`,
-      `Date: ${new Date().toUTCString()}`,
-      `MIME-Version: 1.0`,
-      `Content-Type: text/html; charset="UTF-8"`,
-      `Content-Transfer-Encoding: base64`,
-      ``,
-      htmlChunked,
-    ].join("\r\n");
+    const boundary = `----=_Part_${Date.now()}`;
+    
+    let message: string;
+    
+    if (pdfBase64 && pdfFilename) {
+      // Multipart message with PDF attachment
+      const htmlB64 = base64Encode(enc.encode(html || `<p>Документ ${pdfFilename} во вложении.</p>`));
+      const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
+      const pdfChunked = pdfBase64.match(/.{1,76}/g)?.join("\r\n") || pdfBase64;
+      const encodedFilename = mimeEncode(pdfFilename);
+      
+      message = [
+        `From: ${encodedFrom}`,
+        `To: <${to}>`,
+        `Subject: ${encodedSubject}`,
+        `Date: ${new Date().toUTCString()}`,
+        `MIME-Version: 1.0`,
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        ``,
+        `--${boundary}`,
+        `Content-Type: text/html; charset="UTF-8"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        htmlChunked,
+        `--${boundary}`,
+        `Content-Type: application/pdf; name="${encodedFilename}"`,
+        `Content-Transfer-Encoding: base64`,
+        `Content-Disposition: attachment; filename="${encodedFilename}"`,
+        ``,
+        pdfChunked,
+        `--${boundary}--`,
+      ].join("\r\n");
+    } else {
+      // Simple HTML message
+      const htmlB64 = base64Encode(enc.encode(html));
+      const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
+      
+      message = [
+        `From: ${encodedFrom}`,
+        `To: <${to}>`,
+        `Subject: ${encodedSubject}`,
+        `Date: ${new Date().toUTCString()}`,
+        `MIME-Version: 1.0`,
+        `Content-Type: text/html; charset="UTF-8"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        htmlChunked,
+      ].join("\r\n");
+    }
 
     // Send message body, then "." on its own line to end
     await conn.write(enc.encode(message + "\r\n.\r\n"));
