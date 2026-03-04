@@ -240,21 +240,22 @@ const SalesAssistant = () => {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1">
               {messages.length === 0 && (
-                <div className="space-y-3 pt-4">
+                <div className="flex flex-col items-center justify-center h-full gap-4 py-6">
+                  <Bot className="w-8 h-8 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground text-center">
                     Задай вопрос о клиентах, продажах или прогнозах
                   </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {quickQuestions.map((q) => (
-                      <Button
+                  <div className="grid grid-cols-2 gap-2 w-full max-w-md">
+                    {quickQuestions.map((q, i) => (
+                      <button
                         key={q}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-7"
-                        onClick={() => { setInput(q); }}
+                        className="group relative text-left text-xs px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 animate-fade-in"
+                        style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
+                        onClick={() => { setInput(q); setTimeout(() => send(), 50); }}
                       >
-                        {q}
-                      </Button>
+                        <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-200">{q}</span>
+                        <Send className="absolute top-2 right-2 w-3 h-3 text-primary/0 group-hover:text-primary/60 transition-all duration-200 group-hover:translate-x-0.5" />
+                      </button>
                     ))}
                   </div>
                 </div>
