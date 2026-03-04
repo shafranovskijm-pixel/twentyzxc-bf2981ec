@@ -372,7 +372,15 @@ const ContractsTab = () => {
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
+              <div className="space-y-2">
+                <Label>Организация *</Label>
+                <div className="flex gap-2">
+                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" />
+                  <Button variant="outline" size="icon" className="shrink-0" disabled={innLoading || !clientName.trim()} onClick={() => { setInn(clientName.trim()); setTimeout(lookupInn, 0); }} title="Найти по названию">
+                    {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
             <div className="grid grid-cols-4 gap-4">
