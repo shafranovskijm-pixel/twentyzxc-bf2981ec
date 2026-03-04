@@ -72,8 +72,8 @@ const baseStyles = `
     .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
     .signature-block { width: 45%; position: relative; }
     .signature-line { border-bottom: 1px solid #000; margin-top: 40px; padding-bottom: 2px; position: relative; }
-    .signature-img { position: absolute; height: 60px; bottom: -5px; left: 80px; }
-    .stamp-img { position: absolute; height: 120px; opacity: 0.85; top: -30px; right: -10px; }
+    .signature-img { position: absolute; height: 50px; bottom: 0; left: 80px; }
+    .stamp-img { position: absolute; height: 110px; opacity: 0.85; bottom: -40px; left: 10px; }
     .bank-header { border: 2px solid #000; margin-bottom: 20px; }
     .bank-header td { padding: 4px 8px; border: 1px solid #000; font-size: 10pt; }
     p { margin: 5px 0; }
