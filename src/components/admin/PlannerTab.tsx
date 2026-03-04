@@ -486,7 +486,7 @@ function EdgeDropZone({ id, side }: { id: string; side: "left" | "right" }) {
   );
 }
 
-
+const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docType?: string) => void }) => {
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
