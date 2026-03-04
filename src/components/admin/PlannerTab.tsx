@@ -473,7 +473,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => v
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-2 h-[calc(100vh-12rem)]">
+          <div className="flex gap-2 min-h-[120px]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
