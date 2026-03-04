@@ -261,61 +261,68 @@ const ContractsTab = () => {
             {search ? "Ничего не найдено" : isArchive ? "Архив пуст" : "Нет договоров"}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Организация</TableHead>
-                  <TableHead>№ договора</TableHead>
-                  <TableHead>Дата</TableHead>
-                  <TableHead>Оплата</TableHead>
-                  <TableHead>Оплачено до</TableHead>
-                  <TableHead>Сумма</TableHead>
-                  <TableHead>Тип</TableHead>
-                  <TableHead>Ответственный</TableHead>
-                  <TableHead className="w-[140px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">
-                      <button onClick={() => startEdit(c)} className="hover:underline hover:text-primary text-left transition-colors cursor-pointer">
-                        {c.client_name}
-                      </button>
-                    </TableCell>
-                    <TableCell>{c.contract_number || "—"}</TableCell>
-                    <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
-                    <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
-                    <TableCell>
-                      {c.paid_until ? (
-                        <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
-                          {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
-                          {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
-                          {new Date(c.paid_until).toLocaleDateString("ru-RU")}
-                        </span>
-                      ) : "—"}
-                    </TableCell>
-                    <TableCell>{formatAmount(c.amount)}</TableCell>
-                    <TableCell>{c.contract_type || "—"}</TableCell>
-                    <TableCell>{c.responsible || "—"}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        {c.file_path && (
-                          <Button variant="ghost" size="icon" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })} title={isArchive ? "Восстановить" : "В архив"}>
-                          {isArchive ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteContract.mutate(c)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
-                    </TableCell>
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Организация</TableHead>
+                    <TableHead>№ договора</TableHead>
+                    <TableHead>Дата</TableHead>
+                    <TableHead>Оплата</TableHead>
+                    <TableHead>Оплачено до</TableHead>
+                    <TableHead>Сумма</TableHead>
+                    <TableHead>Тип</TableHead>
+                    <TableHead>Ответственный</TableHead>
+                    <TableHead className="w-[140px]"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {items.map((c) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">
+                        <button onClick={() => startEdit(c)} className="hover:underline hover:text-primary text-left transition-colors cursor-pointer">
+                          {c.client_name}
+                        </button>
+                      </TableCell>
+                      <TableCell>{c.contract_number || "—"}</TableCell>
+                      <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
+                      <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                      <TableCell>
+                        {c.paid_until ? (
+                          <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
+                            {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                            {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                            {new Date(c.paid_until).toLocaleDateString("ru-RU")}
+                          </span>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell>{formatAmount(c.amount)}</TableCell>
+                      <TableCell>{c.contract_type || "—"}</TableCell>
+                      <TableCell>{c.responsible || "—"}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {c.file_path && (
+                            <Button variant="ghost" size="icon" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })} title={isArchive ? "Восстановить" : "В архив"}>
+                            {isArchive ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => deleteContract.mutate(c)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex justify-center py-4 border-t">
+              <Button variant="outline" onClick={() => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                <Plus className="w-4 h-4 mr-2" />Добавить договор
+              </Button>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
