@@ -594,6 +594,31 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Отправить на почту</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Email получателя</Label>
+              <Input
+                type="email"
+                value={emailTo}
+                onChange={e => setEmailTo(e.target.value)}
+                placeholder="client@example.com"
+                onKeyDown={e => { if (e.key === 'Enter') sendDocumentEmail(); }}
+              />
+            </div>
+            <Button onClick={sendDocumentEmail} disabled={emailSending} className="w-full">
+              {emailSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
+              Отправить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
