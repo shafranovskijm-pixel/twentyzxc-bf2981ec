@@ -1,32 +1,32 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Проблемы
 
-## Проблема
+**1. Сессия не сохраняется между перезагрузками** — В preview-среде Lovable каждое обновление кода перезагружает iframe. Supabase-клиент настроен с `persistSession: true`, но проблема в том, что `useAdminAuth` не обрабатывает ситуацию, когда запрос к `user_roles` зависает или возвращает ошибку — `isLoading` может остаться `true` навсегда. Также race condition: и `onAuthStateChange`, и `getSession` вызывают одни и те же setter'ы параллельно.
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+**2. Изменения не видны сразу** — `value` column is `jsonb`. При чтении в `useSiteSettings`, значения из БД приходят как JSON (строки обёрнуты в кавычки: `"\"text\""`). При записи значение уже строка, PostgREST сохраняет её как JSON string. При чтении `typeof row.value === "string"` может не срабатывать корректно для jsonb — значение может быть уже parsed. Также `useEffect` с `settings` заполняет state только через `if (settings.key)` — если значение пустая строка `""`, условие false и поле не обновится.
 
-## Решение
+## План
 
-### 1. Включить Google OAuth через настройки аутентификации
+### 1. Исправить race condition и зависание в `use-admin-auth.tsx`
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+- Убрать дублирование логики `getSession` — использовать только `onAuthStateChange` для установки состояния
+- `getSession` только для первоначального trigger'а (Supabase v2 рекомендует такой паттерн)
+- Добавить `try/catch` вокруг запроса к `user_roles`, чтобы ошибка не оставляла `isLoading = true`
+- Добавить `setTimeout` fallback: если за 5 секунд `isLoading` не стал false — принудительно ставить false
 
-### 2. Добавить redirect URL в список разрешённых
+### 2. Исправить чтение jsonb в `use-site-settings.tsx`
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+- При чтении `value` из jsonb: если значение строка в JSON (`"text"`), оно приходит как JS string — это ок. Но нужно убрать `as any` кастинг и использовать правильные типы
+- Убедиться что `updateSetting` и `updateMultiple` не double-encode значения
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+### 3. Исправить загрузку settings в `Admin.tsx`
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+- Заменить `if (settings.key)` на `if (settings.key !== undefined)` чтобы пустые строки тоже подхватывались
+- Добавить `isError` handling для `useSiteSettings` — показывать ошибку вместо бесконечного спиннера
 
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Файлы для изменения
+- `src/hooks/use-admin-auth.tsx` — исправить race condition и таймаут
+- `src/hooks/use-site-settings.tsx` — error handling
+- `src/pages/Admin.tsx` — исправить условия загрузки settings + fallback при ошибке
 
