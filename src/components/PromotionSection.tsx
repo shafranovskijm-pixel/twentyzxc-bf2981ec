@@ -62,8 +62,8 @@ const PromotionSection = () => {
 
           {/* Promotion banners */}
           <div className="flex flex-col gap-6">
-            {promotions.map((promo) => (
-              <div
+            {promotions.map((promo, index) => (
+              <AnimatedSection key={promo.id} delay={index * 150} direction="up">
                 key={promo.id}
                 className="relative luxury-card rounded-sm border-l-2 border-primary/40 border-t border-r border-b border-t-primary/15 border-r-primary/15 border-b-primary/15 hover:border-l-primary/70 hover:border-t-primary/25 hover:border-r-primary/25 hover:border-b-primary/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_30px_hsl(var(--primary)/0.08)] group"
               >
