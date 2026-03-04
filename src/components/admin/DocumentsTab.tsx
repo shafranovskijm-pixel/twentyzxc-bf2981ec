@@ -60,6 +60,35 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+  // Auto-generate doc number from last document
+  const { data: lastDocNumbers } = useQuery({
+    queryKey: ["last-doc-numbers"],
+    queryFn: async () => {
+      const result: Record<string, string> = {};
+      for (const type of ["contract", "invoice", "act"] as DocType[]) {
+        const { data } = await supabase
+          .from("generated_documents" as any)
+          .select("doc_number")
+          .eq("doc_type", type)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (data && data.length > 0) {
+          const lastNum = parseInt((data[0] as any).doc_number, 10);
+          result[type] = String(isNaN(lastNum) ? 1 : lastNum + 1).padStart(3, "0");
+        } else {
+          result[type] = "001";
+        }
+      }
+      return result;
+    },
+  });
+
+  useEffect(() => {
+    if (lastDocNumbers && !docNumber) {
+      setDocNumber(lastDocNumbers[docType] || "001");
+    }
+  }, [lastDocNumbers, docType]);
+
   // client
   const [clientSearch, setClientSearch] = useState("");
   const [clientName, setClientName] = useState("");
@@ -123,9 +152,30 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     setLookingUp(false);
   };
 
-  const selectClient = (name: string) => {
+  const selectClient = async (name: string) => {
     setClientName(name);
     setClientSearch("");
+    // Auto-lookup requisites via DaData by company name
+    setLookingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", {
+        body: { query: name },
+      });
+      if (error) throw error;
+      if (data?.found) {
+        setClientInn(data.inn || "");
+        setClientKpp(data.kpp || "");
+        setClientOgrn(data.ogrn || "");
+        setClientAddress(data.address || "");
+        setClientDirectorName(data.management_name || "");
+        setClientDirectorPost(data.management_post || "Директор");
+        if (data.name_short) setClientName(data.name_short);
+        toast.success("Реквизиты заполнены автоматически");
+      }
+    } catch {
+      // Silent fail — user can fill manually
+    }
+    setLookingUp(false);
   };
 
   const addService = () => setServices(prev => [...prev, { name: "", qty: 1, price: 0 }]);
