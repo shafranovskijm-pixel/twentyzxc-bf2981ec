@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { toast } from "sonner";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown, FileOutput } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -67,13 +67,16 @@ function TaskCard({
   contracts,
   onStatusChange,
   onDelete,
+  onCreateDocument,
 }: {
   task: Task;
   clients: Client[];
   contracts: Contract[];
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
+  onCreateDocument?: (task: Task) => void;
 }) {
+  const [taskPopoverOpen, setTaskPopoverOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { task },
@@ -90,40 +93,77 @@ function TaskCard({
   const contract = task.contract_id ? contracts.find((c) => c.id === task.contract_id) : null;
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="group flex items-start gap-2 p-3 rounded-md border bg-card hover:shadow-sm transition-shadow"
-    >
-      <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
-        <GripVertical className="h-4 w-4" />
-      </span>
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <p className="text-base font-medium leading-tight truncate">{task.title}</p>
-        {client && (
-          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-            {client.name}
-          </Badge>
-        )}
-        {contract && (
-          <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-            №{contract.contract_number || "—"}
-          </Badge>
-        )}
+    <Popover open={taskPopoverOpen} onOpenChange={setTaskPopoverOpen}>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="group flex items-start gap-2 p-3 rounded-md border bg-card hover:shadow-sm transition-shadow"
+      >
+        <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
+          <GripVertical className="h-4 w-4" />
+        </span>
+        <PopoverTrigger asChild>
+          <div className="flex-1 min-w-0 space-y-1.5 cursor-pointer">
+            <p className="text-base font-medium leading-tight truncate">{task.title}</p>
+            {client && (
+              <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                {client.name}
+              </Badge>
+            )}
+            {contract && (
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                №{contract.contract_number || "—"}
+              </Badge>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, statusCfg.next); }}
+              className={`inline-block text-xs font-medium rounded px-2 py-0.5 ${statusCfg.color} cursor-pointer hover:opacity-80 transition-opacity`}
+            >
+              {statusCfg.label}
+            </button>
+          </div>
+        </PopoverTrigger>
         <button
-          onClick={() => onStatusChange(task.id, statusCfg.next)}
-          className={`inline-block text-xs font-medium rounded px-2 py-0.5 ${statusCfg.color} cursor-pointer hover:opacity-80 transition-opacity`}
+          onClick={() => onDelete(task.id)}
+          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 text-destructive"
         >
-          {statusCfg.label}
+          <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      <button
-        onClick={() => onDelete(task.id)}
-        className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 text-destructive"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
-    </div>
+      <PopoverContent className="w-72 p-4 space-y-3" side="right" align="start">
+        <p className="font-semibold text-sm leading-tight">{task.title}</p>
+        {task.description && <p className="text-xs text-muted-foreground">{task.description}</p>}
+        <div className="space-y-1.5">
+          {client && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Клиент:</span>
+              <span className="font-medium">{client.name}</span>
+            </div>
+          )}
+          {contract && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Договор:</span>
+              <span className="font-medium">№{contract.contract_number || "—"}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Статус:</span>
+            <span className={`text-xs font-medium rounded px-2 py-0.5 ${statusCfg.color}`}>{statusCfg.label}</span>
+          </div>
+        </div>
+        {onCreateDocument && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => { setTaskPopoverOpen(false); onCreateDocument(task); }}
+          >
+            <FileOutput className="w-4 h-4 mr-2" />
+            Создать документ
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -137,6 +177,7 @@ function DayColumn({
   onStatusChange,
   onDelete,
   onAddTask,
+  onCreateDocument,
 }: {
   date: Date;
   tasks: Task[];
@@ -147,6 +188,7 @@ function DayColumn({
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
+  onCreateDocument?: (task: Task) => void;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -194,7 +236,7 @@ function DayColumn({
       <div className="flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} />
+            <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} onCreateDocument={onCreateDocument} />
           ))}
         </SortableContext>
       </div>
@@ -288,7 +330,7 @@ function DayColumn({
   );
 }
 
-const PlannerTab = () => {
+const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => void }) => {
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -446,6 +488,7 @@ const PlannerTab = () => {
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
+                  onCreateDocument={onCreateDocument}
                 />
               );
             })}

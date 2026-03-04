@@ -40,6 +40,8 @@ const Admin = () => {
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
   const [activeSection, setActiveSection] = useState("seo");
+  const [docInitialClientName, setDocInitialClientName] = useState("");
+  const [docInitialContractId, setDocInitialContractId] = useState("");
   const queryClient = useQueryClient();
 
   // SEO state
@@ -326,8 +328,11 @@ const Admin = () => {
               {activeSection === "clients" && <ClientsTab />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
-              {activeSection === "planner" && <PlannerTab />}
-              {activeSection === "documents" && <DocumentsTab />}
+              {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any) => {
+                setDocInitialContractId(task.contract_id || "");
+                setActiveSection("documents");
+              }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} onMounted={() => { setDocInitialContractId(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
             </main>
           </div>

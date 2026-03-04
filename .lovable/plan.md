@@ -1,30 +1,32 @@
 
 
-## План: Попап с кнопкой «Создать документ» при клике на задачу
+# Исправление авторизации для отзывов (403 Forbidden)
 
-### Что делаем
-При клике на карточку задачи в Планере показывать Popover с деталями задачи и кнопкой «Создать документ», которая переключает на вкладку «Документы» с предзаполненными данными клиента/договора из задачи.
+## Проблема
 
-### Изменения
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-**1. `src/components/admin/PlannerTab.tsx`**
-- Обернуть содержимое `TaskCard` в `Popover`
-- В `PopoverContent` показать: название задачи, клиента, договор, статус
-- Добавить кнопку «Создать документ» (иконка `FileOutput`), которая вызывает callback `onCreateDocument(task)`
-- Добавить проп `onCreateDocument` в `TaskCard` и `DayColumn`
+## Решение
 
-**2. `src/pages/Admin.tsx`**
-- Передать в `PlannerTab` callback `onNavigateToDocuments(clientId, contractId)`, который:
-  - Устанавливает `activeSection = "documents"`
-  - Передаёт предзаполненные данные через state/props
-- Добавить state для передачи предзаполненных данных в `DocumentsTab`
+### 1. Включить Google OAuth через настройки аутентификации
 
-**3. `src/components/admin/DocumentsTab.tsx`**
-- Принять опциональные пропы `initialClientId` и `initialContractId`
-- При получении — автоматически выбрать клиента и договор в форме
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-### Файлы
-- `src/components/admin/PlannerTab.tsx` — попап на карточке задачи
-- `src/pages/Admin.tsx` — связь между вкладками
-- `src/components/admin/DocumentsTab.tsx` — приём предзаполненных данных
+### 2. Добавить redirect URL в список разрешённых
+
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
