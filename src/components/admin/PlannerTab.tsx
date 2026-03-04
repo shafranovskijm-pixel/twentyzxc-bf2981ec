@@ -538,6 +538,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const [filterClientId, setFilterClientId] = useState<string>("all");
   const [filterClientOpen, setFilterClientOpen] = useState(false);
   const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const edgeHoverIdRef = useRef<string | null>(null);
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const weekEnd = addDays(weekStart, 6);
@@ -833,7 +834,27 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-          <div className="flex flex-col sm:flex-row gap-2 min-h-[120px]">
+          <div
+            className="flex flex-col sm:flex-row gap-2 min-h-[120px]"
+            onTouchStart={(e) => {
+              if (!isMobile) return;
+              const touch = e.touches[0];
+              touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+            }}
+            onTouchEnd={(e) => {
+              if (!isMobile || !touchStartRef.current) return;
+              const touch = e.changedTouches[0];
+              const dx = touch.clientX - touchStartRef.current.x;
+              const dy = touch.clientY - touchStartRef.current.y;
+              const dt = Date.now() - touchStartRef.current.time;
+              touchStartRef.current = null;
+              // Horizontal swipe: >80px, faster than 300ms, more horizontal than vertical
+              if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.5 && dt < 400) {
+                if (dx > 0) setWeekStart((w) => subWeeks(w, 1));
+                else setWeekStart((w) => addWeeks(w, 1));
+              }
+            }}
+          >
             {isDragging && <div className="hidden sm:block"><EdgeDropZone id="edge-prev-week" side="left" isCharging={chargingEdge === "edge-prev-week"} /></div>}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
