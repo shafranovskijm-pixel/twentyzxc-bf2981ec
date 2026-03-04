@@ -302,7 +302,7 @@ const SalesAssistant = () => {
                 className="text-sm"
                 disabled={isLoading}
               />
-              <Button size="icon" onClick={send} disabled={isLoading || !input.trim()}>
+              <Button size="icon" onClick={() => send()} disabled={isLoading || !input.trim()}>
                 <Send className="w-4 h-4" />
               </Button>
             </div>
