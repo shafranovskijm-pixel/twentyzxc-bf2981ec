@@ -778,10 +778,17 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
             })}
             {isDragging && <EdgeDropZone id="edge-next-week" side="right" isCharging={chargingEdge === "edge-next-week"} />}
           </div>
-          <DragOverlay>
+          <DragOverlay dropAnimation={{
+            duration: 250,
+            easing: "cubic-bezier(0.25, 1, 0.5, 1)",
+          }}>
             {activeTask && (
-              <div className="p-2 rounded-md border bg-card shadow-lg text-sm font-medium">
-                {activeTask.title}
+              <div className="p-3 rounded-lg border-2 border-primary/40 bg-card shadow-2xl shadow-primary/20 text-sm font-medium max-w-[200px] rotate-[2deg] scale-105 transition-transform">
+                <p className="line-clamp-2">{activeTask.title}</p>
+                {activeTask.client_id && (() => {
+                  const c = clients.find(cl => cl.id === activeTask.client_id);
+                  return c ? <span className="text-xs text-muted-foreground mt-1 block">{c.name}</span> : null;
+                })()}
               </div>
             )}
           </DragOverlay>
