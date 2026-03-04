@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   useDroppable,
@@ -465,23 +466,34 @@ function DayColumn({
     </div>
   );
 }
-function EdgeDropZone({ id, side }: { id: string; side: "left" | "right" }) {
+function EdgeDropZone({ id, side, isCharging }: { id: string; side: "left" | "right"; isCharging?: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        "flex items-center justify-center w-12 shrink-0 rounded-lg border-2 border-dashed transition-all",
+        "relative flex items-center justify-center w-12 shrink-0 rounded-lg border-2 border-dashed transition-all overflow-hidden",
         isOver
           ? "border-primary bg-primary/20 scale-105"
           : "border-muted-foreground/30 bg-muted/20"
       )}
     >
-      {side === "left" ? (
-        <ChevronLeft className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
-      ) : (
-        <ChevronRight className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+      {isCharging && (
+        <div className="absolute inset-0 bg-primary/30 animate-pulse" />
       )}
+      {isCharging && (
+        <div
+          className="absolute bottom-0 left-0 right-0 bg-primary/60 transition-all duration-1000 ease-linear"
+          style={{ height: "100%", animation: "edgeFill 1s linear forwards" }}
+        />
+      )}
+      <div className="relative z-10">
+        {side === "left" ? (
+          <ChevronLeft className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+        ) : (
+          <ChevronRight className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+        )}
+      </div>
     </div>
   );
 }
@@ -492,6 +504,9 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+  const [chargingEdge, setChargingEdge] = useState<string | null>(null);
+  const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const edgeHoverIdRef = useRef<string | null>(null);
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const weekEnd = addDays(weekStart, 6);
 
@@ -565,6 +580,58 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  const clearEdgeTimer = useCallback(() => {
+    if (edgeTimerRef.current) {
+      clearTimeout(edgeTimerRef.current);
+      edgeTimerRef.current = null;
+    }
+    edgeHoverIdRef.current = null;
+    setChargingEdge(null);
+  }, []);
+
+  useEffect(() => {
+    return () => clearEdgeTimer();
+  }, [clearEdgeTimer]);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    const overId = event.over?.id ? String(event.over.id) : null;
+
+    if (overId !== "edge-prev-week" && overId !== "edge-next-week") {
+      clearEdgeTimer();
+      return;
+    }
+
+    // Already tracking this edge
+    if (edgeHoverIdRef.current === overId) return;
+
+    clearEdgeTimer();
+    edgeHoverIdRef.current = overId;
+    setChargingEdge(overId);
+
+    const activeId = String(event.active.id);
+
+    edgeTimerRef.current = setTimeout(() => {
+      // Find the task from current data
+      const task = queryClient.getQueryData<Task[]>(["planner-tasks", format(weekStart, "yyyy-MM-dd")])
+        ?.find((t) => t.id === activeId);
+      if (!task) return;
+
+      const taskDate = new Date(task.task_date + "T00:00:00");
+      const newDate = overId === "edge-prev-week" ? addDays(taskDate, -7) : addDays(taskDate, 7);
+      const newDateStr = format(newDate, "yyyy-MM-dd");
+
+      updateTask.mutate({ id: task.id, task_date: newDateStr });
+
+      if (overId === "edge-prev-week") {
+        setWeekStart((w) => subWeeks(w, 1));
+      } else {
+        setWeekStart((w) => addWeeks(w, 1));
+      }
+
+      clearEdgeTimer();
+    }, 1000);
+  }, [weekStart, clearEdgeTimer, queryClient, updateTask]);
+
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find((t) => t.id === event.active.id);
     setActiveTask(task || null);
@@ -572,6 +639,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    clearEdgeTimer();
     setActiveTask(null);
     setIsDragging(false);
     const { active, over } = event;
@@ -661,9 +729,9 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
           <div className="flex gap-2 min-h-[120px]">
-            {isDragging && <EdgeDropZone id="edge-prev-week" side="left" />}
+            {isDragging && <EdgeDropZone id="edge-prev-week" side="left" isCharging={chargingEdge === "edge-prev-week"} />}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -683,7 +751,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                 />
               );
             })}
-            {isDragging && <EdgeDropZone id="edge-next-week" side="right" />}
+            {isDragging && <EdgeDropZone id="edge-next-week" side="right" isCharging={chargingEdge === "edge-next-week"} />}
           </div>
           <DragOverlay>
             {activeTask && (
