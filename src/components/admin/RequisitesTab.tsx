@@ -86,12 +86,16 @@ const RequisitesTab = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateMultiple.mutateAsync(
+      const savePromise = updateMultiple.mutateAsync(
         FIELDS.map(f => ({ key: f.key, value: values[f.key] || "" }))
       );
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 10000)
+      );
+      await Promise.race([savePromise, timeoutPromise]);
       toast.success("Реквизиты сохранены");
-    } catch {
-      toast.error("Ошибка сохранения");
+    } catch (e: any) {
+      toast.error(e?.message === "timeout" ? "Таймаут сохранения, попробуйте ещё раз" : "Ошибка сохранения");
     }
     setSaving(false);
   };

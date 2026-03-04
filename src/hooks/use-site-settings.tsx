@@ -25,7 +25,7 @@ export const useSiteSettings = () => {
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       const { error } = await supabase
         .from("site_settings" as any)
-        .upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() } as any, { onConflict: "key" });
+        .upsert({ key, value, updated_at: new Date().toISOString() } as any, { onConflict: "key" });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -35,13 +35,15 @@ export const useSiteSettings = () => {
 
   const updateMultiple = useMutation({
     mutationFn: async (entries: { key: string; value: string }[]) => {
-      const promises = entries.map(entry =>
-        supabase
-          .from("site_settings" as any)
-          .upsert({ key: entry.key, value: JSON.stringify(entry.value), updated_at: new Date().toISOString() } as any, { onConflict: "key" })
-          .then(({ error }) => { if (error) throw error; })
-      );
-      await Promise.all(promises);
+      const rows = entries.map(e => ({
+        key: e.key,
+        value: e.value,
+        updated_at: new Date().toISOString(),
+      }));
+      const { error } = await supabase
+        .from("site_settings" as any)
+        .upsert(rows as any, { onConflict: "key" });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
