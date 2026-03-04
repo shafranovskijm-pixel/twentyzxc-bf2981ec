@@ -43,7 +43,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["doc-clients"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("clients").select("id, name, inn, kpp, ogrn, legal_address, director_name, director_post").order("name");
+      const { data, error } = await supabase.from("clients").select("id, name, email, inn, kpp, ogrn, legal_address, director_name, director_post").order("name");
       if (error) throw error;
       return data;
     },
@@ -327,6 +327,15 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
+      
+      // Save email to client card if not already there
+      const client = clients.find(c => c.name === clientName);
+      if (client && !client.email && emailTo.trim()) {
+        await supabase.from("clients").update({ email: emailTo.trim() }).eq("id", client.id);
+        queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+      }
+      
       toast.success(`Документ отправлен на ${emailTo}`);
       setEmailDialogOpen(false);
       setEmailTo("");
@@ -551,10 +560,8 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  // Pre-fill email from client data
                   const client = clients.find(c => c.name === clientName);
-                  // Try client email from clients table (not in current select, use empty)
-                  setEmailTo("");
+                  setEmailTo(client?.email || "");
                   setEmailDialogOpen(true);
                 }}
               >
@@ -565,20 +572,12 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (!previewHtml) return;
-                  const blob = new Blob([previewHtml], { type: "text/html;charset=utf-8" });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement("a");
-                  a.href = url;
-                  a.download = "document.html";
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                  if (!previewHtml || !iframeRef.current?.contentWindow) return;
+                  iframeRef.current.contentWindow.print();
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Скачать
+                Скачать PDF
               </Button>
             </div>
           </DialogHeader>
