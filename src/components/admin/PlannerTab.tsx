@@ -387,7 +387,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => v
         title,
         task_date,
         client_id: client_id || null,
-        contract_id: contract_id || null,
+        contract_id: (contract_id && contract_id !== "none") ? contract_id : null,
         sort_order: maxOrder + 1,
       });
       if (error) throw error;
