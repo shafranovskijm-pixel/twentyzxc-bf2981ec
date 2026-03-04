@@ -181,6 +181,56 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_documents: {
+        Row: {
+          client_inn: string | null
+          client_name: string
+          contract_id: string | null
+          created_at: string
+          doc_date: string
+          doc_number: string
+          doc_type: string
+          html_content: string
+          id: string
+          services: Json
+          total_amount: number | null
+        }
+        Insert: {
+          client_inn?: string | null
+          client_name: string
+          contract_id?: string | null
+          created_at?: string
+          doc_date?: string
+          doc_number: string
+          doc_type: string
+          html_content: string
+          id?: string
+          services?: Json
+          total_amount?: number | null
+        }
+        Update: {
+          client_inn?: string | null
+          client_name?: string
+          contract_id?: string | null
+          created_at?: string
+          doc_date?: string
+          doc_number?: string
+          doc_type?: string
+          html_content?: string
+          id?: string
+          services?: Json
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_documents_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listings: {
         Row: {
           category_id: string
