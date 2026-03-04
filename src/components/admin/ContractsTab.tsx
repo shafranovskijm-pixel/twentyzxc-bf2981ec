@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle } from "lucide-react";
 
 interface Contract {
   id: string;
@@ -24,6 +24,7 @@ interface Contract {
   responsible: string | null;
   file_path: string | null;
   notes: string | null;
+  paid_until: string | null;
   is_archived: boolean;
   created_at: string;
 }
@@ -41,6 +42,7 @@ const ContractsTab = () => {
   const [contractType, setContractType] = useState("");
   const [responsible, setResponsible] = useState("");
   const [notes, setNotes] = useState("");
+  const [paidUntil, setPaidUntil] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,7 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setFile(null); setEditingId(null); setShowForm(false);
   };
 
   const startEdit = (c: Contract) => {
@@ -70,7 +72,7 @@ const ContractsTab = () => {
     setContractDate(c.contract_date || ""); setPaymentStatus(c.payment_status || "не оплачено");
     setAmount(c.amount?.toString() || ""); setAmountExtra(c.amount_extra?.toString() || "");
     setContractType(c.contract_type || ""); setResponsible(c.responsible || "");
-    setNotes(c.notes || ""); setFile(null); setShowForm(true);
+    setNotes(c.notes || ""); setPaidUntil(c.paid_until || ""); setFile(null); setShowForm(true);
   };
 
   const uploadFile = async (contractId: string): Promise<string | null> => {
@@ -98,6 +100,7 @@ const ContractsTab = () => {
         contract_type: contractType.trim() || null,
         responsible: responsible.trim() || null,
         notes: notes.trim() || null,
+        paid_until: paidUntil || null,
       };
       if (editingId) {
         if (file) { const fp = await uploadFile(editingId); if (fp) payload.file_path = fp; }
@@ -176,6 +179,20 @@ const ContractsTab = () => {
     return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
   };
 
+  const isPaidUntilSoon = (paidUntil: string | null) => {
+    if (!paidUntil) return false;
+    const date = new Date(paidUntil);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays <= 30 && diffDays >= 0;
+  };
+
+  const isPaidUntilExpired = (paidUntil: string | null) => {
+    if (!paidUntil) return false;
+    return new Date(paidUntil) < new Date();
+  };
+
   const renderTable = (items: Contract[], isArchive: boolean) => (
     <Card>
       <CardContent className="p-0">
@@ -194,6 +211,7 @@ const ContractsTab = () => {
                   <TableHead>№ договора</TableHead>
                   <TableHead>Дата</TableHead>
                   <TableHead>Оплата</TableHead>
+                  <TableHead>Оплачено до</TableHead>
                   <TableHead>Сумма</TableHead>
                   <TableHead>Тип</TableHead>
                   <TableHead>Ответственный</TableHead>
@@ -207,6 +225,15 @@ const ContractsTab = () => {
                     <TableCell>{c.contract_number || "—"}</TableCell>
                     <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
                     <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                    <TableCell>
+                      {c.paid_until ? (
+                        <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
+                          {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                          {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
+                          {new Date(c.paid_until).toLocaleDateString("ru-RU")}
+                        </span>
+                      ) : "—"}
+                    </TableCell>
                     <TableCell>{formatAmount(c.amount)}</TableCell>
                     <TableCell>{c.contract_type || "—"}</TableCell>
                     <TableCell>{c.responsible || "—"}</TableCell>
@@ -254,9 +281,10 @@ const ContractsTab = () => {
               <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
+              <div className="space-y-2"><Label>Оплачено до</Label><Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} /></div>
               <div className="space-y-2"><Label>Тип договора</Label><Input value={contractType} onChange={(e) => setContractType(e.target.value)} placeholder="фрдо, разработка..." /></div>
             </div>
             <div className="grid grid-cols-3 gap-4">

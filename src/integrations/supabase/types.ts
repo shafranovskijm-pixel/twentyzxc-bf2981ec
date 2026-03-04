@@ -93,6 +93,7 @@ export type Database = {
           id: string
           is_archived: boolean
           notes: string | null
+          paid_until: string | null
           payment_status: string | null
           responsible: string | null
           updated_at: string
@@ -109,6 +110,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           notes?: string | null
+          paid_until?: string | null
           payment_status?: string | null
           responsible?: string | null
           updated_at?: string
@@ -125,6 +127,7 @@ export type Database = {
           id?: string
           is_archived?: boolean
           notes?: string | null
+          paid_until?: string | null
           payment_status?: string | null
           responsible?: string | null
           updated_at?: string
