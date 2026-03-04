@@ -465,11 +465,32 @@ function DayColumn({
     </div>
   );
 }
+function EdgeDropZone({ id, side }: { id: string; side: "left" | "right" }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex items-center justify-center w-12 shrink-0 rounded-lg border-2 border-dashed transition-all",
+        isOver
+          ? "border-primary bg-primary/20 scale-105"
+          : "border-muted-foreground/30 bg-muted/20"
+      )}
+    >
+      {side === "left" ? (
+        <ChevronLeft className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+      ) : (
+        <ChevronRight className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+      )}
+    </div>
+  );
+}
 
 const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docType?: string) => void }) => {
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const weekDates = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
   const weekEnd = addDays(weekStart, 6);
@@ -547,10 +568,12 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find((t) => t.id === event.active.id);
     setActiveTask(task || null);
+    setIsDragging(true);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveTask(null);
+    setIsDragging(false);
     const { active, over } = event;
     if (!over) return;
 
@@ -558,6 +581,23 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
     if (!activeTaskData) return;
 
     const overId = String(over.id);
+
+    // Edge zones: move to prev/next week (same weekday)
+    if (overId === "edge-prev-week" || overId === "edge-next-week") {
+      const taskDate = new Date(activeTaskData.task_date + "T00:00:00");
+      const newDate = overId === "edge-prev-week"
+        ? addDays(taskDate, -7)
+        : addDays(taskDate, 7);
+      const newDateStr = format(newDate, "yyyy-MM-dd");
+      updateTask.mutate({ id: activeTaskData.id, task_date: newDateStr });
+      // Switch visible week
+      if (overId === "edge-prev-week") {
+        setWeekStart((w) => subWeeks(w, 1));
+      } else {
+        setWeekStart((w) => addWeeks(w, 1));
+      }
+      return;
+    }
 
     // Check if dropped on a day column droppable zone
     if (overId.startsWith("day-")) {
@@ -623,6 +663,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       ) : (
         <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-2 min-h-[120px]">
+            {isDragging && <EdgeDropZone id="edge-prev-week" side="left" />}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -642,6 +683,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                 />
               );
             })}
+            {isDragging && <EdgeDropZone id="edge-next-week" side="right" />}
           </div>
           <DragOverlay>
             {activeTask && (
