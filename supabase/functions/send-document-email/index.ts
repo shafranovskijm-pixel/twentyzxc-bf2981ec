@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 
 const corsHeaders = {
@@ -7,10 +6,82 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-/** RFC 2047 Base64 encoding for non-ASCII header values */
-function encodeHeader(text: string): string {
-  const encoded = base64Encode(new TextEncoder().encode(text));
-  return `=?UTF-8?B?${encoded}?=`;
+/** RFC 2047 Base64 encode for non-ASCII headers */
+function mimeEncode(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  return `=?UTF-8?B?${base64Encode(bytes)}?=`;
+}
+
+/** Minimal raw SMTP client over TLS */
+async function sendRawSMTP(opts: {
+  host: string; port: number; user: string; pass: string;
+  from: string; fromName: string; to: string; subject: string; html: string;
+}) {
+  const conn = await Deno.connectTls({ hostname: opts.host, port: opts.port });
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  async function readLine(): Promise<string> {
+    const buf = new Uint8Array(4096);
+    let result = "";
+    while (true) {
+      const n = await conn.read(buf);
+      if (n === null) break;
+      result += decoder.decode(buf.subarray(0, n));
+      if (result.includes("\r\n")) break;
+    }
+    return result.trim();
+  }
+
+  async function send(cmd: string): Promise<string> {
+    await conn.write(encoder.encode(cmd + "\r\n"));
+    return await readLine();
+  }
+
+  try {
+    // Greeting
+    await readLine();
+    await send(`EHLO localhost`);
+    // May have multi-line response
+    await new Promise(r => setTimeout(r, 200));
+
+    // AUTH LOGIN
+    await send("AUTH LOGIN");
+    await send(base64Encode(encoder.encode(opts.user)));
+    const authResp = await send(base64Encode(encoder.encode(opts.pass)));
+    if (!authResp.startsWith("235")) {
+      throw new Error(`SMTP auth failed: ${authResp}`);
+    }
+
+    await send(`MAIL FROM:<${opts.from}>`);
+    await send(`RCPT TO:<${opts.to}>`);
+    await send("DATA");
+
+    // Build raw MIME message with proper UTF-8 headers
+    const boundary = `boundary_${Date.now()}`;
+    const encodedFrom = `${mimeEncode(opts.fromName)} <${opts.from}>`;
+    const encodedSubject = mimeEncode(opts.subject);
+
+    const rawMessage = [
+      `From: ${encodedFrom}`,
+      `To: <${opts.to}>`,
+      `Subject: ${encodedSubject}`,
+      `MIME-Version: 1.0`,
+      `Content-Type: text/html; charset="UTF-8"`,
+      `Content-Transfer-Encoding: base64`,
+      `Date: ${new Date().toUTCString()}`,
+      ``,
+      base64Encode(encoder.encode(opts.html)).match(/.{1,76}/g)?.join("\r\n") || "",
+      `.`,
+    ].join("\r\n");
+
+    const quitResp = await send(rawMessage);
+    await send("QUIT");
+    
+    return quitResp;
+  } finally {
+    try { conn.close(); } catch {}
+  }
 }
 
 serve(async (req) => {
@@ -42,30 +113,17 @@ serve(async (req) => {
       );
     }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true,
-        auth: {
-          username: SMTP_USER,
-          password: SMTP_PASS,
-        },
-      },
-    });
-
-    // Encode non-ASCII from name and subject per RFC 2047
-    const fromHeader = `${encodeHeader(SMTP_FROM_NAME)} <${SMTP_FROM_EMAIL}>`;
-    const encodedSubject = encodeHeader(subject);
-
-    await client.send({
-      from: fromHeader,
+    await sendRawSMTP({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      user: SMTP_USER,
+      pass: SMTP_PASS,
+      from: SMTP_FROM_EMAIL,
+      fromName: SMTP_FROM_NAME,
       to,
-      subject: encodedSubject,
+      subject,
       html,
     });
-
-    await client.close();
 
     return new Response(
       JSON.stringify({ success: true }),
