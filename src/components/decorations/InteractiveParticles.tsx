@@ -131,7 +131,7 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(230, 179, 25, ${lineOpacity})`;
+            ctx.strokeStyle = `rgba(212, 190, 55, ${lineOpacity})`;
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
