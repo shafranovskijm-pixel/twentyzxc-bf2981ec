@@ -100,12 +100,26 @@ const RequisitesTab = () => {
               {FIELDS.filter(f => f.section === s.id).map(f => (
                 <div key={f.key} className="space-y-1">
                   <Label htmlFor={f.key}>{f.label}</Label>
-                  <Input
-                    id={f.key}
-                    value={values[f.key] || ""}
-                    onChange={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder}
-                  />
+                  {f.key === "company_inn" ? (
+                    <div className="flex gap-2">
+                      <Input
+                        id={f.key}
+                        value={values[f.key] || ""}
+                        onChange={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        placeholder={f.placeholder}
+                      />
+                      <Button variant="outline" size="sm" onClick={lookupInn} disabled={lookingUp} className="shrink-0" title="Заполнить по ИНН">
+                        {lookingUp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Input
+                      id={f.key}
+                      value={values[f.key] || ""}
+                      onChange={e => setValues(prev => ({ ...prev, [f.key]: e.target.value }))}
+                      placeholder={f.placeholder}
+                    />
+                  )}
                 </div>
               ))}
             </CardContent>
