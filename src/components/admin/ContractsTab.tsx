@@ -63,6 +63,19 @@ const ContractsTab = () => {
     },
   });
 
+  const getNextContractNumber = () => {
+    const year = new Date().getFullYear();
+    let maxNum = 0;
+    contracts.forEach((c) => {
+      const match = c.contract_number?.match(/^(\d+)-(\d{4})$/);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxNum) maxNum = num;
+      }
+    });
+    return `${maxNum + 1}-${year}`;
+  };
+
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
