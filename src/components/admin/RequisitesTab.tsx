@@ -30,6 +30,34 @@ const RequisitesTab = () => {
   const { settings, isLoading, updateMultiple } = useSiteSettings();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
+
+  const lookupInn = async () => {
+    const inn = values.company_inn?.trim();
+    if (!inn || inn.length < 10) return toast.error("Введите корректный ИНН (10 или 12 цифр)");
+    setLookingUp(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", {
+        body: { inn },
+      });
+      if (error) throw error;
+      if (!data?.found) { toast.error("Организация не найдена"); return; }
+      setValues(prev => ({
+        ...prev,
+        company_name: data.name || prev.company_name,
+        company_short_name: data.name_short || prev.company_short_name,
+        company_kpp: data.kpp || prev.company_kpp,
+        company_ogrn: data.ogrn || prev.company_ogrn,
+        company_legal_address: data.address || prev.company_legal_address,
+        company_director_name: data.management_name || prev.company_director_name,
+        company_director_post: data.management_post || prev.company_director_post,
+      }));
+      toast.success("Реквизиты заполнены по ИНН");
+    } catch {
+      toast.error("Ошибка запроса DaData");
+    }
+    setLookingUp(false);
+  };
 
   useEffect(() => {
     const v: Record<string, string> = {};
