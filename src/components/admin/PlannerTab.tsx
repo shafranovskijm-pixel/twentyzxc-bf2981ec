@@ -547,6 +547,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const handleDragStart = (event: DragStartEvent) => {
     const task = tasks.find((t) => t.id === event.active.id);
     setActiveTask(task || null);
+    setIsDragging(true);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
