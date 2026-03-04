@@ -82,14 +82,14 @@ const ContractsTab = () => {
     setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
   };
 
-  const lookupInn = async () => {
-    const value = inn.trim();
-    if (!value) return toast.error("Введите ИНН или название организации");
+  const lookupByValue = async (searchValue: string) => {
+    if (!searchValue.trim()) return toast.error("Введите ИНН или название организации");
     setInnLoading(true);
     try {
-      const isInn = /^\d{10,12}$/.test(value);
+      const val = searchValue.trim();
+      const isInn = /^\d{10,12}$/.test(val);
       const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-        body: isInn ? { inn: value } : { query: value },
+        body: isInn ? { inn: val } : { query: val },
       });
       if (error) throw error;
       if (!data?.found) {
@@ -111,6 +111,8 @@ const ContractsTab = () => {
       setInnLoading(false);
     }
   };
+
+  const lookupInn = () => lookupByValue(inn);
 
   const startEdit = (c: Contract) => {
     setEditingId(c.id); setClientName(c.client_name); setContractNumber(c.contract_number || "");
@@ -372,7 +374,15 @@ const ContractsTab = () => {
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
+              <div className="space-y-2">
+                <Label>Организация *</Label>
+                <div className="flex gap-2">
+                  <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" onKeyDown={(e) => e.key === "Enter" && lookupByValue(clientName)} />
+                  <Button variant="outline" size="icon" className="shrink-0" disabled={innLoading || !clientName.trim()} onClick={() => lookupByValue(clientName)} title="Найти по названию">
+                    {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
             <div className="grid grid-cols-4 gap-4">
