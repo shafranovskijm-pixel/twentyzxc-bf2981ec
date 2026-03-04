@@ -38,6 +38,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailSending, setEmailSending] = useState(false);
+  const [emailProgress, setEmailProgress] = useState({ step: '', percent: 0 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -390,21 +391,22 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const sendDocumentEmail = async () => {
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
+    setEmailProgress({ step: 'Подготовка документа...', percent: 10 });
     try {
-      console.log('[Email] Starting PDF generation...');
-      toast.info("Генерация PDF для вложения...");
       let pdfBase64: string | undefined;
       let pdfFilename: string | undefined;
+      
+      setEmailProgress({ step: 'Генерация PDF...', percent: 20 });
       try {
         pdfBase64 = await generatePdfBase64(previewHtml);
         pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-        console.log('[Email] PDF generated, size:', pdfBase64.length);
+        setEmailProgress({ step: 'PDF готов, отправка...', percent: 60 });
       } catch (pdfErr) {
         console.warn('[Email] PDF generation failed, sending as HTML:', pdfErr);
-        toast.warning("PDF не удалось сгенерировать, отправляю как HTML");
+        setEmailProgress({ step: 'PDF не удался, отправка HTML...', percent: 50 });
       }
 
-      console.log('[Email] Invoking edge function...');
+      setEmailProgress({ step: 'Отправка письма...', percent: 70 });
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
           to: emailTo.trim(),
@@ -415,10 +417,10 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
           ...(pdfBase64 && { pdfBase64, pdfFilename }),
         },
       });
-      console.log('[Email] Edge function response:', { data, error });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
       
+      setEmailProgress({ step: 'Сохранение...', percent: 90 });
       const client = clients.find(c => c.name === clientName);
       if (client && !client.email && emailTo.trim()) {
         await supabase.from("clients").update({ email: emailTo.trim() }).eq("id", client.id);
@@ -426,12 +428,17 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       }
       
+      setEmailProgress({ step: 'Готово!', percent: 100 });
       toast.success(`Документ отправлен на ${emailTo}${pdfBase64 ? ' (с PDF)' : ''}`);
-      setEmailDialogOpen(false);
-      setEmailTo("");
+      setTimeout(() => {
+        setEmailDialogOpen(false);
+        setEmailTo("");
+        setEmailProgress({ step: '', percent: 0 });
+      }, 500);
     } catch (err: any) {
       console.error('[Email] Error:', err);
       toast.error(err.message || "Не удалось отправить письмо");
+      setEmailProgress({ step: '', percent: 0 });
     }
     setEmailSending(false);
   };
@@ -772,11 +779,21 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 onChange={e => setEmailTo(e.target.value)}
                 placeholder="client@example.com"
                 onKeyDown={e => { if (e.key === 'Enter') sendDocumentEmail(); }}
+                disabled={emailSending}
               />
             </div>
+            {emailSending && emailProgress.step && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{emailProgress.step}</span>
+                  <span className="text-muted-foreground font-mono">{emailProgress.percent}%</span>
+                </div>
+                <Progress value={emailProgress.percent} className="h-2" />
+              </div>
+            )}
             <Button onClick={sendDocumentEmail} disabled={emailSending} className="w-full">
               {emailSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
-              Отправить
+              {emailSending ? emailProgress.step || 'Отправка...' : 'Отправить'}
             </Button>
           </div>
         </DialogContent>
