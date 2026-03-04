@@ -20,6 +20,7 @@ import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
 import DashboardTab from "@/components/admin/DashboardTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
+import FloatingAIChat from "@/components/admin/FloatingAIChat";
 import { toast } from "sonner";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -216,7 +217,7 @@ const Admin = () => {
               <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
               <NotificationsPanel onNavigate={setActiveSection} />
             </header>
-            <main className="flex-1 p-3 sm:p-6 max-w-5xl">
+            <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-16">
               {activeSection === "dashboard" && <DashboardTab onNavigate={setActiveSection} />}
               {activeSection === "seo" && (
                 <div className="space-y-6">
@@ -345,6 +346,7 @@ const Admin = () => {
           </div>
         </div>
       </SidebarProvider>
+      <FloatingAIChat />
     </>
   );
 };
