@@ -158,9 +158,9 @@
   }
 
   .luxury-card {
-    background: linear-gradient(145deg, hsl(20 12% 10% / 0.95) 0%, hsl(20 10% 7% / 0.98) 100%);
+    background: linear-gradient(145deg, hsl(220 8% 18% / 0.95) 0%, hsl(220 8% 14% / 0.98) 100%);
     border: 1px solid hsl(42 80% 50% / 0.15);
-    box-shadow: 0 4px 24px hsl(0 0% 0% / 0.3);
+    box-shadow: 0 4px 24px hsl(0 0% 0% / 0.2);
   }
 
   .luxury-card:hover {
