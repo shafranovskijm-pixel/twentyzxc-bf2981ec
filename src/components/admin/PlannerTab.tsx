@@ -621,7 +621,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-2 min-h-[120px]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
