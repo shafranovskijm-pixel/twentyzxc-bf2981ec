@@ -35,6 +35,9 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
