@@ -1,32 +1,57 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## План: Кремовая тёплая тема + замена ворот на fade-in
 
-## Проблема
+### 1. Обновить цветовую схему на кремовую тёплую
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+**Файл: `src/index.css`** — полная замена CSS-переменных:
 
-## Решение
+- `--background`: чёрный (#080808) → тёплый крем (`40 30% 96%` ≈ #F5F0E8)
+- `--foreground`: золотистый белый → тёмно-коричневый (`30 10% 15%`)
+- `--card`: тёмно-серый → белый/слоновая кость (`40 25% 98%`)
+- `--card-foreground`: → тёмный (`30 10% 15%`)
+- `--secondary`: → светло-бежевый (`35 20% 92%`)
+- `--muted`: → бежево-серый (`35 15% 88%`)
+- `--muted-foreground`: → средне-серый (`30 5% 45%`)
+- `--border`: → тёплый серый (`35 15% 85%`)
+- `--primary` (золото): оставить, но чуть темнее для контраста на светлом (`42 75% 42%`)
+- Обновить `--gradient-gold`, `--glow-gold` под светлый фон (менее яркое свечение, более мягкие тени)
+- Скроллбар: светлый трек, золотой thumb
+- `::selection`: более мягкий золотой
 
-### 1. Включить Google OAuth через настройки аутентификации
+Обновить `.luxury-card`: светлый фон с мягкой тенью вместо тёмного градиента. Обновить `.gradient-gold-text` для контраста на светлом.
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+### 2. Заменить ворота Синтагмы на fade-in
 
-### 2. Добавить redirect URL в список разрешённых
+**Файл: `src/components/WebDevSection.tsx`**:
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+- Удалить компонент `Spark` и все sparks
+- В `SyntagmaCard` убрать анимированные створки (left gate, right gate, center ornament, closed gates text)
+- Контент карточки показывать сразу, с плавным hover-эффектом:
+  - При наведении — мягкий подъём карточки (translateY, тень)
+  - Контент всегда видимый, без opacity: 0
+  - Ачивка `syntagma_gates` — срабатывает при первом наведении (без задержки 3.5с)
+- Удалить `@keyframes animate-spark` из CSS если есть
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+### 3. Адаптировать декорации под светлую тему
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+**Файл: `src/components/decorations/GradientGlows.tsx`** — уменьшить интенсивность свечений, использовать тёплые мягкие тона вместо ярких gold glows.
 
-## Технические детали
+**Файл: `src/components/decorations/FloatingParticles.tsx`** — изменить `bg-primary/30` на более мягкий для светлого фона.
 
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+**Файл: `src/components/decorations/GeometricShapes.tsx`** — уменьшить opacity элементов.
 
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+**Файл: `src/components/HeroSection.tsx`** — убрать `bg-background` у фонового div, адаптировать декоративные линии и glow под светлый фон.
+
+### 4. Обновить Header и Footer
+
+Убедиться, что Header и Footer корректно работают на светлом фоне — проверить контрастность текста и border-цвета.
+
+### Итого файлы для изменения:
+1. `src/index.css` — цветовая схема
+2. `src/components/WebDevSection.tsx` — убрать ворота/искры, fade-in
+3. `src/components/decorations/GradientGlows.tsx` — мягче
+4. `src/components/decorations/FloatingParticles.tsx` — мягче
+5. `src/components/decorations/GeometricShapes.tsx` — мягче
+6. `src/components/HeroSection.tsx` — адаптация
 
