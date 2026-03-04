@@ -16,6 +16,7 @@ const FIELDS = [
   { section: "org", label: "ОГРН", key: "company_ogrn", placeholder: "1234567890123" },
   { section: "org", label: "Юридический адрес", key: "company_legal_address", placeholder: "г. Москва, ул. ..." },
   { section: "org", label: "Фактический адрес", key: "company_actual_address", placeholder: "г. Москва, ул. ..." },
+  { section: "bank", label: "Получатель", key: "company_bank_recipient", placeholder: "ООО «Компания»" },
   { section: "bank", label: "Расчётный счёт", key: "company_bank_account", placeholder: "40702810..." },
   { section: "bank", label: "БИК", key: "company_bank_bik", placeholder: "044525..." },
   { section: "bank", label: "Корр. счёт", key: "company_bank_corr", placeholder: "30101810..." },
