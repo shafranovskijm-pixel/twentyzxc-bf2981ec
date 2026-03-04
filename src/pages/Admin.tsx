@@ -12,7 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, X, Plus, LogOut, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
+import { Save, X, Plus, LogOut, Loader2, Search, Share2, Mail, Sparkles, Trash2, Users, FileText } from "lucide-react";
+import ClientsTab from "@/components/admin/ClientsTab";
+import ContractsTab from "@/components/admin/ContractsTab";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
