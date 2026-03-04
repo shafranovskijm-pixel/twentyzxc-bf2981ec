@@ -70,8 +70,10 @@ const baseStyles = `
     .header-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .section { margin: 15px 0; }
     .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
-    .signature-block { width: 45%; }
-    .signature-line { border-bottom: 1px solid #000; margin-top: 40px; padding-bottom: 2px; }
+    .signature-block { width: 45%; position: relative; }
+    .signature-line { border-bottom: 1px solid #000; margin-top: 40px; padding-bottom: 2px; position: relative; }
+    .signature-img { position: absolute; height: 60px; bottom: -5px; left: 80px; }
+    .stamp-img { position: absolute; height: 120px; opacity: 0.85; top: -30px; right: -10px; }
     .bank-header { border: 2px solid #000; margin-bottom: 20px; }
     .bank-header td { padding: 4px 8px; border: 1px solid #000; font-size: 10pt; }
     p { margin: 5px 0; }
@@ -188,7 +190,11 @@ export function generateContractHtml(data: DocumentData): string {
           <p>р/с ${c.company_bank_account}</p>
           <p>${c.company_bank_name}</p>
           <p>БИК ${c.company_bank_bik} к/с ${c.company_bank_corr}</p>
-          <div class="signature-line">${c.company_director_post} __________ / ${c.company_director_name} /</div>
+          <div class="signature-line">
+            ${c.company_director_post} __________ / ${c.company_director_name} /
+            <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+          </div>
+          <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
@@ -241,7 +247,11 @@ export function generateInvoiceHtml(data: DocumentData): string {
     </div>
     <div class="signatures">
       <div class="signature-block">
-        <div class="signature-line">${c.company_director_post} __________ / ${c.company_director_name} /</div>
+        <div class="signature-line">
+          ${c.company_director_post} __________ / ${c.company_director_name} /
+          <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+        </div>
+        <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
       </div>
     </div>
   </body></html>`;
@@ -271,7 +281,11 @@ export function generateActHtml(data: DocumentData): string {
       <div class="signature-block">
         <p><strong>Исполнитель:</strong></p>
         <p>${c.company_name}</p>
-        <div class="signature-line">${c.company_director_post} __________ / ${c.company_director_name} /</div>
+        <div class="signature-line">
+          ${c.company_director_post} __________ / ${c.company_director_name} /
+          <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+        </div>
+        <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
       </div>
       <div class="signature-block">
         <p><strong>Заказчик:</strong></p>
