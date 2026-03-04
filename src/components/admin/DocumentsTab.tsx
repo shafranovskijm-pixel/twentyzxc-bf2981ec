@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   type DocumentData,
   type ServiceItem,
@@ -30,6 +32,7 @@ const DOC_LABELS: Record<DocType, string> = {
 };
 
 const DocumentsTab = () => {
+  const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -182,6 +185,27 @@ const DocumentsTab = () => {
       case "invoice": html = generateInvoiceHtml(docData); break;
       case "act": html = generateActHtml(docData); break;
     }
+
+    // Save to DB
+    try {
+      const filteredServices = services.filter(s => s.name.trim());
+      await supabase.from("generated_documents" as any).insert({
+        doc_type: docType,
+        doc_number: docNumber,
+        doc_date: docDate,
+        client_name: clientName,
+        client_inn: clientInn || null,
+        contract_id: linkedContractId || null,
+        total_amount: total,
+        services: JSON.stringify(filteredServices),
+        html_content: html,
+      } as any);
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success("Документ сохранён");
+    } catch {
+      toast.error("Не удалось сохранить документ");
+    }
+
     openDocumentPrint(html);
   };
 
@@ -374,7 +398,94 @@ const DocumentsTab = () => {
         <Printer className="w-5 h-5 mr-2" />
         Сформировать {DOC_LABELS[docType]}
       </Button>
+
+      {/* History */}
+      <DocumentHistory />
     </div>
+  );
+};
+
+const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  contract: { label: "Договор", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  invoice: { label: "Счёт", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+};
+
+const DocumentHistory = () => {
+  const queryClient = useQueryClient();
+  const { data: docs = [], isLoading } = useQuery({
+    queryKey: ["generated-documents"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("generated_documents" as any)
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const viewDoc = (html: string) => {
+    openDocumentPrint(html);
+  };
+
+  const deleteDoc = async (id: string) => {
+    const { error } = await supabase.from("generated_documents" as any).delete().eq("id", id);
+    if (error) { toast.error("Ошибка удаления"); return; }
+    queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+    toast.success("Документ удалён");
+  };
+
+  if (isLoading) return null;
+  if (docs.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><History className="w-5 h-5" />История документов</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Тип</TableHead>
+              <TableHead>Номер</TableHead>
+              <TableHead>Дата</TableHead>
+              <TableHead>Клиент</TableHead>
+              <TableHead>Сумма</TableHead>
+              <TableHead className="w-24"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {docs.map((doc: any) => {
+              const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
+              return (
+                <TableRow key={doc.id}>
+                  <TableCell>
+                    <Badge variant="outline" className={typeInfo.color}>{typeInfo.label}</Badge>
+                  </TableCell>
+                  <TableCell className="font-mono">№{doc.doc_number}</TableCell>
+                  <TableCell>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</TableCell>
+                  <TableCell>{doc.client_name}</TableCell>
+                  <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => viewDoc(doc.html_content)} title="Открыть">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteDoc(doc.id)} className="text-destructive hover:text-destructive" title="Удалить">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 };
 
