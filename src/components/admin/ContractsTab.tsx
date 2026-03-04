@@ -24,6 +24,7 @@ interface Contract {
   responsible: string | null;
   file_path: string | null;
   notes: string | null;
+  paid_until: string | null;
   is_archived: boolean;
   created_at: string;
 }
