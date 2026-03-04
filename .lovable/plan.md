@@ -1,34 +1,32 @@
 
 
+# Исправление авторизации для отзывов (403 Forbidden)
+
 ## Проблема
 
-Edge-функция `send-document-email` зависает при передаче большого PDF через base64 в теле запроса. SMTP-соединение таймаутит, функция отключается (shutdown в логах без ответа).
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
 ## Решение
 
-Изменить подход: сначала сохранить PDF в storage (`contracts` bucket), записать в `contract_files`, а затем отправить email с **ссылкой на скачивание** вместо вложения. Это устраняет проблему размера payload.
+### 1. Включить Google OAuth через настройки аутентификации
 
-### Изменения в `src/components/admin/DocumentsTab.tsx`
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-Переписать `sendDocumentEmail`:
+### 2. Добавить redirect URL в список разрешённых
 
-1. **Генерация PDF** → конвертировать base64 в `Blob`
-2. **Загрузка в storage** → `supabase.storage.from("contracts").upload(path, blob)` используя `linkedContractId` (или создавая путь `documents/{docType}_{docNumber}`)
-3. **Запись в `contract_files`** → сохранить метаданные файла
-4. **Получить публичный URL** → `supabase.storage.from("contracts").getPublicUrl(path)` (или createSignedUrl)
-5. **Отправить email без вложения** → в body передать только `to`, `subject`, `html` с ссылкой на скачивание PDF. Без `pdfBase64`.
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### Шаги прогресса
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-- 10% — Подготовка
-- 30% — Генерация PDF
-- 60% — Сохранение в файлы
-- 80% — Отправка письма
-- 100% — Готово
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
 
-### Результат
+## Технические детали
 
-- PDF сохраняется в папку договора (виден во вкладке «Файлы»)
-- Email отправляется мгновенно (маленький payload — только HTML с ссылкой)
-- Клиент получает письмо со ссылкой для скачивания PDF
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 

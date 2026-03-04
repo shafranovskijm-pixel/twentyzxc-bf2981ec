@@ -394,33 +394,83 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     setEmailSending(true);
     setEmailProgress({ step: 'Подготовка документа...', percent: 10 });
     try {
-      let pdfBase64: string | undefined;
-      let pdfFilename: string | undefined;
-      
+      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+
+      // 1. Generate PDF
       setEmailProgress({ step: 'Генерация PDF...', percent: 20 });
+      let pdfBase64: string;
       try {
         pdfBase64 = await generatePdfBase64(previewHtml);
-        pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-        setEmailProgress({ step: 'PDF готов, отправка...', percent: 60 });
       } catch (pdfErr) {
-        console.warn('[Email] PDF generation failed, sending as HTML:', pdfErr);
-        setEmailProgress({ step: 'PDF не удался, отправка HTML...', percent: 50 });
+        console.error('[Email] PDF generation failed:', pdfErr);
+        throw new Error('Не удалось сгенерировать PDF');
+      }
+      setEmailProgress({ step: 'PDF готов, сохранение в файлы...', percent: 40 });
+
+      // 2. Convert base64 to Blob and upload to storage
+      const byteChars = atob(pdfBase64);
+      const byteArray = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+      const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+
+      const storagePath = linkedContractId
+        ? `${linkedContractId}/${pdfFilename}`
+        : `documents/${docType}_${docNumber}_${docDate}.pdf`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('contracts')
+        .upload(storagePath, pdfBlob, { upsert: true });
+      if (uploadError) throw new Error(`Ошибка загрузки файла: ${uploadError.message}`);
+
+      setEmailProgress({ step: 'Файл сохранён, получение ссылки...', percent: 55 });
+
+      // 3. Record in contract_files if linked to a contract
+      if (linkedContractId) {
+        await supabase.from('contract_files').insert({
+          contract_id: linkedContractId,
+          file_name: pdfFilename,
+          file_path: storagePath,
+          file_size: pdfBlob.size,
+        });
+        queryClient.invalidateQueries({ queryKey: ['contract-files'] });
       }
 
+      // 4. Get signed URL (7 days)
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from('contracts')
+        .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
+      if (signedError || !signedData?.signedUrl) throw new Error('Не удалось создать ссылку на файл');
+
       setEmailProgress({ step: 'Отправка письма...', percent: 70 });
+
+      // 5. Send email with download link (no attachment)
+      const docLabel = `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`;
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Добрый день!</p>
+          <p>Направляем Вам документ: <strong>${docLabel}</strong>.</p>
+          <p style="margin: 24px 0;">
+            <a href="${signedData.signedUrl}" 
+               style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+              📎 Скачать PDF
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px;">Ссылка действительна 7 дней.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+          <p style="color: #9ca3af; font-size: 12px;">Синтагма — автоматизированная система документооборота</p>
+        </div>
+      `;
+
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
           to: emailTo.trim(),
-          subject: `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`,
-          html: pdfBase64
-            ? `<p>Добрый день! Во вложении ${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}.</p>`
-            : previewHtml,
-          ...(pdfBase64 && { pdfBase64, pdfFilename }),
+          subject: docLabel,
+          html: emailHtml,
         },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
-      
+
       setEmailProgress({ step: 'Сохранение...', percent: 90 });
       const client = clients.find(c => c.name === clientName);
       if (client && !client.email && emailTo.trim()) {
@@ -428,9 +478,9 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
         queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       }
-      
+
       setEmailProgress({ step: 'Готово!', percent: 100 });
-      toast.success(`Документ отправлен на ${emailTo}${pdfBase64 ? ' (с PDF)' : ''}`);
+      toast.success(`Документ отправлен на ${emailTo} (PDF сохранён в файлы)`);
       setTimeout(() => {
         setEmailDialogOpen(false);
         setEmailTo("");
