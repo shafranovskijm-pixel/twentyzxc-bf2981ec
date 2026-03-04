@@ -64,7 +64,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, contract_number, contract_date, client_name")
+        .select("id, contract_number, contract_date, client_name, amount, contract_type")
         .order("contract_number", { ascending: false });
       if (error) throw error;
       return data;
