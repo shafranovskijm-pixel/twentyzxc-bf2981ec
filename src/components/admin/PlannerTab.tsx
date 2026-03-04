@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
-import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday, isSameDay } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   DndContext,
   closestCenter,
@@ -142,16 +144,19 @@ function DayColumn({
   onDelete: (id: string) => void;
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
 }) {
-  const [showAdd, setShowAdd] = useState(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newClientId, setNewClientId] = useState<string>("");
   const [newContractId, setNewContractId] = useState<string>("");
+  const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const dateStr = format(date, "yyyy-MM-dd");
   const today = isToday(date);
 
-  const filteredContracts = newClientId && newClientId !== "none"
+  const filteredContracts = newClientId
     ? contracts.filter((c) => c.client_name === clients.find((cl) => cl.id === newClientId)?.name)
     : contracts;
+
+  const selectedClient = clients.find((c) => c.id === newClientId);
 
   const handleAdd = () => {
     if (!newTitle.trim()) return;
@@ -159,7 +164,13 @@ function DayColumn({
     setNewTitle("");
     setNewClientId("");
     setNewContractId("");
-    setShowAdd(false);
+    setPopoverOpen(false);
+  };
+
+  const resetForm = () => {
+    setNewTitle("");
+    setNewClientId("");
+    setNewContractId("");
   };
 
   return (
@@ -176,50 +187,90 @@ function DayColumn({
         </SortableContext>
       </div>
       <div className="p-2 border-t">
-        {showAdd ? (
-          <div className="space-y-2">
+        <Popover open={popoverOpen} onOpenChange={(open) => { setPopoverOpen(open); if (!open) resetForm(); }}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full h-6 text-xs text-muted-foreground">
+              <Plus className="h-3 w-3 mr-1" />Задача
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-4 space-y-3" side="top" align="start">
+            <p className="text-sm font-medium">Новая задача — {format(date, "d MMMM", { locale: ru })}</p>
             <Input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-              placeholder="Задача..."
-              className="h-7 text-xs"
+              placeholder="Название задачи..."
+              className="h-9 text-sm"
               autoFocus
             />
-            <Select value={newClientId} onValueChange={setNewClientId}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder="Клиент (опц.)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Без клиента</SelectItem>
-                {clients.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+            {/* Client combobox */}
+            <Popover open={clientSearchOpen} onOpenChange={setClientSearchOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={clientSearchOpen}
+                  className="w-full h-9 justify-between text-sm font-normal"
+                >
+                  {selectedClient ? selectedClient.name : "Выберите клиента..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-0" side="bottom" align="start">
+                <Command>
+                  <CommandInput placeholder="Поиск клиента..." className="h-9" />
+                  <CommandList>
+                    <CommandEmpty>Не найдено</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="__none__"
+                        onSelect={() => { setNewClientId(""); setNewContractId(""); setClientSearchOpen(false); }}
+                      >
+                        <Check className={cn("mr-2 h-4 w-4", !newClientId ? "opacity-100" : "opacity-0")} />
+                        Без клиента
+                      </CommandItem>
+                      {clients.map((c) => (
+                        <CommandItem
+                          key={c.id}
+                          value={c.name}
+                          onSelect={() => { setNewClientId(c.id); setNewContractId(""); setClientSearchOpen(false); }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", newClientId === c.id ? "opacity-100" : "opacity-0")} />
+                          {c.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* Contract select */}
             <Select value={newContractId} onValueChange={setNewContractId}>
-              <SelectTrigger className="h-7 text-xs">
-                <SelectValue placeholder="Договор (опц.)" />
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Договор (необязательно)" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Без договора</SelectItem>
                 {filteredContracts.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.contract_number ? `№${c.contract_number}` : c.client_name}
+                    {c.contract_number ? `№${c.contract_number} — ${c.client_name}` : c.client_name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex gap-1">
-              <Button size="sm" className="h-6 text-xs flex-1" onClick={handleAdd}>Добавить</Button>
-              <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => { setShowAdd(false); setNewContractId(""); }}>✕</Button>
+
+            <div className="flex gap-2 pt-1">
+              <Button size="sm" className="flex-1" onClick={handleAdd} disabled={!newTitle.trim()}>
+                Добавить
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setPopoverOpen(false)}>
+                Отмена
+              </Button>
             </div>
-          </div>
-        ) : (
-          <Button variant="ghost" size="sm" className="w-full h-6 text-xs text-muted-foreground" onClick={() => setShowAdd(true)}>
-            <Plus className="h-3 w-3 mr-1" />Задача
-          </Button>
-        )}
+          </PopoverContent>
+        </Popover>
       </div>
     </div>
   );
