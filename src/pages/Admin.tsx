@@ -42,6 +42,7 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState("seo");
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
+  const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
 
   // SEO state
