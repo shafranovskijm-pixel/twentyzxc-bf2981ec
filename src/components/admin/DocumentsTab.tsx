@@ -326,27 +326,30 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     document.body.appendChild(iframe);
     
     iframe.srcdoc = htmlContent;
-    await new Promise<void>(resolve => {
-      iframe.onload = () => resolve();
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('Iframe load timeout')), 10000);
+      iframe.onload = () => { clearTimeout(timeout); resolve(); };
     });
-    // Extra wait for fonts and images
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise(r => setTimeout(r, 500));
     
     const body = iframe.contentDocument!.body;
-    // Let the iframe auto-size to full document height
     iframe.style.height = body.scrollHeight + 'px';
     
-    const canvas = await html2canvas(body, {
-      scale: 3,
-      useCORS: true,
-      width: 794,
-      height: body.scrollHeight,
-      windowWidth: 794,
-      windowHeight: body.scrollHeight,
-    });
+    const canvas = await Promise.race([
+      html2canvas(body, {
+        scale: 2,
+        useCORS: true,
+        width: 794,
+        height: body.scrollHeight,
+        windowWidth: 794,
+        windowHeight: body.scrollHeight,
+        logging: false,
+      }),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('html2canvas timeout')), 15000)),
+    ]);
     document.body.removeChild(iframe);
     
-    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    const imgData = canvas.toDataURL('image/jpeg', 0.85);
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -363,7 +366,6 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       heightLeft -= pdfHeight;
     }
     
-    // Return base64 without data URI prefix
     const pdfOutput = pdf.output('datauristring');
     return pdfOutput.split(',')[1];
   };
@@ -372,17 +374,30 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
     try {
+      toast.info("Генерация PDF для вложения...");
+      let pdfBase64: string | undefined;
+      let pdfFilename: string | undefined;
+      try {
+        pdfBase64 = await generatePdfBase64(previewHtml);
+        pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+      } catch (pdfErr) {
+        console.warn('PDF generation failed, sending as HTML:', pdfErr);
+        toast.warning("PDF не удалось сгенерировать, отправляю как HTML");
+      }
+
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
           to: emailTo.trim(),
           subject: `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`,
-          html: previewHtml,
+          html: pdfBase64
+            ? `<p>Добрый день! Во вложении ${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}.</p>`
+            : previewHtml,
+          ...(pdfBase64 && { pdfBase64, pdfFilename }),
         },
       });
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
       
-      // Save email to client card if not already there
       const client = clients.find(c => c.name === clientName);
       if (client && !client.email && emailTo.trim()) {
         await supabase.from("clients").update({ email: emailTo.trim() }).eq("id", client.id);
@@ -390,7 +405,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
       }
       
-      toast.success(`Документ отправлен на ${emailTo}`);
+      toast.success(`Документ отправлен на ${emailTo}${pdfBase64 ? ' (с PDF)' : ''}`);
       setEmailDialogOpen(false);
       setEmailTo("");
     } catch (err: any) {
