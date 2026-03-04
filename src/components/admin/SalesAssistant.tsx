@@ -104,10 +104,23 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
 
   const calcForecast = (start: Date, end: Date) => {
     return active.reduce((sum, c) => {
+      const amount = (c.amount || 0) + (c.amount_extra || 0);
+      if (!amount) return sum;
+
+      // Unpaid contracts without paid_until — expected income this month
+      if (!c.paid_until && c.payment_status === "не оплачено") {
+        // Show in current month and this week forecasts
+        const contractDate = c.contract_date ? new Date(c.contract_date) : new Date(c.created_at || now);
+        if (isWithinInterval(contractDate, { start, end }) || isWithinInterval(now, { start, end })) {
+          return sum + amount;
+        }
+        return sum;
+      }
+
       if (!c.paid_until) return sum;
       const paidUntil = new Date(c.paid_until);
       if (isWithinInterval(paidUntil, { start, end }) || isBefore(paidUntil, start)) {
-        return sum + (c.amount || 0) + (c.amount_extra || 0);
+        return sum + amount;
       }
       return sum;
     }, 0);
