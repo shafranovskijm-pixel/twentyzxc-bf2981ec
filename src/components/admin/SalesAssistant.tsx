@@ -173,7 +173,7 @@ const SalesAssistant = () => {
     queryKey: ["sales-contracts"],
     queryFn: async () => {
       const { data, error } = await supabase.from("contracts")
-        .select("id, client_name, contract_number, amount, amount_extra, payment_status, paid_until, is_archived")
+        .select("id, client_name, contract_number, contract_date, amount, amount_extra, payment_status, paid_until, is_archived, created_at")
         .order("contract_number", { ascending: false });
       if (error) throw error;
       return data as Contract[];
