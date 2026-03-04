@@ -179,6 +179,20 @@ const ContractsTab = () => {
     return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
   };
 
+  const isPaidUntilSoon = (paidUntil: string | null) => {
+    if (!paidUntil) return false;
+    const date = new Date(paidUntil);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays <= 30 && diffDays >= 0;
+  };
+
+  const isPaidUntilExpired = (paidUntil: string | null) => {
+    if (!paidUntil) return false;
+    return new Date(paidUntil) < new Date();
+  };
+
   const renderTable = (items: Contract[], isArchive: boolean) => (
     <Card>
       <CardContent className="p-0">
