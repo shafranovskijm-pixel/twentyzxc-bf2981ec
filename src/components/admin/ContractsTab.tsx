@@ -66,7 +66,34 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setPaidUntil(""); setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
+  };
+
+  const lookupInn = async () => {
+    if (!inn.trim()) return toast.error("Введите ИНН");
+    setInnLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", {
+        body: { inn: inn.trim() },
+      });
+      if (error) throw error;
+      if (!data?.found) {
+        toast.error("Организация не найдена");
+        return;
+      }
+      setClientName(data.name_short || data.name || "");
+      if (data.management_name) {
+        setNotes((prev) => {
+          const mgmt = `${data.management_post || "Руководитель"}: ${data.management_name}`;
+          return prev ? `${prev}\n${mgmt}` : mgmt;
+        });
+      }
+      toast.success(`Найдено: ${data.name_short || data.name}`);
+    } catch {
+      toast.error("Ошибка поиска по ИНН");
+    } finally {
+      setInnLoading(false);
+    }
   };
 
   const startEdit = (c: Contract) => {
