@@ -23,13 +23,21 @@ import {
   generateInvoiceHtml,
   generateActHtml,
 } from "@/lib/document-templates";
+import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 
 type DocType = "contract" | "invoice" | "act";
+type ContractSubType = "site" | "frdo" | "other";
 
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
   invoice: "Счёт на оплату",
   act: "Акт выполненных работ",
+};
+
+const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
+  site: "Сайт",
+  frdo: "ФРДО",
+  other: "Прочее",
 };
 
 const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: string; onMounted?: () => void }) => {
@@ -64,6 +72,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   });
 
   const [docType, setDocType] = useState<DocType>("contract");
+  const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -282,7 +291,9 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
 
     let html = "";
     switch (docType) {
-      case "contract": html = generateContractHtml(docData); break;
+      case "contract":
+        html = contractSubType === "frdo" ? generateFrdoContractHtml(docData) : generateContractHtml(docData);
+        break;
       case "invoice": html = generateInvoiceHtml(docData); break;
       case "act": html = generateActHtml(docData); break;
     }
@@ -316,7 +327,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
             contract_number: contractNumber,
             contract_date: docDate,
             amount: total || null,
-            contract_type: null,
+            contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
             payment_status: "не оплачено",
           });
           if (contractError) {
@@ -528,7 +539,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Тип и номер документа</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-1">
             <Label>Тип документа</Label>
             <Select value={docType} onValueChange={v => { setDocType(v as DocType); setDocNumber(lastDocNumbers?.[v] || "001"); }}>
@@ -540,6 +551,19 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
               </SelectContent>
             </Select>
           </div>
+          {docType === "contract" && (
+            <div className="space-y-1">
+              <Label>Тип договора</Label>
+              <Select value={contractSubType} onValueChange={v => setContractSubType(v as ContractSubType)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(CONTRACT_TYPE_LABELS) as ContractSubType[]).map(k => (
+                    <SelectItem key={k} value={k}>{CONTRACT_TYPE_LABELS[k]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-1">
             <Label>Номер</Label>
             <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder="001" />
@@ -621,7 +645,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       </Card>
 
       {/* Contract-specific */}
-      {docType === "contract" && (
+      {docType === "contract" && contractSubType !== "frdo" && (
         <Card>
           <CardHeader><CardTitle>Условия договора</CardTitle></CardHeader>
           <CardContent className="space-y-4">
@@ -637,6 +661,25 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
               <div className="space-y-1">
                 <Label>Условия оплаты</Label>
                 <Input value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} placeholder="100% предоплата" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* FRDO contract-specific */}
+      {docType === "contract" && contractSubType === "frdo" && (
+        <Card>
+          <CardHeader><CardTitle>Условия договора ФРДО</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label>Период оказания услуг</Label>
+                <Input value={deadline} onChange={e => setDeadline(e.target.value)} placeholder="05.03.2026 по 05.03.2027" />
+              </div>
+              <div className="space-y-1">
+                <Label>Условия оплаты</Label>
+                <Input value={paymentTerms} onChange={e => setPaymentTerms(e.target.value)} placeholder="авансом в размере 100%" />
               </div>
             </div>
           </CardContent>
