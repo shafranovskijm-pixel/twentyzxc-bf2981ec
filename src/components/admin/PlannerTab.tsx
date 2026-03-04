@@ -663,6 +663,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       ) : (
         <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-2 min-h-[120px]">
+            {isDragging && <EdgeDropZone id="edge-prev-week" side="left" />}
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -682,6 +683,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                 />
               );
             })}
+            {isDragging && <EdgeDropZone id="edge-next-week" side="right" />}
           </div>
           <DragOverlay>
             {activeTask && (
