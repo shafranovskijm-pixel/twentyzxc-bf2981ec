@@ -553,6 +553,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
 
   const handleDragEnd = (event: DragEndEvent) => {
     setActiveTask(null);
+    setIsDragging(false);
     const { active, over } = event;
     if (!over) return;
 
@@ -560,6 +561,23 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
     if (!activeTaskData) return;
 
     const overId = String(over.id);
+
+    // Edge zones: move to prev/next week (same weekday)
+    if (overId === "edge-prev-week" || overId === "edge-next-week") {
+      const taskDate = new Date(activeTaskData.task_date + "T00:00:00");
+      const newDate = overId === "edge-prev-week"
+        ? addDays(taskDate, -7)
+        : addDays(taskDate, 7);
+      const newDateStr = format(newDate, "yyyy-MM-dd");
+      updateTask.mutate({ id: activeTaskData.id, task_date: newDateStr });
+      // Switch visible week
+      if (overId === "edge-prev-week") {
+        setWeekStart((w) => subWeeks(w, 1));
+      } else {
+        setWeekStart((w) => addWeeks(w, 1));
+      }
+      return;
+    }
 
     // Check if dropped on a day column droppable zone
     if (overId.startsWith("day-")) {
