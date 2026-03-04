@@ -55,6 +55,7 @@ const Admin = () => {
   const [promoPrice, setPromoPrice] = useState("");
   const [promoOldPrice, setPromoOldPrice] = useState("");
   const [promoBadge, setPromoBadge] = useState("Акция");
+  const [promoIcon, setPromoIcon] = useState("");
   const [editingPromo, setEditingPromo] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
@@ -98,14 +99,14 @@ const Admin = () => {
       if (editingPromo) {
         const { error } = await supabase.from("promotions").update({
           title: promoTitle, description: promoDesc || null, price: promoPrice || null,
-          old_price: promoOldPrice || null, badge: promoBadge || null, updated_at: new Date().toISOString(),
+          old_price: promoOldPrice || null, badge: promoBadge || null, icon: promoIcon || null, updated_at: new Date().toISOString(),
         }).eq("id", editingPromo);
         if (error) throw error;
         toast.success("Акция обновлена");
       } else {
         const { error } = await supabase.from("promotions").insert({
           title: promoTitle, description: promoDesc || null, price: promoPrice || null,
-          old_price: promoOldPrice || null, badge: promoBadge || null,
+          old_price: promoOldPrice || null, badge: promoBadge || null, icon: promoIcon || null,
         });
         if (error) throw error;
         toast.success("Акция добавлена");
@@ -119,12 +120,12 @@ const Admin = () => {
   };
 
   const resetPromoForm = () => {
-    setPromoTitle(""); setPromoDesc(""); setPromoPrice(""); setPromoOldPrice(""); setPromoBadge("Акция"); setEditingPromo(null);
+    setPromoTitle(""); setPromoDesc(""); setPromoPrice(""); setPromoOldPrice(""); setPromoBadge("Акция"); setPromoIcon(""); setEditingPromo(null);
   };
 
   const startEditPromo = (p: Promotion) => {
     setEditingPromo(p.id); setPromoTitle(p.title); setPromoDesc(p.description || "");
-    setPromoPrice(p.price || ""); setPromoOldPrice(p.old_price || ""); setPromoBadge(p.badge || "");
+    setPromoPrice(p.price || ""); setPromoOldPrice(p.old_price || ""); setPromoBadge(p.badge || ""); setPromoIcon(p.icon || "");
   };
 
   useEffect(() => {
