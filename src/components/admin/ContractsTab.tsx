@@ -105,11 +105,11 @@ const ContractsTab = () => {
           const filePath = await uploadFile(editingId);
           if (filePath) payload.file_path = filePath;
         }
-        const { error } = await supabase.from("contracts").update(payload).eq("id", editingId);
+        const { error } = await supabase.from("contracts").update(payload as any).eq("id", editingId);
         if (error) throw error;
         toast.success("Договор обновлён");
       } else {
-        const { data, error } = await supabase.from("contracts").insert(payload).select("id").single();
+        const { data, error } = await supabase.from("contracts").insert(payload as any).select("id").single();
         if (error) throw error;
         if (file && data) {
           const filePath = await uploadFile(data.id);
