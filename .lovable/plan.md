@@ -1,35 +1,32 @@
 
 
+# Исправление авторизации для отзывов (403 Forbidden)
+
 ## Проблема
 
-`html2canvas` плохо рендерит сложные HTML-документы — обрезает текст, ломает шрифты (Times New Roman), теряет стили таблиц. Это известная проблема библиотеки с CSS-рендерингом.
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
 ## Решение
 
-Заменить `html2canvas + jsPDF` на **`window.print()`** через iframe, но с правильными настройками CSS `@page` и `@media print`, чтобы:
-- Браузер сам предлагал «Сохранить как PDF» (это стандартный способ)
-- Шрифты, таблицы и разметка сохранялись идеально
+### 1. Включить Google OAuth через настройки аутентификации
 
-Ключевая проблема прошлых попыток с `window.print()` — заголовок "about:blank". Решение: задать `<title>` в iframe и использовать `srcdoc` вместо `document.write`.
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-### Изменения
+### 2. Добавить redirect URL в список разрешённых
 
-**`src/components/admin/DocumentsTab.tsx`** — кнопка "Скачать PDF":
-- Убрать `html2canvas` + `jsPDF` логику
-- Создать скрытый iframe с `srcdoc = previewHtml`
-- После загрузки вызвать `iframe.contentWindow.print()`
-- Iframe автоматически удаляется после печати
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-**`src/lib/document-templates.ts`** — улучшить print-стили:
-- `@page { margin: 10mm; size: A4; }` — убирает колонтитулы и задаёт размер
-- `@media print { body { -webkit-print-color-adjust: exact; } }` — сохраняет цвета
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-**`src/components/admin/DocumentsTab.tsx`** — функция `generatePdfBase64` для отправки email:
-- Тоже заменить на правильную генерацию через iframe + print-подход
-- Альтернативно: оставить `html2canvas` только для email-отправки (так как нужен base64), но увеличить таймаут и исправить параметры рендеринга
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
 
-### Итого
-- **Скачать PDF** → `iframe.contentWindow.print()` (идеальное качество, браузер сам рендерит)
-- **Отправка email** → оставить `html2canvas + jsPDF` для генерации base64, но с улучшенными настройками (`scale: 3`, полная высота документа, корректные размеры)
-- **print CSS** → `@page { size: A4; margin: 10mm; }` для удаления "about:blank" и колонтитулов
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
