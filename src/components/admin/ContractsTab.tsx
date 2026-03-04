@@ -64,7 +64,7 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setFile(null); setEditingId(null); setShowForm(false);
   };
 
   const startEdit = (c: Contract) => {
