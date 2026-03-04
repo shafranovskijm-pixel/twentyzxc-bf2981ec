@@ -129,6 +129,11 @@
     background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    filter: drop-shadow(0 0 20px hsl(42 75% 42% / 0.3));
+  }
+
+  .gold-glow-text {
+    text-shadow: 0 0 30px hsl(42 75% 50% / 0.4), 0 0 60px hsl(42 75% 50% / 0.2), 0 0 100px hsl(42 75% 50% / 0.1);
   }
   
   /* Fallback for browsers that don't support background-clip: text */

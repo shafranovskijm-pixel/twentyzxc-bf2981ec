@@ -2,7 +2,7 @@ import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import WebDevSection from "@/components/WebDevSection";
-import AdvertisingSection from "@/components/AdvertisingSection";
+import PromotionSection from "@/components/PromotionSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import { FloatingParticles, GeometricShapes, GradientGlows, SectionDivider } from "@/components/decorations";
@@ -31,7 +31,7 @@ const Index = () => {
         <SectionDivider variant="ornate" />
         <WebDevSection />
         <SectionDivider variant="diamond" />
-        <AdvertisingSection />
+        <PromotionSection />
         <SectionDivider variant="simple" />
         <ContactSection />
       </main>

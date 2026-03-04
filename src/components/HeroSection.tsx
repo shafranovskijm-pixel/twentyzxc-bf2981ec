@@ -5,22 +5,37 @@ import { Link } from "react-router-dom";
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0" />
-      
-      {/* Decorative elements */}
+      {/* Decorative corner elements */}
       <div className="absolute top-20 left-20 w-px h-40 bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
       <div className="absolute top-40 left-20 w-20 h-px bg-gradient-to-r from-primary/30 to-transparent" />
+      <div className="absolute top-20 left-20 w-3 h-3 border border-primary/30 rotate-45" />
       
       <div className="absolute bottom-20 right-20 w-px h-40 bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
       <div className="absolute bottom-40 right-20 w-20 h-px bg-gradient-to-l from-primary/30 to-transparent" />
+      <div className="absolute bottom-20 right-20 w-3 h-3 border border-primary/30 rotate-45" />
+
+      {/* Additional corner ornaments */}
+      <div className="absolute top-20 right-20 w-16 h-16 border-t border-r border-primary/15" />
+      <div className="absolute bottom-20 left-20 w-16 h-16 border-b border-l border-primary/15" />
       
       {/* Floating orbs */}
       <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full border border-primary/10 animate-float" style={{ animationDelay: '0s' }} />
       <div className="absolute bottom-1/3 left-1/4 w-48 h-48 rounded-full border border-primary/5 animate-float" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-1/3 left-1/3 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-float" style={{ animationDelay: '4s' }} />
+      <div className="absolute bottom-1/4 right-1/3 w-24 h-24 rounded-full bg-primary/8 blur-xl animate-float" style={{ animationDelay: '1s' }} />
       
-      {/* Gold glow - subtle on light */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/3 blur-3xl" />
+      {/* Gold glow - enhanced */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/8 blur-3xl" />
+
+      {/* Decorative diamonds scattered */}
+      <div className="absolute top-[15%] left-[10%] w-2 h-2 bg-primary/20 rotate-45" />
+      <div className="absolute top-[25%] right-[15%] w-1.5 h-1.5 bg-primary/15 rotate-45" />
+      <div className="absolute bottom-[30%] left-[15%] w-2.5 h-2.5 border border-primary/20 rotate-45" />
+      <div className="absolute bottom-[20%] right-[10%] w-2 h-2 border border-primary/15 rotate-45" />
+
+      {/* Horizontal gold lines */}
+      <div className="absolute top-[30%] left-0 w-32 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
+      <div className="absolute bottom-[35%] right-0 w-40 h-px bg-gradient-to-l from-transparent via-primary/15 to-transparent" />
 
       <div className="container relative z-10 px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
@@ -31,10 +46,14 @@ const HeroSection = () => {
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
           </div>
 
-          {/* Main heading */}
-          <h1 className="mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          {/* Main heading with golden glow */}
+          <h1 className="mb-8 animate-fade-in relative" style={{ animationDelay: '0.1s' }}>
+            {/* Glow layer behind text */}
+            <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-8xl lg:text-9xl font-display font-bold text-primary/30 blur-2xl" aria-hidden="true">
+              24ZXC
+            </span>
             <span className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
-              <span className="gradient-gold-text">24ZXC</span>
+              <span className="gradient-gold-text gold-glow-text">24ZXC</span>
               <span className="absolute inset-0 gradient-gold-text shimmer">24ZXC</span>
             </span>
           </h1>
