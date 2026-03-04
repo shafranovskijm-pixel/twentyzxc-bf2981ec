@@ -316,6 +316,11 @@ const ContractsTab = () => {
               </TableBody>
             </Table>
           </div>
+          <div className="flex justify-center py-4 border-t">
+            <Button variant="outline" onClick={() => { resetForm(); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <Plus className="w-4 h-4 mr-2" />Добавить договор
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
