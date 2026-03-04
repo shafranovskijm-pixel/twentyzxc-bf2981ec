@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Bot, Send, Loader2, TrendingUp, AlertTriangle, DollarSign, X, ChevronRight } from "lucide-react";
+import { Bot, Send, Loader2, TrendingUp, AlertTriangle, DollarSign, X, ChevronRight, Users, PhoneCall, ShoppingCart, UserX } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, isBefore } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -167,7 +167,7 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
             <CardContent className="p-3 text-center">
               <Icon className={`w-4 h-4 mx-auto mb-1 ${color}`} />
               <p className="text-[11px] text-muted-foreground">{label}</p>
-              <p className="text-lg font-bold">{calcForecast(start, end).toLocaleString("ru-RU")}₽</p>
+              <p className="text-xl font-bold tracking-tight">{calcForecast(start, end).toLocaleString("ru-RU")}₽</p>
               <ChevronRight className="w-3 h-3 mx-auto mt-1 text-muted-foreground/40" />
             </CardContent>
           </Card>
@@ -296,10 +296,10 @@ const SalesAssistant = () => {
   };
 
   const quickQuestions = [
-    "Покажи прогноз поступлений",
-    "Кто из клиентов просрочил оплату?",
-    "Что можно допродать текущим клиентам?",
-    "Кто из клиентов неактивен?",
+    { text: "Покажи прогноз поступлений", icon: TrendingUp },
+    { text: "Кто из клиентов просрочил оплату?", icon: AlertTriangle },
+    { text: "Что можно допродать текущим клиентам?", icon: ShoppingCart },
+    { text: "Кто из клиентов неактивен?", icon: UserX },
   ];
 
   return (
@@ -322,7 +322,7 @@ const SalesAssistant = () => {
 
       {/* Right: AI Chat */}
       <div className="lg:col-span-2">
-        <Card className="flex flex-col h-[500px]">
+        <Card className="flex flex-col h-[400px]">
           <CardHeader className="pb-2 shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Bot className="w-4 h-4" />
@@ -339,17 +339,20 @@ const SalesAssistant = () => {
                     Задай вопрос о клиентах, продажах или прогнозах
                   </p>
                   <div className="grid grid-cols-2 gap-2 w-full max-w-md">
-                    {quickQuestions.map((q, i) => (
-                      <button
-                        key={q}
-                        className="group relative text-left text-xs px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 animate-fade-in"
-                        style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
-                        onClick={() => send(q)}
-                      >
-                        <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-200">{q}</span>
-                        <Send className="absolute top-2 right-2 w-3 h-3 text-primary/0 group-hover:text-primary/60 transition-all duration-200 group-hover:translate-x-0.5" />
-                      </button>
-                    ))}
+                    {quickQuestions.map((q, i) => {
+                      const Icon = q.icon;
+                      return (
+                        <button
+                          key={q.text}
+                          className="group relative flex items-start gap-2 text-left text-xs px-3 py-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 animate-fade-in"
+                          style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
+                          onClick={() => send(q.text)}
+                        >
+                          <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary/60 group-hover:text-primary transition-colors" />
+                          <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-200">{q.text}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

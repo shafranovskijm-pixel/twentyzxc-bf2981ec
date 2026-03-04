@@ -13,6 +13,7 @@ import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday } from "date-
 import { ru } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown, FileOutput, FileText, ClipboardCheck, Bell, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import SalesAssistant from "./SalesAssistant";
 import {
   DndContext,
@@ -95,6 +96,7 @@ function TaskCard({
   };
 
   const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
+  const statusStrip = task.status === "in_progress" ? "border-l-yellow-500" : task.status === "done" ? "border-l-green-500" : "border-l-muted-foreground/30";
   const client = task.client_id ? clients.find((c) => c.id === task.client_id) : null;
   const contract = task.contract_id ? contracts.find((c) => c.id === task.contract_id) : null;
 
@@ -159,14 +161,27 @@ function TaskCard({
       <div
         ref={setNodeRef}
         style={style}
-        className="group flex items-start gap-2 p-3 rounded-md border bg-card hover:shadow-sm transition-shadow"
+        className={cn(
+          "group flex items-start gap-2 p-3 rounded-md border border-l-[3px] bg-card hover:shadow-sm transition-shadow",
+          statusStrip
+        )}
       >
         <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
           <GripVertical className="h-4 w-4" />
         </span>
         <PopoverTrigger asChild>
           <div className="flex-1 min-w-0 space-y-1.5 cursor-pointer">
-            <p className="text-base font-medium leading-tight truncate">{task.title}</p>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <p className="text-sm font-medium leading-snug line-clamp-2">{task.title}</p>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[250px]">
+                  <p className="text-xs">{task.title}</p>
+                  {task.description && <p className="text-xs text-muted-foreground mt-1">{task.description}</p>}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             {client && (
               <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                 {client.name}
@@ -360,17 +375,26 @@ function DayColumn({
       onClick={onSelect}
       className={cn(
         "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
-        today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
+        today ? "border-primary/60 bg-primary/5 shadow-md shadow-primary/10 ring-1 ring-primary/20" : "bg-muted/30",
         isExpanded && "border-primary/60 shadow-lg shadow-primary/10",
         isOver && "ring-2 ring-primary/50 bg-primary/10"
       )}
       style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
     >
-      <div className={`px-3 py-2.5 text-center border-b transition-all duration-500 ${today ? "bg-primary/10" : ""}`}>
-        <div className="text-sm text-muted-foreground">{format(date, "EEEEEE", { locale: ru })}</div>
-        <div className={`text-xl font-bold ${today ? "text-primary" : "text-foreground"}`}>{format(date, "d")}</div>
+      <div className={cn(
+        "px-3 py-2.5 text-center border-b transition-all duration-500",
+        today && "bg-primary/15 border-b-primary/30"
+      )}>
+        <div className={cn("text-sm", today ? "text-primary font-medium" : "text-muted-foreground")}>{format(date, "EEEEEE", { locale: ru })}</div>
+        <div className={cn(
+          "text-xl font-bold",
+          today ? "text-primary" : "text-foreground"
+        )}>
+          {format(date, "d")}
+        </div>
+        {today && <div className="w-1.5 h-1.5 rounded-full bg-primary mx-auto mt-1" />}
       </div>
-      <div className="p-2 space-y-2 min-h-[60px] overflow-y-auto">
+      <div className="p-2 space-y-2 min-h-[60px] max-h-[320px] overflow-y-auto">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} clients={clients} contracts={contracts} onStatusChange={onStatusChange} onDelete={onDelete} onCreateDocument={onCreateDocument} />
