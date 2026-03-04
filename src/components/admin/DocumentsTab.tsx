@@ -360,7 +360,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                       <button
                         key={c.id}
                         className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                        onClick={() => selectClient(c.name)}
+                        onClick={() => selectClient(c.id, c.name)}
                       >
                         {c.name}
                       </button>
