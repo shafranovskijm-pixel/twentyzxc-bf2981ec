@@ -211,6 +211,7 @@ const ContractsTab = () => {
                   <TableHead>№ договора</TableHead>
                   <TableHead>Дата</TableHead>
                   <TableHead>Оплата</TableHead>
+                  <TableHead>Оплачено до</TableHead>
                   <TableHead>Сумма</TableHead>
                   <TableHead>Тип</TableHead>
                   <TableHead>Ответственный</TableHead>
