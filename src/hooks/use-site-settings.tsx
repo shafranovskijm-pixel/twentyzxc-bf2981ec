@@ -35,12 +35,11 @@ export const useSiteSettings = () => {
 
   const updateMultiple = useMutation({
     mutationFn: async (entries: { key: string; value: string }[]) => {
-      for (const entry of entries) {
-        const { error } = await supabase
-          .from("site_settings" as any)
-          .upsert({ key: entry.key, value: JSON.stringify(entry.value), updated_at: new Date().toISOString() } as any, { onConflict: "key" });
-        if (error) throw error;
-      }
+      const rows = entries.map(e => ({ key: e.key, value: JSON.stringify(e.value), updated_at: new Date().toISOString() }));
+      const { error } = await supabase
+        .from("site_settings" as any)
+        .upsert(rows as any, { onConflict: "key" });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["site-settings"] });
