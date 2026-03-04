@@ -471,7 +471,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       </Button>
 
       {/* History */}
-      <DocumentHistory />
+      <DocumentHistory onView={setPreviewHtml} />
 
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
@@ -534,7 +534,7 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 };
 
-const DocumentHistory = () => {
+const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
   const queryClient = useQueryClient();
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ["generated-documents"],
@@ -550,7 +550,7 @@ const DocumentHistory = () => {
   });
 
   const viewDoc = (html: string) => {
-    setPreviewHtml(html);
+    onView(html);
   };
 
   const deleteDoc = async (id: string) => {
