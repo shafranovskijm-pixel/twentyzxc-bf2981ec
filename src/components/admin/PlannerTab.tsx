@@ -91,8 +91,9 @@ function TaskCard({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+    transition: transition || "transform 200ms cubic-bezier(0.25, 1, 0.5, 1), opacity 200ms ease",
+    opacity: isDragging ? 0.3 : 1,
+    scale: isDragging ? "0.95" : "1",
   };
 
   const statusCfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.todo;
