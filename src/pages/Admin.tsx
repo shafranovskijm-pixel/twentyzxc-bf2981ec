@@ -328,14 +328,7 @@ const Admin = () => {
               {activeSection === "clients" && <ClientsTab />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
-              {activeSection === "planner" && <PlannerTab onCreateDocument={(task) => {
-                setDocInitialClientName("");
-                setDocInitialContractId("");
-                // Find client name from task
-                if (task.client_id) {
-                  // We pass name via a small lookup — PlannerTab already has clients loaded
-                  // We'll use contract_id directly if available
-                }
+              {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any) => {
                 setDocInitialContractId(task.contract_id || "");
                 setActiveSection("documents");
               }} />}
