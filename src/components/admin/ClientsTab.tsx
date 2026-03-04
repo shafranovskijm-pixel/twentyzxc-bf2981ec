@@ -23,6 +23,7 @@ interface Client {
   service_type: string | null;
   frdo_login: string | null;
   frdo_password: string | null;
+  frdo_password_po: string | null;
   payment_date: string | null;
   inn: string | null;
   kpp: string | null;
@@ -72,6 +73,7 @@ const ClientsTab = () => {
   const [serviceType, setServiceType] = useState("");
   const [frdoLogin, setFrdoLogin] = useState("");
   const [frdoPassword, setFrdoPassword] = useState("");
+  const [frdoPasswordPo, setFrdoPasswordPo] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
   const [inn, setInn] = useState("");
   const [kpp, setKpp] = useState("");
@@ -95,11 +97,12 @@ const ClientsTab = () => {
       return data as Client[];
     },
     retry: 2,
+    staleTime: 5 * 60 * 1000,
   });
 
   const resetForm = () => {
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
-    setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setPaymentDate("");
+    setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setFrdoPasswordPo(""); setPaymentDate("");
     setInn(""); setKpp(""); setOgrn(""); setLegalAddress(""); setDirectorName(""); setDirectorPost("");
     setEditingId(null); setShowForm(false);
   };
@@ -108,7 +111,7 @@ const ClientsTab = () => {
     setEditingId(c.id); setName(c.name); setContactPerson(c.contact_person || "");
     setPhone(c.phone || ""); setEmail(c.email || ""); setTelegram(c.telegram || "");
     setNotes(c.notes || ""); setServiceType(c.service_type || "");
-    setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || "");
+    setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || ""); setFrdoPasswordPo((c as any).frdo_password_po || "");
     setPaymentDate(c.payment_date || "");
     setInn(c.inn || ""); setKpp(c.kpp || ""); setOgrn(c.ogrn || "");
     setLegalAddress(c.legal_address || ""); setDirectorName(c.director_name || "");
@@ -180,6 +183,7 @@ const ClientsTab = () => {
         service_type: serviceType || null,
         frdo_login: frdoLogin.trim() || null,
         frdo_password: frdoPassword.trim() || null,
+        frdo_password_po: frdoPasswordPo.trim() || null,
         payment_date: paymentDate || null,
         inn: inn.trim() || null,
         kpp: kpp.trim() || null,
@@ -281,9 +285,10 @@ const ClientsTab = () => {
               <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@company.ru" /></div>
               <div className="space-y-2"><Label>Telegram</Label><Input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" /></div>
             </div>
+            <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={frdoLogin} onChange={(e) => setFrdoLogin(e.target.value)} placeholder="login" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={frdoLogin} onChange={(e) => setFrdoLogin(e.target.value)} placeholder="login" /></div>
-              <div className="space-y-2"><Label>Пароль ФИС ФРДО</Label><Input value={frdoPassword} onChange={(e) => setFrdoPassword(e.target.value)} placeholder="password" /></div>
+              <div className="space-y-2"><Label>Пароль ДПО</Label><Input value={frdoPassword} onChange={(e) => setFrdoPassword(e.target.value)} placeholder="пароль ДПО" /></div>
+              <div className="space-y-2"><Label>Пароль ПО</Label><Input value={frdoPasswordPo} onChange={(e) => setFrdoPasswordPo(e.target.value)} placeholder="пароль ПО" /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

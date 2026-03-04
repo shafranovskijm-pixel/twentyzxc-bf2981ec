@@ -53,6 +53,7 @@ export type Database = {
           email: string | null
           frdo_login: string | null
           frdo_password: string | null
+          frdo_password_po: string | null
           id: string
           inn: string | null
           kpp: string | null
@@ -74,6 +75,7 @@ export type Database = {
           email?: string | null
           frdo_login?: string | null
           frdo_password?: string | null
+          frdo_password_po?: string | null
           id?: string
           inn?: string | null
           kpp?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           email?: string | null
           frdo_login?: string | null
           frdo_password?: string | null
+          frdo_password_po?: string | null
           id?: string
           inn?: string | null
           kpp?: string | null
