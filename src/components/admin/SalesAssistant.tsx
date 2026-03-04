@@ -17,11 +17,13 @@ interface Contract {
   id: string;
   client_name: string;
   contract_number: string | null;
+  contract_date: string | null;
   amount: number | null;
   amount_extra: number | null;
   payment_status: string | null;
   paid_until: string | null;
   is_archived: boolean;
+  created_at: string;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sales-assistant`;
