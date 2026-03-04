@@ -44,6 +44,90 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          telegram: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          telegram?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          telegram?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contracts: {
+        Row: {
+          amount: number | null
+          amount_extra: number | null
+          client_name: string
+          contract_date: string | null
+          contract_number: string | null
+          contract_type: string | null
+          created_at: string
+          file_path: string | null
+          id: string
+          notes: string | null
+          payment_status: string | null
+          responsible: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          amount_extra?: number | null
+          client_name: string
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_type?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          payment_status?: string | null
+          responsible?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          amount_extra?: number | null
+          client_name?: string
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_type?: string | null
+          created_at?: string
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          payment_status?: string | null
+          responsible?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           category_id: string

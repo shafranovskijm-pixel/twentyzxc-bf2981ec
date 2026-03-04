@@ -12,7 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Save, X, Plus, LogOut, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
+import { Save, X, Plus, LogOut, Loader2, Search, Share2, Mail, Sparkles, Trash2, Users, FileText } from "lucide-react";
+import ClientsTab from "@/components/admin/ClientsTab";
+import ContractsTab from "@/components/admin/ContractsTab";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -198,17 +200,19 @@ const Admin = () => {
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className="min-h-screen bg-background">
-        <div className="max-w-3xl mx-auto px-4 py-8">
+        <div className="max-w-5xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-2xl font-bold text-foreground">Настройки сайта</h1>
             <Button variant="outline" size="sm" onClick={signOut}><LogOut className="w-4 h-4 mr-2" />Выйти</Button>
           </div>
 
           <Tabs defaultValue="seo" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="seo" className="gap-2"><Search className="w-4 h-4" />SEO и OG</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="seo" className="gap-2"><Search className="w-4 h-4" />SEO</TabsTrigger>
               <TabsTrigger value="contacts" className="gap-2"><Mail className="w-4 h-4" />Контакты</TabsTrigger>
               <TabsTrigger value="promotions" className="gap-2"><Sparkles className="w-4 h-4" />Акции</TabsTrigger>
+              <TabsTrigger value="clients" className="gap-2"><Users className="w-4 h-4" />Клиенты</TabsTrigger>
+              <TabsTrigger value="contracts" className="gap-2"><FileText className="w-4 h-4" />Договоры</TabsTrigger>
             </TabsList>
 
             <TabsContent value="seo" className="space-y-6">
@@ -333,6 +337,13 @@ const Admin = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+            <TabsContent value="clients">
+              <ClientsTab />
+            </TabsContent>
+
+            <TabsContent value="contracts">
+              <ContractsTab />
             </TabsContent>
           </Tabs>
         </div>
