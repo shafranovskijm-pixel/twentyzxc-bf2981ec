@@ -163,6 +163,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       });
       if (error) throw error;
       if (data?.found) {
+        const hasRequisites = data.inn || data.kpp || data.address;
         setClientInn(data.inn || "");
         setClientKpp(data.kpp || "");
         setClientOgrn(data.ogrn || "");
@@ -170,7 +171,13 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         setClientDirectorName(data.management_name || "");
         setClientDirectorPost(data.management_post || "Директор");
         if (data.name_short) setClientName(data.name_short);
-        toast.success("Реквизиты заполнены автоматически");
+        if (hasRequisites) {
+          toast.success("Реквизиты заполнены автоматически");
+        } else {
+          toast.info("Организация найдена, но реквизиты неполные. Заполните вручную или введите ИНН.");
+        }
+      } else {
+        toast.info("Организация не найдена в DaData. Введите ИНН для поиска реквизитов.");
       }
     } catch {
       // Silent fail — user can fill manually

@@ -50,7 +50,7 @@ const ClientsTab = () => {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin-clients"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,6 +60,7 @@ const ClientsTab = () => {
       if (error) throw error;
       return data as Client[];
     },
+    retry: 2,
   });
 
   const resetForm = () => {
@@ -211,6 +212,14 @@ const ClientsTab = () => {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+          ) : isError ? (
+            <div className="text-center py-8 space-y-2">
+              <p className="text-sm text-destructive">Ошибка загрузки клиентов</p>
+              <p className="text-xs text-muted-foreground">{error instanceof Error ? error.message : "Попробуйте перезагрузить страницу"}</p>
+              <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-clients"] })}>
+                Повторить
+              </Button>
+            </div>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               {search ? "Ничего не найдено" : "Нет клиентов"}
