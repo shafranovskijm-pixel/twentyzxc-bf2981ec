@@ -250,9 +250,22 @@ export function generateActHtml(data: DocumentData): string {
 }
 
 export function openDocumentPrint(html: string) {
+  // Try window.open first, fallback to blob download if blocked (e.g. in iframe)
   const win = window.open("", "_blank");
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 500);
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  } else {
+    // Fallback: create a blob and open it as a downloadable HTML file
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "document.html";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }
