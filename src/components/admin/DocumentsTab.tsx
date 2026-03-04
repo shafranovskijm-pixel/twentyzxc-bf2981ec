@@ -748,7 +748,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
           <CardContent>
             <div className="space-y-1">
               <Label>Договор</Label>
-              <Select value={linkedContractId} onValueChange={setLinkedContractId}>
+              <Select value={linkedContractId} onValueChange={(val) => {
+                setLinkedContractId(val);
+                const contract = contracts.find(c => c.id === val);
+                if (contract) {
+                  setClientName(contract.client_name || "");
+                  fillClientFromName(contract.client_name || "");
+                  fillServicesFromContract(contract.id, contract);
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Выберите договор (необязательно)" /></SelectTrigger>
                 <SelectContent>
                   {contracts.map(c => (
