@@ -209,7 +209,7 @@ function TaskCard({
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      <PopoverContent className="w-72 p-4 space-y-3" side="right" align="start">
+      <PopoverContent className="w-72 p-4 space-y-3 max-h-[80vh] overflow-y-auto" side="bottom" align="center">
         <p className="font-semibold text-sm leading-tight">{task.title}</p>
         {task.description && <p className="text-xs text-muted-foreground">{task.description}</p>}
         <div className="space-y-1.5">
