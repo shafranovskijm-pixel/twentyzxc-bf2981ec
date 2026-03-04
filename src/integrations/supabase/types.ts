@@ -510,6 +510,60 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          client_id: string | null
+          contract_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          sort_order: number
+          status: string
+          task_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          task_date?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          contract_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          status?: string
+          task_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_bot_users: {
         Row: {
           chat_id: number
