@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,6 +35,9 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -311,6 +314,28 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     setPreviewHtml(html);
   };
 
+  const sendDocumentEmail = async () => {
+    if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
+    setEmailSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-document-email', {
+        body: {
+          to: emailTo.trim(),
+          subject: `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`,
+          html: previewHtml,
+        },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Ошибка отправки');
+      toast.success(`Документ отправлен на ${emailTo}`);
+      setEmailDialogOpen(false);
+      setEmailTo("");
+    } catch (err: any) {
+      toast.error(err.message || "Не удалось отправить письмо");
+    }
+    setEmailSending(false);
+  };
+
   if (settingsLoading || clientsLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -526,6 +551,20 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 variant="outline"
                 size="sm"
                 onClick={() => {
+                  // Pre-fill email from client data
+                  const client = clients.find(c => c.name === clientName);
+                  // Try client email from clients table (not in current select, use empty)
+                  setEmailTo("");
+                  setEmailDialogOpen(true);
+                }}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                На почту
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
                   if (!previewHtml) return;
                   const blob = new Blob([previewHtml], { type: "text/html;charset=utf-8" });
                   const url = URL.createObjectURL(blob);
@@ -552,6 +591,31 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 title="Предпросмотр документа"
               />
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Отправить на почту</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label>Email получателя</Label>
+              <Input
+                type="email"
+                value={emailTo}
+                onChange={e => setEmailTo(e.target.value)}
+                placeholder="client@example.com"
+                onKeyDown={e => { if (e.key === 'Enter') sendDocumentEmail(); }}
+              />
+            </div>
+            <Button onClick={sendDocumentEmail} disabled={emailSending} className="w-full">
+              {emailSending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Mail className="w-4 h-4 mr-2" />}
+              Отправить
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
