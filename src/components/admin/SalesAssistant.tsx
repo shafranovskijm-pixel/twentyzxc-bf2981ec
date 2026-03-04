@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Bot, Send, Loader2, TrendingUp, AlertTriangle, DollarSign, X, ChevronRight, Users, PhoneCall, ShoppingCart, UserX } from "lucide-react";
+import { TrendingUp, AlertTriangle, DollarSign, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addMonths, isWithinInterval, isBefore } from "date-fns";
 import { ru } from "date-fns/locale";
-import ReactMarkdown from "react-markdown";
 import LeadsPanel from "./LeadsPanel";
 
 type Msg = { role: "user" | "assistant"; content: string };
