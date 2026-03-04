@@ -6,7 +6,7 @@ type SiteSettings = Record<string, string>;
 export const useSiteSettings = () => {
   const queryClient = useQueryClient();
 
-  const { data: settings = {}, isLoading } = useQuery<SiteSettings>({
+  const { data: settings = {}, isLoading, isError } = useQuery<SiteSettings>({
     queryKey: ["site-settings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -15,7 +15,14 @@ export const useSiteSettings = () => {
       if (error) throw error;
       const result: SiteSettings = {};
       (data as any[])?.forEach((row: { key: string; value: any }) => {
-        result[row.key] = typeof row.value === "string" ? row.value : JSON.stringify(row.value);
+        // jsonb returns parsed JS values; strings come as JS strings directly
+        if (typeof row.value === "string") {
+          result[row.key] = row.value;
+        } else if (row.value === null || row.value === undefined) {
+          result[row.key] = "";
+        } else {
+          result[row.key] = String(row.value);
+        }
       });
       return result;
     },
@@ -50,5 +57,5 @@ export const useSiteSettings = () => {
     },
   });
 
-  return { settings, isLoading, updateSetting, updateMultiple };
+  return { settings, isLoading, isError, updateSetting, updateMultiple };
 };
