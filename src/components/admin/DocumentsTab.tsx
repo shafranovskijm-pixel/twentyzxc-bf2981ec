@@ -31,7 +31,7 @@ const DOC_LABELS: Record<DocType, string> = {
   act: "Акт выполненных работ",
 };
 
-const DocumentsTab = () => {
+const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: string; onMounted?: () => void }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
 

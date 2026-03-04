@@ -486,6 +486,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => v
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
+                  onCreateDocument={onCreateDocument}
                 />
               );
             })}
