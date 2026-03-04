@@ -251,7 +251,28 @@ const SalesAssistant = () => {
                         key={q}
                         className="group relative text-left text-xs px-3 py-2.5 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/60 hover:border-primary/30 transition-all duration-300 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 animate-fade-in"
                         style={{ animationDelay: `${i * 80}ms`, animationFillMode: 'backwards' }}
-                        onClick={() => { setInput(q); setTimeout(() => send(), 50); }}
+                        onClick={() => { setInput(q); }}
+                        onMouseUp={() => { 
+                          const text = q.trim();
+                          if (!text || isLoading) return;
+                          setInput("");
+                          const userMsg: Msg = { role: "user", content: text };
+                          setMessages(prev => [...prev, userMsg]);
+                          setIsLoading(true);
+                          let assistantSoFar = "";
+                          const upsert = (chunk: string) => {
+                            assistantSoFar += chunk;
+                            setMessages(prev => {
+                              const last = prev[prev.length - 1];
+                              if (last?.role === "assistant") {
+                                return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+                              }
+                              return [...prev, { role: "assistant", content: assistantSoFar }];
+                            });
+                          };
+                          streamChat({ messages: [...messages, userMsg], onDelta: upsert, onDone: () => setIsLoading(false) })
+                            .catch((e: any) => { setIsLoading(false); toast.error(e.message || "Ошибка"); });
+                        }
                       >
                         <span className="text-muted-foreground group-hover:text-foreground transition-colors duration-200">{q}</span>
                         <Send className="absolute top-2 right-2 w-3 h-3 text-primary/0 group-hover:text-primary/60 transition-all duration-200 group-hover:translate-x-0.5" />
