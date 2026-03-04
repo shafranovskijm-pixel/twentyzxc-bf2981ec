@@ -354,6 +354,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     }
 
     // Save to DB
+    let targetContractId = linkedContractId || null;
     try {
       const filteredServices = services.filter(s => s.name.trim());
       const { error: insertError } = await supabase.from("generated_documents").insert({
@@ -362,7 +363,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         doc_date: docDate,
         client_name: clientName,
         client_inn: clientInn || null,
-        contract_id: linkedContractId || null,
+        contract_id: targetContractId,
         total_amount: total,
         services: JSON.stringify(filteredServices),
         html_content: html,
@@ -377,21 +378,51 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         if (docType === "contract" && !linkedContractId) {
           const year = new Date(docDate).getFullYear();
           const contractNumber = `${docNumber}-${year}`;
-          const { error: contractError } = await supabase.from("contracts").insert({
+          const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
             client_name: clientName,
             contract_number: contractNumber,
             contract_date: docDate,
             amount: total || null,
             contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
             payment_status: "не оплачено",
-          });
+          }).select("id").single();
           if (contractError) {
             console.error("Contract auto-create error:", contractError);
             toast.error(`Документ сохранён, но договор не создан: ${contractError.message}`);
           } else {
+            targetContractId = newContract.id;
             queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
             queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-            toast.success("Документ и договор сохранены");
+          }
+        }
+
+        // Auto-save PDF to Files tab
+        if (targetContractId) {
+          try {
+            const pdfBase64 = await generatePdfBase64(html);
+            const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+            const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const pdfFileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+            const storagePath = `${targetContractId}/${Date.now()}-${pdfFileName}`;
+
+            const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, pdfBlob);
+            if (!uploadErr) {
+              await supabase.from("contract_files").insert({
+                contract_id: targetContractId,
+                file_name: pdfFileName,
+                file_path: storagePath,
+                file_size: pdfBlob.size,
+              });
+              queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+              queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
+              toast.success("Документ сохранён и добавлен в папку файлов");
+            } else {
+              console.error("PDF upload error:", uploadErr);
+              toast.success("Документ сохранён (файл не загружен в папку)");
+            }
+          } catch (pdfErr) {
+            console.error("PDF auto-save error:", pdfErr);
+            toast.success("Документ сохранён (файл не загружен в папку)");
           }
         } else {
           toast.success("Документ сохранён");
