@@ -159,7 +159,10 @@ const baseStyles = `
     .bank-header { border: 2px solid #000; margin-bottom: 20px; }
     .bank-header td { padding: 4px 8px; border: 1px solid #000; font-size: 10pt; }
     p { margin: 5px 0; }
-    @media print { body { padding: 10mm; } }
+    @media print {
+      body { padding: 10mm; }
+      @page { margin: 10mm; }
+    }
   </style>
 `;
 

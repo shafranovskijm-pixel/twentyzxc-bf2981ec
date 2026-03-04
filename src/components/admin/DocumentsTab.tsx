@@ -572,8 +572,12 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (!previewHtml || !iframeRef.current?.contentWindow) return;
-                  iframeRef.current.contentWindow.print();
+                  if (!previewHtml) return;
+                  const w = window.open('', '_blank');
+                  if (!w) { toast.error("Браузер заблокировал окно"); return; }
+                  w.document.write(previewHtml);
+                  w.document.close();
+                  w.onload = () => { w.print(); };
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
