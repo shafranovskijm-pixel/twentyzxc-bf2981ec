@@ -59,13 +59,79 @@ function totalSum(services: ServiceItem[]): number {
 function isFeminineName(fullName: string): boolean {
   if (!fullName) return false;
   const parts = fullName.trim().split(/\s+/);
-  // Check patronymic (отчество) ending — most reliable
   const patronymic = parts.length >= 3 ? parts[2] : parts.length >= 2 ? parts[1] : "";
   if (patronymic.endsWith("вна") || patronymic.endsWith("чна") || patronymic.endsWith("шна")) return true;
-  // Fallback: check last name ending
   const lastName = parts[0] || "";
   if (lastName.endsWith("ва") || lastName.endsWith("на") || lastName.endsWith("ая") || lastName.endsWith("яя")) return true;
   return false;
+}
+
+function toGenitive(word: string, feminine: boolean): string {
+  if (!word) return word;
+  // Common title patterns
+  const lw = word.toLowerCase();
+  if (lw === "директор") return feminine ? "Директора" : "Директора";
+  if (lw === "генеральный") return "Генерального";
+  // For names: apply basic Russian declension rules
+  if (feminine) {
+    // Feminine last names: -ова → -овой, -ева → -евой, -ина → -иной, -ая → -ой, -яя → -ей
+    if (word.endsWith("ова")) return word.slice(0, -1) + "ой";
+    if (word.endsWith("ева")) return word.slice(0, -1) + "ой";
+    if (word.endsWith("ёва")) return word.slice(0, -1) + "ой";
+    if (word.endsWith("ина")) return word.slice(0, -1) + "ой";
+    if (word.endsWith("ская")) return word.slice(0, -2) + "ой";
+    if (word.endsWith("цкая")) return word.slice(0, -2) + "ой";
+    // Feminine first names: -а → -ы (after г,к,х → -и), -я → -и, -ия → -ии
+    if (word.endsWith("ия")) return word.slice(0, -1) + "и";
+    if (word.endsWith("ья")) return word.slice(0, -1) + "и";
+    if (word.endsWith("я")) return word.slice(0, -1) + "и";
+    if (word.endsWith("а")) {
+      const beforeA = word.slice(-2, -1);
+      if ("гкх".includes(beforeA)) return word.slice(0, -1) + "и";
+      if ("жшщч".includes(beforeA)) return word.slice(0, -1) + "и";
+      return word.slice(0, -1) + "ы";
+    }
+    // Feminine patronymic: -вна → -вны
+    if (word.endsWith("вна")) return word.slice(0, -1) + "ы";
+    if (word.endsWith("чна")) return word.slice(0, -1) + "ы";
+  } else {
+    // Masculine last names: -ов → -ова, -ев → -ева, -ин → -ина, -ский → -ского
+    if (word.endsWith("ов") || word.endsWith("ев") || word.endsWith("ёв")) return word + "а";
+    if (word.endsWith("ин") && word.length > 3) return word + "а";
+    if (word.endsWith("ский")) return word.slice(0, -2) + "ого";
+    if (word.endsWith("цкий")) return word.slice(0, -2) + "ого";
+    // Masculine first names: consonant → +а, -й → -я, -ь → -я
+    if (word.endsWith("й")) return word.slice(0, -1) + "я";
+    if (word.endsWith("ь")) return word.slice(0, -1) + "я";
+    // Masculine patronymic: -вич → -вича
+    if (word.endsWith("вич") || word.endsWith("мич") || word.endsWith("ич")) return word + "а";
+    // Default for masculine: add -а
+    const lastChar = word.slice(-1).toLowerCase();
+    if (!"аеёиоуыэюя".includes(lastChar)) return word + "а";
+  }
+  return word;
+}
+
+function declineFullName(fullName: string): string {
+  if (!fullName) return fullName;
+  const feminine = isFeminineName(fullName);
+  const parts = fullName.trim().split(/\s+/);
+  return parts.map(p => toGenitive(p, feminine)).join(" ");
+}
+
+function declinePost(post: string): string {
+  if (!post) return post;
+  // Handle multi-word posts like "Генеральный директор"
+  return post.split(/\s+/).map(w => {
+    const lw = w.toLowerCase();
+    if (lw === "директор") return w[0] === w[0].toUpperCase() ? "Директора" : "директора";
+    if (lw === "генеральный") return w[0] === w[0].toUpperCase() ? "Генерального" : "генерального";
+    if (lw === "заместитель") return w[0] === w[0].toUpperCase() ? "Заместителя" : "заместителя";
+    if (lw === "президент") return w[0] === w[0].toUpperCase() ? "Президента" : "президента";
+    if (lw === "управляющий") return w[0] === w[0].toUpperCase() ? "Управляющего" : "управляющего";
+    if (lw === "председатель") return w[0] === w[0].toUpperCase() ? "Председателя" : "председателя";
+    return w;
+  }).join(" ");
 }
 
 function getActingPhrase(directorName: string): string {
