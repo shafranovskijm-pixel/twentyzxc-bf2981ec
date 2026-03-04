@@ -45,16 +45,14 @@ async function fetchDadataByName(companyName: string) {
       body: { query: companyName },
     });
     if (error) throw error;
-    const suggestions = data?.suggestions;
-    if (!suggestions || suggestions.length === 0) return null;
-    const s = suggestions[0];
+    if (!data?.found) return null;
     return {
-      inn: s.data?.inn || null,
-      kpp: s.data?.kpp || null,
-      ogrn: s.data?.ogrn || null,
-      legal_address: s.data?.address?.unrestricted_value || s.data?.address?.value || null,
-      director_name: s.data?.management?.name || null,
-      director_post: s.data?.management?.post || null,
+      inn: data.inn || null,
+      kpp: data.kpp || null,
+      ogrn: data.ogrn || null,
+      legal_address: data.address || null,
+      director_name: data.management_name || null,
+      director_post: data.management_post || null,
     };
   } catch {
     return null;
