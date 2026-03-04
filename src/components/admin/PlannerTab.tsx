@@ -465,8 +465,28 @@ function DayColumn({
     </div>
   );
 }
+function EdgeDropZone({ id, side }: { id: string; side: "left" | "right" }) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "flex items-center justify-center w-12 shrink-0 rounded-lg border-2 border-dashed transition-all",
+        isOver
+          ? "border-primary bg-primary/20 scale-105"
+          : "border-muted-foreground/30 bg-muted/20"
+      )}
+    >
+      {side === "left" ? (
+        <ChevronLeft className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+      ) : (
+        <ChevronRight className={cn("h-5 w-5", isOver ? "text-primary" : "text-muted-foreground")} />
+      )}
+    </div>
+  );
+}
 
-const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docType?: string) => void }) => {
+
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
