@@ -50,6 +50,7 @@ const LeadsPanel = () => {
       if (error) throw error;
       return data as Lead[];
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateStatus = useMutation({

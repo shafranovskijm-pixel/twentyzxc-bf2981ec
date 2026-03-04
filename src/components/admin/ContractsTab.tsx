@@ -61,6 +61,7 @@ const ContractsTab = () => {
       if (error) throw error;
       return data as Contract[];
     },
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
