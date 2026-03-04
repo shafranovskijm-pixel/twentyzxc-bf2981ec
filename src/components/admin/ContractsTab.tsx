@@ -72,7 +72,7 @@ const ContractsTab = () => {
     setContractDate(c.contract_date || ""); setPaymentStatus(c.payment_status || "не оплачено");
     setAmount(c.amount?.toString() || ""); setAmountExtra(c.amount_extra?.toString() || "");
     setContractType(c.contract_type || ""); setResponsible(c.responsible || "");
-    setNotes(c.notes || ""); setFile(null); setShowForm(true);
+    setNotes(c.notes || ""); setPaidUntil(c.paid_until || ""); setFile(null); setShowForm(true);
   };
 
   const uploadFile = async (contractId: string): Promise<string | null> => {
