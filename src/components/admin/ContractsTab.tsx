@@ -83,11 +83,13 @@ const ContractsTab = () => {
   };
 
   const lookupInn = async () => {
-    if (!inn.trim()) return toast.error("Введите ИНН");
+    const value = inn.trim();
+    if (!value) return toast.error("Введите ИНН или название организации");
     setInnLoading(true);
     try {
+      const isInn = /^\d{10,12}$/.test(value);
       const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-        body: { inn: inn.trim() },
+        body: isInn ? { inn: value } : { query: value },
       });
       if (error) throw error;
       if (!data?.found) {
@@ -95,6 +97,7 @@ const ContractsTab = () => {
         return;
       }
       setClientName(data.name_short || data.name || "");
+      if (data.inn) setInn(data.inn);
       if (data.management_name) {
         setNotes((prev) => {
           const mgmt = `${data.management_post || "Руководитель"}: ${data.management_name}`;
@@ -103,7 +106,7 @@ const ContractsTab = () => {
       }
       toast.success(`Найдено: ${data.name_short || data.name}`);
     } catch {
-      toast.error("Ошибка поиска по ИНН");
+      toast.error("Ошибка поиска");
     } finally {
       setInnLoading(false);
     }
@@ -361,8 +364,8 @@ const ContractsTab = () => {
           <CardContent className="space-y-4">
             <div className="flex gap-2 items-end">
               <div className="space-y-2 flex-1">
-                <Label>Поиск по ИНН</Label>
-                <Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="Введите ИНН организации" onKeyDown={(e) => e.key === "Enter" && lookupInn()} />
+                <Label>Поиск по ИНН / названию</Label>
+                <Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="ИНН или название организации" onKeyDown={(e) => e.key === "Enter" && lookupInn()} />
               </div>
               <Button onClick={lookupInn} disabled={innLoading} variant="outline">
                 {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
