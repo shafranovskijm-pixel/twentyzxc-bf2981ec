@@ -154,10 +154,24 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     setLookingUp(false);
   };
 
-  const selectClient = async (name: string) => {
+  const selectClient = async (clientId: string, name: string) => {
     setClientName(name);
     setClientSearch("");
-    // Auto-lookup requisites via DaData by company name
+
+    // First try to use existing client data from DB
+    const client = clients.find(c => c.id === clientId);
+    if (client?.inn) {
+      setClientInn(client.inn || "");
+      setClientKpp(client.kpp || "");
+      setClientOgrn(client.ogrn || "");
+      setClientAddress(client.legal_address || "");
+      setClientDirectorName(client.director_name || "");
+      setClientDirectorPost(client.director_post || "Директор");
+      toast.success("Реквизиты загружены из карточки клиента");
+      return;
+    }
+
+    // If no data in DB, lookup via DaData and save to client record
     setLookingUp(true);
     try {
       const { data, error } = await supabase.functions.invoke("dadata-lookup", {
@@ -165,7 +179,6 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
       });
       if (error) throw error;
       if (data?.found) {
-        const hasRequisites = data.inn || data.kpp || data.address;
         setClientInn(data.inn || "");
         setClientKpp(data.kpp || "");
         setClientOgrn(data.ogrn || "");
@@ -173,16 +186,28 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         setClientDirectorName(data.management_name || "");
         setClientDirectorPost(data.management_post || "Директор");
         if (data.name_short) setClientName(data.name_short);
-        if (hasRequisites) {
-          toast.success("Реквизиты заполнены автоматически");
+
+        // Save requisites to client record in DB
+        if (data.inn && clientId) {
+          const updatePayload: Record<string, string | null> = {};
+          if (data.inn) updatePayload.inn = data.inn;
+          if (data.kpp) updatePayload.kpp = data.kpp;
+          if (data.ogrn) updatePayload.ogrn = data.ogrn;
+          if (data.address) updatePayload.legal_address = data.address;
+          if (data.management_name) updatePayload.director_name = data.management_name;
+          if (data.management_post) updatePayload.director_post = data.management_post;
+          await supabase.from("clients").update(updatePayload).eq("id", clientId);
+          queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+          queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+          toast.success("Реквизиты найдены и сохранены в карточку клиента");
         } else {
-          toast.info("Организация найдена, но реквизиты неполные. Заполните вручную или введите ИНН.");
+          toast.info("Организация найдена, но реквизиты неполные");
         }
       } else {
-        toast.info("Организация не найдена в DaData. Введите ИНН для поиска реквизитов.");
+        toast.info("Организация не найдена в DaData. Введите ИНН для поиска.");
       }
     } catch {
-      // Silent fail — user can fill manually
+      // Silent fail
     }
     setLookingUp(false);
   };
