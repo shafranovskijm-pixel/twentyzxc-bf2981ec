@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Decorative corner elements */}
@@ -45,7 +46,12 @@ const HeroSection = () => {
           </div>
 
           {/* Main heading with golden glow */}
-          <h1 className="mb-8 animate-fade-in relative" style={{ animationDelay: '0.1s' }}>
+          <h1
+            className="mb-8 animate-fade-in relative cursor-pointer"
+            style={{ animationDelay: '0.1s' }}
+            onClick={() => navigate('/admin')}
+            title="Админ-панель"
+          >
             {/* Glow layer behind text */}
             <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-8xl lg:text-9xl font-display font-bold text-primary/30 blur-2xl" aria-hidden="true">
               24ZXC
