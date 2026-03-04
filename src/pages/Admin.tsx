@@ -15,6 +15,7 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import ClientsTab from "@/components/admin/ClientsTab";
 import ContractsTab from "@/components/admin/ContractsTab";
 import FilesTab from "@/components/admin/FilesTab";
+import PlannerTab from "@/components/admin/PlannerTab";
 import { toast } from "sonner";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -190,6 +191,7 @@ const Admin = () => {
     clients: "Клиенты",
     contracts: "Договоры",
     files: "Файлы договоров",
+    planner: "Планер",
   };
 
   return (
