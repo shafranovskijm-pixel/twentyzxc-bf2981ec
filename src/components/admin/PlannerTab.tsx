@@ -430,7 +430,7 @@ const PlannerTab = () => {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-7 gap-2 h-[calc(100vh-12rem)]">
+          <div className="flex gap-2 h-[calc(100vh-12rem)]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
               const dayTasks = tasks.filter((t) => t.task_date === dateStr).sort((a, b) => a.sort_order - b.sort_order);
@@ -441,6 +441,8 @@ const PlannerTab = () => {
                   tasks={dayTasks}
                   clients={clients}
                   contracts={contracts}
+                  isExpanded={selectedDate === dateStr}
+                  onSelect={() => setSelectedDate(dateStr)}
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
