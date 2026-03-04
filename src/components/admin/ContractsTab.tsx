@@ -250,7 +250,11 @@ const ContractsTab = () => {
               <TableBody>
                 {items.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.client_name}</TableCell>
+                    <TableCell className="font-medium">
+                      <button onClick={() => startEdit(c)} className="hover:underline hover:text-primary text-left transition-colors cursor-pointer">
+                        {c.client_name}
+                      </button>
+                    </TableCell>
                     <TableCell>{c.contract_number || "—"}</TableCell>
                     <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
                     <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
