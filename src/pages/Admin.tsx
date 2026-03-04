@@ -338,6 +338,13 @@ const Admin = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+            <TabsContent value="clients">
+              <ClientsTab />
+            </TabsContent>
+
+            <TabsContent value="contracts">
+              <ContractsTab />
+            </TabsContent>
           </Tabs>
         </div>
       </div>
