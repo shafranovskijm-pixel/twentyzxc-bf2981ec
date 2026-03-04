@@ -138,21 +138,28 @@ const ClientsTab = () => {
     setSyncingAll(true);
     let updated = 0;
     let failed = 0;
-    for (const client of clients) {
-      const result = await fetchDadataByName(client.name);
-      if (result && result.inn) {
-        const payload: Record<string, string | null> = {};
-        if (result.inn) payload.inn = result.inn;
-        if (result.kpp) payload.kpp = result.kpp;
-        if (result.ogrn) payload.ogrn = result.ogrn;
-        if (result.legal_address) payload.legal_address = result.legal_address;
-        if (result.director_name) payload.director_name = result.director_name;
-        if (result.director_post) payload.director_post = result.director_post;
-        const { error } = await supabase.from("clients").update(payload as any).eq("id", client.id);
-        if (!error) updated++; else failed++;
-      } else {
-        failed++;
-      }
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < clients.length; i += BATCH_SIZE) {
+      const batch = clients.slice(i, i + BATCH_SIZE);
+      const results = await Promise.all(
+        batch.map(async (client) => {
+          const result = await fetchDadataByName(client.name);
+          if (result && result.inn) {
+            const payload: Record<string, string | null> = {};
+            if (result.inn) payload.inn = result.inn;
+            if (result.kpp) payload.kpp = result.kpp;
+            if (result.ogrn) payload.ogrn = result.ogrn;
+            if (result.legal_address) payload.legal_address = result.legal_address;
+            if (result.director_name) payload.director_name = result.director_name;
+            if (result.director_post) payload.director_post = result.director_post;
+            const { error } = await supabase.from("clients").update(payload as any).eq("id", client.id);
+            return !error;
+          }
+          return false;
+        })
+      );
+      results.forEach((ok) => ok ? updated++ : failed++);
+      toast.info(`Обработано ${Math.min(i + BATCH_SIZE, clients.length)} из ${clients.length}...`);
     }
     queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
     toast.success(`Синхронизация завершена: ${updated} обновлено, ${failed} не найдено`);
