@@ -61,6 +61,7 @@ const ContractsTab = () => {
       if (error) throw error;
       return data as Contract[];
     },
+    refetchOnWindowFocus: true,
   });
 
   const getNextContractNumber = () => {
@@ -169,10 +170,19 @@ const ContractsTab = () => {
         toast.error("Ошибка сохранения — изменения откачены");
       }
     } else {
-      // New contract — can't fully optimistic, but close form immediately
+      // New contract — check session first, then insert
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData.session) {
+          toast.error("Сессия истекла — войдите заново");
+          setSaving(false);
+          return;
+        }
         const { data, error } = await supabase.from("contracts").insert(payload as any).select("id").single();
-        if (error) throw error;
+        if (error) {
+          console.error("Contract insert error:", error);
+          throw error;
+        }
         if (file && data) {
           const fp = await uploadFile(data.id);
           if (fp) await supabase.from("contracts").update({ file_path: fp }).eq("id", data.id);
@@ -180,7 +190,10 @@ const ContractsTab = () => {
         toast.success("Договор добавлен");
         queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
         resetForm();
-      } catch { toast.error("Ошибка сохранения"); }
+      } catch (err: any) {
+        const msg = err?.message || "Неизвестная ошибка";
+        toast.error(`Ошибка сохранения: ${msg}`);
+      }
       setSaving(false);
     }
   };
