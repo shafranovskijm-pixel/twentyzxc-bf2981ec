@@ -11,7 +11,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { toast } from "sonner";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isToday } from "date-fns";
 import { ru } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown, FileOutput } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, Loader2, GripVertical, Check, ChevronsUpDown, FileOutput, FileText, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SalesAssistant from "./SalesAssistant";
 import {
@@ -75,7 +75,7 @@ function TaskCard({
   contracts: Contract[];
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
-  onCreateDocument?: (task: Task) => void;
+  onCreateDocument?: (task: Task, docType?: string) => void;
 }) {
   const [taskPopoverOpen, setTaskPopoverOpen] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -152,7 +152,40 @@ function TaskCard({
             <span className={`text-xs font-medium rounded px-2 py-0.5 ${statusCfg.color}`}>{statusCfg.label}</span>
           </div>
         </div>
-        {onCreateDocument && (
+        {onCreateDocument && task.contract_id ? (
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground font-medium">Создать документ:</p>
+            <div className="flex flex-col gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => { setTaskPopoverOpen(false); onCreateDocument(task, "invoice"); }}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Счёт на оплату
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => { setTaskPopoverOpen(false); onCreateDocument(task, "act"); }}
+              >
+                <ClipboardCheck className="w-4 h-4 mr-2" />
+                Акт выполненных работ
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => { setTaskPopoverOpen(false); onCreateDocument(task, "contract"); }}
+              >
+                <FileOutput className="w-4 h-4 mr-2" />
+                Договор
+              </Button>
+            </div>
+          </div>
+        ) : onCreateDocument ? (
           <Button
             variant="outline"
             size="sm"
@@ -162,7 +195,7 @@ function TaskCard({
             <FileOutput className="w-4 h-4 mr-2" />
             Создать документ
           </Button>
-        )}
+        ) : null}
       </PopoverContent>
     </Popover>
   );
@@ -331,7 +364,7 @@ function DayColumn({
   );
 }
 
-const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task) => void }) => {
+const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docType?: string) => void }) => {
   const queryClient = useQueryClient();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [activeTask, setActiveTask] = useState<Task | null>(null);
