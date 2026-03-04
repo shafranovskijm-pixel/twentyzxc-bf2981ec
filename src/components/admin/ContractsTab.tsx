@@ -306,6 +306,15 @@ const ContractsTab = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex gap-2 items-end">
+              <div className="space-y-2 flex-1">
+                <Label>Поиск по ИНН</Label>
+                <Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="Введите ИНН организации" onKeyDown={(e) => e.key === "Enter" && lookupInn()} />
+              </div>
+              <Button onClick={lookupInn} disabled={innLoading} variant="outline">
+                {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
