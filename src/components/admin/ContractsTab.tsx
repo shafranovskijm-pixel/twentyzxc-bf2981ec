@@ -48,6 +48,8 @@ const ContractsTab = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
+  const [inn, setInn] = useState("");
+  const [innLoading, setInnLoading] = useState(false);
 
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["admin-contracts"],
