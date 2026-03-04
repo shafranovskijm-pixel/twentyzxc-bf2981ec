@@ -348,13 +348,20 @@ function DayColumn({
     setNewContractId("");
   };
 
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: `day-${dateStr}`,
+    data: { date: dateStr },
+  });
+
   return (
     <div
+      ref={setDroppableRef}
       onClick={onSelect}
       className={cn(
         "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
         today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
-        isExpanded && "border-primary/60 shadow-lg shadow-primary/10"
+        isExpanded && "border-primary/60 shadow-lg shadow-primary/10",
+        isOver && "ring-2 ring-primary/50 bg-primary/10"
       )}
       style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
     >
