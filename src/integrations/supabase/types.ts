@@ -91,6 +91,7 @@ export type Database = {
           created_at: string
           file_path: string | null
           id: string
+          is_archived: boolean
           notes: string | null
           payment_status: string | null
           responsible: string | null
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string
           file_path?: string | null
           id?: string
+          is_archived?: boolean
           notes?: string | null
           payment_status?: string | null
           responsible?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           created_at?: string
           file_path?: string | null
           id?: string
+          is_archived?: boolean
           notes?: string | null
           payment_status?: string | null
           responsible?: string | null
