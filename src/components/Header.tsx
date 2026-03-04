@@ -55,7 +55,7 @@ const Header = () => {
       <div className="container px-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/admin" className="text-2xl font-display font-bold gradient-gold-text" onClick={incrementLogoClicks}>
+          <Link to="/" className="text-2xl font-display font-bold gradient-gold-text" onClick={incrementLogoClicks}>
             24ZXC
           </Link>
 
