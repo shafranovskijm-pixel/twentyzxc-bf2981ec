@@ -157,7 +157,7 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {periods.map(({ label, start, end, icon: Icon, color }) => (
           <Card
             key={label}
@@ -322,7 +322,7 @@ const SalesAssistant = () => {
 
       {/* Right: AI Chat */}
       <div className="lg:col-span-2">
-        <Card className="flex flex-col h-[400px]">
+        <Card className="flex flex-col h-[300px] sm:h-[400px]">
           <CardHeader className="pb-2 shrink-0">
             <CardTitle className="text-base flex items-center gap-2">
               <Bot className="w-4 h-4" />
@@ -338,7 +338,7 @@ const SalesAssistant = () => {
                   <p className="text-sm text-muted-foreground text-center">
                     Задай вопрос о клиентах, продажах или прогнозах
                   </p>
-                  <div className="grid grid-cols-2 gap-2 w-full max-w-md">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-md">
                     {quickQuestions.map((q, i) => {
                       const Icon = q.icon;
                       return (

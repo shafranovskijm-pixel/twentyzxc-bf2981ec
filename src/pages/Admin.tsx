@@ -216,7 +216,7 @@ const Admin = () => {
               <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
               <NotificationsPanel onNavigate={setActiveSection} />
             </header>
-            <main className="flex-1 p-6 max-w-5xl">
+            <main className="flex-1 p-3 sm:p-6 max-w-5xl">
               {activeSection === "dashboard" && <DashboardTab onNavigate={setActiveSection} />}
               {activeSection === "seo" && (
                 <div className="space-y-6">
