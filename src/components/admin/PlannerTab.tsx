@@ -320,6 +320,7 @@ function DayColumn({
   clients,
   contracts,
   isExpanded,
+  isMobile,
   onSelect,
   onStatusChange,
   onDelete,
@@ -331,6 +332,7 @@ function DayColumn({
   clients: Client[];
   contracts: Contract[];
   isExpanded: boolean;
+  isMobile: boolean;
   onSelect: () => void;
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
