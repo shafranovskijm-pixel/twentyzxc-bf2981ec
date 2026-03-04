@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/use-site-settings";
@@ -82,6 +82,18 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
   const [linkedContractId, setLinkedContractId] = useState("");
 
   const [lookingUp, setLookingUp] = useState(false);
+
+  // Pre-fill from planner task
+  useEffect(() => {
+    if (initialContractId && contracts.length > 0) {
+      const contract = contracts.find(c => c.id === initialContractId);
+      if (contract) {
+        setLinkedContractId(contract.id);
+        setClientName(contract.client_name || "");
+      }
+      onMounted?.();
+    }
+  }, [initialContractId, contracts]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
