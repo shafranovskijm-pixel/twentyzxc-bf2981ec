@@ -50,7 +50,7 @@ const ContractsTab = () => {
       const { data, error } = await supabase
         .from("contracts")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("contract_number", { ascending: true });
       if (error) throw error;
       return data as Contract[];
     },
