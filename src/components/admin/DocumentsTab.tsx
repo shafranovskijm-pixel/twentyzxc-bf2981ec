@@ -573,30 +573,70 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
                 size="sm"
                 onClick={async () => {
                   if (!previewHtml) return;
-                  const html2pdf = (await import('html2pdf.js')).default;
-                  const container = document.createElement('div');
-                  const bodyMatch = previewHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-                  if (bodyMatch) {
-                    container.innerHTML = bodyMatch[1];
-                    const styleMatch = previewHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
-                    if (styleMatch) {
-                      const styleEl = document.createElement('style');
-                      styleEl.textContent = styleMatch.map(s => s.replace(/<\/?style[^>]*>/gi, '')).join('\n');
-                      container.prepend(styleEl);
+                  try {
+                    const html2canvas = (await import('html2canvas')).default;
+                    const { jsPDF } = await import('jspdf');
+                    
+                    const container = document.createElement('div');
+                    container.style.position = 'absolute';
+                    container.style.left = '-9999px';
+                    container.style.top = '0';
+                    container.style.width = '794px'; // A4 width at 96dpi
+                    container.style.background = 'white';
+                    
+                    // Create iframe to render full HTML document
+                    const iframe = document.createElement('iframe');
+                    iframe.style.position = 'absolute';
+                    iframe.style.left = '-9999px';
+                    iframe.style.width = '794px';
+                    iframe.style.height = '1123px';
+                    iframe.style.border = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    iframe.contentDocument!.open();
+                    iframe.contentDocument!.write(previewHtml);
+                    iframe.contentDocument!.close();
+                    
+                    // Wait for content to render
+                    await new Promise(r => setTimeout(r, 500));
+                    
+                    const body = iframe.contentDocument!.body;
+                    const canvas = await html2canvas(body, {
+                      scale: 2,
+                      useCORS: true,
+                      width: 794,
+                      windowWidth: 794,
+                    });
+                    
+                    document.body.removeChild(iframe);
+                    
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const imgWidth = pdfWidth;
+                    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+                    
+                    let heightLeft = imgHeight;
+                    let position = 0;
+                    
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                    
+                    while (heightLeft > 0) {
+                      position -= pdfHeight;
+                      pdf.addPage();
+                      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                      heightLeft -= pdfHeight;
                     }
-                  } else {
-                    container.innerHTML = previewHtml;
+                    
+                    const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+                    pdf.save(fileName);
+                    toast.success('PDF скачан');
+                  } catch (err) {
+                    console.error('PDF generation error:', err);
+                    toast.error('Ошибка генерации PDF');
                   }
-                  document.body.appendChild(container);
-                  const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-                  await html2pdf().set({
-                    margin: 10,
-                    filename: fileName,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                  }).from(container).save();
-                  document.body.removeChild(container);
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
