@@ -285,7 +285,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-1">
             <Label>Тип документа</Label>
-            <Select value={docType} onValueChange={v => setDocType(v as DocType)}>
+            <Select value={docType} onValueChange={v => { setDocType(v as DocType); setDocNumber(lastDocNumbers?.[v] || "001"); }}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(Object.keys(DOC_LABELS) as DocType[]).map(k => (
