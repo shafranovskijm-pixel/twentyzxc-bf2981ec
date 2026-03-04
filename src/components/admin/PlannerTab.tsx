@@ -23,6 +23,8 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  useDroppable,
+  pointerWithin,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -346,13 +348,20 @@ function DayColumn({
     setNewContractId("");
   };
 
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({
+    id: `day-${dateStr}`,
+    data: { date: dateStr },
+  });
+
   return (
     <div
+      ref={setDroppableRef}
       onClick={onSelect}
       className={cn(
         "flex flex-col rounded-lg border cursor-pointer transition-all duration-500 ease-in-out min-w-0",
         today ? "border-primary/50 bg-primary/5" : "bg-muted/30",
-        isExpanded && "border-primary/60 shadow-lg shadow-primary/10"
+        isExpanded && "border-primary/60 shadow-lg shadow-primary/10",
+        isOver && "ring-2 ring-primary/50 bg-primary/10"
       )}
       style={{ flex: isExpanded ? 3 : (tasks.length > 0 ? 2 : 1) }}
     >
@@ -548,14 +557,25 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
     const activeTaskData = tasks.find((t) => t.id === active.id);
     if (!activeTaskData) return;
 
-    // Check if dropped over a task in a different day
-    const overTask = tasks.find((t) => t.id === over.id);
+    const overId = String(over.id);
+
+    // Check if dropped on a day column droppable zone
+    if (overId.startsWith("day-")) {
+      const targetDate = overId.replace("day-", "");
+      if (activeTaskData.task_date !== targetDate) {
+        updateTask.mutate({ id: activeTaskData.id, task_date: targetDate });
+      }
+      return;
+    }
+
+    // Dropped over another task
+    const overTask = tasks.find((t) => t.id === overId);
     if (overTask) {
       if (activeTaskData.task_date === overTask.task_date) {
         // Same day reorder
         const dayTasks = tasks.filter((t) => t.task_date === activeTaskData.task_date).sort((a, b) => a.sort_order - b.sort_order);
         const oldIdx = dayTasks.findIndex((t) => t.id === active.id);
-        const newIdx = dayTasks.findIndex((t) => t.id === over.id);
+        const newIdx = dayTasks.findIndex((t) => t.id === overId);
         if (oldIdx !== newIdx) {
           const reordered = arrayMove(dayTasks, oldIdx, newIdx);
           reordered.forEach((t, i) => {
@@ -601,7 +621,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
       {isLoading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div className="flex gap-2 min-h-[120px]">
             {weekDates.map((date) => {
               const dateStr = format(date, "yyyy-MM-dd");
