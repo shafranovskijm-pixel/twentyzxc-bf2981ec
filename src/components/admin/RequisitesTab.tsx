@@ -20,6 +20,8 @@ const FIELDS = [
   { section: "bank", label: "БИК", key: "company_bank_bik", placeholder: "044525..." },
   { section: "bank", label: "Корр. счёт", key: "company_bank_corr", placeholder: "30101810..." },
   { section: "bank", label: "Банк", key: "company_bank_name", placeholder: "АО «Тинькофф Банк»" },
+  { section: "bank", label: "ИНН банка", key: "company_bank_inn", placeholder: "9703077050" },
+  { section: "bank", label: "КПП банка", key: "company_bank_kpp", placeholder: "770301001" },
   { section: "person", label: "ФИО руководителя", key: "company_director_name", placeholder: "Иванов Иван Иванович" },
   { section: "person", label: "Должность руководителя", key: "company_director_post", placeholder: "Генеральный директор" },
   { section: "person", label: "Телефон", key: "company_phone", placeholder: "+7 (999) 123-45-67" },
