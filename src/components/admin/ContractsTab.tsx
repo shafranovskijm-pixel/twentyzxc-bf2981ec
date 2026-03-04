@@ -294,7 +294,43 @@ const ContractsTab = () => {
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y">
+              {items.map((c) => (
+                <div key={c.id} className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <button onClick={() => startEdit(c)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
+                      {c.client_name}
+                    </button>
+                    <Badge variant={statusColor(c.payment_status)} className="shrink-0 text-xs">{c.payment_status || "—"}</Badge>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    {c.contract_number && <span className="font-mono">№{c.contract_number}</span>}
+                    {c.contract_date && <span>{new Date(c.contract_date).toLocaleDateString("ru-RU")}</span>}
+                    <span className="font-medium text-foreground">{formatAmount(c.amount)}</span>
+                    {c.contract_type && <span>{c.contract_type}</span>}
+                  </div>
+                  {c.paid_until && (
+                    <div className={`text-xs flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : "text-muted-foreground"}`}>
+                      {(isPaidUntilExpired(c.paid_until) || isPaidUntilSoon(c.paid_until)) && <AlertTriangle className="w-3 h-3" />}
+                      Оплачено до: {new Date(c.paid_until).toLocaleDateString("ru-RU")}
+                    </div>
+                  )}
+                  <div className="flex gap-1">
+                    {c.file_path && (
+                      <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => downloadFile(c.file_path!)}><Download className="w-3.5 h-3.5" /></Button>
+                    )}
+                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
+                      {isArchive ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => startEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteContract.mutate(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -387,7 +423,7 @@ const ContractsTab = () => {
                 {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               </Button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Организация *</Label>
                 <div className="flex gap-2">
@@ -399,13 +435,13 @@ const ContractsTab = () => {
               </div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
               <div className="space-y-2"><Label>Оплачено до</Label><Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} /></div>
               <div className="space-y-2"><Label>Тип договора</Label><Input value={contractType} onChange={(e) => setContractType(e.target.value)} placeholder="фрдо, разработка..." /></div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Сумма</Label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="23000" /></div>
               <div className="space-y-2"><Label>Доп. сумма</Label><Input type="number" value={amountExtra} onChange={(e) => setAmountExtra(e.target.value)} placeholder="5000" /></div>
               <div className="space-y-2"><Label>Ответственный</Label><Input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder="Иванов" /></div>
