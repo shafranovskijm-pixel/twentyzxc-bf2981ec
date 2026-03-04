@@ -48,12 +48,18 @@ export type Database = {
         Row: {
           contact_person: string | null
           created_at: string
+          director_name: string | null
+          director_post: string | null
           email: string | null
           frdo_login: string | null
           frdo_password: string | null
           id: string
+          inn: string | null
+          kpp: string | null
+          legal_address: string | null
           name: string
           notes: string | null
+          ogrn: string | null
           payment_date: string | null
           phone: string | null
           service_type: string | null
@@ -63,12 +69,18 @@ export type Database = {
         Insert: {
           contact_person?: string | null
           created_at?: string
+          director_name?: string | null
+          director_post?: string | null
           email?: string | null
           frdo_login?: string | null
           frdo_password?: string | null
           id?: string
+          inn?: string | null
+          kpp?: string | null
+          legal_address?: string | null
           name: string
           notes?: string | null
+          ogrn?: string | null
           payment_date?: string | null
           phone?: string | null
           service_type?: string | null
@@ -78,12 +90,18 @@ export type Database = {
         Update: {
           contact_person?: string | null
           created_at?: string
+          director_name?: string | null
+          director_post?: string | null
           email?: string | null
           frdo_login?: string | null
           frdo_password?: string | null
           id?: string
+          inn?: string | null
+          kpp?: string | null
+          legal_address?: string | null
           name?: string
           notes?: string | null
+          ogrn?: string | null
           payment_date?: string | null
           phone?: string | null
           service_type?: string | null
