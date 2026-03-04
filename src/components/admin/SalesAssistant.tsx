@@ -113,6 +113,7 @@ function ForecastCards({ contracts }: { contracts: Contract[] }) {
     return active.filter(c => {
       const amount = (c.amount || 0) + (c.amount_extra || 0);
       if (!amount) return false;
+      if (c.payment_status === "оплачено") return false;
       if (!c.paid_until && c.payment_status === "не оплачено") {
         const contractDate = c.contract_date ? new Date(c.contract_date) : new Date(c.created_at || now);
         return isWithinInterval(contractDate, { start, end }) || isWithinInterval(now, { start, end });
