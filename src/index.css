@@ -302,3 +302,8 @@
 .animate-reveal-up {
   animation: reveal-up 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@keyframes edgeFill {
+  from { height: 0%; }
+  to { height: 100%; }
+}
