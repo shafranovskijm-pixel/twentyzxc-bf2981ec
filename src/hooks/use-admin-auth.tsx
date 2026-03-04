@@ -23,13 +23,12 @@ export const useAdminAuth = () => {
   }, []);
 
   useEffect(() => {
-    // Safety timeout — never stay loading forever
     const timeout = setTimeout(() => {
       if (!checkedRef.current) {
         checkedRef.current = true;
         setIsLoading(false);
       }
-    }, 5000);
+    }, 2000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -46,8 +45,15 @@ export const useAdminAuth = () => {
       }
     );
 
-    // Trigger initial session check — onAuthStateChange will handle the result
-    supabase.auth.getSession();
+    // Eagerly resolve if no session exists
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session && !checkedRef.current) {
+        checkedRef.current = true;
+        setUser(null);
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
+    });
 
     return () => {
       clearTimeout(timeout);
