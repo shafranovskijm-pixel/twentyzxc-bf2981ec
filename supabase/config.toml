@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.sales-assistant]
 verify_jwt = false
+
+[functions.check-overdue]
+verify_jwt = false
