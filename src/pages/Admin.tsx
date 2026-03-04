@@ -173,7 +173,7 @@ const Admin = () => {
     setSaving(false);
   };
 
-  if (authLoading || (settingsLoading && !settingsError)) {
+  if (authLoading) {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
   }
 
