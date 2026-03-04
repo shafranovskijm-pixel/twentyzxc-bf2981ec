@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN frdo_password_po TEXT;
