@@ -557,14 +557,25 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
     const activeTaskData = tasks.find((t) => t.id === active.id);
     if (!activeTaskData) return;
 
-    // Check if dropped over a task in a different day
-    const overTask = tasks.find((t) => t.id === over.id);
+    const overId = String(over.id);
+
+    // Check if dropped on a day column droppable zone
+    if (overId.startsWith("day-")) {
+      const targetDate = overId.replace("day-", "");
+      if (activeTaskData.task_date !== targetDate) {
+        updateTask.mutate({ id: activeTaskData.id, task_date: targetDate });
+      }
+      return;
+    }
+
+    // Dropped over another task
+    const overTask = tasks.find((t) => t.id === overId);
     if (overTask) {
       if (activeTaskData.task_date === overTask.task_date) {
         // Same day reorder
         const dayTasks = tasks.filter((t) => t.task_date === activeTaskData.task_date).sort((a, b) => a.sort_order - b.sort_order);
         const oldIdx = dayTasks.findIndex((t) => t.id === active.id);
-        const newIdx = dayTasks.findIndex((t) => t.id === over.id);
+        const newIdx = dayTasks.findIndex((t) => t.id === overId);
         if (oldIdx !== newIdx) {
           const reordered = arrayMove(dayTasks, oldIdx, newIdx);
           reordered.forEach((t, i) => {
