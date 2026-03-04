@@ -285,7 +285,7 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
     // Save to DB
     try {
       const filteredServices = services.filter(s => s.name.trim());
-      await supabase.from("generated_documents" as any).insert({
+      const { error: insertError } = await supabase.from("generated_documents").insert({
         doc_type: docType,
         doc_number: docNumber,
         doc_date: docDate,
@@ -295,10 +295,16 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         total_amount: total,
         services: JSON.stringify(filteredServices),
         html_content: html,
-      } as any);
-      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
-      toast.success("Документ сохранён");
-    } catch {
+      });
+      if (insertError) {
+        console.error("Document save error:", insertError);
+        toast.error(`Ошибка сохранения: ${insertError.message}`);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+        toast.success("Документ сохранён");
+      }
+    } catch (err) {
+      console.error("Document save exception:", err);
       toast.error("Не удалось сохранить документ");
     }
 
