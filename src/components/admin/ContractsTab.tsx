@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Upload, Download, FileText } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore } from "lucide-react";
 
 interface Contract {
   id: string;
@@ -23,6 +24,7 @@ interface Contract {
   responsible: string | null;
   file_path: string | null;
   notes: string | null;
+  is_archived: boolean;
   created_at: string;
 }
 
@@ -43,6 +45,7 @@ const ContractsTab = () => {
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [tab, setTab] = useState("active");
 
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["admin-contracts"],
@@ -50,7 +53,7 @@ const ContractsTab = () => {
       const { data, error } = await supabase
         .from("contracts")
         .select("*")
-        .order("contract_number", { ascending: true });
+        .order("contract_number", { ascending: false });
       if (error) throw error;
       return data as Contract[];
     },
@@ -77,10 +80,7 @@ const ContractsTab = () => {
     const path = `${contractId}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("contracts").upload(path, file);
     setUploading(false);
-    if (error) {
-      toast.error("Ошибка загрузки файла");
-      return null;
-    }
+    if (error) { toast.error("Ошибка загрузки файла"); return null; }
     return path;
   };
 
@@ -99,12 +99,8 @@ const ContractsTab = () => {
         responsible: responsible.trim() || null,
         notes: notes.trim() || null,
       };
-
       if (editingId) {
-        if (file) {
-          const filePath = await uploadFile(editingId);
-          if (filePath) payload.file_path = filePath;
-        }
+        if (file) { const fp = await uploadFile(editingId); if (fp) payload.file_path = fp; }
         const { error } = await supabase.from("contracts").update(payload as any).eq("id", editingId);
         if (error) throw error;
         toast.success("Договор обновлён");
@@ -112,48 +108,52 @@ const ContractsTab = () => {
         const { data, error } = await supabase.from("contracts").insert(payload as any).select("id").single();
         if (error) throw error;
         if (file && data) {
-          const filePath = await uploadFile(data.id);
-          if (filePath) {
-            await supabase.from("contracts").update({ file_path: filePath }).eq("id", data.id);
-          }
+          const fp = await uploadFile(data.id);
+          if (fp) await supabase.from("contracts").update({ file_path: fp }).eq("id", data.id);
         }
         toast.success("Договор добавлен");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
       resetForm();
-    } catch {
-      toast.error("Ошибка сохранения");
-    }
+    } catch { toast.error("Ошибка сохранения"); }
     setSaving(false);
   };
 
   const deleteContract = useMutation({
     mutationFn: async (contract: Contract) => {
-      if (contract.file_path) {
-        await supabase.storage.from("contracts").remove([contract.file_path]);
-      }
+      if (contract.file_path) await supabase.storage.from("contracts").remove([contract.file_path]);
       const { error } = await supabase.from("contracts").delete().eq("id", contract.id);
+      if (error) throw error;
+    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }); toast.success("Договор удалён"); },
+    onError: () => toast.error("Ошибка удаления"),
+  });
+
+  const toggleArchive = useMutation({
+    mutationFn: async ({ id, archive }: { id: string; archive: boolean }) => {
+      const { error } = await supabase.from("contracts").update({ is_archived: archive } as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-      toast.success("Договор удалён");
+      toast.success("Готово");
     },
-    onError: () => toast.error("Ошибка удаления"),
+    onError: () => toast.error("Ошибка"),
   });
 
   const downloadFile = async (filePath: string) => {
     const { data, error } = await supabase.storage.from("contracts").download(filePath);
     if (error || !data) return toast.error("Ошибка скачивания");
     const url = URL.createObjectURL(data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filePath.split("/").pop() || "contract";
-    a.click();
+    const a = document.createElement("a"); a.href = url;
+    a.download = filePath.split("/").pop() || "contract"; a.click();
     URL.revokeObjectURL(url);
   };
 
   const filtered = contracts.filter((c) => {
+    const isArchived = (c as any).is_archived ?? false;
+    if (tab === "active" && isArchived) return false;
+    if (tab === "archive" && !isArchived) return false;
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return c.client_name.toLowerCase().includes(s) ||
@@ -161,6 +161,9 @@ const ContractsTab = () => {
       c.contract_type?.toLowerCase().includes(s) ||
       c.responsible?.toLowerCase().includes(s);
   });
+
+  const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
+  const archiveCount = contracts.filter((c) => (c as any).is_archived).length;
 
   const statusColor = (status: string | null) => {
     if (!status) return "secondary";
@@ -172,6 +175,62 @@ const ContractsTab = () => {
     if (n == null) return "—";
     return new Intl.NumberFormat("ru-RU").format(n) + " ₽";
   };
+
+  const renderTable = (items: Contract[], isArchive: boolean) => (
+    <Card>
+      <CardContent className="p-0">
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {search ? "Ничего не найдено" : isArchive ? "Архив пуст" : "Нет договоров"}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Организация</TableHead>
+                  <TableHead>№ договора</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead>Оплата</TableHead>
+                  <TableHead>Сумма</TableHead>
+                  <TableHead>Тип</TableHead>
+                  <TableHead>Ответственный</TableHead>
+                  <TableHead className="w-[140px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {items.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell className="font-medium">{c.client_name}</TableCell>
+                    <TableCell>{c.contract_number || "—"}</TableCell>
+                    <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
+                    <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                    <TableCell>{formatAmount(c.amount)}</TableCell>
+                    <TableCell>{c.contract_type || "—"}</TableCell>
+                    <TableCell>{c.responsible || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        {c.file_path && (
+                          <Button variant="ghost" size="icon" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })} title={isArchive ? "Восстановить" : "В архив"}>
+                          {isArchive ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteContract.mutate(c)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -192,14 +251,8 @@ const ContractsTab = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Организация *</Label>
-                <Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" />
-              </div>
-              <div className="space-y-2">
-                <Label>Номер договора</Label>
-                <Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" />
-              </div>
+              <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
+              <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
@@ -211,14 +264,8 @@ const ContractsTab = () => {
               <div className="space-y-2"><Label>Доп. сумма</Label><Input type="number" value={amountExtra} onChange={(e) => setAmountExtra(e.target.value)} placeholder="5000" /></div>
               <div className="space-y-2"><Label>Ответственный</Label><Input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder="Иванов" /></div>
             </div>
-            <div className="space-y-2">
-              <Label>Заметки</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Примечания..." rows={2} />
-            </div>
-            <div className="space-y-2">
-              <Label>Файл договора (PDF/Word)</Label>
-              <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            </div>
+            <div className="space-y-2"><Label>Заметки</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Примечания..." rows={2} /></div>
+            <div className="space-y-2"><Label>Файл договора (PDF/Word)</Label><Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
             <Button onClick={saveContract} disabled={saving || uploading} className="w-full">
               {(saving || uploading) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
               {editingId ? "Обновить" : "Добавить"}
@@ -227,60 +274,18 @@ const ContractsTab = () => {
         </Card>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              {search ? "Ничего не найдено" : "Нет договоров"}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Организация</TableHead>
-                    <TableHead>№ договора</TableHead>
-                    <TableHead>Дата</TableHead>
-                    <TableHead>Оплата</TableHead>
-                    <TableHead>Сумма</TableHead>
-                    <TableHead>Тип</TableHead>
-                    <TableHead>Ответственный</TableHead>
-                    <TableHead className="w-[120px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((c) => (
-                    <TableRow key={c.id}>
-                      <TableCell className="font-medium">{c.client_name}</TableCell>
-                      <TableCell>{c.contract_number || "—"}</TableCell>
-                      <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge>
-                      </TableCell>
-                      <TableCell>{formatAmount(c.amount)}</TableCell>
-                      <TableCell>{c.contract_type || "—"}</TableCell>
-                      <TableCell>{c.responsible || "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          {c.file_path && (
-                            <Button variant="ghost" size="icon" onClick={() => downloadFile(c.file_path!)} title="Скачать файл">
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteContract.mutate(c)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="active">Активные ({activeCount})</TabsTrigger>
+          <TabsTrigger value="archive" className="gap-2"><Archive className="w-4 h-4" />Архив ({archiveCount})</TabsTrigger>
+        </TabsList>
+        <TabsContent value="active" className="mt-4">
+          {renderTable(filtered, false)}
+        </TabsContent>
+        <TabsContent value="archive" className="mt-4">
+          {renderTable(filtered, true)}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
