@@ -847,6 +847,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                   contracts={contracts}
                   isExpanded={selectedDate === dateStr}
                   isMobile={isMobile}
+                  onSelect={() => setSelectedDate(dateStr)}
                   onStatusChange={handleStatusChange}
                   onDelete={(id) => deleteTask.mutate(id)}
                   onAddTask={handleAddTask}
