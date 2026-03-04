@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/use-site-settings";
@@ -571,13 +571,32 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
                   if (!previewHtml) return;
-                  const w = window.open('', '_blank');
-                  if (!w) { toast.error("Браузер заблокировал окно"); return; }
-                  w.document.write(previewHtml);
-                  w.document.close();
-                  w.onload = () => { w.print(); };
+                  const html2pdf = (await import('html2pdf.js')).default;
+                  const container = document.createElement('div');
+                  const bodyMatch = previewHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+                  if (bodyMatch) {
+                    container.innerHTML = bodyMatch[1];
+                    const styleMatch = previewHtml.match(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+                    if (styleMatch) {
+                      const styleEl = document.createElement('style');
+                      styleEl.textContent = styleMatch.map(s => s.replace(/<\/?style[^>]*>/gi, '')).join('\n');
+                      container.prepend(styleEl);
+                    }
+                  } else {
+                    container.innerHTML = previewHtml;
+                  }
+                  document.body.appendChild(container);
+                  const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+                  await html2pdf().set({
+                    margin: 10,
+                    filename: fileName,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                  }).from(container).save();
+                  document.body.removeChild(container);
                 }}
               >
                 <Download className="w-4 h-4 mr-2" />
