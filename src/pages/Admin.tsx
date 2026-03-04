@@ -207,10 +207,12 @@ const Admin = () => {
           </div>
 
           <Tabs defaultValue="seo" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="seo" className="gap-2"><Search className="w-4 h-4" />SEO и OG</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="seo" className="gap-2"><Search className="w-4 h-4" />SEO</TabsTrigger>
               <TabsTrigger value="contacts" className="gap-2"><Mail className="w-4 h-4" />Контакты</TabsTrigger>
               <TabsTrigger value="promotions" className="gap-2"><Sparkles className="w-4 h-4" />Акции</TabsTrigger>
+              <TabsTrigger value="clients" className="gap-2"><Users className="w-4 h-4" />Клиенты</TabsTrigger>
+              <TabsTrigger value="contracts" className="gap-2"><FileText className="w-4 h-4" />Договоры</TabsTrigger>
             </TabsList>
 
             <TabsContent value="seo" className="space-y-6">
