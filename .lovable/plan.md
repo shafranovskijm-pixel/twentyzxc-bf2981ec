@@ -1,28 +1,32 @@
 
 
+# Исправление авторизации для отзывов (403 Forbidden)
+
 ## Проблема
 
-Кнопка «Скачать PDF» открывает диалог печати (`window.print()`), а пользователь хочет прямое скачивание файла `.pdf`. Также нужно, чтобы email отправлялся с PDF-вложением.
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
 ## Решение
 
-Заменить `window.print()` на `generatePdfBase64` + прямое скачивание через `jsPDF.save()` для кнопки «Скачать PDF». Для email — оставить текущую логику с `generatePdfBase64`.
+### 1. Включить Google OAuth через настройки аутентификации
 
-### Изменения в `src/components/admin/DocumentsTab.tsx`
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-**Кнопка «Скачать PDF»** (строки ~640-680):
-- Убрать логику с `printIframe` и `window.print()`
-- Использовать уже существующую `generatePdfBase64`, но вместо получения base64 — вызывать `jsPDF.save()` напрямую
-- Создать новую функцию `downloadPdf(htmlContent, fileName)` которая:
-  1. Рендерит HTML в скрытом iframe
-  2. Захватывает через `html2canvas` (scale: 2)
-  3. Создаёт `jsPDF` и вызывает `pdf.save(fileName)` — это скачивает файл напрямую
-  4. Показывает лоадер на кнопке во время генерации
-  5. Имеет timeout 15 секунд с обработкой ошибки
+### 2. Добавить redirect URL в список разрешённых
 
-**Email** — оставить как есть (уже работает через `generatePdfBase64` + edge function).
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### Итого
-- «Скачать PDF» → прямое скачивание `.pdf` файла через `jsPDF.save()`
-- «На почту» → PDF-вложение через edge function (без изменений)
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
