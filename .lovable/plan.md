@@ -1,32 +1,34 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## План: Улучшить карточки акций с иконками + добавить вторую акцию
 
-## Проблема
+### 1. Добавить поле `icon` в таблицу `promotions`
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+Миграция: `ALTER TABLE public.promotions ADD COLUMN icon text;`
 
-## Решение
+Обновить существующую акцию и добавить новую:
+```sql
+UPDATE public.promotions SET icon = 'Monitor' WHERE title = 'Сайт + настройка рекламы';
+INSERT INTO public.promotions (title, description, price, badge, icon, sort_order)
+VALUES ('Сайты для образовательных организаций', 'Разработка и поддержка сайта для школ, колледжей и учебных центров с учётом требований Рособрнадзора', '10 000 ₽/год', 'Акция', 'GraduationCap', 1);
+```
 
-### 1. Включить Google OAuth через настройки аутентификации
+### 2. Переделать layout карточки акции
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+**Файл: `src/components/PromotionSection.tsx`**:
 
-### 2. Добавить redirect URL в список разрешённых
+- Горизонтальный layout: слева — крупная иконка Lucide в золотом круге (w-20 h-20), справа — текст, цена, CTA
+- Иконка рендерится динамически из lucide-react по имени из поля `icon`
+- На мобильных — вертикальный layout (иконка сверху по центру)
+- Добавить мягкий золотой фоновый gradient за иконкой
+- Сетка `grid md:grid-cols-2` если акций 2+, одна карточка — полная ширина
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+### 3. Обновить админку
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+**Файл: `src/pages/Admin.tsx`**: добавить поле `icon` (text input с подсказкой "Имя иконки Lucide") в форму создания/редактирования акций.
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Файлы:
+1. Миграция SQL — новое поле + вторая акция
+2. `src/components/PromotionSection.tsx` — новый layout с иконками
+3. `src/pages/Admin.tsx` — поле icon в форме
 
