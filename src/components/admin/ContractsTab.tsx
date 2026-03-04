@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search } from "lucide-react";
 
 interface Contract {
   id: string;
@@ -48,6 +48,8 @@ const ContractsTab = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
+  const [inn, setInn] = useState("");
+  const [innLoading, setInnLoading] = useState(false);
 
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["admin-contracts"],
@@ -64,7 +66,34 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setPaidUntil(""); setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
+  };
+
+  const lookupInn = async () => {
+    if (!inn.trim()) return toast.error("Введите ИНН");
+    setInnLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", {
+        body: { inn: inn.trim() },
+      });
+      if (error) throw error;
+      if (!data?.found) {
+        toast.error("Организация не найдена");
+        return;
+      }
+      setClientName(data.name_short || data.name || "");
+      if (data.management_name) {
+        setNotes((prev) => {
+          const mgmt = `${data.management_post || "Руководитель"}: ${data.management_name}`;
+          return prev ? `${prev}\n${mgmt}` : mgmt;
+        });
+      }
+      toast.success(`Найдено: ${data.name_short || data.name}`);
+    } catch {
+      toast.error("Ошибка поиска по ИНН");
+    } finally {
+      setInnLoading(false);
+    }
   };
 
   const startEdit = (c: Contract) => {
@@ -277,6 +306,15 @@ const ContractsTab = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="flex gap-2 items-end">
+              <div className="space-y-2 flex-1">
+                <Label>Поиск по ИНН</Label>
+                <Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="Введите ИНН организации" onKeyDown={(e) => e.key === "Enter" && lookupInn()} />
+              </div>
+              <Button onClick={lookupInn} disabled={innLoading} variant="outline">
+                {innLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              </Button>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Организация *</Label><Input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="ООО Ромашка" /></div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
