@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond, KeyRound, Check } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Diamond, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
