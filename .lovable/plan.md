@@ -1,32 +1,41 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Контекст
 
-## Проблема
+Сейчас в попапе задачи планера есть одна кнопка «Создать документ», которая переключает на вкладку Документы с предзаполненным договором. Пользователь хочет, чтобы для задач с уже привязанным договором (у которого уже есть сгенерированный документ) показывались конкретные действия: «Создать счёт», «Создать акт», «Скачать договор» и т.д.
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+## План
 
-## Решение
+### 1. Расширить `onCreateDocument` → передавать тип документа
 
-### 1. Включить Google OAuth через настройки аутентификации
+В `Admin.tsx` изменить колбэк, чтобы принимать `docType` (`"contract"` | `"invoice"` | `"act"`). Передавать его в `DocumentsTab` через новый проп `initialDocType`.
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+В `DocumentsTab` — в `useEffect` для `initialContractId` также устанавливать `setDocType(initialDocType)` если передан.
 
-### 2. Добавить redirect URL в список разрешённых
+### 2. Переработать кнопки в попапе `TaskCard`
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+Вместо одной кнопки «Создать документ» — показывать набор действий в зависимости от наличия `contract_id`:
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+**Если у задачи есть `contract_id`:**
+- «Создать счёт» — вызывает `onCreateDocument(task, "invoice")`
+- «Создать акт» — вызывает `onCreateDocument(task, "act")`
+- «Создать договор» — вызывает `onCreateDocument(task, "contract")`
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+**Если нет `contract_id`:**
+- «Создать документ» (как сейчас)
 
-## Технические детали
+### 3. Изменения в файлах
 
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+**`src/components/admin/PlannerTab.tsx`:**
+- Изменить сигнатуру `onCreateDocument` на `(task: Task, docType?: string) => void`
+- В `TaskCard` попапе вместо одной кнопки отрисовать 3 кнопки (Счёт, Акт, Договор) если есть `contract_id`, иначе — одну общую
 
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+**`src/pages/Admin.tsx`:**
+- Добавить state `docInitialDocType`
+- В колбэке `onCreateDocument` сохранять переданный `docType`
+- Передать `initialDocType` в `DocumentsTab`
+
+**`src/components/admin/DocumentsTab.tsx`:**
+- Добавить проп `initialDocType`
+- В `useEffect` для prefill — устанавливать `setDocType(initialDocType)` если передан
 
