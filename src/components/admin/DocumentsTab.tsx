@@ -306,7 +306,30 @@ const DocumentsTab = ({ initialContractId, onMounted }: { initialContractId?: st
         toast.error(`Ошибка сохранения: ${insertError.message}`);
       } else {
         queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
-        toast.success("Документ сохранён");
+
+        // Auto-create contract in contracts table when generating a contract document
+        if (docType === "contract" && !linkedContractId) {
+          const year = new Date(docDate).getFullYear();
+          const contractNumber = `${docNumber}-${year}`;
+          const { error: contractError } = await supabase.from("contracts").insert({
+            client_name: clientName,
+            contract_number: contractNumber,
+            contract_date: docDate,
+            amount: total || null,
+            contract_type: null,
+            payment_status: "не оплачено",
+          });
+          if (contractError) {
+            console.error("Contract auto-create error:", contractError);
+            toast.error(`Документ сохранён, но договор не создан: ${contractError.message}`);
+          } else {
+            queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
+            queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+            toast.success("Документ и договор сохранены");
+          }
+        } else {
+          toast.success("Документ сохранён");
+        }
       }
     } catch (err) {
       console.error("Document save exception:", err);
