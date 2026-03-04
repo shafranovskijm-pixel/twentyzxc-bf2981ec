@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X } from "lucide-react";
 
 interface Client {
   id: string;
@@ -18,8 +20,18 @@ interface Client {
   email: string | null;
   telegram: string | null;
   notes: string | null;
+  service_type: string | null;
+  frdo_login: string | null;
+  frdo_password: string | null;
+  payment_date: string | null;
   created_at: string;
 }
+
+const SERVICE_OPTIONS = [
+  { value: "ФРДО", label: "ФРДО", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  { value: "САЙТ", label: "САЙТ", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  { value: "ПРОЧЕЕ", label: "ПРОЧЕЕ", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+];
 
 const ClientsTab = () => {
   const queryClient = useQueryClient();
@@ -31,6 +43,10 @@ const ClientsTab = () => {
   const [email, setEmail] = useState("");
   const [telegram, setTelegram] = useState("");
   const [notes, setNotes] = useState("");
+  const [serviceType, setServiceType] = useState("");
+  const [frdoLogin, setFrdoLogin] = useState("");
+  const [frdoPassword, setFrdoPassword] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -48,13 +64,16 @@ const ClientsTab = () => {
 
   const resetForm = () => {
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
+    setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setPaymentDate("");
     setEditingId(null); setShowForm(false);
   };
 
   const startEdit = (c: Client) => {
     setEditingId(c.id); setName(c.name); setContactPerson(c.contact_person || "");
     setPhone(c.phone || ""); setEmail(c.email || ""); setTelegram(c.telegram || "");
-    setNotes(c.notes || ""); setShowForm(true);
+    setNotes(c.notes || ""); setServiceType(c.service_type || "");
+    setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || "");
+    setPaymentDate(c.payment_date || ""); setShowForm(true);
   };
 
   const saveClient = async () => {
@@ -68,6 +87,10 @@ const ClientsTab = () => {
         email: email.trim() || null,
         telegram: telegram.trim() || null,
         notes: notes.trim() || null,
+        service_type: serviceType || null,
+        frdo_login: frdoLogin.trim() || null,
+        frdo_password: frdoPassword.trim() || null,
+        payment_date: paymentDate || null,
       };
       if (editingId) {
         const { error } = await supabase.from("clients").update(payload).eq("id", editingId);
@@ -86,6 +109,12 @@ const ClientsTab = () => {
     setSaving(false);
   };
 
+  const updateServiceType = async (clientId: string, value: string) => {
+    const { error } = await supabase.from("clients").update({ service_type: value }).eq("id", clientId);
+    if (error) { toast.error("Ошибка"); return; }
+    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+  };
+
   const deleteClient = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("clients").delete().eq("id", id);
@@ -101,11 +130,17 @@ const ClientsTab = () => {
   const filtered = clients.filter((c) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
-    return c.name.toLowerCase().includes(s) || 
+    return c.name.toLowerCase().includes(s) ||
       c.contact_person?.toLowerCase().includes(s) ||
       c.phone?.toLowerCase().includes(s) ||
       c.email?.toLowerCase().includes(s);
   });
+
+  const getServiceBadge = (type: string | null) => {
+    const opt = SERVICE_OPTIONS.find(o => o.value === type);
+    if (!opt) return <span className="text-muted-foreground text-xs">—</span>;
+    return <Badge variant="outline" className={opt.color}>{opt.label}</Badge>;
+  };
 
   return (
     <div className="space-y-6">
@@ -125,9 +160,22 @@ const ClientsTab = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Название организации *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Название организации *</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
+              </div>
+              <div className="space-y-2">
+                <Label>Услуга</Label>
+                <Select value={serviceType} onValueChange={setServiceType}>
+                  <SelectTrigger><SelectValue placeholder="Выберите услугу" /></SelectTrigger>
+                  <SelectContent>
+                    {SERVICE_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Контактное лицо</Label><Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Иванов И.И." /></div>
@@ -136,6 +184,16 @@ const ClientsTab = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@company.ru" /></div>
               <div className="space-y-2"><Label>Telegram</Label><Input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={frdoLogin} onChange={(e) => setFrdoLogin(e.target.value)} placeholder="login" /></div>
+              <div className="space-y-2"><Label>Пароль ФИС ФРДО</Label><Input value={frdoPassword} onChange={(e) => setFrdoPassword(e.target.value)} placeholder="password" /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Дата оплаты</Label>
+                <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Заметки</Label>
@@ -162,24 +220,51 @@ const ClientsTab = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Организация</TableHead>
+                  <TableHead>Услуга</TableHead>
                   <TableHead>Контактное лицо</TableHead>
                   <TableHead>Телефон</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead className="w-[100px]"></TableHead>
+                  <TableHead>Логин ФРДО</TableHead>
+                  <TableHead>Пароль ФРДО</TableHead>
+                  <TableHead>Оплата</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.name}</TableCell>
+                    <TableCell>
+                      <button
+                        onClick={() => startEdit(c)}
+                        className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors"
+                      >
+                        {c.name}
+                      </button>
+                    </TableCell>
+                    <TableCell>
+                      <Select value={c.service_type || ""} onValueChange={(v) => updateServiceType(c.id, v)}>
+                        <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none focus:ring-0">
+                          <SelectValue>{getServiceBadge(c.service_type)}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SERVICE_OPTIONS.map(o => (
+                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                     <TableCell>{c.contact_person || "—"}</TableCell>
                     <TableCell>{c.phone || "—"}</TableCell>
-                    <TableCell>{c.email || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{c.frdo_login || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{c.frdo_password || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {c.payment_date
+                        ? new Date(c.payment_date).toLocaleDateString("ru-RU")
+                        : "—"}
+                    </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteClient.mutate(c.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => deleteClient.mutate(c.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
