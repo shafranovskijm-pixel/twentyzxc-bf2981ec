@@ -1183,17 +1183,25 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 
 const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
   const queryClient = useQueryClient();
-  const { data: docs = [], isLoading } = useQuery({
+  const { data: docs = [], isLoading, error: historyError } = useQuery({
     queryKey: ["generated-documents"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log("[DocumentHistory] Loading documents...");
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Query timeout after 10s")), 10000)
+      );
+      const queryPromise = supabase
         .from("generated_documents" as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      console.log("[DocumentHistory] Result:", { count: data?.length, error });
       if (error) throw error;
       return data as any[];
     },
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   const viewDoc = (html: string) => {
