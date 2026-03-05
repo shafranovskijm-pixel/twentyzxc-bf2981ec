@@ -105,7 +105,6 @@ function TaskCard({
   const sendReminder = async (immediate: boolean) => {
     setReminderSending(true);
     try {
-      const timeStr = immediate ? "сейчас" : reminderTime;
       const clientName = client?.name || "";
       const contractNum = contract?.contract_number ? ` (договор №${contract.contract_number})` : "";
       
@@ -117,33 +116,26 @@ function TaskCard({
       if (!immediate && reminderTime) text += ` в ${reminderTime}`;
       
       if (!immediate && reminderTime) {
-        // Schedule: calculate delay and use setTimeout
+        // Schedule: save to DB so it persists across page reloads
         const [hours, minutes] = reminderTime.split(":").map(Number);
-        const now = new Date();
         const target = new Date(task.task_date);
         target.setHours(hours, minutes, 0, 0);
-        const delay = target.getTime() - now.getTime();
         
-        if (delay <= 0) {
+        if (target.getTime() <= Date.now()) {
           // Time already passed, send immediately
-          const { data: session } = await supabase.auth.getSession();
           await supabase.functions.invoke("send-bot-message", {
             body: { chat_id: 1248037753, text },
           });
           toast.success("Напоминание отправлено (время уже прошло)");
         } else {
-          // Schedule the send
-          setTimeout(async () => {
-            try {
-              await supabase.functions.invoke("send-bot-message", {
-                body: { chat_id: 1248037753, text },
-              });
-            } catch (e) {
-              console.error("Scheduled reminder failed:", e);
-            }
-          }, delay);
-          const mins = Math.round(delay / 60000);
-          toast.success(`Напоминание запланировано через ${mins} мин.`);
+          // Save scheduled reminder to database
+          const { error } = await supabase.from("scheduled_reminders").insert({
+            task_id: task.id,
+            message: text,
+            send_at: target.toISOString(),
+          });
+          if (error) throw error;
+          toast.success(`Напоминание сохранено на ${reminderTime}`);
         }
       } else {
         await supabase.functions.invoke("send-bot-message", {
