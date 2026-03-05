@@ -380,18 +380,24 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     };
 
     let html = "";
-    switch (docType) {
-      case "contract":
-        if (contractSubType === "frdo") {
-          html = generateFrdoContractHtml(docData);
-        } else if (contractSubType === "nmo") {
-          html = generateNmoContractHtml(docData);
-        } else {
-          html = generateContractHtml(docData);
-        }
-        break;
-      case "invoice": html = generateInvoiceHtml(docData); break;
-      case "act": html = generateActHtml(docData); break;
+    try {
+      switch (docType) {
+        case "contract":
+          if (contractSubType === "frdo") {
+            html = generateFrdoContractHtml(docData);
+          } else if (contractSubType === "nmo") {
+            html = generateNmoContractHtml(docData);
+          } else {
+            html = generateContractHtml(docData);
+          }
+          break;
+        case "invoice": html = generateInvoiceHtml(docData); break;
+        case "act": html = generateActHtml(docData); break;
+      }
+    } catch (templateErr) {
+      console.error("[DOC] Template generation error:", templateErr);
+      toast.error(`Ошибка генерации шаблона: ${templateErr instanceof Error ? templateErr.message : String(templateErr)}`);
+      return;
     }
 
     // Save to DB
