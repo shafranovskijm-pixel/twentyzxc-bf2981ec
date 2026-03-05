@@ -197,6 +197,38 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     }
   }, [initialContractId, contracts, clients]);
 
+  // Auto-fill template data when contract subtype changes
+  useEffect(() => {
+    if (contractSubType === "nmo") {
+      setSubject("Разработка документов для непрерывного медицинского образования (НМО)");
+      setDeadline("с момента подписания договора по 31.12." + new Date().getFullYear());
+      setPaymentTerms("авансом в размере 100%");
+      setServices([
+        { name: "Разработка комплекта документов для НМО (образовательные программы, учебные планы, методические материалы)", qty: 1, price: 35000 },
+        { name: "Сопровождение аккредитации на портале НМО", qty: 1, price: 15000 },
+        { name: "Синхронизация данных с порталом НМО", qty: 1, price: 10000 },
+      ]);
+    } else if (contractSubType === "frdo") {
+      setSubject("Оказание услуг по внесению сведений в ФИС ФРДО");
+      setDeadline("05.03." + new Date().getFullYear() + " по 05.03." + (new Date().getFullYear() + 1));
+      setPaymentTerms("авансом в размере 100%");
+      setServices([
+        { name: "Выгрузка данных в ФИС ФРДО (разовая)", qty: 1, price: 3500 },
+        { name: "Ежегодное сопровождение ФИС ФРДО", qty: 1, price: 24000 },
+      ]);
+    } else if (contractSubType === "site") {
+      setSubject("Разработка веб-сайта");
+      setDeadline("30 рабочих дней");
+      setPaymentTerms("100% предоплата");
+      setServices([{ name: "", qty: 1, price: 0 }]);
+    } else {
+      setSubject("");
+      setDeadline("");
+      setPaymentTerms("");
+      setServices([{ name: "", qty: 1, price: 0 }]);
+    }
+  }, [contractSubType]);
+
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
     const q = clientSearch.toLowerCase();
