@@ -967,11 +967,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      {/* History */}
-      <DocumentHistory onView={setPreviewHtml} />
+      <DocumentHistory onView={(html) => { setPreviewHtml(html); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
 
       {/* Document Preview Modal */}
-      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
         <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1087,14 +1086,39 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
               </div>
             </div>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            {previewHtml && (
-              <iframe
-                ref={iframeRef}
-                srcDoc={previewHtml}
-                className="w-full h-full border-0 bg-white"
-                title="Предпросмотр документа"
-              />
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {previewInvoiceHtml ? (
+              <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex flex-col flex-1 overflow-hidden">
+                <TabsList className="mx-3 sm:mx-6 mt-2 shrink-0 w-fit">
+                  <TabsTrigger value="contract">Договор</TabsTrigger>
+                  <TabsTrigger value="invoice">Счёт</TabsTrigger>
+                </TabsList>
+                <TabsContent value="contract" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                  <iframe
+                    ref={previewTab === "contract" ? iframeRef : undefined}
+                    srcDoc={previewHtml || ""}
+                    className="w-full h-full border-0 bg-white"
+                    title="Договор"
+                  />
+                </TabsContent>
+                <TabsContent value="invoice" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                  <iframe
+                    ref={previewTab === "invoice" ? iframeRef : undefined}
+                    srcDoc={previewInvoiceHtml}
+                    className="w-full h-full border-0 bg-white"
+                    title="Счёт"
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              previewHtml && (
+                <iframe
+                  ref={iframeRef}
+                  srcDoc={previewHtml}
+                  className="w-full h-full border-0 bg-white"
+                  title="Предпросмотр документа"
+                />
+              )
             )}
           </div>
         </DialogContent>
