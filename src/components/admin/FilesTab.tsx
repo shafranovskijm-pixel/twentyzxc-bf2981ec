@@ -144,6 +144,15 @@ const FilesTab = () => {
     return c.client_name.toLowerCase().includes(s) || c.contract_number?.toLowerCase().includes(s);
   });
 
+  if (contractsError) {
+    return (
+      <div className="text-center py-8 space-y-2">
+        <p className="text-sm text-destructive">Ошибка загрузки: {contractsError.message}</p>
+        <button onClick={() => queryClient.invalidateQueries({ queryKey: ["files-contracts"] })} className="text-sm text-primary underline">Повторить</button>
+      </div>
+    );
+  }
+
   if (loadingContracts) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
