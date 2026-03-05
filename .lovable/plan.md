@@ -1,21 +1,32 @@
 
 
-## Problem
+# Исправление авторизации для отзывов (403 Forbidden)
 
-The Files tab sorts contracts by `contract_number DESC`. The user wants the most recently created contract to appear first — i.e., sort by `created_at DESC` (or `updated_at DESC`).
+## Проблема
 
-## Plan
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-**File: `src/components/admin/FilesTab.tsx`** (line 44)
+## Решение
 
-Change the query ordering from:
-```
-.order("contract_number", { ascending: false })
-```
-to:
-```
-.order("created_at", { ascending: false })
-```
+### 1. Включить Google OAuth через настройки аутентификации
 
-This ensures the newest contract (e.g., one just generated for ЭЛАРА КЛИНИК) appears at the top of the folder list.
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+
+### 2. Добавить redirect URL в список разрешённых
+
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 

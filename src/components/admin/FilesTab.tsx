@@ -41,7 +41,7 @@ const FilesTab = () => {
         .from("contracts")
         .select("id, client_name, contract_number")
         .eq("is_archived", false)
-        .order("contract_number", { ascending: false });
+        .order("created_at", { ascending: false });
       
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
       console.log("[FilesTab] Contracts query result:", { data: data?.length, error });
