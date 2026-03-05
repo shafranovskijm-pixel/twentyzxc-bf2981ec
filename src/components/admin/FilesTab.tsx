@@ -37,10 +37,14 @@ const FilesTab = () => {
         .from("contracts")
         .select("id, client_name, contract_number")
         .order("contract_number", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("Files contracts query error:", error);
+        throw error;
+      }
       return data as ContractFolder[];
     },
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   // Load files only for the opened folder
@@ -60,14 +64,17 @@ const FilesTab = () => {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Load file counts per contract for badges
+  // Load file counts per contract for badges - only contract_id column
   const { data: fileCounts = {} } = useQuery({
     queryKey: ["contract-file-counts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contract_files")
         .select("contract_id");
-      if (error) throw error;
+      if (error) {
+        console.error("File counts query error:", error);
+        return {};
+      }
       const counts: Record<string, number> = {};
       data.forEach((f: { contract_id: string }) => {
         counts[f.contract_id] = (counts[f.contract_id] || 0) + 1;
@@ -75,6 +82,7 @@ const FilesTab = () => {
       return counts;
     },
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const uploadFiles = useCallback(async (contractId: string, fileList: FileList | File[]) => {
