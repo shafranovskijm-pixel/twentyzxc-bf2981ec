@@ -34,7 +34,7 @@ const formatSize = (bytes: number | null) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-const FilesFolderCard = ({ contract: c, files, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete }: Props) => {
+const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete }: Props) => {
   return (
     <Card
       className={`transition-colors ${isDragTarget ? "border-primary bg-primary/5" : ""}`}
