@@ -14,6 +14,7 @@ interface ContractFile {
 interface Props {
   contract: { id: string; client_name: string; contract_number: string | null };
   files: ContractFile[];
+  fileCount?: number;
   isOpen: boolean;
   isDragTarget: boolean;
   loadingFiles: boolean;
@@ -33,7 +34,7 @@ const formatSize = (bytes: number | null) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-const FilesFolderCard = ({ contract: c, files, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete }: Props) => {
+const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete }: Props) => {
   return (
     <Card
       className={`transition-colors ${isDragTarget ? "border-primary bg-primary/5" : ""}`}
@@ -50,7 +51,7 @@ const FilesFolderCard = ({ contract: c, files, isOpen, isDragTarget, loadingFile
               {c.contract_number && <span className="text-muted-foreground font-normal ml-2">№{c.contract_number}</span>}
             </CardTitle>
           </div>
-          <span className="text-xs text-muted-foreground">{files.length} файл(ов)</span>
+          <span className="text-xs text-muted-foreground">{fileCount ?? files.length} файл(ов)</span>
         </div>
       </CardHeader>
 
