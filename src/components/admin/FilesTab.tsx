@@ -43,24 +43,39 @@ const FilesTab = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: files = [], isLoading: loadingFiles } = useQuery({
-    queryKey: ["contract-files"],
+  // Load files only for the opened folder
+  const { data: folderFiles = [], isLoading: loadingFiles } = useQuery({
+    queryKey: ["contract-files", openFolder],
     queryFn: async () => {
+      if (!openFolder) return [];
       const { data, error } = await supabase
         .from("contract_files")
         .select("*")
+        .eq("contract_id", openFolder)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as ContractFile[];
     },
-    staleTime: 5 * 60 * 1000,
+    enabled: !!openFolder,
+    staleTime: 2 * 60 * 1000,
   });
 
-  const filesByContract = files.reduce<Record<string, ContractFile[]>>((acc, f) => {
-    if (!acc[f.contract_id]) acc[f.contract_id] = [];
-    acc[f.contract_id].push(f);
-    return acc;
-  }, {});
+  // Load file counts per contract for badges
+  const { data: fileCounts = {} } = useQuery({
+    queryKey: ["contract-file-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contract_files")
+        .select("contract_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      data.forEach((f: { contract_id: string }) => {
+        counts[f.contract_id] = (counts[f.contract_id] || 0) + 1;
+      });
+      return counts;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const uploadFiles = useCallback(async (contractId: string, fileList: FileList | File[]) => {
     setUploading(true);
