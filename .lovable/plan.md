@@ -1,32 +1,35 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Diagnosis
 
-## Проблема
+**Root cause: All queries to the database are hanging/timing out from the client side.**
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+Evidence:
+- Database has 113 active contracts, 146 files, 1 generated document — data exists
+- The ЭЛАРА КЛИНИК contract and documents were **never saved** — the background save in `generate()` silently failed (no record in `generated_documents` or `contracts`)
+- The Contracts tab shows "Активные (0)" with a spinner — the query hangs indefinitely
+- The Files tab also hangs (reported earlier)
+- No network errors captured in logs
 
-## Решение
+The `ContractsTab` query has no timeout protection (unlike `FilesTab` which we already patched). When a query hangs, the UI shows a spinner forever with no way to retry.
 
-### 1. Включить Google OAuth через настройки аутентификации
+## Plan
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+### 1. Fix ContractsTab infinite loading
+- Add a 10-second timeout to the contracts query (same pattern as FilesTab)
+- Add error state with retry button
+- Add `retry: 1` to prevent infinite retries
 
-### 2. Добавить redirect URL в список разрешённых
+### 2. Fix document save reliability in DocumentsTab
+- The ЭЛАРА КЛИНИК save failed silently. Add explicit `toast.error` for **every** failure point and ensure the error is visible
+- Add a retry/re-save button in the preview dialog so user can retry saving if the background save fails
+- Show a status indicator in the preview dialog: "Сохранение..." → "Сохранено" or "Ошибка сохранения"
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+### 3. Add timeout to all admin queries
+- Wrap the `generated_documents` query in DocumentsTab with the same timeout pattern
+- Ensure all admin tab queries have consistent timeout + error + retry behavior
 
-### 3. Обновить GoogleAuthButton (если потребуется)
-
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Files to modify
+- `src/components/admin/ContractsTab.tsx` — add timeout, error state, retry
+- `src/components/admin/DocumentsTab.tsx` — add save status indicator, retry button, timeout on history query
 
