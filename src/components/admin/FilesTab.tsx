@@ -30,14 +30,21 @@ const FilesTab = () => {
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: contracts = [], isLoading: loadingContracts } = useQuery({
+  const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log("[FilesTab] Starting contracts query...");
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Query timeout after 10s")), 10000)
+      );
+      const queryPromise = supabase
         .from("contracts")
         .select("id, client_name, contract_number")
         .eq("is_archived", false)
         .order("contract_number", { ascending: false });
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      console.log("[FilesTab] Contracts query result:", { data: data?.length, error });
       if (error) {
         console.error("Files contracts query error:", error);
         throw error;
@@ -136,6 +143,15 @@ const FilesTab = () => {
     const s = search.toLowerCase();
     return c.client_name.toLowerCase().includes(s) || c.contract_number?.toLowerCase().includes(s);
   });
+
+  if (contractsError) {
+    return (
+      <div className="text-center py-8 space-y-2">
+        <p className="text-sm text-destructive">Ошибка загрузки: {contractsError.message}</p>
+        <button onClick={() => queryClient.invalidateQueries({ queryKey: ["files-contracts"] })} className="text-sm text-primary underline">Повторить</button>
+      </div>
+    );
+  }
 
   if (loadingContracts) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
