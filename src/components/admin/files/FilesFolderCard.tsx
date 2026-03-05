@@ -14,6 +14,7 @@ interface ContractFile {
 interface Props {
   contract: { id: string; client_name: string; contract_number: string | null };
   files: ContractFile[];
+  fileCount?: number;
   isOpen: boolean;
   isDragTarget: boolean;
   loadingFiles: boolean;
