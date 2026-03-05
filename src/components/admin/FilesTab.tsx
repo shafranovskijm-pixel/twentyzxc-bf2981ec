@@ -163,10 +163,11 @@ const FilesTab = () => {
             <FilesFolderCard
               key={c.id}
               contract={c}
-              files={filesByContract[c.id] || []}
+              files={openFolder === c.id ? folderFiles : []}
+              fileCount={fileCounts[c.id] || 0}
               isOpen={openFolder === c.id}
               isDragTarget={dragOver === c.id}
-              loadingFiles={loadingFiles}
+              loadingFiles={openFolder === c.id && loadingFiles}
               onToggle={() => setOpenFolder(openFolder === c.id ? null : c.id)}
               onDrop={(files) => uploadFiles(c.id, files)}
               onDragOver={() => setDragOver(c.id)}
