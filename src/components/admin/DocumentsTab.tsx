@@ -330,6 +330,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
   };
 
   const generate = async () => {
+    console.log("[DOC] generate called", { docNumber, clientName, services });
     if (!docNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
     if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
