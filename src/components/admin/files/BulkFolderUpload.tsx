@@ -136,18 +136,19 @@ const BulkFolderUpload = ({ contracts, uploadFiles, uploading }: Props) => {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <Button
           variant="outline"
           size="sm"
           onClick={() => inputRef.current?.click()}
           disabled={uploading || bulkUploading}
+          className="shrink-0"
         >
           <FolderUp className="w-4 h-4 mr-2" />
           Загрузить папку целиком
         </Button>
         <span className="text-xs text-muted-foreground">
-          Выберите папку с подпапками — система сопоставит их с договорами по имени/номеру
+          Выберите папку с подпапками — система сопоставит их с договорами
         </span>
         <input
           ref={inputRef}
@@ -164,37 +165,42 @@ const BulkFolderUpload = ({ contracts, uploadFiles, uploading }: Props) => {
       {matches && (
         <Card>
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <p className="text-sm font-medium">
-                Найдено {matches.length} папок: {matchedCount} совпало, {unmatchedCount} без совпадений
+                {matchedCount} из {matches.length} совпало
               </p>
               <Button
                 size="sm"
                 onClick={handleUploadAll}
                 disabled={matchedCount === 0 || bulkUploading}
+                className="shrink-0"
               >
                 {bulkUploading ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Загрузка...</>
                 ) : (
-                  <><Upload className="w-4 h-4 mr-2" /> Загрузить совпавшие ({matchedCount})</>
+                  <><Upload className="w-4 h-4 mr-2" /> Загрузить ({matchedCount})</>
                 )}
               </Button>
             </div>
 
             <div className="space-y-1.5 max-h-60 overflow-y-auto">
               {matches.map((m, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm px-2 py-1 rounded-sm bg-muted/30">
-                  {m.contractId ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0" />
-                  )}
-                  <span className="font-medium truncate">{m.folderName}</span>
-                  <span className="text-muted-foreground">→</span>
-                  <span className="truncate flex-1">
-                    {m.contractLabel || <span className="text-yellow-500">не найден</span>}
-                  </span>
-                  <span className="text-xs text-muted-foreground shrink-0">{m.files.length} файл(ов)</span>
+                <div key={i} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 text-sm px-2 py-1.5 rounded-sm bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {m.contractId ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0" />
+                    )}
+                    <span className="font-medium truncate">{m.folderName}</span>
+                    <span className="text-muted-foreground hidden sm:inline">→</span>
+                  </div>
+                  <div className="flex items-center gap-2 pl-6 sm:pl-0 min-w-0 flex-1">
+                    <span className="truncate flex-1">
+                      {m.contractLabel || <span className="text-yellow-500">не найден</span>}
+                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">{m.files.length} файл(ов)</span>
+                  </div>
                 </div>
               ))}
             </div>

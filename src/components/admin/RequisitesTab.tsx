@@ -114,11 +114,11 @@ const RequisitesTab = () => {
         const Icon = s.icon;
         return (
           <Card key={s.id}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Icon className="w-5 h-5" />{s.title}</CardTitle>
-              <CardDescription>{s.desc}</CardDescription>
+            <CardHeader className="px-3 sm:px-6 py-4 sm:py-6">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-2xl"><Icon className="w-5 h-5" />{s.title}</CardTitle>
+              <CardDescription className="text-xs sm:text-sm">{s.desc}</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 px-3 sm:px-6">
               {FIELDS.filter(f => f.section === s.id).map(f => (
                 <div key={f.key} className="space-y-1">
                   <Label htmlFor={f.key}>{f.label}</Label>

@@ -168,7 +168,7 @@ function TaskCard({
           statusStrip
         )}
       >
-        <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-0 group-hover:opacity-60 transition-opacity shrink-0">
+        <span {...attributes} {...listeners} className="mt-1 cursor-grab opacity-60 sm:opacity-0 sm:group-hover:opacity-60 transition-opacity shrink-0">
           <GripVertical className="h-4 w-4" />
         </span>
         <PopoverTrigger asChild>
@@ -204,7 +204,7 @@ function TaskCard({
         </PopoverTrigger>
         <button
           onClick={() => onDelete(task.id)}
-          className="opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 text-destructive"
+          className="opacity-60 sm:opacity-0 sm:group-hover:opacity-60 hover:!opacity-100 transition-opacity shrink-0 text-destructive"
         >
           <Trash2 className="h-4 w-4" />
         </button>

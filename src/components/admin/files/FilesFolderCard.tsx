@@ -65,14 +65,14 @@ const FilesFolderCard = ({ contract: c, files, isOpen, isDragTarget, loadingFile
           ) : (
             <div className="space-y-1">
               {files.map((f) => (
-                <div key={f.id} className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-muted/50 group">
+                 <div key={f.id} className="flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-muted/50 group">
                   <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-sm truncate flex-1">{f.file_name}</span>
-                  <span className="text-xs text-muted-foreground">{formatSize(f.file_size)}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => onDownload(f)}>
+                  <span className="text-xs text-muted-foreground hidden sm:inline">{formatSize(f.file_size)}</span>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => onDownload(f)}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive" onClick={() => onDelete(f)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-destructive hover:text-destructive" onClick={() => onDelete(f)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
