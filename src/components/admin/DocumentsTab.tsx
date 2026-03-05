@@ -24,9 +24,10 @@ import {
   generateActHtml,
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
+import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
 
 type DocType = "contract" | "invoice" | "act";
-type ContractSubType = "site" | "frdo" | "other";
+type ContractSubType = "site" | "frdo" | "nmo" | "other";
 
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
@@ -37,6 +38,7 @@ const DOC_LABELS: Record<DocType, string> = {
 const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   site: "Сайт",
   frdo: "ФРДО",
+  nmo: "НМО",
   other: "Прочее",
 };
 
