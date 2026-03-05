@@ -1215,7 +1215,17 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
     toast.success("Документ удалён");
   };
 
-  if (isLoading) return null;
+  if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  if (historyError) {
+    return (
+      <Card>
+        <CardContent className="text-center py-6 space-y-2">
+          <p className="text-sm text-destructive">Ошибка загрузки истории: {historyError.message}</p>
+          <button onClick={() => queryClient.invalidateQueries({ queryKey: ["generated-documents"] })} className="text-sm text-primary underline">Повторить</button>
+        </CardContent>
+      </Card>
+    );
+  }
   if (docs.length === 0) return null;
 
   return (
