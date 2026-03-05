@@ -571,20 +571,21 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       const timeout = setTimeout(() => reject(new Error('Iframe load timeout')), 10000);
       iframe.onload = () => { clearTimeout(timeout); resolve(); };
     });
-    await new Promise(r => setTimeout(r, 500));
+    await new Promise(r => setTimeout(r, 200));
     
     const body = iframe.contentDocument!.body;
     iframe.style.height = body.scrollHeight + 'px';
     
     const canvas = await Promise.race([
       html2canvas(body, {
-        scale: 1.5,
+        scale: 1.2,
         useCORS: true,
         width: 794,
         height: body.scrollHeight,
         windowWidth: 794,
         windowHeight: body.scrollHeight,
         logging: false,
+        imageTimeout: 5000,
       }),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('html2canvas timeout')), 15000)),
     ]);
