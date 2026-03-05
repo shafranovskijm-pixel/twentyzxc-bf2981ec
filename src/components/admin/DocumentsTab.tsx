@@ -349,7 +349,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     let html = "";
     switch (docType) {
       case "contract":
-        html = contractSubType === "frdo" ? generateFrdoContractHtml(docData) : generateContractHtml(docData);
+        if (contractSubType === "frdo") {
+          html = generateFrdoContractHtml(docData);
+        } else if (contractSubType === "nmo") {
+          html = generateNmoContractHtml(docData);
+        } else {
+          html = generateContractHtml(docData);
+        }
         break;
       case "invoice": html = generateInvoiceHtml(docData); break;
       case "act": html = generateActHtml(docData); break;
