@@ -106,7 +106,7 @@ serve(async (req) => {
     // Support multiple recipients (comma or semicolon separated)
     const recipients = to.split(/[,;]\s*/).map((e: string) => e.trim()).filter(Boolean);
     for (const rcpt of recipients) {
-      resp = await cmd(conn, `RCPT TO:<${rcpt}>`);
+      resp = await cmd(conn, `RCPT TO:<${extractEmail(rcpt)}>`);
       if (!resp.startsWith("250")) throw new Error(`RCPT TO failed for ${rcpt}: ${resp}`);
     }
 
@@ -129,7 +129,7 @@ serve(async (req) => {
       
       message = [
         `From: ${encodedFrom}`,
-        `To: <${to}>`,
+        `To: ${recipients.map(r => `<${extractEmail(r)}>`).join(', ')}`,
         `Subject: ${encodedSubject}`,
         `Date: ${new Date().toUTCString()}`,
         `MIME-Version: 1.0`,
@@ -155,7 +155,7 @@ serve(async (req) => {
       
       message = [
         `From: ${encodedFrom}`,
-        `To: <${to}>`,
+        `To: ${recipients.map(r => `<${extractEmail(r)}>`).join(', ')}`,
         `Subject: ${encodedSubject}`,
         `Date: ${new Date().toUTCString()}`,
         `MIME-Version: 1.0`,
