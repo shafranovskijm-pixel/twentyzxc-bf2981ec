@@ -93,7 +93,8 @@ const FilesTab = () => {
         });
         if (dbErr) toast.error(`Ошибка сохранения ${file.name}`);
       }
-      queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-files", contractId] });
+      queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
       toast.success("Файлы загружены");
     } catch {
       toast.error("Ошибка загрузки");
@@ -105,7 +106,8 @@ const FilesTab = () => {
     await supabase.storage.from("contracts").remove([f.file_path]);
     const { error } = await supabase.from("contract_files").delete().eq("id", f.id);
     if (error) { toast.error("Ошибка удаления"); return; }
-    queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+    queryClient.invalidateQueries({ queryKey: ["contract-files", f.contract_id] });
+    queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
     toast.success("Файл удалён");
   };
 
