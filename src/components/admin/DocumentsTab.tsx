@@ -51,6 +51,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
   const [previewTab, setPreviewTab] = useState<string>("contract");
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("24@24zxc.ru");
   const [emailSending, setEmailSending] = useState(false);
   const [emailProgress, setEmailProgress] = useState({ step: '', percent: 0 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -699,9 +700,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         </div>
       `;
 
+      const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
       const { data, error } = await supabase.functions.invoke('send-document-email', {
         body: {
-          to: emailTo.trim(),
+          to: recipients.join(','),
           subject: docLabel,
           html: emailHtml,
         },
@@ -1138,6 +1140,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
                 value={emailTo}
                 onChange={e => setEmailTo(e.target.value)}
                 placeholder="client@example.com"
+                onKeyDown={e => { if (e.key === 'Enter') sendDocumentEmail(); }}
+                disabled={emailSending}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Копия</Label>
+              <Input
+                type="email"
+                value={emailCc}
+                onChange={e => setEmailCc(e.target.value)}
+                placeholder="copy@example.com"
                 onKeyDown={e => { if (e.key === 'Enter') sendDocumentEmail(); }}
                 disabled={emailSending}
               />
