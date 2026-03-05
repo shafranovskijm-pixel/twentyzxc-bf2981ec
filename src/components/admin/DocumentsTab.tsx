@@ -1183,17 +1183,25 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
 
 const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
   const queryClient = useQueryClient();
-  const { data: docs = [], isLoading } = useQuery({
+  const { data: docs = [], isLoading, error: historyError } = useQuery({
     queryKey: ["generated-documents"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log("[DocumentHistory] Loading documents...");
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Query timeout after 10s")), 10000)
+      );
+      const queryPromise = supabase
         .from("generated_documents" as any)
         .select("*")
         .order("created_at", { ascending: false })
         .limit(50);
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      console.log("[DocumentHistory] Result:", { count: data?.length, error });
       if (error) throw error;
       return data as any[];
     },
+    retry: 1,
+    staleTime: 2 * 60 * 1000,
   });
 
   const viewDoc = (html: string) => {
@@ -1207,7 +1215,17 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
     toast.success("Документ удалён");
   };
 
-  if (isLoading) return null;
+  if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  if (historyError) {
+    return (
+      <Card>
+        <CardContent className="text-center py-6 space-y-2">
+          <p className="text-sm text-destructive">Ошибка загрузки истории: {historyError.message}</p>
+          <button onClick={() => queryClient.invalidateQueries({ queryKey: ["generated-documents"] })} className="text-sm text-primary underline">Повторить</button>
+        </CardContent>
+      </Card>
+    );
+  }
   if (docs.length === 0) return null;
 
   return (

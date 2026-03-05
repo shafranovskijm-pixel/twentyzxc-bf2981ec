@@ -51,18 +51,25 @@ const ContractsTab = () => {
   const [inn, setInn] = useState("");
   const [innLoading, setInnLoading] = useState(false);
 
-  const { data: contracts = [], isLoading } = useQuery({
+  const { data: contracts = [], isLoading, error: contractsError } = useQuery({
     queryKey: ["admin-contracts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log("[ContractsTab] Starting contracts query...");
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error("Query timeout after 10s")), 10000)
+      );
+      const queryPromise = supabase
         .from("contracts")
         .select("*")
         .order("updated_at", { ascending: false });
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      console.log("[ContractsTab] Query result:", { count: data?.length, error });
       if (error) throw error;
       return data as Contract[];
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
+    retry: 1,
   });
 
   const getNextContractNumber = () => {
@@ -282,6 +289,15 @@ const ContractsTab = () => {
     if (!paidUntil) return false;
     return new Date(paidUntil) < new Date();
   };
+
+  if (contractsError) {
+    return (
+      <div className="text-center py-8 space-y-2">
+        <p className="text-sm text-destructive">Ошибка загрузки: {contractsError.message}</p>
+        <button onClick={() => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] })} className="text-sm text-primary underline">Повторить</button>
+      </div>
+    );
+  }
 
   const renderTable = (items: Contract[], isArchive: boolean) => (
     <Card>
