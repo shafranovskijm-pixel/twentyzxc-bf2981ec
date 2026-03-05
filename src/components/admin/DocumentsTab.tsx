@@ -400,7 +400,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       return;
     }
 
-    // Save to DB
+    // Show preview immediately
+    setPreviewHtml(html);
+
+    // Save to DB in background
     let targetContractId = linkedContractId || null;
     try {
       const filteredServices = services.filter(s => s.name.trim());
@@ -479,8 +482,6 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       console.error("Document save exception:", err);
       toast.error("Не удалось сохранить документ");
     }
-
-    setPreviewHtml(html);
   };
 
   const generatePdfBase64 = async (htmlContent: string): Promise<string> => {
