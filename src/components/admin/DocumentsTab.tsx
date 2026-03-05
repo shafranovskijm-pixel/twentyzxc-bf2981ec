@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,6 +47,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewInvoiceHtml, setPreviewInvoiceHtml] = useState<string | null>(null);
+  const [previewTab, setPreviewTab] = useState<string>("contract");
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailSending, setEmailSending] = useState(false);
@@ -400,13 +403,30 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       return;
     }
 
-    // Show preview immediately
+    // Generate invoice HTML upfront if contract type
+    let invoiceHtml: string | null = null;
+    if (docType === "contract") {
+      try {
+        const invoiceDocData = { ...docData, type: "invoice" as const };
+        invoiceHtml = generateInvoiceHtml(invoiceDocData);
+        console.log("[DOC] Invoice HTML generated alongside contract");
+      } catch (invoiceErr) {
+        console.error("[DOC] Invoice template error:", invoiceErr);
+      }
+    }
+
+    // Show preview immediately (both tabs)
     setPreviewHtml(html);
+    setPreviewInvoiceHtml(invoiceHtml);
+    setPreviewTab("contract");
 
     // Save to DB in background
     let targetContractId = linkedContractId || null;
     try {
       const filteredServices = services.filter(s => s.name.trim());
+      
+      // Step 1: Save main document
+      console.log("[DOC] Step 1: Saving document to generated_documents...");
       const { error: insertError } = await supabase.from("generated_documents").insert({
         doc_type: docType,
         doc_number: docNumber,
@@ -419,13 +439,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         html_content: html,
       });
       if (insertError) {
-        console.error("Document save error:", insertError);
-        toast.error(`Ошибка сохранения: ${insertError.message}`);
+        console.error("[DOC] Step 1 FAILED:", insertError);
+        toast.error(`Ошибка сохранения документа: ${insertError.message}`);
       } else {
+        console.log("[DOC] Step 1 OK");
         queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
 
-        // Auto-create contract in contracts table when generating a contract document
+        // Step 2: Auto-create contract record
         if (docType === "contract" && !linkedContractId) {
+          console.log("[DOC] Step 2: Auto-creating contract...");
           const year = new Date(docDate).getFullYear();
           const contractNumber = `${docNumber}-${year}`;
           const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
@@ -437,19 +459,20 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             payment_status: "не оплачено",
           }).select("id").single();
           if (contractError) {
-            console.error("Contract auto-create error:", contractError);
-            toast.error(`Документ сохранён, но договор не создан: ${contractError.message}`);
+            console.error("[DOC] Step 2 FAILED:", contractError);
+            toast.error(`Договор не создан в CRM: ${contractError.message}`);
           } else {
+            console.log("[DOC] Step 2 OK, contract id:", newContract.id);
             targetContractId = newContract.id;
             queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
             queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
           }
         }
 
-        // Auto-save PDF(s) to Files tab
+        // Step 3: Save PDFs to storage
         if (targetContractId) {
           try {
-            // 1. Save contract PDF
+            console.log("[DOC] Step 3: Generating contract PDF...");
             const pdfBase64 = await generatePdfBase64(html);
             const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
             const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -457,22 +480,23 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             const storagePath = `${targetContractId}/${Date.now()}-${pdfFileName}`;
 
             const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, pdfBlob);
-            if (!uploadErr) {
+            if (uploadErr) {
+              console.error("[DOC] Step 3 upload FAILED:", uploadErr);
+              toast.error(`PDF не загружен: ${uploadErr.message}`);
+            } else {
+              console.log("[DOC] Step 3 upload OK");
               await supabase.from("contract_files").insert({
                 contract_id: targetContractId,
                 file_name: pdfFileName,
                 file_path: storagePath,
                 file_size: pdfBlob.size,
               });
-            } else {
-              console.error("PDF upload error:", uploadErr);
             }
 
-            // 2. If contract — also generate and save invoice PDF
-            if (docType === "contract") {
+            // Step 4: Save invoice PDF if contract
+            if (docType === "contract" && invoiceHtml) {
               try {
-                const invoiceDocData = { ...docData, type: "invoice" as const };
-                const invoiceHtml = generateInvoiceHtml(invoiceDocData);
+                console.log("[DOC] Step 4: Generating invoice PDF...");
                 const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
                 const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
                 const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
@@ -480,18 +504,20 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
                 const invoiceStoragePath = `${targetContractId}/${Date.now()}-${invoiceFileName}`;
 
                 const { error: invoiceUploadErr } = await supabase.storage.from("contracts").upload(invoiceStoragePath, invoicePdfBlob);
-                if (!invoiceUploadErr) {
+                if (invoiceUploadErr) {
+                  console.error("[DOC] Step 4 upload FAILED:", invoiceUploadErr);
+                } else {
+                  console.log("[DOC] Step 4 upload OK");
                   await supabase.from("contract_files").insert({
                     contract_id: targetContractId,
                     file_name: invoiceFileName,
                     file_path: invoiceStoragePath,
                     file_size: invoicePdfBlob.size,
                   });
-                } else {
-                  console.error("Invoice PDF upload error:", invoiceUploadErr);
                 }
 
-                // Also save invoice to generated_documents
+                // Save invoice to generated_documents
+                console.log("[DOC] Step 4b: Saving invoice to generated_documents...");
                 await supabase.from("generated_documents").insert({
                   doc_type: "invoice",
                   doc_number: docNumber,
@@ -500,11 +526,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
                   client_inn: clientInn || null,
                   contract_id: targetContractId,
                   total_amount: total,
-                  services: JSON.stringify(services.filter(s => s.name.trim())),
+                  services: JSON.stringify(filteredServices),
                   html_content: invoiceHtml,
                 });
               } catch (invoiceErr) {
-                console.error("Invoice auto-generate error:", invoiceErr);
+                console.error("[DOC] Step 4 error:", invoiceErr);
+                toast.error("Счёт-PDF не удалось сохранить");
               }
             }
 
@@ -512,17 +539,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
             queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
             queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
-            toast.success("Документы сохранены и добавлены в папку файлов");
+            toast.success("Документы сохранены и добавлены в файлы");
           } catch (pdfErr) {
-            console.error("PDF auto-save error:", pdfErr);
-            toast.success("Документ сохранён (файлы не загружены в папку)");
+            console.error("[DOC] PDF generation error:", pdfErr);
+            toast.error("Документ сохранён, но PDF не удалось создать");
           }
         } else {
           toast.success("Документ сохранён");
         }
       }
     } catch (err) {
-      console.error("Document save exception:", err);
+      console.error("[DOC] Save exception:", err);
       toast.error("Не удалось сохранить документ");
     }
   };
@@ -940,11 +967,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      {/* History */}
-      <DocumentHistory onView={setPreviewHtml} />
+      <DocumentHistory onView={(html) => { setPreviewHtml(html); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
 
       {/* Document Preview Modal */}
-      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
         <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
           <DialogHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b shrink-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -1060,14 +1086,39 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
               </div>
             </div>
           </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            {previewHtml && (
-              <iframe
-                ref={iframeRef}
-                srcDoc={previewHtml}
-                className="w-full h-full border-0 bg-white"
-                title="Предпросмотр документа"
-              />
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {previewInvoiceHtml ? (
+              <Tabs value={previewTab} onValueChange={setPreviewTab} className="flex flex-col flex-1 overflow-hidden">
+                <TabsList className="mx-3 sm:mx-6 mt-2 shrink-0 w-fit">
+                  <TabsTrigger value="contract">Договор</TabsTrigger>
+                  <TabsTrigger value="invoice">Счёт</TabsTrigger>
+                </TabsList>
+                <TabsContent value="contract" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                  <iframe
+                    ref={previewTab === "contract" ? iframeRef : undefined}
+                    srcDoc={previewHtml || ""}
+                    className="w-full h-full border-0 bg-white"
+                    title="Договор"
+                  />
+                </TabsContent>
+                <TabsContent value="invoice" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                  <iframe
+                    ref={previewTab === "invoice" ? iframeRef : undefined}
+                    srcDoc={previewInvoiceHtml}
+                    className="w-full h-full border-0 bg-white"
+                    title="Счёт"
+                  />
+                </TabsContent>
+              </Tabs>
+            ) : (
+              previewHtml && (
+                <iframe
+                  ref={iframeRef}
+                  srcDoc={previewHtml}
+                  className="w-full h-full border-0 bg-white"
+                  title="Предпросмотр документа"
+                />
+              )
             )}
           </div>
         </DialogContent>
