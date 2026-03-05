@@ -103,8 +103,12 @@ serve(async (req) => {
     resp = await cmd(conn, `MAIL FROM:<${fromEmail}>`);
     if (!resp.startsWith("250")) throw new Error(`MAIL FROM failed: ${resp}`);
 
-    resp = await cmd(conn, `RCPT TO:<${to}>`);
-    if (!resp.startsWith("250")) throw new Error(`RCPT TO failed: ${resp}`);
+    // Support multiple recipients (comma or semicolon separated)
+    const recipients = to.split(/[,;]\s*/).map((e: string) => e.trim()).filter(Boolean);
+    for (const rcpt of recipients) {
+      resp = await cmd(conn, `RCPT TO:<${rcpt}>`);
+      if (!resp.startsWith("250")) throw new Error(`RCPT TO failed for ${rcpt}: ${resp}`);
+    }
 
     resp = await cmd(conn, "DATA");
     if (!resp.startsWith("354")) throw new Error(`DATA failed: ${resp}`);
