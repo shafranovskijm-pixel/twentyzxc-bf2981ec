@@ -674,6 +674,41 @@ export type Database = {
           },
         ]
       }
+      scheduled_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          send_at: string
+          status: string
+          task_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          send_at: string
+          status?: string
+          task_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          send_at?: string
+          status?: string
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_reminders_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           key: string
