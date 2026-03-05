@@ -1,18 +1,32 @@
 
 
-## Problem
+# Исправление авторизации для отзывов (403 Forbidden)
 
-The "Сформировать Договор" button is called (console logs confirm it), HTML is generated successfully, but **nothing visible happens**. No preview dialog, no toast, no error.
+## Проблема
 
-**Root cause**: `setPreviewHtml(html)` on line 483 is placed AFTER the entire database save block (lines 403-481). The `await supabase.from("generated_documents").insert(...)` call is hanging indefinitely — likely due to an RLS policy blocking the insert or an authentication issue. Since the promise never resolves or rejects, execution never reaches `setPreviewHtml(html)`, so the preview dialog never opens.
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-## Fix
+## Решение
 
-1. **Move `setPreviewHtml(html)` immediately after HTML generation** (after line 401, before the DB save block) so the preview dialog opens instantly regardless of DB save outcome.
+### 1. Включить Google OAuth через настройки аутентификации
 
-2. **Add a `console.log` before and after the DB insert** to confirm the hanging theory and help debug future issues.
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-3. **Add a timeout or `.catch()` safeguard** on the DB insert so it doesn't silently hang forever — if it fails, the user still sees a toast message.
+### 2. Добавить redirect URL в список разрешённых
 
-The key change is a single line move: `setPreviewHtml(html)` from line 483 to right after the template generation try/catch (after line 401). The DB save then runs in the background without blocking the preview.
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
