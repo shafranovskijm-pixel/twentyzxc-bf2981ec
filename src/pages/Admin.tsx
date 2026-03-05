@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { AdminLoginDialog } from "@/components/portfolio/AdminLoginDialog";
@@ -218,6 +219,14 @@ const Admin = () => {
               <NotificationsPanel onNavigate={setActiveSection} />
             </header>
             <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-16">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeSection}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
               {activeSection === "dashboard" && <DashboardTab onNavigate={setActiveSection} />}
               {activeSection === "seo" && (
                 <div className="space-y-6">
@@ -342,6 +351,8 @@ const Admin = () => {
               }} />}
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
+                </motion.div>
+              </AnimatePresence>
             </main>
           </div>
         </div>
