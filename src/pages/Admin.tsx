@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Helmet } from "react-helmet-async";
+import { AnimatePresence, motion } from "framer-motion";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { AdminLoginDialog } from "@/components/portfolio/AdminLoginDialog";
