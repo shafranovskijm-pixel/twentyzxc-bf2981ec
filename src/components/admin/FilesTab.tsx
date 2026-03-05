@@ -36,6 +36,7 @@ const FilesTab = () => {
       const { data, error } = await supabase
         .from("contracts")
         .select("id, client_name, contract_number")
+        .eq("is_archived", false)
         .order("contract_number", { ascending: false });
       if (error) {
         console.error("Files contracts query error:", error);
