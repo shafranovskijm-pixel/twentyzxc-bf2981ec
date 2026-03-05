@@ -51,7 +51,7 @@ const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, 
               {c.contract_number && <span className="text-muted-foreground font-normal ml-2">№{c.contract_number}</span>}
             </CardTitle>
           </div>
-          <span className="text-xs text-muted-foreground">{files.length} файл(ов)</span>
+          <span className="text-xs text-muted-foreground">{fileCount ?? files.length} файл(ов)</span>
         </div>
       </CardHeader>
 
