@@ -1,32 +1,20 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Plan: Add "История" (History) Tab to Admin Sidebar
 
-## Проблема
+Currently, document history is embedded at the bottom of the "Документы" tab. The user wants it as a separate sidebar tab.
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+### Changes
 
-## Решение
+**1. `src/components/admin/AdminSidebar.tsx`**
+- Add `{ id: "history", label: "История", icon: "History" }` to `defaultMenuItems`
+- Import `History` from lucide-react and add to `iconMap`
 
-### 1. Включить Google OAuth через настройки аутентификации
+**2. `src/pages/Admin.tsx`**
+- Add a case for `"history"` section that renders the `DocumentHistory` component (extracted or imported)
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
-
-### 2. Добавить redirect URL в список разрешённых
-
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
-
-### 3. Обновить GoogleAuthButton (если потребуется)
-
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+**3. `src/components/admin/DocumentsTab.tsx`**
+- Extract `DocumentHistory` into its own file `src/components/admin/HistoryTab.tsx` so it can be rendered independently as a full tab
+- Remove the inline `<DocumentHistory>` from the bottom of DocumentsTab
+- The new HistoryTab will include the download and view functionality, plus the preview modal for viewing documents
 
