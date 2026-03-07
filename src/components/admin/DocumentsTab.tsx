@@ -645,6 +645,80 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     return pdfOutput.split(',')[1];
   };
 
+  const downloadPdfFromHtml = async (htmlContent: string, filename: string) => {
+    try {
+      toast.info("Генерация PDF...");
+      const base64 = await generatePdfBase64(htmlContent);
+      const byteChars = atob(base64);
+      const byteArray = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF скачан");
+    } catch (e) {
+      console.error('PDF download error:', e);
+      toast.error("Не удалось сгенерировать PDF");
+    }
+  };
+
+  const downloadSampleDocument = async (type: DocType) => {
+    const company: CompanyRequisites = {
+      company_name: settings.company_name || "ООО «Ваша компания»",
+      company_short_name: settings.company_short_name || "ООО «Ваша компания»",
+      company_inn: settings.company_inn || "0000000000",
+      company_kpp: settings.company_kpp || "000000000",
+      company_ogrn: settings.company_ogrn || "0000000000000",
+      company_legal_address: settings.company_legal_address || "г. Москва",
+      company_actual_address: settings.company_actual_address || "г. Москва",
+      company_bank_account: settings.company_bank_account || "40702810000000000000",
+      company_bank_bik: settings.company_bank_bik || "044525000",
+      company_bank_corr: settings.company_bank_corr || "30101810000000000000",
+      company_bank_name: settings.company_bank_name || "Банк",
+      company_director_name: settings.company_director_name || "Иванов И.И.",
+      company_director_post: settings.company_director_post || "Директор",
+      company_phone: settings.company_phone || "",
+      company_email: settings.company_email || "",
+    };
+    const client: ClientRequisites = {
+      name: "ООО «Образец»",
+      inn: "1234567890",
+      kpp: "123456789",
+      ogrn: "1234567890123",
+      address: "г. Москва, ул. Примерная, д. 1",
+      director_name: "Петров Пётр Петрович",
+      director_post: "Директор",
+    };
+    const sampleServices: ServiceItem[] = [
+      { name: "Пример услуги", qty: 1, price: 10000 },
+    ];
+    const docData: DocumentData = {
+      type,
+      number: "000",
+      date: formatDate(new Date().toISOString().slice(0, 10)),
+      company,
+      client,
+      services: sampleServices,
+      subject: "Пример предмета договора",
+      deadline: "30 рабочих дней",
+      paymentTerms: "100% предоплата",
+      contractNumber: "000",
+      contractDate: formatDate(new Date().toISOString().slice(0, 10)),
+    };
+    let html = "";
+    switch (type) {
+      case "contract": html = generateContractHtml(docData); break;
+      case "invoice": html = generateInvoiceHtml(docData); break;
+      case "act": html = generateActHtml(docData); break;
+    }
+    html = embedDocImages(html);
+    await downloadPdfFromHtml(html, `Образец_${DOC_LABELS[type]}.pdf`);
+  };
+
   const sendDocumentEmail = async () => {
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
@@ -757,6 +831,26 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
 
   return (
     <div className="space-y-6">
+      {/* Sample download buttons */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Download className="w-5 h-5" />Скачать образец</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("contract")}>
+              <FileText className="w-4 h-4 mr-1" />Образец договора
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("invoice")}>
+              <FileText className="w-4 h-4 mr-1" />Образец счёта
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("act")}>
+              <FileText className="w-4 h-4 mr-1" />Образец акта
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Document type & number */}
       <Card>
         <CardHeader>
@@ -986,7 +1080,14 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      <DocumentHistory onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
+      <DocumentHistory
+        onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }}
+        onDownload={(html, doc) => {
+          const typeLabel = DOC_TYPE_LABELS[doc.doc_type]?.label || doc.doc_type;
+          const filename = `${typeLabel}_${doc.doc_number}_${doc.doc_date}.pdf`;
+          downloadPdfFromHtml(embedDocImages(html), filename);
+        }}
+      />
 
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
@@ -1023,80 +1124,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
                   variant="outline"
                   size="sm"
                   disabled={emailSending}
-                  onClick={async () => {
+                  onClick={() => {
                     if (!previewHtml) return;
-                    const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-                    try {
-                      toast.info("Генерация PDF...");
-                      const html2canvas = (await import('html2canvas')).default;
-                      const { jsPDF } = await import('jspdf');
-
-                      const iframe = document.createElement('iframe');
-                      iframe.style.position = 'absolute';
-                      iframe.style.left = '-9999px';
-                      iframe.style.width = '794px';
-                      iframe.style.border = 'none';
-                      document.body.appendChild(iframe);
-
-                      iframe.srcdoc = previewHtml;
-                      await new Promise<void>((resolve, reject) => {
-                        const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
-                        iframe.onload = () => { clearTimeout(timeout); resolve(); };
-                      });
-                      await new Promise(r => setTimeout(r, 500));
-
-                      const body = iframe.contentDocument!.body;
-                      iframe.style.height = body.scrollHeight + 'px';
-
-                      const canvas = await Promise.race([
-                        html2canvas(body, {
-                          scale: 2, useCORS: true, width: 794,
-                          height: body.scrollHeight, windowWidth: 794,
-                          windowHeight: body.scrollHeight, logging: false,
-                        }),
-                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000)),
-                      ]);
-                      document.body.removeChild(iframe);
-
-                      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                      const pdf = new jsPDF('p', 'mm', 'a4');
-                      const pdfWidth = pdf.internal.pageSize.getWidth();
-                      const pdfHeight = pdf.internal.pageSize.getHeight();
-                      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                      const margin = 10;
-                      const usableHeight = pdfHeight - margin * 2;
-                      let heightLeft = imgHeight;
-                      let srcY = 0;
-                      let page = 0;
-
-                      while (heightLeft > 0) {
-                        if (page > 0) pdf.addPage();
-                        const sliceHeight = Math.min(usableHeight, heightLeft);
-                        const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
-                        
-                        const sliceCanvas = document.createElement('canvas');
-                        sliceCanvas.width = canvas.width;
-                        sliceCanvas.height = sliceCanvasHeight;
-                        const ctx = sliceCanvas.getContext('2d')!;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-                        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
-                        
-                        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
-                        pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
-                        
-                        srcY += sliceCanvasHeight;
-                        heightLeft -= sliceHeight;
-                        page++;
-                      }
-
-                      pdf.save(fileName);
-                      toast.success("PDF скачан");
-                    } catch (e) {
-                      console.error('PDF download error:', e);
-                      toast.error("Не удалось сгенерировать PDF");
-                    }
+                    const currentHtml = previewTab === "invoice" && previewInvoiceHtml ? previewInvoiceHtml : previewHtml;
+                    const label = previewTab === "invoice" ? "Счёт" : DOC_LABELS[docType];
+                    const fileName = `${label}_${docNumber}_${docDate}.pdf`;
+                    downloadPdfFromHtml(currentHtml, fileName);
                   }}
                 >
                   <Download className="w-4 h-4 sm:mr-2" />
@@ -1198,7 +1231,7 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 };
 
-const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
+const DocumentHistory = ({ onView, onDownload }: { onView: (html: string) => void; onDownload: (html: string, doc: any) => void }) => {
   const queryClient = useQueryClient();
   const { data: docs = [], isLoading, error: historyError } = useQuery({
     queryKey: ["generated-documents"],
@@ -1264,6 +1297,7 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => viewDoc(doc.html_content)}><Eye className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onDownload(doc.html_content, doc)} title="Скачать PDF"><Download className="w-3.5 h-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteDoc(doc.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                 </div>
@@ -1286,7 +1320,7 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
                 <TableHead>Дата</TableHead>
                 <TableHead>Клиент</TableHead>
                 <TableHead>Сумма</TableHead>
-                <TableHead className="w-24"></TableHead>
+                <TableHead className="w-32"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -1305,6 +1339,9 @@ const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => viewDoc(doc.html_content)} title="Открыть">
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => onDownload(doc.html_content, doc)} title="Скачать PDF">
+                          <Download className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteDoc(doc.id)} className="text-destructive hover:text-destructive" title="Удалить">
                           <Trash2 className="w-4 h-4" />
