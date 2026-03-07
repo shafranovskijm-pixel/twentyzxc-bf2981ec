@@ -831,6 +831,26 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
 
   return (
     <div className="space-y-6">
+      {/* Sample download buttons */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Download className="w-5 h-5" />Скачать образец</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("contract")}>
+              <FileText className="w-4 h-4 mr-1" />Образец договора
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("invoice")}>
+              <FileText className="w-4 h-4 mr-1" />Образец счёта
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("act")}>
+              <FileText className="w-4 h-4 mr-1" />Образец акта
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Document type & number */}
       <Card>
         <CardHeader>
@@ -1097,80 +1117,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
                   variant="outline"
                   size="sm"
                   disabled={emailSending}
-                  onClick={async () => {
+                  onClick={() => {
                     if (!previewHtml) return;
-                    const fileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-                    try {
-                      toast.info("Генерация PDF...");
-                      const html2canvas = (await import('html2canvas')).default;
-                      const { jsPDF } = await import('jspdf');
-
-                      const iframe = document.createElement('iframe');
-                      iframe.style.position = 'absolute';
-                      iframe.style.left = '-9999px';
-                      iframe.style.width = '794px';
-                      iframe.style.border = 'none';
-                      document.body.appendChild(iframe);
-
-                      iframe.srcdoc = previewHtml;
-                      await new Promise<void>((resolve, reject) => {
-                        const timeout = setTimeout(() => reject(new Error('Timeout')), 10000);
-                        iframe.onload = () => { clearTimeout(timeout); resolve(); };
-                      });
-                      await new Promise(r => setTimeout(r, 500));
-
-                      const body = iframe.contentDocument!.body;
-                      iframe.style.height = body.scrollHeight + 'px';
-
-                      const canvas = await Promise.race([
-                        html2canvas(body, {
-                          scale: 2, useCORS: true, width: 794,
-                          height: body.scrollHeight, windowWidth: 794,
-                          windowHeight: body.scrollHeight, logging: false,
-                        }),
-                        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000)),
-                      ]);
-                      document.body.removeChild(iframe);
-
-                      const imgData = canvas.toDataURL('image/jpeg', 0.85);
-                      const pdf = new jsPDF('p', 'mm', 'a4');
-                      const pdfWidth = pdf.internal.pageSize.getWidth();
-                      const pdfHeight = pdf.internal.pageSize.getHeight();
-                      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-                      const margin = 10;
-                      const usableHeight = pdfHeight - margin * 2;
-                      let heightLeft = imgHeight;
-                      let srcY = 0;
-                      let page = 0;
-
-                      while (heightLeft > 0) {
-                        if (page > 0) pdf.addPage();
-                        const sliceHeight = Math.min(usableHeight, heightLeft);
-                        const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
-                        
-                        const sliceCanvas = document.createElement('canvas');
-                        sliceCanvas.width = canvas.width;
-                        sliceCanvas.height = sliceCanvasHeight;
-                        const ctx = sliceCanvas.getContext('2d')!;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-                        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
-                        
-                        const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.85);
-                        pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
-                        
-                        srcY += sliceCanvasHeight;
-                        heightLeft -= sliceHeight;
-                        page++;
-                      }
-
-                      pdf.save(fileName);
-                      toast.success("PDF скачан");
-                    } catch (e) {
-                      console.error('PDF download error:', e);
-                      toast.error("Не удалось сгенерировать PDF");
-                    }
+                    const currentHtml = previewTab === "invoice" && previewInvoiceHtml ? previewInvoiceHtml : previewHtml;
+                    const label = previewTab === "invoice" ? "Счёт" : DOC_LABELS[docType];
+                    const fileName = `${label}_${docNumber}_${docDate}.pdf`;
+                    downloadPdfFromHtml(currentHtml, fileName);
                   }}
                 >
                   <Download className="w-4 h-4 sm:mr-2" />
