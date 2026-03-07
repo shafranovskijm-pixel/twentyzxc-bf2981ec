@@ -1297,6 +1297,7 @@ const DocumentHistory = ({ onView, onDownload }: { onView: (html: string) => voi
                   </div>
                   <div className="flex gap-1 shrink-0">
                     <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => viewDoc(doc.html_content)}><Eye className="w-3.5 h-3.5" /></Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onDownload(doc.html_content, doc)} title="Скачать PDF"><Download className="w-3.5 h-3.5" /></Button>
                     <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteDoc(doc.id)}><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                 </div>
@@ -1338,6 +1339,9 @@ const DocumentHistory = ({ onView, onDownload }: { onView: (html: string) => voi
                       <div className="flex gap-1">
                         <Button variant="ghost" size="icon" onClick={() => viewDoc(doc.html_content)} title="Открыть">
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => onDownload(doc.html_content, doc)} title="Скачать PDF">
+                          <Download className="w-4 h-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => deleteDoc(doc.id)} className="text-destructive hover:text-destructive" title="Удалить">
                           <Trash2 className="w-4 h-4" />
