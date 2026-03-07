@@ -1,4 +1,6 @@
-// Pre-load signature and stamp as base64 data URIs for embedding in documents
+// Pre-load signature and stamp from Cloud storage as base64 data URIs
+const STORAGE_BASE = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/document-assets`;
+
 let signatureDataUri: string | null = null;
 let stampDataUri: string | null = null;
 
@@ -15,14 +17,14 @@ async function toDataUri(url: string): Promise<string> {
 
 export async function getSignatureDataUri(): Promise<string> {
   if (!signatureDataUri) {
-    signatureDataUri = await toDataUri('/images/signature.png');
+    signatureDataUri = await toDataUri(`${STORAGE_BASE}/signature.png`);
   }
   return signatureDataUri;
 }
 
 export async function getStampDataUri(): Promise<string> {
   if (!stampDataUri) {
-    stampDataUri = await toDataUri('/images/stamp.png');
+    stampDataUri = await toDataUri(`${STORAGE_BASE}/stamp.png`);
   }
   return stampDataUri;
 }
