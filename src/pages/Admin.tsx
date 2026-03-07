@@ -20,6 +20,7 @@ import PlannerTab from "@/components/admin/PlannerTab";
 import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
 import DashboardTab from "@/components/admin/DashboardTab";
+import HistoryTab from "@/components/admin/HistoryTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import FloatingAIChat from "@/components/admin/FloatingAIChat";
 import { toast } from "sonner";
@@ -204,6 +205,7 @@ const Admin = () => {
     planner: "Планер",
     documents: "Конструктор документов",
     requisites: "Реквизиты компании",
+    history: "История документов",
   };
 
   return (
@@ -351,6 +353,7 @@ const Admin = () => {
               }} />}
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
+              {activeSection === "history" && <HistoryTab />}
                 </motion.div>
               </AnimatePresence>
             </main>
