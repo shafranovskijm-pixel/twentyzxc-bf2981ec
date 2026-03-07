@@ -1320,7 +1320,7 @@ const DocumentHistory = ({ onView, onDownload }: { onView: (html: string) => voi
                 <TableHead>Дата</TableHead>
                 <TableHead>Клиент</TableHead>
                 <TableHead>Сумма</TableHead>
-                <TableHead className="w-24"></TableHead>
+                <TableHead className="w-32"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
