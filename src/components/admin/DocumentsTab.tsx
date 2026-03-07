@@ -645,6 +645,80 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     return pdfOutput.split(',')[1];
   };
 
+  const downloadPdfFromHtml = async (htmlContent: string, filename: string) => {
+    try {
+      toast.info("Генерация PDF...");
+      const base64 = await generatePdfBase64(htmlContent);
+      const byteChars = atob(base64);
+      const byteArray = new Uint8Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF скачан");
+    } catch (e) {
+      console.error('PDF download error:', e);
+      toast.error("Не удалось сгенерировать PDF");
+    }
+  };
+
+  const downloadSampleDocument = async (type: DocType) => {
+    const company: CompanyRequisites = {
+      company_name: settings.company_name || "ООО «Ваша компания»",
+      company_short_name: settings.company_short_name || "ООО «Ваша компания»",
+      company_inn: settings.company_inn || "0000000000",
+      company_kpp: settings.company_kpp || "000000000",
+      company_ogrn: settings.company_ogrn || "0000000000000",
+      company_legal_address: settings.company_legal_address || "г. Москва",
+      company_actual_address: settings.company_actual_address || "г. Москва",
+      company_bank_account: settings.company_bank_account || "40702810000000000000",
+      company_bank_bik: settings.company_bank_bik || "044525000",
+      company_bank_corr: settings.company_bank_corr || "30101810000000000000",
+      company_bank_name: settings.company_bank_name || "Банк",
+      company_director_name: settings.company_director_name || "Иванов И.И.",
+      company_director_post: settings.company_director_post || "Директор",
+      company_phone: settings.company_phone || "",
+      company_email: settings.company_email || "",
+    };
+    const client: ClientRequisites = {
+      name: "ООО «Образец»",
+      inn: "1234567890",
+      kpp: "123456789",
+      ogrn: "1234567890123",
+      address: "г. Москва, ул. Примерная, д. 1",
+      director_name: "Петров Пётр Петрович",
+      director_post: "Директор",
+    };
+    const sampleServices: ServiceItem[] = [
+      { name: "Пример услуги", qty: 1, price: 10000 },
+    ];
+    const docData: DocumentData = {
+      type,
+      number: "000",
+      date: formatDate(new Date().toISOString().slice(0, 10)),
+      company,
+      client,
+      services: sampleServices,
+      subject: "Пример предмета договора",
+      deadline: "30 рабочих дней",
+      paymentTerms: "100% предоплата",
+      contractNumber: "000",
+      contractDate: formatDate(new Date().toISOString().slice(0, 10)),
+    };
+    let html = "";
+    switch (type) {
+      case "contract": html = generateContractHtml(docData); break;
+      case "invoice": html = generateInvoiceHtml(docData); break;
+      case "act": html = generateActHtml(docData); break;
+    }
+    html = embedDocImages(html);
+    await downloadPdfFromHtml(html, `Образец_${DOC_LABELS[type]}.pdf`);
+  };
+
   const sendDocumentEmail = async () => {
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
