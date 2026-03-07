@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard } from "lucide-react";
+import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -42,10 +42,11 @@ const defaultMenuItems = [
   { id: "planner", label: "Планер", icon: "CalendarDays" },
   { id: "documents", label: "Документы", icon: "FileOutput" },
   { id: "requisites", label: "Реквизиты", icon: "Building2" },
+  { id: "history", label: "История", icon: "History" },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard,
+  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History,
 };
 
 const STORAGE_KEY = "admin-sidebar-order";
