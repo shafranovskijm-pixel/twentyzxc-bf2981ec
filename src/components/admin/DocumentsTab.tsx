@@ -1080,7 +1080,14 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      <DocumentHistory onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
+      <DocumentHistory
+        onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }}
+        onDownload={(html, doc) => {
+          const typeLabel = DOC_TYPE_LABELS[doc.doc_type]?.label || doc.doc_type;
+          const filename = `${typeLabel}_${doc.doc_number}_${doc.doc_date}.pdf`;
+          downloadPdfFromHtml(embedDocImages(html), filename);
+        }}
+      />
 
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
@@ -1224,7 +1231,7 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 };
 
-const DocumentHistory = ({ onView }: { onView: (html: string) => void }) => {
+const DocumentHistory = ({ onView, onDownload }: { onView: (html: string) => void; onDownload: (html: string, doc: any) => void }) => {
   const queryClient = useQueryClient();
   const { data: docs = [], isLoading, error: historyError } = useQuery({
     queryKey: ["generated-documents"],
