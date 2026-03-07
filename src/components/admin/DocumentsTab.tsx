@@ -433,8 +433,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     }
 
     // Show preview immediately (both tabs)
-    setPreviewHtml(html);
-    setPreviewInvoiceHtml(invoiceHtml);
+    setPreviewHtml(embedDocImages(html));
+    setPreviewInvoiceHtml(embedDocImages(invoiceHtml));
     setPreviewTab("contract");
 
     // Save to DB in background
@@ -986,7 +986,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      <DocumentHistory onView={(html) => { setPreviewHtml(html); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
+      <DocumentHistory onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
 
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
