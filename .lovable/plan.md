@@ -1,32 +1,34 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Plan: Download Sample Templates + Enhanced Document History
 
-## Проблема
+### What we're building
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+1. **"Скачать образец" buttons** — three buttons at the top of the Documents tab to download blank sample PDFs (Договор, Счёт, Акт) with placeholder data so the user can see what each document looks like.
 
-## Решение
+2. **Enhanced Document History section** — the existing `DocumentHistory` component already shows past documents, but it lacks a **Download PDF** button. We'll add a download action to each row so users can download any previously generated document as PDF directly from history.
 
-### 1. Включить Google OAuth через настройки аутентификации
+### Technical Details
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+**File: `src/components/admin/DocumentsTab.tsx`**
 
-### 2. Добавить redirect URL в список разрешённых
+1. **Sample download section** (after the "Тип и номер документа" card, ~line 760):
+   - Add a card with 3 buttons: "Образец договора", "Образец счёта", "Образец акта"
+   - Each button generates HTML from the existing template functions using placeholder/demo data (company requisites from settings, dummy client "ООО «Образец»"), then calls `generatePdfBase64` and triggers a browser download
+   - Reuse existing `generateContractHtml`, `generateInvoiceHtml`, `generateActHtml` functions
 
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+2. **Download button in DocumentHistory** (~lines 1265-1310):
+   - Add a `Download` icon button next to the existing `Eye` and `Trash2` buttons in both mobile and desktop views
+   - On click, takes the `html_content` from the document record, runs it through `generatePdfBase64`, and triggers `pdf.save()`
+   - Extract the existing inline PDF download logic (lines 1026-1099) into a reusable `downloadPdfFromHtml(html, filename)` helper function to avoid code duplication
 
-### 3. Обновить GoogleAuthButton (если потребуется)
+3. **Refactor**: Extract the inline PDF download code from the preview modal into a shared helper function used by both the preview download button, the sample download, and the history download.
 
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+### Changes Summary
 
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+- **`src/components/admin/DocumentsTab.tsx`**:
+  - Add `downloadPdfFromHtml(html: string, filename: string)` helper
+  - Add sample download buttons section before the constructor form
+  - Add Download button to `DocumentHistory` rows (mobile + desktop)
+  - Refactor preview modal's download button to use the shared helper
 
