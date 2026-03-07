@@ -26,6 +26,7 @@ import {
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
+import { preloadDocumentImages } from "@/lib/document-images";
 
 type DocType = "contract" | "invoice" | "act";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
@@ -55,6 +56,21 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
   const [emailSending, setEmailSending] = useState(false);
   const [emailProgress, setEmailProgress] = useState({ step: '', percent: 0 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const docImagesRef = useRef<{ signature: string; stamp: string } | null>(null);
+
+  // Preload signature & stamp as base64 data URIs
+  useEffect(() => {
+    preloadDocumentImages().then(imgs => { docImagesRef.current = imgs; }).catch(console.error);
+  }, []);
+
+  // Replace image URLs with embedded base64 data URIs
+  const embedDocImages = useCallback((html: string): string => {
+    const imgs = docImagesRef.current;
+    if (!imgs) return html;
+    return html
+      .replace(new RegExp(`${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/images/signature\\.png`, 'g'), imgs.signature)
+      .replace(new RegExp(`${window.location.origin.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/images/stamp\\.png`, 'g'), imgs.stamp);
+  }, []);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["doc-clients"],
@@ -417,8 +433,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     }
 
     // Show preview immediately (both tabs)
-    setPreviewHtml(html);
-    setPreviewInvoiceHtml(invoiceHtml);
+    setPreviewHtml(embedDocImages(html));
+    setPreviewInvoiceHtml(embedDocImages(invoiceHtml));
     setPreviewTab("contract");
 
     // Save to DB in background
@@ -970,7 +986,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         Сформировать {DOC_LABELS[docType]}
       </Button>
 
-      <DocumentHistory onView={(html) => { setPreviewHtml(html); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
+      <DocumentHistory onView={(html) => { setPreviewHtml(embedDocImages(html)); setPreviewInvoiceHtml(null); setPreviewTab("contract"); }} />
 
       {/* Document Preview Modal */}
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) { setPreviewHtml(null); setPreviewInvoiceHtml(null); } }}>
