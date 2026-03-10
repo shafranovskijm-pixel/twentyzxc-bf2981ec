@@ -14,17 +14,18 @@ export const useAdminAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
-      const rpcPromise = new Promise<{ data: any; error: any }>((resolve) => {
-        supabase.rpc("has_role", { _user_id: userId, _role: "admin" })
-          .then(res => resolve(res))
-          .catch(() => resolve({ data: false, error: { message: "exception" } }));
-      });
-      const result = await withTimeout(rpcPromise, 5000, { data: false, error: { message: "timeout" } });
-      if (result.error) {
-        console.error("checkAdminRole error:", result.error);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      const { data, error } = await supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      }, { signal: controller.signal } as any);
+      clearTimeout(timer);
+      if (error) {
+        console.error("checkAdminRole error:", error);
         return false;
       }
-      return !!result.data;
+      return !!data;
     } catch (e) {
       console.error("checkAdminRole exception:", e);
       return false;
