@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
       const encoder = new TextEncoder();
       const htmlBytes = encoder.encode(doc.html_content);
-      const storagePath = `${contractId}/${Date.now()}-${fileName}`;
+      const storagePath = `${contractId}/${Date.now()}-${storageFileName}`;
 
       const { error: uploadErr } = await admin.storage
         .from("contracts")
