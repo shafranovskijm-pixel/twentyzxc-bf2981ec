@@ -486,70 +486,48 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
           }
         }
 
-        // Step 3: Save PDFs to storage
+        // Step 3: Save files to storage (HTML first for reliability, then try PDF)
         if (targetContractId) {
-          try {
-            console.log("[DOC] Step 3: Generating contract PDF...");
-            const pdfBase64 = await generatePdfBase64(html);
-            const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-            const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const pdfFileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-            const storagePath = `${targetContractId}/${Date.now()}-${pdfFileName}`;
-
-            const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, pdfBlob);
+          const saveFileToFolder = async (content: Blob, fileName: string, contractId: string) => {
+            const storagePath = `${contractId}/${Date.now()}-${fileName}`;
+            const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, content);
             if (uploadErr) {
-              console.error("[DOC] Step 3 upload FAILED:", uploadErr);
-              toast.error(`PDF не загружен: ${uploadErr.message}`);
-            } else {
-              console.log("[DOC] Step 3 upload OK");
-              await supabase.from("contract_files").insert({
-                contract_id: targetContractId,
-                file_name: pdfFileName,
-                file_path: storagePath,
-                file_size: pdfBlob.size,
-              });
+              console.error(`[DOC] Upload FAILED for ${fileName}:`, uploadErr);
+              return null;
             }
+            await supabase.from("contract_files").insert({
+              contract_id: contractId,
+              file_name: fileName,
+              file_path: storagePath,
+              file_size: content.size,
+            });
+            console.log(`[DOC] Saved ${fileName} to folder`);
+            return storagePath;
+          };
 
-            // Step 4: Save invoice PDF if contract
+          // Save HTML files immediately (reliable)
+          try {
+            const contractHtmlBlob = new Blob([html], { type: 'text/html' });
+            const contractHtmlName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.html`;
+            await saveFileToFolder(contractHtmlBlob, contractHtmlName, targetContractId);
+
             if (docType === "contract" && invoiceHtml) {
-              try {
-                console.log("[DOC] Step 4: Generating invoice PDF...");
-                const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
-                const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
-                const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-                const invoiceFileName = `Счёт_${docNumber}_${docDate}.pdf`;
-                const invoiceStoragePath = `${targetContractId}/${Date.now()}-${invoiceFileName}`;
+              const invoiceHtmlBlob = new Blob([invoiceHtml], { type: 'text/html' });
+              const invoiceHtmlName = `Счёт_${docNumber}_${docDate}.html`;
+              await saveFileToFolder(invoiceHtmlBlob, invoiceHtmlName, targetContractId);
 
-                const { error: invoiceUploadErr } = await supabase.storage.from("contracts").upload(invoiceStoragePath, invoicePdfBlob);
-                if (invoiceUploadErr) {
-                  console.error("[DOC] Step 4 upload FAILED:", invoiceUploadErr);
-                } else {
-                  console.log("[DOC] Step 4 upload OK");
-                  await supabase.from("contract_files").insert({
-                    contract_id: targetContractId,
-                    file_name: invoiceFileName,
-                    file_path: invoiceStoragePath,
-                    file_size: invoicePdfBlob.size,
-                  });
-                }
-
-                // Save invoice to generated_documents
-                console.log("[DOC] Step 4b: Saving invoice to generated_documents...");
-                await supabase.from("generated_documents").insert({
-                  doc_type: "invoice",
-                  doc_number: docNumber,
-                  doc_date: docDate,
-                  client_name: clientName,
-                  client_inn: clientInn || null,
-                  contract_id: targetContractId,
-                  total_amount: total,
-                  services: JSON.stringify(filteredServices),
-                  html_content: invoiceHtml,
-                });
-              } catch (invoiceErr) {
-                console.error("[DOC] Step 4 error:", invoiceErr);
-                toast.error("Счёт-PDF не удалось сохранить");
-              }
+              // Save invoice to generated_documents
+              await supabase.from("generated_documents").insert({
+                doc_type: "invoice",
+                doc_number: docNumber,
+                doc_date: docDate,
+                client_name: clientName,
+                client_inn: clientInn || null,
+                contract_id: targetContractId,
+                total_amount: total,
+                services: JSON.stringify(filteredServices),
+                html_content: invoiceHtml,
+              });
             }
 
             queryClient.invalidateQueries({ queryKey: ["contract-files"] });
@@ -557,10 +535,35 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
             queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
             toast.success("Документы сохранены и добавлены в файлы");
-          } catch (pdfErr) {
-            console.error("[DOC] PDF generation error:", pdfErr);
-            toast.error("Документ сохранён, но PDF не удалось создать");
+          } catch (saveErr) {
+            console.error("[DOC] File save error:", saveErr);
+            toast.error("Документ сохранён в историю, но файлы не удалось загрузить");
           }
+
+          // Try PDF generation in background (bonus, non-blocking)
+          (async () => {
+            try {
+              const pdfBase64 = await generatePdfBase64(html);
+              const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+              const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+              const pdfFileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+              await saveFileToFolder(pdfBlob, pdfFileName, targetContractId);
+
+              if (docType === "contract" && invoiceHtml) {
+                const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
+                const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
+                const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
+                const invoicePdfName = `Счёт_${docNumber}_${docDate}.pdf`;
+                await saveFileToFolder(invoicePdfBlob, invoicePdfName, targetContractId);
+              }
+
+              queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+              queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
+              toast.success("PDF-версии добавлены в папку");
+            } catch (pdfErr) {
+              console.error("[DOC] Background PDF generation failed:", pdfErr);
+            }
+          })();
         } else {
           toast.success("Документ сохранён");
         }
