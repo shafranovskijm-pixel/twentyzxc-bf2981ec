@@ -2,6 +2,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> =>
+  Promise.race([promise, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))]);
+
 export const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -9,12 +12,15 @@ export const useAdminAuth = () => {
   const checkedRef = useRef(false);
   const signInActiveRef = useRef(false);
 
-  const checkAdminRole = useCallback(async (userId: string) => {
+  const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
       const { data, error } = await supabase.rpc("has_role", {
         _user_id: userId,
         _role: "admin",
-      });
+      }, { signal: controller.signal } as any);
+      clearTimeout(timer);
       if (error) {
         console.error("checkAdminRole error:", error);
         return false;
@@ -36,7 +42,6 @@ export const useAdminAuth = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        // Skip duplicate check if signIn already handled it
         if (signInActiveRef.current) {
           signInActiveRef.current = false;
           return;
@@ -54,7 +59,6 @@ export const useAdminAuth = () => {
       }
     );
 
-    // Eagerly resolve if no session exists
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session && !checkedRef.current) {
         checkedRef.current = true;
