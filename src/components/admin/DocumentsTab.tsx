@@ -734,6 +734,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     setEmailProgress({ step: 'Подготовка документа...', percent: 10 });
     try {
       const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
 
       // 1. Generate PDF
       setEmailProgress({ step: 'Генерация PDF...', percent: 20 });
@@ -753,8 +754,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
       const storagePath = linkedContractId
-        ? `${linkedContractId}/${pdfFilename}`
-        : `documents/${docType}_${docNumber}_${docDate}.pdf`;
+        ? `${linkedContractId}/${pdfStorageName}`
+        : `documents/${pdfStorageName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('contracts')
