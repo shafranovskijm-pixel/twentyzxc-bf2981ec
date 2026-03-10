@@ -29,7 +29,7 @@ const DynamicIcon = ({ name, className }: { name: string; className?: string }) 
 
 const keyVariants: Array<'gold' | 'silver' | 'bronze' | 'emerald'> = ['gold', 'silver', 'bronze', 'emerald'];
 
-const DEADLINE = new Date("2025-03-31T23:59:59+03:00").getTime();
+const DEADLINE = new Date("2026-03-31T23:59:59+03:00").getTime();
 
 function useCountdown(target: number) {
   const [now, setNow] = useState(Date.now());
