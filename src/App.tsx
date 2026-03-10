@@ -22,6 +22,7 @@ import Landing from "./pages/services/Landing";
 import Corporate from "./pages/services/Corporate";
 import Ecommerce from "./pages/services/Ecommerce";
 import WebApp from "./pages/services/WebApp";
+import Nmo from "./pages/services/Nmo";
 import Flowrish from "./pages/projects/Flowrish";
 import Chmuleva from "./pages/projects/Chmuleva";
 import Lanmei from "./pages/projects/Lanmei";
