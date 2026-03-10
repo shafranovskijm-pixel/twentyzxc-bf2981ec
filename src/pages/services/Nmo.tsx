@@ -297,6 +297,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="diamond" />
+
         {/* FAQ */}
         <section className="py-20">
           <div className="container px-4">
