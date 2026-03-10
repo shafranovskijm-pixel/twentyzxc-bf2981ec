@@ -43,6 +43,7 @@ const defaultMenuItems = [
   { id: "documents", label: "Документы", icon: "FileOutput" },
   { id: "requisites", label: "Реквизиты", icon: "Building2" },
   { id: "history", label: "История", icon: "History" },
+  { id: "nmo", label: "НМО Портал", icon: "GraduationCap" },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
