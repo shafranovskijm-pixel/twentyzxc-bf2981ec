@@ -2,9 +2,11 @@ import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import FilesFolderCard from "./files/FilesFolderCard";
 import BulkFolderUpload from "./files/BulkFolderUpload";
 
@@ -29,6 +31,10 @@ const FilesTab = () => {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
+  const [emailFile, setEmailFile] = useState<ContractFile | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("24@24zxc.ru");
+  const [emailSending, setEmailSending] = useState(false);
 
   const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
@@ -138,6 +144,48 @@ const FilesTab = () => {
     URL.revokeObjectURL(url);
   };
 
+  const sendFileEmail = async () => {
+    if (!emailFile || !emailTo.trim()) return toast.error("Укажите email");
+    setEmailSending(true);
+    try {
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from("contracts")
+        .createSignedUrl(emailFile.file_path, 60 * 60 * 24 * 7);
+      if (signedError || !signedData?.signedUrl) throw new Error("Не удалось создать ссылку");
+
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Добрый день!</p>
+          <p>Направляем Вам документ: <strong>${emailFile.file_name}</strong>.</p>
+          <p style="margin: 24px 0;">
+            <a href="${signedData.signedUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">📎 Скачать</a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px;">Ссылка действительна 7 дней.</p>
+        </div>
+      `;
+
+      const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
+      const { error } = await supabase.functions.invoke("send-document-email", {
+        body: { to: recipients.join(","), subject: emailFile.file_name, html: emailHtml },
+      });
+      if (error) throw error;
+
+      toast.success("Письмо отправлено");
+      setEmailFile(null);
+      setEmailTo("");
+    } catch (e: any) {
+      toast.error(`Ошибка: ${e.message || "не удалось отправить"}`);
+    }
+    setEmailSending(false);
+  };
+
+  const handleEmailFile = (f: ContractFile) => {
+    // Try to find client email from contract
+    const contract = contracts.find(c => c.id === f.contract_id);
+    setEmailFile(f);
+    setEmailTo("");
+  };
+
   const filtered = contracts.filter((c) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
@@ -200,10 +248,35 @@ const FilesTab = () => {
               onUpload={(files) => uploadFiles(c.id, files)}
               onDownload={downloadFile}
               onDelete={deleteFile}
+              onEmail={handleEmailFile}
             />
           ))
         )}
       </div>
+
+      {/* Email dialog */}
+      <Dialog open={!!emailFile} onOpenChange={(open) => { if (!open) setEmailFile(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Отправить на почту</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground truncate">{emailFile?.file_name}</p>
+            <div className="space-y-1.5">
+              <Label>Email получателя</Label>
+              <Input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="client@example.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Копия (CC)</Label>
+              <Input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
+            </div>
+            <Button onClick={sendFileEmail} disabled={emailSending || !emailTo.trim()} className="w-full">
+              {emailSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Отправить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

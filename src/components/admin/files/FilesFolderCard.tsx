@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Folder, FolderOpen, FileText, Upload, Trash2, Download, Loader2 } from "lucide-react";
+import { Folder, FolderOpen, FileText, Upload, Trash2, Download, Loader2, Mail } from "lucide-react";
 
 interface ContractFile {
   id: string;
@@ -25,6 +25,7 @@ interface Props {
   onUpload: (files: FileList) => void;
   onDownload: (f: ContractFile) => void;
   onDelete: (f: ContractFile) => void;
+  onEmail?: (f: ContractFile) => void;
 }
 
 const formatSize = (bytes: number | null) => {
@@ -34,7 +35,7 @@ const formatSize = (bytes: number | null) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete }: Props) => {
+const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete, onEmail }: Props) => {
   return (
     <Card
       className={`transition-colors ${isDragTarget ? "border-primary bg-primary/5" : ""}`}
@@ -70,6 +71,11 @@ const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, 
                   <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
                   <span className="text-sm truncate flex-1">{f.file_name}</span>
                   <span className="text-xs text-muted-foreground hidden sm:inline">{formatSize(f.file_size)}</span>
+                  {onEmail && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100 text-blue-500 hover:text-blue-600" onClick={() => onEmail(f)} title="Отправить на почту">
+                      <Mail className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   <Button variant="ghost" size="icon" className="h-7 w-7 sm:opacity-0 sm:group-hover:opacity-100" onClick={() => onDownload(f)}>
                     <Download className="w-3.5 h-3.5" />
                   </Button>
