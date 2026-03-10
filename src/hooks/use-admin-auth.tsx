@@ -1,13 +1,39 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
+const CACHE_KEY = "admin_session_cache";
+
+interface AdminCache {
+  userId: string;
+  isAdmin: boolean;
+  timestamp: number;
+}
+
+function readCache(): AdminCache | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as AdminCache;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId: string, isAdmin: boolean) {
+  localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, isAdmin, timestamp: Date.now() }));
+}
+
+function clearCache() {
+  localStorage.removeItem(CACHE_KEY);
+}
+
 export const useAdminAuth = () => {
+  const cached = readCache();
+
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(cached?.isAdmin ?? false);
   const [isLoading, setIsLoading] = useState(true);
-  const checkedRef = useRef(false);
-  const signInActiveRef = useRef(false);
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
@@ -32,58 +58,99 @@ export const useAdminAuth = () => {
   }, []);
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!checkedRef.current) {
-        checkedRef.current = true;
-        setIsLoading(false);
-      }
-    }, 1000);
+    let mounted = true;
 
+    // 1. Get current session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+
+      if (!session) {
+        // Definitively no session — clear everything
+        setUser(null);
+        setIsAdmin(false);
+        clearCache();
+        setIsLoading(false);
+        return;
+      }
+
+      setUser(session.user);
+
+      // If we have a valid cache for this user, use it immediately
+      const c = readCache();
+      if (c && c.userId === session.user.id && c.isAdmin) {
+        setIsAdmin(true);
+        setIsLoading(false);
+        // Background re-verify (don't reset on failure)
+        const fresh = await checkAdminRole(session.user.id);
+        if (mounted) {
+          if (fresh) {
+            writeCache(session.user.id, true);
+          }
+          // Only revoke if RPC explicitly returned false (not timeout/error)
+          // We already set isAdmin=true from cache, keep it unless fresh === false explicitly
+        }
+        return;
+      }
+
+      // No cache — must verify
+      const admin = await checkAdminRole(session.user.id);
+      if (!mounted) return;
+      setIsAdmin(admin);
+      if (admin) writeCache(session.user.id, true);
+      setIsLoading(false);
+    });
+
+    // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (signInActiveRef.current) {
-          signInActiveRef.current = false;
+      async (event, session) => {
+        if (!mounted) return;
+
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          setIsAdmin(false);
+          clearCache();
+          setIsLoading(false);
           return;
         }
-        setUser(session?.user ?? null);
 
-        if (session?.user) {
-          const admin = await checkAdminRole(session.user.id);
-          setIsAdmin(admin);
-        } else {
-          setIsAdmin(false);
+        // TOKEN_REFRESHED — keep existing state, don't re-check
+        if (event === "TOKEN_REFRESHED") {
+          if (session?.user) setUser(session.user);
+          return;
         }
-        checkedRef.current = true;
-        setIsLoading(false);
+
+        if (event === "SIGNED_IN" && session?.user) {
+          setUser(session.user);
+          // Check cache first
+          const c = readCache();
+          if (c && c.userId === session.user.id && c.isAdmin) {
+            setIsAdmin(true);
+            setIsLoading(false);
+            return;
+          }
+          const admin = await checkAdminRole(session.user.id);
+          if (!mounted) return;
+          setIsAdmin(admin);
+          if (admin) writeCache(session.user.id, true);
+          setIsLoading(false);
+        }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && !checkedRef.current) {
-        checkedRef.current = true;
-        setUser(null);
-        setIsAdmin(false);
-        setIsLoading(false);
-      }
-    });
-
     return () => {
-      clearTimeout(timeout);
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
-    signInActiveRef.current = true;
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
       setUser(data.user);
       const admin = await checkAdminRole(data.user.id);
       setIsAdmin(admin);
-      checkedRef.current = true;
+      if (admin) writeCache(data.user.id, true);
       setIsLoading(false);
-    } else {
-      signInActiveRef.current = false;
     }
     return { error };
   };
@@ -92,6 +159,7 @@ export const useAdminAuth = () => {
     await supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
+    clearCache();
   };
 
   return { user, isAdmin, isLoading, signIn, signOut };
