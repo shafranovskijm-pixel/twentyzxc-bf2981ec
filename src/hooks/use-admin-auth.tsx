@@ -14,12 +14,12 @@ export const useAdminAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
-      const rpcCall = supabase.rpc("has_role", { _user_id: userId, _role: "admin" }).then(res => res);
-      const result = await withTimeout(
-        rpcCall,
-        5000,
-        { data: false, error: { message: "timeout" } as any }
-      );
+      const rpcPromise = new Promise<{ data: any; error: any }>((resolve) => {
+        supabase.rpc("has_role", { _user_id: userId, _role: "admin" })
+          .then(res => resolve(res))
+          .catch(() => resolve({ data: false, error: { message: "exception" } }));
+      });
+      const result = await withTimeout(rpcPromise, 5000, { data: false, error: { message: "timeout" } });
       if (result.error) {
         console.error("checkAdminRole error:", result.error);
         return false;
