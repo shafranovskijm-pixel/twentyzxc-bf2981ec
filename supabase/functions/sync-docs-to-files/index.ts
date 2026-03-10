@@ -48,8 +48,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      const docLabel = doc.doc_type === "contract" ? "Договор" : doc.doc_type === "invoice" ? "Счёт" : "Акт";
-      const fileName = `${docLabel}_${doc.doc_number}_${doc.doc_date}.html`;
+      const docLabel = doc.doc_type === "contract" ? "Dogovor" : doc.doc_type === "invoice" ? "Schet" : "Akt";
+      const displayName = doc.doc_type === "contract" ? "Договор" : doc.doc_type === "invoice" ? "Счёт" : "Акт";
+      const fileName = `${displayName}_${doc.doc_number}_${doc.doc_date}.html`;
+      const storageFileName = `${docLabel}_${doc.doc_number}_${doc.doc_date}.html`;
 
       const { data: existing } = await admin
         .from("contract_files")
