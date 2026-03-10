@@ -159,6 +159,36 @@ const NmoTab = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["nmo-registrations"] }),
   });
 
+  const updateRegistration = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof emptyForm }) => {
+      if (!data.organization_name.trim()) throw new Error("Укажите название организации");
+      const { error } = await supabase
+        .from("nmo_registrations")
+        .update({
+          organization_name: data.organization_name,
+          inn: data.inn || null,
+          kpp: data.kpp || null,
+          license_number: data.license_number || null,
+          license_date: data.license_date || null,
+          responsible_name: data.responsible_name || null,
+          responsible_email: data.responsible_email || null,
+          responsible_phone: data.responsible_phone || null,
+          responsible_snils: data.responsible_snils || null,
+          responsible_position: data.responsible_position || null,
+          notes: data.notes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nmo-registrations"] });
+      toast.success("Заявка обновлена");
+      setEditingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteReg = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("nmo_registrations").delete().eq("id", id);
@@ -169,6 +199,25 @@ const NmoTab = () => {
       toast.success("Заявка удалена");
     },
   });
+
+  const startEdit = (reg: NmoRegistration) => {
+    setEditingId(reg.id);
+    setEditForm({
+      organization_name: reg.organization_name,
+      inn: reg.inn || "",
+      kpp: reg.kpp || "",
+      license_number: reg.license_number || "",
+      license_date: reg.license_date || "",
+      responsible_name: reg.responsible_name || "",
+      responsible_email: reg.responsible_email || "",
+      responsible_phone: reg.responsible_phone || "",
+      responsible_snils: reg.responsible_snils || "",
+      responsible_position: reg.responsible_position || "",
+      status: reg.status,
+      notes: reg.notes || "",
+      client_id: reg.client_id || "",
+    });
+  };
 
   const fillFromClient = (clientId: string) => {
     const c = clients.find((cl) => cl.id === clientId);
