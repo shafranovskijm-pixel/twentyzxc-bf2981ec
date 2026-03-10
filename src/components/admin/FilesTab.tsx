@@ -144,7 +144,49 @@ const FilesTab = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filtered = contracts.filter((c) => {
+  const sendFileEmail = async () => {
+    if (!emailFile || !emailTo.trim()) return toast.error("Укажите email");
+    setEmailSending(true);
+    try {
+      const { data: signedData, error: signedError } = await supabase.storage
+        .from("contracts")
+        .createSignedUrl(emailFile.file_path, 60 * 60 * 24 * 7);
+      if (signedError || !signedData?.signedUrl) throw new Error("Не удалось создать ссылку");
+
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Добрый день!</p>
+          <p>Направляем Вам документ: <strong>${emailFile.file_name}</strong>.</p>
+          <p style="margin: 24px 0;">
+            <a href="${signedData.signedUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">📎 Скачать</a>
+          </p>
+          <p style="color: #6b7280; font-size: 13px;">Ссылка действительна 7 дней.</p>
+        </div>
+      `;
+
+      const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
+      const { error } = await supabase.functions.invoke("send-document-email", {
+        body: { to: recipients.join(","), subject: emailFile.file_name, html: emailHtml },
+      });
+      if (error) throw error;
+
+      toast.success("Письмо отправлено");
+      setEmailFile(null);
+      setEmailTo("");
+    } catch (e: any) {
+      toast.error(`Ошибка: ${e.message || "не удалось отправить"}`);
+    }
+    setEmailSending(false);
+  };
+
+  const handleEmailFile = (f: ContractFile) => {
+    // Try to find client email from contract
+    const contract = contracts.find(c => c.id === f.contract_id);
+    setEmailFile(f);
+    setEmailTo("");
+  };
+
+
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return c.client_name.toLowerCase().includes(s) || c.contract_number?.toLowerCase().includes(s);
