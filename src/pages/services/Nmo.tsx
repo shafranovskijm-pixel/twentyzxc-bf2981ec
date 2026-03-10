@@ -26,6 +26,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
 import AnimatedSection from "@/components/AnimatedSection";
+import { FloatingParticles, GradientGlows, SectionDivider } from "@/components/decorations";
 import {
   Accordion,
   AccordionContent,
@@ -151,6 +152,9 @@ const NmoPage = () => {
       </Helmet>
       <Header />
       <main className="min-h-screen bg-background pt-24">
+        <FloatingParticles count={20} />
+        <GradientGlows />
+
         {/* Hero */}
         <section className="py-20 md:py-28 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20">
@@ -192,6 +196,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="diamond" />
+
         {/* Steps */}
         <section className="py-20 bg-secondary/30">
           <div className="container px-4">
@@ -228,6 +234,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="ornate" />
+
         {/* What's included */}
         <section className="py-20">
           <div className="container px-4">
@@ -252,6 +260,8 @@ const NmoPage = () => {
             </div>
           </div>
         </section>
+
+        <SectionDivider variant="simple" />
 
         {/* Reference docs */}
         <section className="py-16 bg-secondary/30">
@@ -287,6 +297,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="diamond" />
+
         {/* FAQ */}
         <section className="py-20">
           <div className="container px-4">
@@ -318,6 +330,8 @@ const NmoPage = () => {
             </div>
           </div>
         </section>
+
+        <SectionDivider variant="ornate" />
 
         {/* Form */}
         <section id="nmo-form" className="py-20 bg-secondary/30">
