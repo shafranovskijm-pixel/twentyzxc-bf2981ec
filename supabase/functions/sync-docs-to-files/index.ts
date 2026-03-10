@@ -11,33 +11,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Get all generated documents without files in contract_files
     const { data: docs, error: docsErr } = await admin
       .from("generated_documents")
       .select("*")
@@ -50,7 +28,6 @@ Deno.serve(async (req) => {
     for (const doc of docs || []) {
       let contractId = doc.contract_id;
 
-      // If no contract linked, try to find one by client name
       if (!contractId) {
         const { data: contract } = await admin
           .from("contracts")
@@ -62,7 +39,6 @@ Deno.serve(async (req) => {
 
         if (contract) {
           contractId = contract.id;
-          // Update the generated_document with the contract_id
           await admin.from("generated_documents").update({ contract_id: contractId }).eq("id", doc.id);
         }
       }
@@ -72,7 +48,6 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Check if file already exists
       const docLabel = doc.doc_type === "contract" ? "Договор" : doc.doc_type === "invoice" ? "Счёт" : "Акт";
       const fileName = `${docLabel}_${doc.doc_number}_${doc.doc_date}.html`;
 
@@ -88,25 +63,24 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Upload HTML to storage
-      const htmlBlob = new Blob([doc.html_content], { type: "text/html" });
+      const encoder = new TextEncoder();
+      const htmlBytes = encoder.encode(doc.html_content);
       const storagePath = `${contractId}/${Date.now()}-${fileName}`;
 
       const { error: uploadErr } = await admin.storage
         .from("contracts")
-        .upload(storagePath, htmlBlob);
+        .upload(storagePath, htmlBytes, { contentType: "text/html" });
 
       if (uploadErr) {
         results.push(`UPLOAD_ERR: ${fileName} - ${uploadErr.message}`);
         continue;
       }
 
-      // Insert into contract_files
       const { error: insertErr } = await admin.from("contract_files").insert({
         contract_id: contractId,
         file_name: fileName,
         file_path: storagePath,
-        file_size: doc.html_content.length,
+        file_size: htmlBytes.length,
       });
 
       if (insertErr) {
