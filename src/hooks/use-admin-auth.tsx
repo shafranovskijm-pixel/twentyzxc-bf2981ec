@@ -2,9 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
-const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<T> =>
-  Promise.race([promise, new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms))]);
-
 export const useAdminAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -14,18 +11,20 @@ export const useAdminAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 5000);
-      const { data, error } = await supabase.rpc("has_role", {
+      const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 5000)
+      );
+      const query = supabase.rpc("has_role", {
         _user_id: userId,
-        _role: "admin",
-      }, { signal: controller.signal } as any);
-      clearTimeout(timer);
-      if (error) {
-        console.error("checkAdminRole error:", error);
+        _role: "admin" as const,
+      }).then((res) => res);
+
+      const result = await Promise.race([query, timeout]);
+      if (result.error) {
+        console.error("checkAdminRole error:", result.error);
         return false;
       }
-      return !!data;
+      return !!result.data;
     } catch (e) {
       console.error("checkAdminRole exception:", e);
       return false;
