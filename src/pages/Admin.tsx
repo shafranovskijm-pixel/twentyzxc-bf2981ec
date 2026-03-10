@@ -220,7 +220,7 @@ const Admin = () => {
               <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
               <NotificationsPanel onNavigate={setActiveSection} />
             </header>
-            <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-16">
+            <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSection}
