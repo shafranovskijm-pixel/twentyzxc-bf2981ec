@@ -402,6 +402,74 @@ export type Database = {
           },
         ]
       }
+      nmo_registrations: {
+        Row: {
+          checklist: Json
+          client_id: string | null
+          created_at: string
+          id: string
+          inn: string | null
+          kpp: string | null
+          license_date: string | null
+          license_number: string | null
+          notes: string | null
+          organization_name: string
+          responsible_email: string | null
+          responsible_name: string | null
+          responsible_phone: string | null
+          responsible_position: string | null
+          responsible_snils: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          checklist?: Json
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          inn?: string | null
+          kpp?: string | null
+          license_date?: string | null
+          license_number?: string | null
+          notes?: string | null
+          organization_name: string
+          responsible_email?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
+          responsible_position?: string | null
+          responsible_snils?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          checklist?: Json
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          inn?: string | null
+          kpp?: string | null
+          license_date?: string | null
+          license_number?: string | null
+          notes?: string | null
+          organization_name?: string
+          responsible_email?: string | null
+          responsible_name?: string | null
+          responsible_phone?: string | null
+          responsible_position?: string | null
+          responsible_snils?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nmo_registrations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playground_feedback: {
         Row: {
           content: string
