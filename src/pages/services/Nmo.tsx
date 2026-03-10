@@ -331,6 +331,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="ornate" />
+
         {/* Form */}
         <section id="nmo-form" className="py-20 bg-secondary/30">
           <div className="container px-4">
