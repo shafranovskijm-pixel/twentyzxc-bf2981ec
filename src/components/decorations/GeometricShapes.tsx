@@ -37,11 +37,11 @@ export function GeometricShapes() {
         />
       </svg>
       
-      {/* Diagonal lines - right side */}
-      <svg className="absolute top-1/2 right-20 w-32 h-32 text-primary/8" viewBox="0 0 100 100">
-        <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="0.5" />
-        <line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="0.5" />
-        <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="0.5" />
+      {/* Diagonal lines - right side, hidden on mobile */}
+      <svg className="absolute top-1/2 right-20 w-32 h-32 text-primary/5 hidden md:block" viewBox="0 0 100 100">
+        <line x1="0" y1="100" x2="100" y2="0" stroke="currentColor" strokeWidth="0.3" />
+        <line x1="20" y1="100" x2="100" y2="20" stroke="currentColor" strokeWidth="0.3" />
+        <line x1="40" y1="100" x2="100" y2="40" stroke="currentColor" strokeWidth="0.3" />
       </svg>
       
       {/* Floating frame - center right */}
