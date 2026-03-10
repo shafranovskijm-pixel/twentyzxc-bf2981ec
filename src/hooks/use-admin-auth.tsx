@@ -68,14 +68,16 @@ export const useAdminAuth = () => {
   }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
+    signInActiveRef.current = true;
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
-      // Immediately set state without waiting for onAuthStateChange
       setUser(data.user);
       const admin = await checkAdminRole(data.user.id);
       setIsAdmin(admin);
       checkedRef.current = true;
       setIsLoading(false);
+    } else {
+      signInActiveRef.current = false;
     }
     return { error };
   };
