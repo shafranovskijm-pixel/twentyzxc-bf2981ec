@@ -73,9 +73,9 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
 
       {/* 3D Key */}
       {!collected && (
-        <button
+         <button
           onClick={handleTakeKey}
-          className="absolute bottom-3 right-3 w-14 h-18 z-20 cursor-pointer hover:scale-110 transition-transform"
+          className="absolute top-3 right-3 w-12 h-16 z-20 cursor-pointer hover:scale-110 transition-transform"
           title="Забрать ключ сотрудничества"
         >
           <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
