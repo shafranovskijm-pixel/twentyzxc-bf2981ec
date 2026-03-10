@@ -507,18 +507,23 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             return storagePath;
           };
 
-          // Save HTML files immediately (reliable)
+          // Save PDF files directly
           try {
-            const contractHtmlBlob = new Blob([html], { type: 'text/html' });
-            const contractDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.html`;
-            const contractStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.html`;
-            await saveFileToFolder(contractHtmlBlob, contractDisplayName, contractStorageName, targetContractId);
+            toast.info("Генерация PDF...");
+            const pdfBase64 = await generatePdfBase64(html);
+            const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+            const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+            const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
+            await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
 
             if (docType === "contract" && invoiceHtml) {
-              const invoiceHtmlBlob = new Blob([invoiceHtml], { type: 'text/html' });
-              const invoiceDisplayName = `Счёт_${docNumber}_${docDate}.html`;
-              const invoiceStorageName = `Schet_${docNumber}_${docDate}.html`;
-              await saveFileToFolder(invoiceHtmlBlob, invoiceDisplayName, invoiceStorageName, targetContractId);
+              const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
+              const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
+              const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
+              const invoicePdfDisplayName = `Счёт_${docNumber}_${docDate}.pdf`;
+              const invoicePdfStorageName = `Schet_${docNumber}_${docDate}.pdf`;
+              await saveFileToFolder(invoicePdfBlob, invoicePdfDisplayName, invoicePdfStorageName, targetContractId);
 
               // Save invoice to generated_documents
               await supabase.from("generated_documents").insert({
@@ -538,38 +543,11 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
             queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
             queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
             queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
-            toast.success("Документы сохранены и добавлены в файлы");
-          } catch (saveErr) {
-            console.error("[DOC] File save error:", saveErr);
-            toast.error("Документ сохранён в историю, но файлы не удалось загрузить");
+            toast.success("PDF-документы сохранены в файлы");
+          } catch (pdfErr) {
+            console.error("[DOC] PDF generation/save error:", pdfErr);
+            toast.error("Не удалось сохранить PDF в файлы");
           }
-
-          // Try PDF generation in background (bonus, non-blocking)
-          (async () => {
-            try {
-              const pdfBase64 = await generatePdfBase64(html);
-              const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-              const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-              const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-              const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
-              await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
-
-              if (docType === "contract" && invoiceHtml) {
-                const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
-                const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
-                const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-                const invoicePdfDisplayName = `Счёт_${docNumber}_${docDate}.pdf`;
-                const invoicePdfStorageName = `Schet_${docNumber}_${docDate}.pdf`;
-                await saveFileToFolder(invoicePdfBlob, invoicePdfDisplayName, invoicePdfStorageName, targetContractId);
-              }
-
-              queryClient.invalidateQueries({ queryKey: ["contract-files"] });
-              queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
-              toast.success("PDF-версии добавлены в папку");
-            } catch (pdfErr) {
-              console.error("[DOC] Background PDF generation failed:", pdfErr);
-            }
-          })();
         } else {
           toast.success("Документ сохранён");
         }
