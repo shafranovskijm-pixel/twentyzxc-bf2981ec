@@ -186,7 +186,7 @@ const FilesTab = () => {
     setEmailTo("");
   };
 
-
+  const filtered = contracts.filter((c) => {
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return c.client_name.toLowerCase().includes(s) || c.contract_number?.toLowerCase().includes(s);
@@ -248,10 +248,35 @@ const FilesTab = () => {
               onUpload={(files) => uploadFiles(c.id, files)}
               onDownload={downloadFile}
               onDelete={deleteFile}
+              onEmail={handleEmailFile}
             />
           ))
         )}
       </div>
+
+      {/* Email dialog */}
+      <Dialog open={!!emailFile} onOpenChange={(open) => { if (!open) setEmailFile(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Отправить на почту</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground truncate">{emailFile?.file_name}</p>
+            <div className="space-y-1.5">
+              <Label>Email получателя</Label>
+              <Input value={emailTo} onChange={(e) => setEmailTo(e.target.value)} placeholder="client@example.com" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Копия (CC)</Label>
+              <Input value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
+            </div>
+            <Button onClick={sendFileEmail} disabled={emailSending || !emailTo.trim()} className="w-full">
+              {emailSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Отправить
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
