@@ -31,6 +31,10 @@ const FilesTab = () => {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
+  const [emailFile, setEmailFile] = useState<ContractFile | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("24@24zxc.ru");
+  const [emailSending, setEmailSending] = useState(false);
 
   const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
