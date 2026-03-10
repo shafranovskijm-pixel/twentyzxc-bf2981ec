@@ -21,6 +21,7 @@ import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
 import DashboardTab from "@/components/admin/DashboardTab";
 import HistoryTab from "@/components/admin/HistoryTab";
+import NmoTab from "@/components/admin/NmoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import FloatingAIChat from "@/components/admin/FloatingAIChat";
 import { toast } from "sonner";
