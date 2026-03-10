@@ -47,7 +47,7 @@ const defaultMenuItems = [
 ];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History,
+  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History, GraduationCap,
 };
 
 const STORAGE_KEY = "admin-sidebar-order";

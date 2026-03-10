@@ -356,6 +356,7 @@ const Admin = () => {
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
               {activeSection === "history" && <HistoryTab />}
+              {activeSection === "nmo" && <NmoTab />}
                 </motion.div>
               </AnimatePresence>
             </main>
