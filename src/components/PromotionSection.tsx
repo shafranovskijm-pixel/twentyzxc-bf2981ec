@@ -118,7 +118,7 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
           )}
         </div>
 
-        <div className="flex flex-col items-center md:items-end gap-3 shrink-0">
+        <div className="flex flex-col items-center md:items-end gap-3 shrink-0 mr-16">
           <div className="flex items-baseline gap-3">
             {promo.old_price && (
               <span className="text-base text-muted-foreground line-through">{promo.old_price}</span>
