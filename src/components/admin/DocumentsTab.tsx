@@ -488,20 +488,22 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
 
         // Step 3: Save files to storage (HTML first for reliability, then try PDF)
         if (targetContractId) {
-          const saveFileToFolder = async (content: Blob, fileName: string, contractId: string) => {
-            const storagePath = `${contractId}/${Date.now()}-${fileName}`;
+          const translitDocLabel = (type: DocType) => type === "contract" ? "Dogovor" : type === "invoice" ? "Schet" : "Akt";
+
+          const saveFileToFolder = async (content: Blob, displayName: string, storageFileName: string, contractId: string) => {
+            const storagePath = `${contractId}/${Date.now()}-${storageFileName}`;
             const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, content);
             if (uploadErr) {
-              console.error(`[DOC] Upload FAILED for ${fileName}:`, uploadErr);
+              console.error(`[DOC] Upload FAILED for ${displayName}:`, uploadErr);
               return null;
             }
             await supabase.from("contract_files").insert({
               contract_id: contractId,
-              file_name: fileName,
+              file_name: displayName,
               file_path: storagePath,
               file_size: content.size,
             });
-            console.log(`[DOC] Saved ${fileName} to folder`);
+            console.log(`[DOC] Saved ${displayName} to folder`);
             return storagePath;
           };
 
