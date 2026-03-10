@@ -20,6 +20,3 @@ verify_jwt = false
 
 [functions.check-overdue]
 verify_jwt = false
-
-[functions.sync-docs-to-files]
-verify_jwt = false
