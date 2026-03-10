@@ -234,6 +234,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="ornate" />
+
         {/* What's included */}
         <section className="py-20">
           <div className="container px-4">
