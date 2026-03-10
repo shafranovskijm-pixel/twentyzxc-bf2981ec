@@ -1,35 +1,32 @@
 
 
-## Problem Analysis
+# Исправление авторизации для отзывов (403 Forbidden)
 
-The admin session keeps getting reset due to several issues in `use-admin-auth.tsx`:
+## Проблема
 
-1. **1-second timeout race condition** (line 35-39): Fires before `getSession()` or `onAuthStateChange` resolves, setting `isLoading=false` with no user/admin state, which triggers the login dialog (line 137 in Admin.tsx).
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-2. **No admin status caching**: Every page load/refresh calls the `has_role` RPC. If it times out (5s limit) or fails due to network issues, `isAdmin` becomes `false` and the user gets kicked out.
+## Решение
 
-3. **Token refresh events**: `onAuthStateChange` fires on `TOKEN_REFRESHED`, re-running `checkAdminRole` each time. Any failure resets admin state.
+### 1. Включить Google OAuth через настройки аутентификации
 
-## Plan
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-### 1. Cache admin status in localStorage
+### 2. Добавить redirect URL в список разрешённых
 
-After a successful `checkAdminRole`, store `{ userId, isAdmin, timestamp }` in localStorage. On hook init, read this cache immediately to set initial state, avoiding the loading/logout flash.
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### 2. Rewrite initialization logic
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-- Remove the aggressive 1-second timeout
-- On mount: read cached admin state first, then call `getSession()` to verify
-- Only show login if session is definitively absent (not on timeout)
-- Re-verify admin role in background without resetting state on failure
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
 
-### 3. Handle auth state changes gracefully
+## Технические детали
 
-- On `TOKEN_REFRESHED`: keep existing admin state, don't re-check
-- On `SIGNED_IN`: verify admin role, update cache
-- On `SIGNED_OUT`: clear cache and state
-- Never set `isAdmin=false` on RPC timeout/error if user was previously verified
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
 
-### Files to modify
-- `src/hooks/use-admin-auth.tsx` — rewrite with localStorage caching and resilient logic
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
