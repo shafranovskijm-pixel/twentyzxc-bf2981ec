@@ -714,8 +714,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
       const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
 
-      // 1. Generate PDF
-      setEmailProgress({ step: 'Генерация PDF...', percent: 20 });
+      // 1. Generate main PDF
+      setEmailProgress({ step: 'Генерация PDF...', percent: 15 });
       let pdfBase64: string;
       try {
         pdfBase64 = await generatePdfBase64(previewHtml);
@@ -723,14 +723,31 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         console.error('[Email] PDF generation failed:', pdfErr);
         throw new Error('Не удалось сгенерировать PDF');
       }
-      setEmailProgress({ step: 'PDF готов, сохранение в файлы...', percent: 40 });
 
-      // 2. Convert base64 to Blob and upload to storage
-      const byteChars = atob(pdfBase64);
-      const byteArray = new Uint8Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-      const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+      // 1b. Generate invoice PDF if exists (contract type)
+      let invoicePdfBase64: string | null = null;
+      if (previewInvoiceHtml && docType === "contract") {
+        setEmailProgress({ step: 'Генерация PDF счёта...', percent: 25 });
+        try {
+          invoicePdfBase64 = await generatePdfBase64(previewInvoiceHtml);
+        } catch (pdfErr) {
+          console.error('[Email] Invoice PDF generation failed:', pdfErr);
+          // Don't throw — send contract without invoice
+          toast.error('Не удалось сгенерировать PDF счёта, отправляем только договор');
+        }
+      }
 
+      setEmailProgress({ step: 'PDF готов, сохранение в файлы...', percent: 35 });
+
+      // 2. Upload main PDF
+      const b64ToBlob = (b64: string) => {
+        const byteChars = atob(b64);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        return new Blob([byteArray], { type: 'application/pdf' });
+      };
+
+      const pdfBlob = b64ToBlob(pdfBase64);
       const storagePath = linkedContractId
         ? `${linkedContractId}/${pdfStorageName}`
         : `documents/${pdfStorageName}`;
@@ -740,7 +757,27 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
         .upload(storagePath, pdfBlob, { upsert: true });
       if (uploadError) throw new Error(`Ошибка загрузки файла: ${uploadError.message}`);
 
-      setEmailProgress({ step: 'Файл сохранён, получение ссылки...', percent: 55 });
+      // 2b. Upload invoice PDF if exists
+      let invoiceStoragePath: string | null = null;
+      const invoiceFilename = `Счёт_${docNumber}_${docDate}.pdf`;
+      const invoiceStorageName = `Schet_${docNumber}_${docDate}.pdf`;
+      if (invoicePdfBase64) {
+        const invoiceBlob = b64ToBlob(invoicePdfBase64);
+        invoiceStoragePath = linkedContractId
+          ? `${linkedContractId}/${invoiceStorageName}`
+          : `documents/${invoiceStorageName}`;
+
+        const { error: invoiceUploadError } = await supabase.storage
+          .from('contracts')
+          .upload(invoiceStoragePath, invoiceBlob, { upsert: true });
+        if (invoiceUploadError) {
+          console.error('[Email] Invoice upload failed:', invoiceUploadError);
+          toast.error('Не удалось загрузить счёт, отправляем только договор');
+          invoiceStoragePath = null;
+        }
+      }
+
+      setEmailProgress({ step: 'Файлы сохранены, получение ссылок...', percent: 50 });
 
       // 3. Record in contract_files if linked to a contract
       if (linkedContractId) {
@@ -750,30 +787,54 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
           file_path: storagePath,
           file_size: pdfBlob.size,
         });
+        if (invoiceStoragePath && invoicePdfBase64) {
+          const invoiceBlob = b64ToBlob(invoicePdfBase64);
+          await supabase.from('contract_files').insert({
+            contract_id: linkedContractId,
+            file_name: invoiceFilename,
+            file_path: invoiceStoragePath,
+            file_size: invoiceBlob.size,
+          });
+        }
         queryClient.invalidateQueries({ queryKey: ['contract-files'] });
       }
 
-      // 4. Get signed URL (7 days)
+      // 4. Get signed URLs (7 days)
       const { data: signedData, error: signedError } = await supabase.storage
         .from('contracts')
         .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
       if (signedError || !signedData?.signedUrl) throw new Error('Не удалось создать ссылку на файл');
 
+      let invoiceSignedUrl: string | null = null;
+      if (invoiceStoragePath) {
+        const { data: invoiceSignedData } = await supabase.storage
+          .from('contracts')
+          .createSignedUrl(invoiceStoragePath, 60 * 60 * 24 * 7);
+        invoiceSignedUrl = invoiceSignedData?.signedUrl || null;
+      }
+
       setEmailProgress({ step: 'Отправка письма...', percent: 70 });
 
-      // 5. Send email with download link (no attachment)
+      // 5. Send email with download links
       const docLabel = `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`;
+      const invoiceLink = invoiceSignedUrl
+        ? `<a href="${invoiceSignedUrl}" 
+               style="display: inline-block; padding: 12px 24px; background: #16a34a; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
+              📎 Скачать Счёт (PDF)
+            </a>`
+        : '';
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <p>Добрый день!</p>
-          <p>Направляем Вам документ: <strong>${docLabel}</strong>.</p>
+          <p>Направляем Вам документ${invoiceSignedUrl ? 'ы' : ''}: <strong>${docLabel}</strong>.</p>
           <p style="margin: 24px 0;">
             <a href="${signedData.signedUrl}" 
                style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
-              📎 Скачать PDF
+              📎 Скачать ${DOC_LABELS[docType]} (PDF)
             </a>
           </p>
-          <p style="color: #6b7280; font-size: 13px;">Ссылка действительна 7 дней.</p>
+          ${invoiceLink ? `<p style="margin: 24px 0;">${invoiceLink}</p>` : ''}
+          <p style="color: #6b7280; font-size: 13px;">Ссылки действительны 7 дней.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
           <p style="color: #9ca3af; font-size: 12px;">Синтагма — автоматизированная система документооборота</p>
         </div>
@@ -799,7 +860,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       }
 
       setEmailProgress({ step: 'Готово!', percent: 100 });
-      toast.success(`Документ отправлен на ${emailTo} (PDF сохранён в файлы)`);
+      toast.success(`Документ${invoiceSignedUrl ? 'ы' : ''} отправлен${invoiceSignedUrl ? 'ы' : ''} на ${emailTo} (PDF сохранён в файлы)`);
       setTimeout(() => {
         setEmailDialogOpen(false);
         setEmailTo("");

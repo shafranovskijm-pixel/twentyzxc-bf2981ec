@@ -1,33 +1,32 @@
 
 
-## Problem
+# Исправление авторизации для отзывов (403 Forbidden)
 
-When sending a contract email, only the contract PDF is attached. The invoice (счёт), which is auto-generated alongside the contract, is not included in the email.
+## Проблема
 
-## Root Cause
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-`sendDocumentEmail` (line 709) only processes `previewHtml` (the contract). It ignores `previewInvoiceHtml` entirely. When `docType === "contract"`, the system generates both contract and invoice HTMLs and saves both as PDFs to storage, but the email only includes one download link for the contract.
+## Решение
 
-## Fix
+### 1. Включить Google OAuth через настройки аутентификации
 
-Modify `sendDocumentEmail` to detect when `previewInvoiceHtml` exists (i.e., contract type) and:
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-1. Generate a second PDF from `previewInvoiceHtml`
-2. Upload the invoice PDF to storage alongside the contract PDF
-3. Record the invoice file in `contract_files`
-4. Include **two** download links in the email HTML — one for the contract, one for the invoice
+### 2. Добавить redirect URL в список разрешённых
 
-### Email HTML will look like:
-```
-Добрый день!
-Направляем Вам документы: Договор №005 от 10 марта 2026 г.
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-📎 Скачать Договор (PDF)
-📎 Скачать Счёт (PDF)
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-Ссылки действительны 7 дней.
-```
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
 
-### File to modify
-- `src/components/admin/DocumentsTab.tsx` — update `sendDocumentEmail` function to handle both contract and invoice PDFs when `previewInvoiceHtml` is present
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
