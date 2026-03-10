@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History } from "lucide-react";
+import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History, GraduationCap } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -43,10 +43,11 @@ const defaultMenuItems = [
   { id: "documents", label: "Документы", icon: "FileOutput" },
   { id: "requisites", label: "Реквизиты", icon: "Building2" },
   { id: "history", label: "История", icon: "History" },
+  { id: "nmo", label: "НМО Портал", icon: "GraduationCap" },
 ];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History,
+  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History, GraduationCap,
 };
 
 const STORAGE_KEY = "admin-sidebar-order";
