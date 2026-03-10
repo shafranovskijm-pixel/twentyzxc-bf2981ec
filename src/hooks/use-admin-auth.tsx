@@ -7,6 +7,7 @@ export const useAdminAuth = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const checkedRef = useRef(false);
+  const signInActiveRef = useRef(false);
 
   const checkAdminRole = useCallback(async (userId: string) => {
     try {
@@ -28,10 +29,15 @@ export const useAdminAuth = () => {
         checkedRef.current = true;
         setIsLoading(false);
       }
-    }, 2000);
+    }, 1000);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        // Skip duplicate check if signIn already handled it
+        if (signInActiveRef.current) {
+          signInActiveRef.current = false;
+          return;
+        }
         setUser(session?.user ?? null);
 
         if (session?.user) {
@@ -62,14 +68,16 @@ export const useAdminAuth = () => {
   }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string) => {
+    signInActiveRef.current = true;
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (!error && data.user) {
-      // Immediately set state without waiting for onAuthStateChange
       setUser(data.user);
       const admin = await checkAdminRole(data.user.id);
       setIsAdmin(admin);
       checkedRef.current = true;
       setIsLoading(false);
+    } else {
+      signInActiveRef.current = false;
     }
     return { error };
   };
