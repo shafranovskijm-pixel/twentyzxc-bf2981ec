@@ -29,6 +29,52 @@ const DynamicIcon = ({ name, className }: { name: string; className?: string }) 
 
 const keyVariants: Array<'gold' | 'silver' | 'bronze' | 'emerald'> = ['gold', 'silver', 'bronze', 'emerald'];
 
+const DEADLINE = new Date("2025-03-31T23:59:59+03:00").getTime();
+
+function useCountdown(target: number) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = Math.max(0, target - now);
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  return { d, h, m, s, expired: diff <= 0 };
+}
+
+const CountdownTimer = () => {
+  const { d, h, m, s, expired } = useCountdown(DEADLINE);
+  if (expired) return null;
+
+  const units = [
+    { value: d, label: "дн" },
+    { value: h, label: "ч" },
+    { value: m, label: "мин" },
+    { value: s, label: "сек" },
+  ];
+
+  return (
+    <div className="flex items-center gap-1.5 md:gap-2">
+      {units.map((u, i) => (
+        <div key={u.label} className="flex items-center gap-1.5 md:gap-2">
+          <div className="flex flex-col items-center min-w-[2.5rem] md:min-w-[3rem] py-1.5 px-1 rounded-sm bg-primary/10 border border-primary/20">
+            <span className="text-base md:text-lg font-display font-bold text-primary tabular-nums leading-none">
+              {String(u.value).padStart(2, "0")}
+            </span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{u.label}</span>
+          </div>
+          {i < units.length - 1 && (
+            <span className="text-primary/40 text-sm font-bold">:</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
   const { addKey, isKeyCollected, useKey } = useInventory();
   const [isHovered, setIsHovered] = useState(false);
