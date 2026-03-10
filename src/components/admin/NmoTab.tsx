@@ -77,6 +77,8 @@ const emptyForm = {
 const NmoTab = () => {
   const queryClient = useQueryClient();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(emptyForm);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
@@ -157,6 +159,36 @@ const NmoTab = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["nmo-registrations"] }),
   });
 
+  const updateRegistration = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof emptyForm }) => {
+      if (!data.organization_name.trim()) throw new Error("Укажите название организации");
+      const { error } = await supabase
+        .from("nmo_registrations")
+        .update({
+          organization_name: data.organization_name,
+          inn: data.inn || null,
+          kpp: data.kpp || null,
+          license_number: data.license_number || null,
+          license_date: data.license_date || null,
+          responsible_name: data.responsible_name || null,
+          responsible_email: data.responsible_email || null,
+          responsible_phone: data.responsible_phone || null,
+          responsible_snils: data.responsible_snils || null,
+          responsible_position: data.responsible_position || null,
+          notes: data.notes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["nmo-registrations"] });
+      toast.success("Заявка обновлена");
+      setEditingId(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteReg = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("nmo_registrations").delete().eq("id", id);
@@ -167,6 +199,25 @@ const NmoTab = () => {
       toast.success("Заявка удалена");
     },
   });
+
+  const startEdit = (reg: NmoRegistration) => {
+    setEditingId(reg.id);
+    setEditForm({
+      organization_name: reg.organization_name,
+      inn: reg.inn || "",
+      kpp: reg.kpp || "",
+      license_number: reg.license_number || "",
+      license_date: reg.license_date || "",
+      responsible_name: reg.responsible_name || "",
+      responsible_email: reg.responsible_email || "",
+      responsible_phone: reg.responsible_phone || "",
+      responsible_snils: reg.responsible_snils || "",
+      responsible_position: reg.responsible_position || "",
+      status: reg.status,
+      notes: reg.notes || "",
+      client_id: reg.client_id || "",
+    });
+  };
 
   const fillFromClient = (clientId: string) => {
     const c = clients.find((cl) => cl.id === clientId);
@@ -399,35 +450,79 @@ const NmoTab = () => {
                       </div>
                     </div>
 
-                    {/* Details */}
-                    <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                      {reg.kpp && <div><span className="text-muted-foreground">КПП:</span> {reg.kpp}</div>}
-                      {reg.license_number && <div><span className="text-muted-foreground">Лицензия:</span> {reg.license_number}</div>}
-                      {reg.license_date && <div><span className="text-muted-foreground">Дата лицензии:</span> {new Date(reg.license_date).toLocaleDateString("ru-RU")}</div>}
-                      {reg.responsible_name && <div><span className="text-muted-foreground">Ответственный:</span> {reg.responsible_name}</div>}
-                      {reg.responsible_email && <div><span className="text-muted-foreground">Email:</span> {reg.responsible_email}</div>}
-                      {reg.responsible_phone && <div><span className="text-muted-foreground">Телефон:</span> {reg.responsible_phone}</div>}
-                      {reg.responsible_snils && <div><span className="text-muted-foreground">СНИЛС:</span> {reg.responsible_snils}</div>}
-                      {reg.responsible_position && <div><span className="text-muted-foreground">Должность:</span> {reg.responsible_position}</div>}
-                    </div>
-
-                    {reg.notes && (
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Заметки:</span>
-                        <p className="mt-1">{reg.notes}</p>
+                    {/* Details / Edit */}
+                    {editingId === reg.id ? (
+                      <div className="space-y-3 border-t pt-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs">Название организации *</Label>
+                          <Input value={editForm.organization_name} onChange={(e) => setEditForm({ ...editForm, organization_name: e.target.value })} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2"><Label className="text-xs">ИНН</Label><Input value={editForm.inn} onChange={(e) => setEditForm({ ...editForm, inn: e.target.value })} maxLength={12} /></div>
+                          <div className="space-y-2"><Label className="text-xs">КПП</Label><Input value={editForm.kpp} onChange={(e) => setEditForm({ ...editForm, kpp: e.target.value })} maxLength={9} /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2"><Label className="text-xs">Номер лицензии</Label><Input value={editForm.license_number} onChange={(e) => setEditForm({ ...editForm, license_number: e.target.value })} /></div>
+                          <div className="space-y-2"><Label className="text-xs">Дата лицензии</Label><Input type="date" value={editForm.license_date} onChange={(e) => setEditForm({ ...editForm, license_date: e.target.value })} /></div>
+                        </div>
+                        <div className="border-t pt-3">
+                          <p className="text-xs font-medium mb-2">Ответственное лицо</p>
+                          <div className="space-y-3">
+                            <div className="space-y-2"><Label className="text-xs">ФИО</Label><Input value={editForm.responsible_name} onChange={(e) => setEditForm({ ...editForm, responsible_name: e.target.value })} /></div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2"><Label className="text-xs">Email</Label><Input type="email" value={editForm.responsible_email} onChange={(e) => setEditForm({ ...editForm, responsible_email: e.target.value })} /></div>
+                              <div className="space-y-2"><Label className="text-xs">Телефон</Label><Input value={editForm.responsible_phone} onChange={(e) => setEditForm({ ...editForm, responsible_phone: e.target.value })} /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2"><Label className="text-xs">СНИЛС</Label><Input value={editForm.responsible_snils} onChange={(e) => setEditForm({ ...editForm, responsible_snils: e.target.value })} placeholder="000-000-000 00" /></div>
+                              <div className="space-y-2"><Label className="text-xs">Должность</Label><Input value={editForm.responsible_position} onChange={(e) => setEditForm({ ...editForm, responsible_position: e.target.value })} /></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-2"><Label className="text-xs">Заметки</Label><Textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} /></div>
+                        <div className="flex gap-2 pt-1">
+                          <Button size="sm" onClick={() => updateRegistration.mutate({ id: reg.id, data: editForm })} disabled={updateRegistration.isPending} className="flex-1">
+                            {updateRegistration.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Save className="w-4 h-4 mr-1" />}
+                            Сохранить
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingId(null)}>Отмена</Button>
+                        </div>
                       </div>
-                    )}
+                    ) : (
+                      <>
+                        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                          {reg.kpp && <div><span className="text-muted-foreground">КПП:</span> {reg.kpp}</div>}
+                          {reg.license_number && <div><span className="text-muted-foreground">Лицензия:</span> {reg.license_number}</div>}
+                          {reg.license_date && <div><span className="text-muted-foreground">Дата лицензии:</span> {new Date(reg.license_date).toLocaleDateString("ru-RU")}</div>}
+                          {reg.responsible_name && <div><span className="text-muted-foreground">Ответственный:</span> {reg.responsible_name}</div>}
+                          {reg.responsible_email && <div><span className="text-muted-foreground">Email:</span> {reg.responsible_email}</div>}
+                          {reg.responsible_phone && <div><span className="text-muted-foreground">Телефон:</span> {reg.responsible_phone}</div>}
+                          {reg.responsible_snils && <div><span className="text-muted-foreground">СНИЛС:</span> {reg.responsible_snils}</div>}
+                          {reg.responsible_position && <div><span className="text-muted-foreground">Должность:</span> {reg.responsible_position}</div>}
+                        </div>
 
-                    <div className="flex justify-end pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => { if (confirm("Удалить заявку?")) deleteReg.mutate(reg.id); }}
-                      >
-                        <Trash2 className="w-4 h-4 mr-1" /> Удалить
-                      </Button>
-                    </div>
+                        {reg.notes && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Заметки:</span>
+                            <p className="mt-1">{reg.notes}</p>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end gap-2 pt-2">
+                          <Button variant="outline" size="sm" onClick={() => startEdit(reg)}>
+                            <Save className="w-4 h-4 mr-1" /> Редактировать
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => { if (confirm("Удалить заявку?")) deleteReg.mutate(reg.id); }}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" /> Удалить
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </Card>
