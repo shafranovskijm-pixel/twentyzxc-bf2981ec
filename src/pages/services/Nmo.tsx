@@ -152,6 +152,9 @@ const NmoPage = () => {
       </Helmet>
       <Header />
       <main className="min-h-screen bg-background pt-24">
+        <FloatingParticles count={20} />
+        <GradientGlows />
+
         {/* Hero */}
         <section className="py-20 md:py-28 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20">
