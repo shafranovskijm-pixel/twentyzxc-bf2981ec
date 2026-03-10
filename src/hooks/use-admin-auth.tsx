@@ -14,8 +14,9 @@ export const useAdminAuth = () => {
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
     try {
+      const rpcCall = supabase.rpc("has_role", { _user_id: userId, _role: "admin" }).then(res => res);
       const result = await withTimeout(
-        supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        rpcCall,
         5000,
         { data: false, error: { message: "timeout" } as any }
       );
