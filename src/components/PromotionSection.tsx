@@ -224,7 +224,10 @@ const PromotionSection = () => {
             <h2 className="text-4xl md:text-6xl font-display font-bold mb-6 gold-glow-text">
               <span className="gradient-gold-text">Акции</span>
             </h2>
-          </div>
+            <div className="flex flex-col items-center gap-2 mb-2">
+              <span className="text-xs tracking-widest uppercase text-muted-foreground">Предложение действует до 31 марта</span>
+              <CountdownTimer />
+            </div>
 
           <div className="flex flex-col gap-6">
             {promotions.map((promo, index) => (
