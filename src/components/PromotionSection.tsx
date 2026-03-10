@@ -85,7 +85,7 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
 
       {/* Collected badge */}
       {collected && (
-        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 text-primary text-xs z-20">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 text-primary text-xs z-20">
           <Check className="w-3 h-3" />
           Ключ собран
         </div>
