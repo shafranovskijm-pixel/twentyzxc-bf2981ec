@@ -26,7 +26,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
 import AnimatedSection from "@/components/AnimatedSection";
-import { FloatingParticles, GradientGlows, SectionDivider } from "@/components/decorations";
+import { FloatingParticles, GeometricShapes, GradientGlows, SectionDivider } from "@/components/decorations";
 import {
   Accordion,
   AccordionContent,
