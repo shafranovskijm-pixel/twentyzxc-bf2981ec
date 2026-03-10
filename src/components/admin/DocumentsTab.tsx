@@ -488,33 +488,37 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
 
         // Step 3: Save files to storage (HTML first for reliability, then try PDF)
         if (targetContractId) {
-          const saveFileToFolder = async (content: Blob, fileName: string, contractId: string) => {
-            const storagePath = `${contractId}/${Date.now()}-${fileName}`;
+          const translitDocLabel = (type: DocType) => type === "contract" ? "Dogovor" : type === "invoice" ? "Schet" : "Akt";
+
+          const saveFileToFolder = async (content: Blob, displayName: string, storageFileName: string, contractId: string) => {
+            const storagePath = `${contractId}/${Date.now()}-${storageFileName}`;
             const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, content);
             if (uploadErr) {
-              console.error(`[DOC] Upload FAILED for ${fileName}:`, uploadErr);
+              console.error(`[DOC] Upload FAILED for ${displayName}:`, uploadErr);
               return null;
             }
             await supabase.from("contract_files").insert({
               contract_id: contractId,
-              file_name: fileName,
+              file_name: displayName,
               file_path: storagePath,
               file_size: content.size,
             });
-            console.log(`[DOC] Saved ${fileName} to folder`);
+            console.log(`[DOC] Saved ${displayName} to folder`);
             return storagePath;
           };
 
           // Save HTML files immediately (reliable)
           try {
             const contractHtmlBlob = new Blob([html], { type: 'text/html' });
-            const contractHtmlName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.html`;
-            await saveFileToFolder(contractHtmlBlob, contractHtmlName, targetContractId);
+            const contractDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.html`;
+            const contractStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.html`;
+            await saveFileToFolder(contractHtmlBlob, contractDisplayName, contractStorageName, targetContractId);
 
             if (docType === "contract" && invoiceHtml) {
               const invoiceHtmlBlob = new Blob([invoiceHtml], { type: 'text/html' });
-              const invoiceHtmlName = `Счёт_${docNumber}_${docDate}.html`;
-              await saveFileToFolder(invoiceHtmlBlob, invoiceHtmlName, targetContractId);
+              const invoiceDisplayName = `Счёт_${docNumber}_${docDate}.html`;
+              const invoiceStorageName = `Schet_${docNumber}_${docDate}.html`;
+              await saveFileToFolder(invoiceHtmlBlob, invoiceDisplayName, invoiceStorageName, targetContractId);
 
               // Save invoice to generated_documents
               await supabase.from("generated_documents").insert({
@@ -546,15 +550,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
               const pdfBase64 = await generatePdfBase64(html);
               const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
               const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-              const pdfFileName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-              await saveFileToFolder(pdfBlob, pdfFileName, targetContractId);
+              const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+              const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
+              await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
 
               if (docType === "contract" && invoiceHtml) {
                 const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
                 const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
                 const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-                const invoicePdfName = `Счёт_${docNumber}_${docDate}.pdf`;
-                await saveFileToFolder(invoicePdfBlob, invoicePdfName, targetContractId);
+                const invoicePdfDisplayName = `Счёт_${docNumber}_${docDate}.pdf`;
+                const invoicePdfStorageName = `Schet_${docNumber}_${docDate}.pdf`;
+                await saveFileToFolder(invoicePdfBlob, invoicePdfDisplayName, invoicePdfStorageName, targetContractId);
               }
 
               queryClient.invalidateQueries({ queryKey: ["contract-files"] });
@@ -728,6 +734,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
     setEmailProgress({ step: 'Подготовка документа...', percent: 10 });
     try {
       const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
 
       // 1. Generate PDF
       setEmailProgress({ step: 'Генерация PDF...', percent: 20 });
@@ -747,8 +754,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, onMounted }: { initia
       const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
       const storagePath = linkedContractId
-        ? `${linkedContractId}/${pdfFilename}`
-        : `documents/${docType}_${docNumber}_${docDate}.pdf`;
+        ? `${linkedContractId}/${pdfStorageName}`
+        : `documents/${pdfStorageName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('contracts')
