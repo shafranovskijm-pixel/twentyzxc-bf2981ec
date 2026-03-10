@@ -10,6 +10,7 @@ const navLinks = [
     dropdown: [
       { href: "/frdo", label: "ФИС ФРДО" },
       { href: "/licensing", label: "Лицензирование" },
+      { href: "/services/nmo", label: "НМО Портал" },
     ]
   },
   { href: "/templates", label: "Шаблоны" },
