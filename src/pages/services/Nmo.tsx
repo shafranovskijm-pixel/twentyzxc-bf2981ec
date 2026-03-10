@@ -261,6 +261,8 @@ const NmoPage = () => {
           </div>
         </section>
 
+        <SectionDivider variant="simple" />
+
         {/* Reference docs */}
         <section className="py-16 bg-secondary/30">
           <div className="container px-4">
