@@ -1,29 +1,32 @@
 
 
-## Plan: Fix AI Chat Overlap + Restore Document History in Documents Tab
+# Исправление авторизации для отзывов (403 Forbidden)
 
-### Problem 1: AI Chat Covers the Generate Button
-The FloatingAIChat is fixed at `bottom: 0` spanning full width. Although `pb-24` exists on the main container, the "Сформировать" button at the very bottom of DocumentsTab still gets covered.
+## Проблема
 
-**Fix**: Increase bottom padding on the DocumentsTab content (add `pb-20` to the DocumentsTab wrapper) so the generate button is always above the floating chat bar. Alternatively, add `mb-16` to the generate button itself.
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-### Problem 2: Document History Missing from Documents Tab
-The HistoryTab is a separate sidebar section. The user expects to see recently generated documents directly within the Documents tab (below the constructor form).
+## Решение
 
-**Fix**: Add a "Последние документы" (Recent Documents) section at the bottom of `DocumentsTab.tsx`, below the generate button. This will query the `saved_documents` table (same as HistoryTab does) and show the last ~10 documents with view/download actions. Reuse the same logic from HistoryTab — preview dialog + PDF download.
+### 1. Включить Google OAuth через настройки аутентификации
 
-### Files to Modify
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-#### 1. `src/components/admin/DocumentsTab.tsx`
-- Add a wrapper `div` with `pb-20` around all content to prevent overlap with floating chat
-- Add a "Последние документы" card after the generate button showing recent documents from `saved_documents` table
-- Include view (Eye), download (Download), and delete (Trash2) actions per row
-- Reuse the `generatePdfBase64` + iframe preview pattern already in the file
+### 2. Добавить redirect URL в список разрешённых
 
-#### 2. No other files need changes
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### Technical Details
-- Query: `supabase.from("saved_documents").select("*").order("created_at", { ascending: false }).limit(10)`
-- Display: compact table/cards with doc type badge, client name, date, and action buttons
-- The bottom padding fix ensures the generate button + history section are never covered by the AI chat bar
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
