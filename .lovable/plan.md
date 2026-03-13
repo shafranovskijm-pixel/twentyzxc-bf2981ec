@@ -1,31 +1,32 @@
 
 
-## Plan: Send Documents via Telegram
+# Исправление авторизации для отзывов (403 Forbidden)
 
-### Overview
-Add a "В Telegram" button next to "На почту" in the document preview dialog. Clicking it generates PDFs and sends them as documents to the admin's Telegram chat via a new edge function.
+## Проблема
 
-### Changes
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-#### 1. New edge function: `supabase/functions/send-telegram-document/index.ts`
-- Accepts `{ pdfBase64, filename, caption?, chat_id? }` (chat_id defaults to `TELEGRAM_CHAT_ID` env)
-- Authenticates the caller (admin check, same as `send-bot-message`)
-- Converts base64 to binary, sends via Telegram Bot API `sendDocument` (multipart/form-data)
-- If invoice PDF is also provided (`invoicePdfBase64`, `invoiceFilename`), sends a second document
-- Uses `ZXC_BOT_TOKEN` (already configured)
-- Add `verify_jwt = false` to `config.toml`
+## Решение
 
-#### 2. `src/components/admin/DocumentsTab.tsx`
-- Add `sendDocumentTelegram` function (similar flow to `sendDocumentEmail` but simpler):
-  1. Generate PDF(s) via `generatePdfBase64`
-  2. Upload to storage (reuse existing upload logic)
-  3. Call `send-telegram-document` edge function with base64 data
-- Add state: `telegramSending`
-- Add a Telegram button (MessageCircle icon) next to the "На почту" button in the preview dialog toolbar
-- No dialog needed — one click sends directly
+### 1. Включить Google OAuth через настройки аутентификации
 
-#### 3. Files
-- **Create**: `supabase/functions/send-telegram-document/index.ts`
-- **Edit**: `supabase/config.toml` (add function config)
-- **Edit**: `src/components/admin/DocumentsTab.tsx` (add button + send logic)
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+
+### 2. Добавить redirect URL в список разрешённых
+
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
+
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
