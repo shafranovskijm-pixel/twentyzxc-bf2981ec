@@ -317,7 +317,7 @@ const ClientsTab = () => {
                 </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>ИНН</Label><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /></div>
+                <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => syncRequisites(true)} disabled={syncing} className="shrink-0" title="Обновить по ИНН">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
                 <div className="space-y-2"><Label>КПП</Label><Input value={kpp} onChange={(e) => setKpp(e.target.value)} placeholder="123456789" /></div>
                 <div className="space-y-2"><Label>ОГРН</Label><Input value={ogrn} onChange={(e) => setOgrn(e.target.value)} placeholder="1234567890123" /></div>
               </div>
