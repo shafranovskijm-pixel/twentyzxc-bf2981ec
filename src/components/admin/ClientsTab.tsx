@@ -62,7 +62,7 @@ async function fetchDadata(params: { inn?: string; query?: string }) {
   }
 }
 
-const ClientsTab = () => {
+const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -339,10 +339,29 @@ const ClientsTab = () => {
             {/* Client History Section - only when editing */}
             {editingId && <ClientHistory clientName={name} clientId={editingId} />}
 
-            <Button onClick={saveClient} disabled={saving} className="w-full">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingId ? "Обновить" : "Добавить"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={saveClient} disabled={saving} className="flex-1 min-w-[120px]">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                {editingId ? "Обновить" : "Добавить"}
+              </Button>
+              {editingId && onNavigate && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => onNavigate("documents", { clientName: name, docType: "contract" })} title="Сделать договор">
+                    <FileText className="w-4 h-4 mr-1" /> Договор
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => onNavigate("documents", { clientName: name, docType: "invoice" })} title="Сделать счёт">
+                    <ClipboardList className="w-4 h-4 mr-1" /> Счёт
+                  </Button>
+                  {telegram && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`https://t.me/${telegram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer">
+                        <Send className="w-4 h-4 mr-1" /> Telegram
+                      </a>
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -460,6 +479,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   invoice: "Счёт",
   act: "Акт",
 };
+
+interface ClientsTabProps {
+  onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void;
+}
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
   const { data: contracts = [], isLoading: loadingContracts } = useQuery({

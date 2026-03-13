@@ -1,34 +1,32 @@
 
 
-## Plan: Add "Create Document" and "Send Telegram" buttons to Client Card
+# Исправление авторизации для отзывов (403 Forbidden)
 
-### What the user wants
-From the client editing form, quickly create a contract, invoice, or send a Telegram message — without manually navigating to the Documents tab and re-entering client info.
+## Проблема
 
-### Changes
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-#### 1. `ClientsTab.tsx` — Accept `onNavigate` prop, add action buttons
+## Решение
 
-- Add prop: `onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void`
-- In the client edit form (near the "Обновить" button at the bottom), add a row of action buttons:
-  - **Сделать договор** — calls `onNavigate("documents", { clientName: name, docType: "contract" })`
-  - **Сделать счёт** — calls `onNavigate("documents", { clientName: name, docType: "invoice" })`
-  - **Написать в Telegram** — opens the client's Telegram link (if present) or sends a notification via the existing send-telegram edge function
+### 1. Включить Google OAuth через настройки аутентификации
 
-#### 2. `Admin.tsx` — Wire up navigation from ClientsTab to DocumentsTab
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-- Pass `onNavigate` to `ClientsTab` that sets `docInitialClientName`, `docInitialDocType`, and switches to `"documents"` section
-- Pass `initialClientName={docInitialClientName}` to `DocumentsTab`
+### 2. Добавить redirect URL в список разрешённых
 
-#### 3. `DocumentsTab.tsx` — Accept `initialClientName` prop
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-- Add `initialClientName?: string` to props
-- In useEffect, when `initialClientName` is set (and clients are loaded), auto-fill the client fields using `fillClientFromName(initialClientName)` and set `clientName`
-- Also set `docType` from `initialDocType` if provided
-- Clear via `onMounted` callback
+### 3. Обновить GoogleAuthButton (если потребуется)
 
-### Files to modify
-- `src/components/admin/ClientsTab.tsx` — add `onNavigate` prop + action buttons
-- `src/pages/Admin.tsx` — pass `onNavigate` to ClientsTab, pass `initialClientName` to DocumentsTab
-- `src/components/admin/DocumentsTab.tsx` — accept and handle `initialClientName` prop
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 

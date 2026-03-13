@@ -345,7 +345,11 @@ const Admin = () => {
                 </div>
               )}
 
-              {activeSection === "clients" && <ClientsTab />}
+              {activeSection === "clients" && <ClientsTab onNavigate={(section, params) => {
+                setDocInitialClientName(params?.clientName || "");
+                setDocInitialDocType(params?.docType || "");
+                setActiveSection(section);
+              }} />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
@@ -353,7 +357,7 @@ const Admin = () => {
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
