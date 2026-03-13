@@ -869,7 +869,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
 
       setEmailProgress({ step: 'Сохранение...', percent: 90 });
       const client = clients.find(c => c.name === clientName);
-      if (client && !client.email && emailTo.trim()) {
+      if (client && emailTo.trim()) {
         await supabase.from("clients").update({ email: emailTo.trim() }).eq("id", client.id);
         queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
         queryClient.invalidateQueries({ queryKey: ["admin-clients"] });

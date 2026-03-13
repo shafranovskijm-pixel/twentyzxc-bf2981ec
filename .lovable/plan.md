@@ -1,33 +1,32 @@
 
 
-## Current Behavior
+# Исправление авторизации для отзывов (403 Forbidden)
 
-Line 872 in `DocumentsTab.tsx`:
-```typescript
-if (client && !client.email && emailTo.trim()) {
-  await supabase.from("clients").update({ email: emailTo.trim() }).eq("id", client.id);
-}
-```
+## Проблема
 
-The email is saved to the client record **only if the client has no email yet**. If the client already has an email, the entered address is silently ignored.
+При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
 
-## Proposed Fix
+## Решение
 
-Update the condition so the email is **always** saved/updated on the client record when sending a document. This way, whenever you send to a new address, the client's email stays current.
+### 1. Включить Google OAuth через настройки аутентификации
 
-### Change in `DocumentsTab.tsx` (line 872)
+Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
 
-Replace:
-```typescript
-if (client && !client.email && emailTo.trim()) {
-```
-With:
-```typescript
-if (client && emailTo.trim()) {
-```
+### 2. Добавить redirect URL в список разрешённых
 
-This single-line change ensures the client's email is always updated to the last address used for sending documents.
+Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
 
-### Files to modify
-- `src/components/admin/DocumentsTab.tsx` — remove `!client.email` condition (1 line)
+### 3. Обновить GoogleAuthButton (если потребуется)
+
+Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
+
+## Технические детали
+
+| Действие | Описание |
+|---|---|
+| Настройка auth | Включить Google OAuth provider через configure-auth |
+| `supabase/config.toml` | Автоматически обновится после настройки |
+| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
+
+Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
 
