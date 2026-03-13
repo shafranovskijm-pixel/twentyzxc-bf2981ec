@@ -40,14 +40,16 @@ const SERVICE_OPTIONS = [
   { value: "ПРОЧЕЕ", label: "ПРОЧЕЕ", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 ];
 
-async function fetchDadataByName(companyName: string) {
+async function fetchDadata(params: { inn?: string; query?: string }) {
   try {
     const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-      body: { query: companyName },
+      body: params,
     });
     if (error) throw error;
     if (!data?.found) return null;
     return {
+      name: data.name || null,
+      name_short: data.name_short || null,
       inn: data.inn || null,
       kpp: data.kpp || null,
       ogrn: data.ogrn || null,
