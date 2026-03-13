@@ -54,6 +54,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("24@24zxc.ru");
   const [emailSending, setEmailSending] = useState(false);
+  const [telegramSending, setTelegramSending] = useState(false);
   const [emailProgress, setEmailProgress] = useState({ step: '', percent: 0 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const docImagesRef = useRef<{ signature: string; stamp: string } | null>(null);
