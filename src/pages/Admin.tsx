@@ -345,7 +345,11 @@ const Admin = () => {
                 </div>
               )}
 
-              {activeSection === "clients" && <ClientsTab />}
+              {activeSection === "clients" && <ClientsTab onNavigate={(section, params) => {
+                setDocInitialClientName(params?.clientName || "");
+                setDocInitialDocType(params?.docType || "");
+                setActiveSection(section);
+              }} />}
               {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "files" && <FilesTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
