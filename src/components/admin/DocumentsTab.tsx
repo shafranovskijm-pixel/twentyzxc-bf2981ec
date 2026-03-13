@@ -938,7 +938,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       {/* Sample download buttons */}
       <Card>
         <CardHeader>
