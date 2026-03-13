@@ -121,11 +121,18 @@ const ClientsTab = () => {
     setShowForm(true);
   };
 
-  const syncRequisites = async () => {
-    if (!name.trim()) return toast.error("Укажите название организации");
+  const syncRequisites = async (byInn = false) => {
+    const innVal = inn.trim();
+    const nameVal = name.trim();
+    if (byInn && (!innVal || !/^\d{10,12}$/.test(innVal))) {
+      return toast.error("Введите корректный ИНН (10 или 12 цифр)");
+    }
+    if (!byInn && !nameVal) return toast.error("Укажите название организации");
     setSyncing(true);
-    const result = await fetchDadataByName(name.trim());
+    const params = byInn ? { inn: innVal } : { query: nameVal };
+    const result = await fetchDadata(params);
     if (result) {
+      if (byInn && result.name) setName(result.name);
       if (result.inn) setInn(result.inn);
       if (result.kpp) setKpp(result.kpp);
       if (result.ogrn) setOgrn(result.ogrn);
