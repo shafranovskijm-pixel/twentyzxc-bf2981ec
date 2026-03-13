@@ -217,6 +217,21 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     }
   }, [initialContractId, contracts, clients]);
 
+  // Pre-fill from client card navigation
+  useEffect(() => {
+    if (initialClientName && !initialContractId && clients.length > 0) {
+      setClientName(initialClientName);
+      fillClientFromName(initialClientName);
+      if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
+        setDocType(initialDocType as DocType);
+        if (lastDocNumbers) {
+          setDocNumber(lastDocNumbers[initialDocType] || "001");
+        }
+      }
+      onMounted?.();
+    }
+  }, [initialClientName, clients]);
+
   // Auto-fill template data when contract subtype changes
   useEffect(() => {
     if (contractSubType === "nmo") {
