@@ -155,7 +155,8 @@ const ClientsTab = () => {
       const batch = clients.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map(async (client) => {
-          const result = await fetchDadataByName(client.name);
+          const params = client.inn ? { inn: client.inn } : { query: client.name };
+          const result = await fetchDadata(params);
           if (result && result.inn) {
             const payload: Record<string, string | null> = {};
             if (result.inn) payload.inn = result.inn;
