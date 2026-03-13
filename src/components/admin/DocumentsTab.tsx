@@ -890,6 +890,49 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     setEmailSending(false);
   };
 
+  const sendDocumentTelegram = async () => {
+    if (!previewHtml) return;
+    setTelegramSending(true);
+    try {
+      toast.info("Генерация PDF...");
+      const pdfBase64 = await generatePdfBase64(previewHtml);
+      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+
+      const documents: { pdfBase64: string; filename: string }[] = [
+        { pdfBase64, filename: pdfFilename },
+      ];
+
+      // Include invoice if present (contract type)
+      if (previewInvoiceHtml && docType === "contract") {
+        try {
+          const invoiceBase64 = await generatePdfBase64(previewInvoiceHtml);
+          documents.push({
+            pdfBase64: invoiceBase64,
+            filename: `Счёт_${docNumber}_${docDate}.pdf`,
+          });
+        } catch (e) {
+          console.error("Invoice PDF failed for Telegram:", e);
+        }
+      }
+
+      toast.info("Отправка в Telegram...");
+      const caption = `📄 ${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}\n👤 ${clientName}`;
+
+      const { data, error } = await supabase.functions.invoke('send-telegram-document', {
+        body: { documents, caption },
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ошибка отправки");
+
+      toast.success(`Документ${documents.length > 1 ? 'ы' : ''} отправлен${documents.length > 1 ? 'ы' : ''} в Telegram`);
+    } catch (err: any) {
+      console.error("[Telegram] Error:", err);
+      toast.error(err.message || "Не удалось отправить в Telegram");
+    }
+    setTelegramSending(false);
+  };
+
   if (settingsLoading || clientsLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
