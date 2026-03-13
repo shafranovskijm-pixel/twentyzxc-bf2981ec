@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search } from "lucide-react";
 
 interface Client {
   id: string;
@@ -40,14 +40,16 @@ const SERVICE_OPTIONS = [
   { value: "ПРОЧЕЕ", label: "ПРОЧЕЕ", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 ];
 
-async function fetchDadataByName(companyName: string) {
+async function fetchDadata(params: { inn?: string; query?: string }) {
   try {
     const { data, error } = await supabase.functions.invoke("dadata-lookup", {
-      body: { query: companyName },
+      body: params,
     });
     if (error) throw error;
     if (!data?.found) return null;
     return {
+      name: data.name || null,
+      name_short: data.name_short || null,
       inn: data.inn || null,
       kpp: data.kpp || null,
       ogrn: data.ogrn || null,
@@ -119,11 +121,18 @@ const ClientsTab = () => {
     setShowForm(true);
   };
 
-  const syncRequisites = async () => {
-    if (!name.trim()) return toast.error("Укажите название организации");
+  const syncRequisites = async (byInn = false) => {
+    const innVal = inn.trim();
+    const nameVal = name.trim();
+    if (byInn && (!innVal || !/^\d{10,12}$/.test(innVal))) {
+      return toast.error("Введите корректный ИНН (10 или 12 цифр)");
+    }
+    if (!byInn && !nameVal) return toast.error("Укажите название организации");
     setSyncing(true);
-    const result = await fetchDadataByName(name.trim());
+    const params = byInn ? { inn: innVal } : { query: nameVal };
+    const result = await fetchDadata(params);
     if (result) {
+      if (byInn && result.name) setName(result.name);
       if (result.inn) setInn(result.inn);
       if (result.kpp) setKpp(result.kpp);
       if (result.ogrn) setOgrn(result.ogrn);
@@ -146,7 +155,8 @@ const ClientsTab = () => {
       const batch = clients.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(
         batch.map(async (client) => {
-          const result = await fetchDadataByName(client.name);
+          const params = client.inn ? { inn: client.inn } : { query: client.name };
+          const result = await fetchDadata(params);
           if (result && result.inn) {
             const payload: Record<string, string | null> = {};
             if (result.inn) payload.inn = result.inn;
@@ -301,13 +311,13 @@ const ClientsTab = () => {
             <div className="border-t pt-4 mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Реквизиты</h3>
-                <Button variant="outline" size="sm" onClick={syncRequisites} disabled={syncing}>
+                <Button variant="outline" size="sm" onClick={() => syncRequisites()} disabled={syncing}>
                   {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                   Синхронизировать
                 </Button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>ИНН</Label><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /></div>
+                <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => syncRequisites(true)} disabled={syncing} className="shrink-0" title="Обновить по ИНН">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
                 <div className="space-y-2"><Label>КПП</Label><Input value={kpp} onChange={(e) => setKpp(e.target.value)} placeholder="123456789" /></div>
                 <div className="space-y-2"><Label>ОГРН</Label><Input value={ogrn} onChange={(e) => setOgrn(e.target.value)} placeholder="1234567890123" /></div>
               </div>
