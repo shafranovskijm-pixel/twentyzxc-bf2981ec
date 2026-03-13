@@ -62,7 +62,7 @@ async function fetchDadata(params: { inn?: string; query?: string }) {
   }
 }
 
-const ClientsTab = () => {
+const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);

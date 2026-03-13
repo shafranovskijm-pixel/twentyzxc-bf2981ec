@@ -357,7 +357,7 @@ const Admin = () => {
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); }} />}
               {activeSection === "requisites" && <RequisitesTab />}
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
