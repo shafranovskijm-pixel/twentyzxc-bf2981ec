@@ -1223,6 +1223,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={telegramSending}
+                  onClick={sendDocumentTelegram}
+                >
+                  {telegramSending ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> : <Send className="w-4 h-4 sm:mr-2" />}
+                  <span className="hidden sm:inline">{telegramSending ? 'Отправка...' : 'В Telegram'}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   disabled={emailSending}
                   onClick={() => {
                     if (!previewHtml) return;
