@@ -461,6 +461,10 @@ const DOC_TYPE_LABELS: Record<string, string> = {
   act: "Акт",
 };
 
+interface ClientsTabProps {
+  onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void;
+}
+
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
   const { data: contracts = [], isLoading: loadingContracts } = useQuery({
     queryKey: ["client-history-contracts", clientName],
