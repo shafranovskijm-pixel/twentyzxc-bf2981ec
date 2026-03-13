@@ -311,7 +311,7 @@ const ClientsTab = () => {
             <div className="border-t pt-4 mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Реквизиты</h3>
-                <Button variant="outline" size="sm" onClick={syncRequisites} disabled={syncing}>
+                <Button variant="outline" size="sm" onClick={() => syncRequisites()} disabled={syncing}>
                   {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
                   Синхронизировать
                 </Button>
