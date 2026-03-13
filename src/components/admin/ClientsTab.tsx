@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search } from "lucide-react";
 
 interface Client {
   id: string;
