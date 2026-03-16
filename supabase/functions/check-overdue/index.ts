@@ -62,13 +62,45 @@ serve(async (req) => {
       throw err2;
     }
 
+    // 3. Website contracts approaching 1-year anniversary (14 days before)
+    // For "Сайт" contracts: remind 2 weeks before the contract_date anniversary
+    const { data: allSiteContracts, error: err3 } = await supabase
+      .from("contracts")
+      .select("id, client_name, contract_number, contract_date, amount, contract_type")
+      .eq("is_archived", false)
+      .eq("contract_type", "Сайт")
+      .not("contract_date", "is", null);
+
+    if (err3) {
+      console.error("Error fetching site contracts:", err3);
+      throw err3;
+    }
+
+    // Check which contracts have an anniversary in exactly 14 days
+    const renewalReminders = (allSiteContracts || []).filter(c => {
+      const contractDate = new Date(c.contract_date!);
+      const todayDate = new Date(today);
+      // Calculate next anniversary
+      const nextAnniversary = new Date(contractDate);
+      nextAnniversary.setFullYear(todayDate.getFullYear());
+      // If anniversary already passed this year, check next year
+      if (nextAnniversary < todayDate) {
+        nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
+      }
+      // Check if anniversary is exactly 14 days from now
+      const diffMs = nextAnniversary.getTime() - todayDate.getTime();
+      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      return diffDays === 14;
+    });
+
     const overdueCount = overdue?.length || 0;
     const expiringCount = expiring?.length || 0;
+    const renewalCount = renewalReminders.length;
 
-    if (overdueCount === 0 && expiringCount === 0) {
-      console.log("No overdue or expiring contracts found");
+    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+      console.log("No notifications needed");
       return new Response(
-        JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0 }),
+        JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0, renewals: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
