@@ -64,11 +64,11 @@ serve(async (req) => {
 
     // 3. Website contracts approaching 1-year anniversary (14 days before)
     // For "Сайт" contracts: remind 2 weeks before the contract_date anniversary
-    const { data: allSiteContracts, error: err3 } = await supabase
+    const { data: allRenewalContracts, error: err3 } = await supabase
       .from("contracts")
       .select("id, client_name, contract_number, contract_date, amount, contract_type")
       .eq("is_archived", false)
-      .eq("contract_type", "Сайт")
+      .in("contract_type", ["Сайт", "ФРДО"])
       .not("contract_date", "is", null);
 
     if (err3) {
