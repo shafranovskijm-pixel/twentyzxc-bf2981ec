@@ -291,6 +291,19 @@ const ContractsTab = () => {
     return new Date(paidUntil) < new Date();
   };
 
+  const getAnniversaryDays = (contractDate: string | null, contractType: string | null): number | null => {
+    if (!contractDate || !contractType) return null;
+    const type = contractType.toLowerCase();
+    if (!type.includes("сайт") && !type.includes("фрдо")) return null;
+    const cd = new Date(contractDate);
+    const now = new Date();
+    const nextAnniversary = new Date(cd);
+    nextAnniversary.setFullYear(now.getFullYear());
+    if (nextAnniversary < now) nextAnniversary.setFullYear(now.getFullYear() + 1);
+    const diffDays = Math.round((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays <= 14 ? diffDays : null;
+  };
+
   if (contractsError) {
     return (
       <div className="text-center py-8 space-y-2">
