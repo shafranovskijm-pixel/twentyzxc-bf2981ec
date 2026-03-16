@@ -109,7 +109,14 @@ serve(async (req) => {
     }
 
     // Build message
-    let text = `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
+    let text = isTest 
+      ? `🔔 <b>Тестовый отчёт по оплатам</b>\n\n`
+      : `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
+
+    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+      text += `✅ Нет просроченных, истекающих или требующих продления договоров.\n`;
+      text += `📅 Напоминания активны для типов: Сайт, ФРДО\n`;
+    }
 
     if (overdueCount > 0) {
       text += `🔴 <b>Просрочено (${overdueCount}):</b>\n`;
