@@ -1,32 +1,26 @@
 
 
-# Исправление авторизации для отзывов (403 Forbidden)
+## Plan: Add Renewal Indicators to Contracts Table + Fix Edge Function + Add ФРДО Reminders
 
-## Проблема
+### Bug Found
+There is a **critical brace mismatch** in `check-overdue/index.ts`: the renewal reminder section (lines 122-132) is nested inside the `if (overdueCount > 0)` block. This means renewal notifications only appear when there are also overdue contracts. Must fix.
 
-При нажатии "Войти через Google" на странице отзывов открывается `oauth.lovable.app` и возвращает **403 Forbidden**. Причина: Google OAuth не настроен для этого проекта в Lovable Cloud.
+### Changes
 
-## Решение
+#### 1. Fix + Extend `supabase/functions/check-overdue/index.ts`
+- **Fix brace bug**: Move the closing `}` of the overdue block (line 120) to before the renewal section
+- **Add ФРДО contracts**: Change the filter from `eq("contract_type", "Сайт")` to `in("contract_type", ["Сайт", "ФРДО"])` so both types get anniversary reminders
+- Update the message label to say "Продление договоров через 2 недели" (without specifying only «Сайт»)
 
-### 1. Включить Google OAuth через настройки аутентификации
+#### 2. Add visual indicator in `src/components/admin/ContractsTab.tsx`
+- Add a helper function `isApproachingAnniversary(contractDate, contractType)` that checks if a "Сайт" or "ФРДО" contract's anniversary is within 14 days
+- Display a 🔄 icon (RefreshCw) or a bell icon next to the contract date/type in the table, with a tooltip like "Продление через X дней"
+- Show this indicator in both mobile cards and desktop table rows
 
-Использовать инструмент `configure-auth` для включения Google-провайдера в проекте. Это добавит необходимую конфигурацию в `supabase/config.toml` и разрешит OAuth-авторизацию.
+#### 3. Test: Invoke check-overdue function
+- After deploying, call the function to send a test Telegram message with the current state of overdue/expiring/renewal contracts
 
-### 2. Добавить redirect URL в список разрешённых
-
-Убедиться, что как preview URL (`https://id-preview--c2afa16d-2c40-4a1e-9579-ec1baa3f79f0.lovable.app`), так и production URL (`https://twentyzxc.lovable.app` и `https://24zxc.ru`) находятся в списке разрешённых redirect-адресов.
-
-### 3. Обновить GoogleAuthButton (если потребуется)
-
-Текущий код использует `lovable.auth.signInWithOAuth("google")` — это правильный подход для Lovable Cloud. Возможно потребуется скорректировать `redirect_uri`, чтобы он правильно работал и в preview, и в production.
-
-## Технические детали
-
-| Действие | Описание |
-|---|---|
-| Настройка auth | Включить Google OAuth provider через configure-auth |
-| `supabase/config.toml` | Автоматически обновится после настройки |
-| `src/components/reviews/GoogleAuthButton.tsx` | Возможная корректировка redirect_uri |
-
-Без включения Google OAuth на уровне проекта авторизация работать не будет -- это не проблема кода, а конфигурации.
+### Files to Modify
+- `supabase/functions/check-overdue/index.ts` — fix braces, add ФРДО
+- `src/components/admin/ContractsTab.tsx` — add anniversary indicator
 
