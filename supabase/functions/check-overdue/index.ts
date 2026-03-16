@@ -117,7 +117,19 @@ serve(async (req) => {
           ? new Date(c.paid_until).toLocaleDateString("ru-RU")
           : "—";
         text += `  • ${c.client_name} ${num} — ${amt} (до ${paidUntil})\n`;
+    }
+
+    if (renewalCount > 0) {
+      text += `🔄 <b>Продление договоров «Сайт» через 2 недели (${renewalCount}):</b>\n`;
+      for (const c of renewalReminders) {
+        const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
+        const num = c.contract_number ? `№${c.contract_number}` : "";
+        const contractDateStr = c.contract_date
+          ? new Date(c.contract_date).toLocaleDateString("ru-RU")
+          : "—";
+        text += `  • ${c.client_name} ${num} — ${amt} (договор от ${contractDateStr})\n`;
       }
+    }
       text += `\n`;
     }
 
