@@ -117,19 +117,28 @@ serve(async (req) => {
           ? new Date(c.paid_until).toLocaleDateString("ru-RU")
           : "—";
         text += `  • ${c.client_name} ${num} — ${amt} (до ${paidUntil})\n`;
+      }
+      text += `\n`;
     }
 
     if (renewalCount > 0) {
-      text += `🔄 <b>Продление договоров «Сайт» через 2 недели (${renewalCount}):</b>\n`;
+      text += `🔄 <b>Продление договоров через 2 недели (${renewalCount}):</b>\n`;
       for (const c of renewalReminders) {
+        const todayDate = new Date(today);
+        const contractDate = new Date(c.contract_date!);
+        const nextAnniversary = new Date(contractDate);
+        nextAnniversary.setFullYear(todayDate.getFullYear());
+        if (nextAnniversary < todayDate) nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
+        const diffDays = Math.round((nextAnniversary.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+        
         const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
         const num = c.contract_number ? `№${c.contract_number}` : "";
+        const type = c.contract_type || "";
         const contractDateStr = c.contract_date
           ? new Date(c.contract_date).toLocaleDateString("ru-RU")
           : "—";
-        text += `  • ${c.client_name} ${num} — ${amt} (договор от ${contractDateStr})\n`;
+        text += `  • ${c.client_name} ${num} [${type}] — ${amt} (договор от ${contractDateStr}, через ${diffDays} дн.)\n`;
       }
-    }
       text += `\n`;
     }
 
