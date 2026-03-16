@@ -90,7 +90,7 @@ serve(async (req) => {
       // Check if anniversary is exactly 14 days from now
       const diffMs = nextAnniversary.getTime() - todayDate.getTime();
       const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      return diffDays === 14;
+      return diffDays >= 0 && diffDays <= 14;
     });
 
     const overdueCount = overdue?.length || 0;
