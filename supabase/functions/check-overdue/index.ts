@@ -12,6 +12,10 @@ serve(async (req) => {
   }
 
   try {
+    // Support test mode
+    let isTest = false;
+    try { const body = await req.json(); isTest = body?.test === true; } catch {}
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const BOT_TOKEN = Deno.env.get("ZXC_BOT_TOKEN");
@@ -64,11 +68,11 @@ serve(async (req) => {
 
     // 3. Website contracts approaching 1-year anniversary (14 days before)
     // For "Сайт" contracts: remind 2 weeks before the contract_date anniversary
-    const { data: allSiteContracts, error: err3 } = await supabase
+    const { data: allRenewalContracts, error: err3 } = await supabase
       .from("contracts")
       .select("id, client_name, contract_number, contract_date, amount, contract_type")
       .eq("is_archived", false)
-      .eq("contract_type", "Сайт")
+      .in("contract_type", ["Сайт", "ФРДО"])
       .not("contract_date", "is", null);
 
     if (err3) {
@@ -76,8 +80,8 @@ serve(async (req) => {
       throw err3;
     }
 
-    // Check which contracts have an anniversary in exactly 14 days
-    const renewalReminders = (allSiteContracts || []).filter(c => {
+    // Check which contracts have an anniversary within 14 days
+    const renewalReminders = (allRenewalContracts || []).filter(c => {
       const contractDate = new Date(c.contract_date!);
       const todayDate = new Date(today);
       // Calculate next anniversary
@@ -90,14 +94,14 @@ serve(async (req) => {
       // Check if anniversary is exactly 14 days from now
       const diffMs = nextAnniversary.getTime() - todayDate.getTime();
       const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      return diffDays === 14;
+      return diffDays >= 0 && diffDays <= 14;
     });
 
     const overdueCount = overdue?.length || 0;
     const expiringCount = expiring?.length || 0;
     const renewalCount = renewalReminders.length;
 
-    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && !isTest) {
       console.log("No notifications needed");
       return new Response(
         JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0, renewals: 0 }),
@@ -106,7 +110,14 @@ serve(async (req) => {
     }
 
     // Build message
-    let text = `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
+    let text = isTest 
+      ? `🔔 <b>Тестовый отчёт по оплатам</b>\n\n`
+      : `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
+
+    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+      text += `✅ Нет просроченных, истекающих или требующих продления договоров.\n`;
+      text += `📅 Напоминания активны для типов: Сайт, ФРДО\n`;
+    }
 
     if (overdueCount > 0) {
       text += `🔴 <b>Просрочено (${overdueCount}):</b>\n`;
@@ -117,19 +128,28 @@ serve(async (req) => {
           ? new Date(c.paid_until).toLocaleDateString("ru-RU")
           : "—";
         text += `  • ${c.client_name} ${num} — ${amt} (до ${paidUntil})\n`;
+      }
+      text += `\n`;
     }
 
     if (renewalCount > 0) {
-      text += `🔄 <b>Продление договоров «Сайт» через 2 недели (${renewalCount}):</b>\n`;
+      text += `🔄 <b>Продление договоров через 2 недели (${renewalCount}):</b>\n`;
       for (const c of renewalReminders) {
+        const todayDate = new Date(today);
+        const contractDate = new Date(c.contract_date!);
+        const nextAnniversary = new Date(contractDate);
+        nextAnniversary.setFullYear(todayDate.getFullYear());
+        if (nextAnniversary < todayDate) nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
+        const diffDays = Math.round((nextAnniversary.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
+        
         const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
         const num = c.contract_number ? `№${c.contract_number}` : "";
+        const type = c.contract_type || "";
         const contractDateStr = c.contract_date
           ? new Date(c.contract_date).toLocaleDateString("ru-RU")
           : "—";
-        text += `  • ${c.client_name} ${num} — ${amt} (договор от ${contractDateStr})\n`;
+        text += `  • ${c.client_name} ${num} [${type}] — ${amt} (договор от ${contractDateStr}, через ${diffDays} дн.)\n`;
       }
-    }
       text += `\n`;
     }
 

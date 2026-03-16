@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Contract {
   id: string;
@@ -290,6 +291,19 @@ const ContractsTab = () => {
     return new Date(paidUntil) < new Date();
   };
 
+  const getAnniversaryDays = (contractDate: string | null, contractType: string | null): number | null => {
+    if (!contractDate || !contractType) return null;
+    const type = contractType.toLowerCase();
+    if (!type.includes("сайт") && !type.includes("фрдо")) return null;
+    const cd = new Date(contractDate);
+    const now = new Date();
+    const nextAnniversary = new Date(cd);
+    nextAnniversary.setFullYear(now.getFullYear());
+    if (nextAnniversary < now) nextAnniversary.setFullYear(now.getFullYear() + 1);
+    const diffDays = Math.round((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays <= 14 ? diffDays : null;
+  };
+
   if (contractsError) {
     return (
       <div className="text-center py-8 space-y-2">
@@ -325,6 +339,11 @@ const ContractsTab = () => {
                     {c.contract_date && <span>{new Date(c.contract_date).toLocaleDateString("ru-RU")}</span>}
                     <span className="font-medium text-foreground">{formatAmount(c.amount)}</span>
                     {c.contract_type && <span>{c.contract_type}</span>}
+                    {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
+                        <RefreshCw className="w-3 h-3" />Продление через {d} дн.
+                      </span>
+                    ) : null; })()}
                   </div>
                   {c.paid_until && (
                     <div className={`text-xs flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : "text-muted-foreground"}`}>
@@ -382,7 +401,21 @@ const ContractsTab = () => {
                         ) : "—"}
                       </TableCell>
                       <TableCell>{formatAmount(c.amount)}</TableCell>
-                      <TableCell>{c.contract_type || "—"}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <div className="flex items-center gap-1.5">
+                            {c.contract_type || "—"}
+                            {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <RefreshCw className="w-4 h-4 text-orange-500" />
+                                </TooltipTrigger>
+                                <TooltipContent>Продление через {d} дн.</TooltipContent>
+                              </Tooltip>
+                            ) : null; })()}
+                          </div>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
