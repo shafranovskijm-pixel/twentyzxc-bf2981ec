@@ -100,7 +100,7 @@ serve(async (req) => {
     const expiringCount = expiring?.length || 0;
     const renewalCount = renewalReminders.length;
 
-    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && !isTest) {
       console.log("No notifications needed");
       return new Response(
         JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0, renewals: 0 }),
