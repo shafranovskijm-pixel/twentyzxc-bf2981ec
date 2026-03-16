@@ -11,10 +11,11 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  try {
     // Support test mode
     let isTest = false;
     try { const body = await req.json(); isTest = body?.test === true; } catch {}
-    
+
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const BOT_TOKEN = Deno.env.get("ZXC_BOT_TOKEN");
