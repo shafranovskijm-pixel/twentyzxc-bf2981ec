@@ -76,8 +76,8 @@ serve(async (req) => {
       throw err3;
     }
 
-    // Check which contracts have an anniversary in exactly 14 days
-    const renewalReminders = (allSiteContracts || []).filter(c => {
+    // Check which contracts have an anniversary within 14 days
+    const renewalReminders = (allRenewalContracts || []).filter(c => {
       const contractDate = new Date(c.contract_date!);
       const todayDate = new Date(today);
       // Calculate next anniversary
