@@ -401,7 +401,21 @@ const ContractsTab = () => {
                         ) : "—"}
                       </TableCell>
                       <TableCell>{formatAmount(c.amount)}</TableCell>
-                      <TableCell>{c.contract_type || "—"}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <div className="flex items-center gap-1.5">
+                            {c.contract_type || "—"}
+                            {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <RefreshCw className="w-4 h-4 text-orange-500" />
+                                </TooltipTrigger>
+                                <TooltipContent>Продление через {d} дн.</TooltipContent>
+                              </Tooltip>
+                            ) : null; })()}
+                          </div>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
