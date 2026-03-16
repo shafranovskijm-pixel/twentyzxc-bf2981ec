@@ -339,6 +339,11 @@ const ContractsTab = () => {
                     {c.contract_date && <span>{new Date(c.contract_date).toLocaleDateString("ru-RU")}</span>}
                     <span className="font-medium text-foreground">{formatAmount(c.amount)}</span>
                     {c.contract_type && <span>{c.contract_type}</span>}
+                    {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                      <span className="flex items-center gap-1 text-orange-500 font-semibold">
+                        <RefreshCw className="w-3 h-3" />Продление через {d} дн.
+                      </span>
+                    ) : null; })()}
                   </div>
                   {c.paid_until && (
                     <div className={`text-xs flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : "text-muted-foreground"}`}>
