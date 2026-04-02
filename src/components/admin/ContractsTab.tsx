@@ -352,15 +352,32 @@ const ContractsTab = () => {
                       Оплачено до: {new Date(c.paid_until).toLocaleDateString("ru-RU")}
                     </div>
                   )}
-                  <div className="flex gap-1">
-                    {c.file_path && (
-                      <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => downloadFile(c.file_path!)}><Download className="w-3.5 h-3.5" /></Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
-                      {isArchive ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => startEdit(c)}><Pencil className="w-3.5 h-3.5" /></Button>
-                    <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteContract.mutate(c)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                  <div className="flex gap-1 pt-1">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 gap-1.5">
+                          <MoreVertical className="w-4 h-4" /> Действия
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => startEdit(c)}>
+                          <Pencil className="w-4 h-4 mr-2" /> Редактировать
+                        </DropdownMenuItem>
+                        {c.file_path && (
+                          <DropdownMenuItem onClick={() => downloadFile(c.file_path!)}>
+                            <Download className="w-4 h-4 mr-2" /> Скачать файл
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
+                          {isArchive ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
+                          {isArchive ? "Восстановить" : "В архив"}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => deleteContract.mutate(c)} className="text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> Удалить
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               ))}
