@@ -249,6 +249,37 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     setShowForm(true);
   };
 
+  const fillFromContract = async () => {
+    const clientName = name.trim();
+    if (!clientName) { toast.error("Укажите название клиента"); return; }
+    setSyncing(true);
+    try {
+      const { data } = await supabase.from("generated_documents")
+        .select("client_inn")
+        .eq("client_name", clientName)
+        .not("client_inn", "is", null)
+        .limit(1)
+        .maybeSingle();
+      if (data?.client_inn) {
+        setInn(data.client_inn);
+        toast.success(`ИНН из документа: ${data.client_inn}`);
+        // Auto-sync via DaData with the correct INN
+        const result = await fetchDadata({ inn: data.client_inn });
+        if (result) {
+          if (result.kpp) setKpp(result.kpp);
+          if (result.ogrn) setOgrn(result.ogrn);
+          if (result.legal_address) setLegalAddress(result.legal_address);
+          if (result.director_name) setDirectorName(result.director_name);
+          if (result.director_post) setDirectorPost(result.director_post);
+          toast.success("Реквизиты заполнены из договора");
+        }
+      } else {
+        toast.error("ИНН не найден в документах этого клиента");
+      }
+    } catch { toast.error("Ошибка при поиске ИНН в документах"); }
+    setSyncing(false);
+  };
+
   const syncRequisites = async (byInn = false) => {
     const innVal = inn.trim();
     const nameVal = name.trim();
@@ -483,10 +514,16 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
             <div className="border-t pt-4 mt-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Реквизиты</h3>
-                <Button variant="outline" size="sm" onClick={() => syncRequisites()} disabled={syncing}>
-                  {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                  Синхронизировать
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={fillFromContract} disabled={syncing}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Из договора
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => syncRequisites()} disabled={syncing}>
+                    {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                    Синхронизировать
+                  </Button>
+                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => syncRequisites(true)} disabled={syncing} className="shrink-0" title="Обновить по ИНН">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
