@@ -39,18 +39,26 @@ const formatSize = (bytes: number | null) => {
   return (bytes / (1024 * 1024)).toFixed(1) + " MB";
 };
 
-const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete, onEmail }: Props) => {
+const FilesFolderCard = ({ contract: c, files, fileCount, isOpen, isDragTarget, loadingFiles, selectable, selected, onSelect, onToggle, onDrop, onDragOver, onDragLeave, onUpload, onDownload, onDelete, onEmail }: Props) => {
   return (
     <Card
-      className={`transition-colors ${isDragTarget ? "border-primary bg-primary/5" : ""}`}
+      className={`transition-colors ${isDragTarget ? "border-primary bg-primary/5" : ""} ${selected ? "border-primary bg-primary/10" : ""}`}
       onDrop={(e) => { e.preventDefault(); onDragLeave(); if (e.dataTransfer.files.length) onDrop(e.dataTransfer.files); }}
       onDragOver={(e) => { e.preventDefault(); onDragOver(); }}
       onDragLeave={onDragLeave}
     >
-      <CardHeader className="p-3 cursor-pointer" onClick={onToggle}>
+      <CardHeader className="p-3 cursor-pointer" onClick={selectable ? undefined : onToggle}>
         <div className="flex items-center gap-3">
+          {selectable && (
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onSelect?.()}
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0"
+            />
+          )}
           {isOpen ? <FolderOpen className="w-5 h-5 text-primary" /> : <Folder className="w-5 h-5 text-muted-foreground" />}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0" onClick={selectable ? onToggle : undefined}>
             <CardTitle className="text-sm font-medium truncate">
               {c.client_name}
               {c.contract_number && <span className="text-muted-foreground font-normal ml-2">№{c.contract_number}</span>}
