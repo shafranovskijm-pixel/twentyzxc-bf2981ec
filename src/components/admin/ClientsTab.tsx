@@ -662,7 +662,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, contract_number, contract_date, amount, payment_status, contract_type")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path")
         .eq("client_name", clientName)
         .order("created_at", { ascending: false });
       if (error) throw error;
