@@ -99,7 +99,7 @@ const FrdoTab = () => {
       const { data, error } = await supabase.functions.invoke("send-document-email", {
         body: {
           to: email,
-          subject: `Документы ФИС ФРДО — ${clientName}`,
+          subject: isSinglePrikaz ? `Приказ ФИС ФРДО — ${clientName}` : `Документы ФИС ФРДО — ${clientName}`,
           html,
         },
       });
