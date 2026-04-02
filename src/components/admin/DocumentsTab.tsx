@@ -502,6 +502,27 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           }
         }
 
+        // Step 2.5: Auto-create client if not exists
+        const existingClient = clients.find(c => c.name === clientName);
+        if (!existingClient && clientName.trim()) {
+          const { error: clientError } = await supabase.from("clients").insert({
+            name: clientName,
+            inn: clientInn || null,
+            kpp: clientKpp || null,
+            ogrn: clientOgrn || null,
+            legal_address: clientAddress || null,
+            director_name: clientDirectorName || null,
+            director_post: clientDirectorPost || null,
+          });
+          if (!clientError) {
+            console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
+            queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+            queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+          } else {
+            console.error("[DOC] Step 2.5 client creation failed:", clientError);
+          }
+        }
+
         // Step 3: Save files to storage (HTML first for reliability, then try PDF)
         if (targetContractId) {
           const translitDocLabel = (type: DocType) => type === "contract" ? "Dogovor" : type === "invoice" ? "Schet" : "Akt";
