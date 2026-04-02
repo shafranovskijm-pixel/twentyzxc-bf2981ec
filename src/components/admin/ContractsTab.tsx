@@ -435,7 +435,7 @@ const ContractsTab = () => {
                         </TooltipProvider>
                       </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right sticky right-0 bg-background">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon" className="w-9 h-9">
