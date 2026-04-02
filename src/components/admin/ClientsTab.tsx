@@ -833,6 +833,24 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
           </div>
         </div>
       )}
+      {/* Document preview dialog */}
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-4 py-3 border-b shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <span>Просмотр документа</span>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(null)}><X className="w-4 h-4" /></Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30 p-2">
+            <iframe
+              srcDoc={previewHtml || ""}
+              className="w-full h-full min-h-[600px] bg-white rounded border"
+              style={{ border: "none" }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
