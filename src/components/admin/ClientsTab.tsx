@@ -10,9 +10,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare, Eye } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Client {
   id: string;
@@ -657,12 +658,13 @@ interface ClientsTabProps {
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
   const queryClient = useQueryClient();
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const { data: contracts = [], isLoading: loadingContracts } = useQuery({
     queryKey: ["client-history-contracts", clientName],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, contract_number, contract_date, amount, payment_status, contract_type")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path")
         .eq("client_name", clientName)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -676,7 +678,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
     queryFn: async () => {
       const { data, error } = await supabase
         .from("generated_documents")
-        .select("id, doc_type, doc_number, doc_date, total_amount")
+        .select("id, doc_type, doc_number, doc_date, total_amount, html_content")
         .eq("client_name", clientName)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -768,6 +770,21 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 >
                   {c.payment_status || "не оплачено"}
                 </button>
+                {c.file_path && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const { data } = await supabase.storage.from("contracts").createSignedUrl(c.file_path!, 300);
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                      else toast.error("Не удалось открыть файл");
+                    }}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -786,6 +803,11 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 <span className="font-mono text-xs">№{d.doc_number}</span>
                 <span className="text-muted-foreground">{formatDate(d.doc_date)}</span>
                 {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+                {d.html_content && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPreviewHtml(d.html_content)}>
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -811,6 +833,24 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
           </div>
         </div>
       )}
+      {/* Document preview dialog */}
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-4 py-3 border-b shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <span>Просмотр документа</span>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(null)}><X className="w-4 h-4" /></Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30 p-2">
+            <iframe
+              srcDoc={previewHtml || ""}
+              className="w-full h-full min-h-[600px] bg-white rounded border"
+              style={{ border: "none" }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
