@@ -255,6 +255,22 @@ const FilesTab = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1"
         />
+        {!selectMode ? (
+          <Button variant="outline" size="sm" onClick={() => setSelectMode(true)} className="shrink-0">
+            <Trash2 className="w-4 h-4 mr-1.5" />
+            Удалить папки
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-sm text-muted-foreground">{selectedIds.size} выбрано</span>
+            <Button variant="destructive" size="sm" disabled={selectedIds.size === 0} onClick={() => setShowDeleteConfirm(true)}>
+              Удалить выбранные
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}>
+              Отмена
+            </Button>
+          </div>
+        )}
       </div>
 
       {uploading && (
