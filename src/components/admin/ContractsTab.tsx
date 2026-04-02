@@ -366,7 +366,7 @@ const ContractsTab = () => {
             </div>
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <Table>
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Организация</TableHead>
@@ -377,7 +377,7 @@ const ContractsTab = () => {
                     <TableHead>Сумма</TableHead>
                     <TableHead>Тип</TableHead>
                     <TableHead>Ответственный</TableHead>
-                    <TableHead className="w-[140px]"></TableHead>
+                    <TableHead className="w-[160px] text-right">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
