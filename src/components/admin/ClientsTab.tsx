@@ -158,22 +158,56 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     if (!importConfirm || importConfirm.selectedNames.size === 0) return;
     setImporting(true);
     try {
-      const rows = importConfirm.names
-        .filter(name => importConfirm.selectedNames.has(name))
-        .map(name => {
-          const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
-          let serviceType: string | null = null;
-          if (ct.includes("ФРДО")) serviceType = "ФРДО";
-          else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
-          else if (ct) serviceType = "ПРОЧЕЕ";
-          return { name, service_type: serviceType };
-        });
+      const selectedNames = importConfirm.names.filter(name => importConfirm.selectedNames.has(name));
 
-      const { error } = await supabase.from("clients").insert(rows as any);
+      // Fetch INN from generated_documents for selected clients
+      const { data: docs } = await supabase
+        .from("generated_documents")
+        .select("client_name, client_inn")
+        .in("client_name", selectedNames)
+        .not("client_inn", "is", null);
+
+      const innMap = new Map<string, string>();
+      (docs || []).forEach(d => {
+        if (d.client_inn && !innMap.has(d.client_name)) {
+          innMap.set(d.client_name, d.client_inn);
+        }
+      });
+
+      const rows = selectedNames.map(name => {
+        const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
+        let serviceType: string | null = null;
+        if (ct.includes("ФРДО")) serviceType = "ФРДО";
+        else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
+        else if (ct) serviceType = "ПРОЧЕЕ";
+        return { name, service_type: serviceType, inn: innMap.get(name) || null };
+      });
+
+      const { error, data: inserted } = await supabase.from("clients").insert(rows as any).select();
       if (error) throw error;
 
       toast.success(`Импортировано ${rows.length} клиентов`);
       queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+
+      // Auto-sync requisites via DaData for clients with INN
+      const withInn = (inserted || []).filter((c: any) => c.inn);
+      if (withInn.length > 0) {
+        toast.info(`Синхронизация реквизитов для ${withInn.length} клиентов...`);
+        for (const client of withInn) {
+          const dadata = await fetchDadata({ inn: (client as any).inn });
+          if (dadata) {
+            await supabase.from("clients").update({
+              kpp: dadata.kpp,
+              ogrn: dadata.ogrn,
+              legal_address: dadata.legal_address,
+              director_name: dadata.director_name,
+              director_post: dadata.director_post,
+            } as any).eq("id", (client as any).id);
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+        toast.success("Реквизиты синхронизированы");
+      }
     } catch {
       toast.error("Ошибка импорта");
     }
