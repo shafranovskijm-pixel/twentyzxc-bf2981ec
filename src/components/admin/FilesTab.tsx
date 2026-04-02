@@ -295,6 +295,9 @@ const FilesTab = () => {
               isOpen={openFolder === c.id}
               isDragTarget={dragOver === c.id}
               loadingFiles={openFolder === c.id && loadingFiles}
+              selectable={selectMode}
+              selected={selectedIds.has(c.id)}
+              onSelect={() => toggleSelect(c.id)}
               onToggle={() => setOpenFolder(openFolder === c.id ? null : c.id)}
               onDrop={(files) => uploadFiles(c.id, files)}
               onDragOver={() => setDragOver(c.id)}
