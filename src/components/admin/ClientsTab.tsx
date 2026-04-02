@@ -367,7 +367,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                     <span>Выбрано {importConfirm?.selectedNames?.size || 0} из {importConfirm?.names?.length || 0}</span>
                     <Button variant="ghost" size="sm" onClick={toggleAllImport} className="text-xs h-7">
                       <CheckSquare className="w-3 h-3 mr-1" />
-                      {importConfirm?.selectedNames.size === importConfirm?.names.length ? "Снять все" : "Выбрать все"}
+                      {importConfirm?.selectedNames?.size === importConfirm?.names?.length ? "Снять все" : "Выбрать все"}
                     </Button>
                   </div>
                   <div className="max-h-60 overflow-y-auto text-xs space-y-1">
