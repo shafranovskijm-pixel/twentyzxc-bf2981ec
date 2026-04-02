@@ -90,7 +90,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [syncing, setSyncing] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string> } | null>(null);
+  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string>; selectedNames: Set<string> } | null>(null);
 
   const handleImportFromContracts = async () => {
     setImporting(true);
