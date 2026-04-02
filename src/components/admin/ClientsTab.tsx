@@ -657,6 +657,7 @@ interface ClientsTabProps {
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
   const queryClient = useQueryClient();
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const { data: contracts = [], isLoading: loadingContracts } = useQuery({
     queryKey: ["client-history-contracts", clientName],
     queryFn: async () => {
