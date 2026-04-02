@@ -502,10 +502,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           }
         }
 
-        // Step 2.5: Auto-create client if not exists
+        // Step 2.5: Auto-create or update client
         const existingClient = clients.find(c => c.name === clientName);
-        if (!existingClient && clientName.trim()) {
-          const { error: clientError } = await supabase.from("clients").insert({
+        if (clientName.trim()) {
+          const clientData = {
             name: clientName,
             inn: clientInn || null,
             kpp: clientKpp || null,
@@ -513,14 +513,32 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
             legal_address: clientAddress || null,
             director_name: clientDirectorName || null,
             director_post: clientDirectorPost || null,
-          });
-          if (!clientError) {
-            console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
-            queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
-            queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+          };
+          if (!existingClient) {
+            const { error: clientError } = await supabase.from("clients").insert(clientData);
+            if (!clientError) {
+              console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
+            } else {
+              console.error("[DOC] Step 2.5 client creation failed:", clientError);
+            }
           } else {
-            console.error("[DOC] Step 2.5 client creation failed:", clientError);
+            // Update existing client requisites
+            const { error: updateError } = await supabase.from("clients").update({
+              inn: clientInn || existingClient.inn || null,
+              kpp: clientKpp || existingClient.kpp || null,
+              ogrn: clientOgrn || existingClient.ogrn || null,
+              legal_address: clientAddress || existingClient.legal_address || null,
+              director_name: clientDirectorName || existingClient.director_name || null,
+              director_post: clientDirectorPost || existingClient.director_post || null,
+            }).eq("id", existingClient.id);
+            if (!updateError) {
+              console.log("[DOC] Step 2.5 OK, client updated:", clientName);
+            } else {
+              console.error("[DOC] Step 2.5 client update failed:", updateError);
+            }
           }
+          queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+          queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
         }
 
         // Step 3: Save files to storage (HTML first for reliability, then try PDF)
