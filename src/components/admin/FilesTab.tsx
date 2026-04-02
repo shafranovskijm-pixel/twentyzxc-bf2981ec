@@ -2,9 +2,10 @@ import { useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import FilesFolderCard from "./files/FilesFolderCard";
@@ -35,6 +36,10 @@ const FilesTab = () => {
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("24@24zxc.ru");
   const [emailSending, setEmailSending] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
@@ -180,10 +185,43 @@ const FilesTab = () => {
   };
 
   const handleEmailFile = (f: ContractFile) => {
-    // Try to find client email from contract
-    const contract = contracts.find(c => c.id === f.contract_id);
     setEmailFile(f);
     setEmailTo("");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkArchive = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const contractId of selectedIds) {
+        // Delete files from storage
+        const { data: files } = await supabase.from("contract_files").select("file_path").eq("contract_id", contractId);
+        if (files?.length) {
+          await supabase.storage.from("contracts").remove(files.map(f => f.file_path));
+        }
+        // Delete DB file records
+        await supabase.from("contract_files").delete().eq("contract_id", contractId);
+        // Archive the contract
+        await supabase.from("contracts").update({ is_archived: true }).eq("id", contractId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+      toast.success(`Архивировано: ${selectedIds.size} папок`);
+    } catch {
+      toast.error("Ошибка при удалении");
+    }
+    setBulkDeleting(false);
+    setShowDeleteConfirm(false);
+    setSelectMode(false);
+    setSelectedIds(new Set());
   };
 
   const filtered = contracts.filter((c) => {
@@ -217,6 +255,22 @@ const FilesTab = () => {
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1"
         />
+        {!selectMode ? (
+          <Button variant="outline" size="sm" onClick={() => setSelectMode(true)} className="shrink-0">
+            <Trash2 className="w-4 h-4 mr-1.5" />
+            Удалить папки
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-sm text-muted-foreground">{selectedIds.size} выбрано</span>
+            <Button variant="destructive" size="sm" disabled={selectedIds.size === 0} onClick={() => setShowDeleteConfirm(true)}>
+              Удалить выбранные
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}>
+              Отмена
+            </Button>
+          </div>
+        )}
       </div>
 
       {uploading && (
@@ -241,6 +295,9 @@ const FilesTab = () => {
               isOpen={openFolder === c.id}
               isDragTarget={dragOver === c.id}
               loadingFiles={openFolder === c.id && loadingFiles}
+              selectable={selectMode}
+              selected={selectedIds.has(c.id)}
+              onSelect={() => toggleSelect(c.id)}
               onToggle={() => setOpenFolder(openFolder === c.id ? null : c.id)}
               onDrop={(files) => uploadFiles(c.id, files)}
               onDragOver={() => setDragOver(c.id)}
@@ -277,6 +334,30 @@ const FilesTab = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Архивировать {selectedIds.size} папок?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Файлы будут удалены из хранилища, а договоры перемещены в архив. Это действие нельзя отменить.
+              <ul className="mt-2 space-y-1 text-sm">
+                {contracts.filter(c => selectedIds.has(c.id)).map(c => (
+                  <li key={c.id}>• {c.client_name}{c.contract_number ? ` №${c.contract_number}` : ""}</li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive} disabled={bulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
