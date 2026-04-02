@@ -418,15 +418,15 @@ const ContractsTab = () => {
                       </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
                       <TableCell>
-                        <div className="flex gap-1">
+                        <div className="flex gap-0.5 opacity-70 hover:opacity-100 transition-opacity">
                           {c.file_path && (
-                            <Button variant="ghost" size="icon" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
+                            <Button variant="outline" size="icon" className="w-8 h-8" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
                           )}
-                          <Button variant="ghost" size="icon" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })} title={isArchive ? "Восстановить" : "В архив"}>
+                          <Button variant="outline" size="icon" className="w-8 h-8" onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })} title={isArchive ? "Восстановить" : "В архив"}>
                             {isArchive ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => startEdit(c)}><Pencil className="w-4 h-4" /></Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteContract.mutate(c)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                          <Button variant="outline" size="icon" className="w-8 h-8" onClick={() => startEdit(c)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>
+                          <Button variant="outline" size="icon" className="w-8 h-8 text-destructive hover:text-destructive" onClick={() => deleteContract.mutate(c)} title="Удалить"><Trash2 className="w-4 h-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
