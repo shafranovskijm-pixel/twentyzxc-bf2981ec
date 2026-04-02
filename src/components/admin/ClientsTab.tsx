@@ -364,7 +364,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
               <AlertDialogDescription asChild>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span>Выбрано {importConfirm?.selectedNames.size || 0} из {importConfirm?.names.length}</span>
+                    <span>Выбрано {importConfirm?.selectedNames?.size || 0} из {importConfirm?.names?.length || 0}</span>
                     <Button variant="ghost" size="sm" onClick={toggleAllImport} className="text-xs h-7">
                       <CheckSquare className="w-3 h-3 mr-1" />
                       {importConfirm?.selectedNames.size === importConfirm?.names.length ? "Снять все" : "Выбрать все"}
