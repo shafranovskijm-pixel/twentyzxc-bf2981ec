@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Client {
@@ -89,7 +90,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [syncing, setSyncing] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string> } | null>(null);
+  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string>; selectedNames: Set<string> } | null>(null);
 
   const handleImportFromContracts = async () => {
     setImporting(true);
@@ -130,25 +131,43 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
         }
       });
 
-      setImportConfirm({ names, contractTypes });
+      setImportConfirm({ names, contractTypes, selectedNames: new Set<string>() });
     } catch {
       toast.error("Ошибка при загрузке данных");
     }
     setImporting(false);
   };
 
-  const confirmImport = async () => {
+  const toggleImportName = (name: string) => {
     if (!importConfirm) return;
+    const next = new Set(importConfirm.selectedNames);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    setImportConfirm({ ...importConfirm, selectedNames: next });
+  };
+
+  const toggleAllImport = () => {
+    if (!importConfirm) return;
+    const allSelected = importConfirm.selectedNames.size === importConfirm.names.length;
+    setImportConfirm({
+      ...importConfirm,
+      selectedNames: allSelected ? new Set<string>() : new Set(importConfirm.names),
+    });
+  };
+
+  const confirmImport = async () => {
+    if (!importConfirm || importConfirm.selectedNames.size === 0) return;
     setImporting(true);
     try {
-      const rows = importConfirm.names.map(name => {
-        const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
-        let serviceType: string | null = null;
-        if (ct.includes("ФРДО")) serviceType = "ФРДО";
-        else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
-        else if (ct) serviceType = "ПРОЧЕЕ";
-        return { name, service_type: serviceType };
-      });
+      const rows = importConfirm.names
+        .filter(name => importConfirm.selectedNames.has(name))
+        .map(name => {
+          const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
+          let serviceType: string | null = null;
+          if (ct.includes("ФРДО")) serviceType = "ФРДО";
+          else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
+          else if (ct) serviceType = "ПРОЧЕЕ";
+          return { name, service_type: serviceType };
+        });
 
       const { error } = await supabase.from("clients").insert(rows as any);
       if (error) throw error;
@@ -342,25 +361,37 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Импорт клиентов из договоров</AlertDialogTitle>
-              <AlertDialogDescription>
-                Найдено {importConfirm?.names.length} новых клиентов. Создать карточки?
-                <div className="mt-2 max-h-40 overflow-y-auto text-xs space-y-1">
-                  {importConfirm?.names.map((n, i) => (
-                    <div key={i} className="flex justify-between">
-                      <span>{n}</span>
-                      {importConfirm.contractTypes[n] && (
-                        <Badge variant="outline" className="ml-2 text-[10px]">{importConfirm.contractTypes[n]}</Badge>
-                      )}
-                    </div>
-                  ))}
+              <AlertDialogDescription asChild>
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span>Выбрано {importConfirm?.selectedNames.size || 0} из {importConfirm?.names.length}</span>
+                    <Button variant="ghost" size="sm" onClick={toggleAllImport} className="text-xs h-7">
+                      <CheckSquare className="w-3 h-3 mr-1" />
+                      {importConfirm?.selectedNames.size === importConfirm?.names.length ? "Снять все" : "Выбрать все"}
+                    </Button>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto text-xs space-y-1">
+                    {importConfirm?.names.map((n, i) => (
+                      <label key={i} className="flex items-center gap-2 py-1 px-1 rounded hover:bg-muted cursor-pointer">
+                        <Checkbox
+                          checked={importConfirm.selectedNames.has(n)}
+                          onCheckedChange={() => toggleImportName(n)}
+                        />
+                        <span className="flex-1">{n}</span>
+                        {importConfirm.contractTypes[n] && (
+                          <Badge variant="outline" className="ml-2 text-[10px]">{importConfirm.contractTypes[n]}</Badge>
+                        )}
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmImport} disabled={importing}>
+              <AlertDialogAction onClick={confirmImport} disabled={importing || !importConfirm?.selectedNames.size}>
                 {importing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Импортировать
+                Импортировать ({importConfirm?.selectedNames.size || 0})
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
