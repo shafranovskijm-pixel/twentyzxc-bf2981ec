@@ -18,6 +18,9 @@ interface Props {
   isOpen: boolean;
   isDragTarget: boolean;
   loadingFiles: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
   onToggle: () => void;
   onDrop: (files: FileList) => void;
   onDragOver: () => void;
