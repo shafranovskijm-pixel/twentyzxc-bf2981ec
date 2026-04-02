@@ -138,18 +138,36 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     setImporting(false);
   };
 
-  const confirmImport = async () => {
+  const toggleImportName = (name: string) => {
     if (!importConfirm) return;
+    const next = new Set(importConfirm.selectedNames);
+    if (next.has(name)) next.delete(name); else next.add(name);
+    setImportConfirm({ ...importConfirm, selectedNames: next });
+  };
+
+  const toggleAllImport = () => {
+    if (!importConfirm) return;
+    const allSelected = importConfirm.selectedNames.size === importConfirm.names.length;
+    setImportConfirm({
+      ...importConfirm,
+      selectedNames: allSelected ? new Set<string>() : new Set(importConfirm.names),
+    });
+  };
+
+  const confirmImport = async () => {
+    if (!importConfirm || importConfirm.selectedNames.size === 0) return;
     setImporting(true);
     try {
-      const rows = importConfirm.names.map(name => {
-        const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
-        let serviceType: string | null = null;
-        if (ct.includes("ФРДО")) serviceType = "ФРДО";
-        else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
-        else if (ct) serviceType = "ПРОЧЕЕ";
-        return { name, service_type: serviceType };
-      });
+      const rows = importConfirm.names
+        .filter(name => importConfirm.selectedNames.has(name))
+        .map(name => {
+          const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
+          let serviceType: string | null = null;
+          if (ct.includes("ФРДО")) serviceType = "ФРДО";
+          else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
+          else if (ct) serviceType = "ПРОЧЕЕ";
+          return { name, service_type: serviceType };
+        });
 
       const { error } = await supabase.from("clients").insert(rows as any);
       if (error) throw error;
