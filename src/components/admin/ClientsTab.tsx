@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Client {
   id: string;
@@ -87,6 +88,79 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string> } | null>(null);
+
+  const handleImportFromContracts = async () => {
+    setImporting(true);
+    try {
+      const { data: contracts } = await supabase
+        .from("contracts")
+        .select("client_name, contract_type")
+        .eq("is_archived", false);
+      const { data: existingClients } = await supabase
+        .from("clients")
+        .select("name");
+
+      const existingNames = new Set((existingClients || []).map(c => c.name.toLowerCase().trim()));
+      const newNamesMap = new Map<string, string>();
+      
+      (contracts || []).forEach(c => {
+        const key = c.client_name.toLowerCase().trim();
+        if (!existingNames.has(key) && !newNamesMap.has(key)) {
+          newNamesMap.set(key, c.contract_type || "");
+        }
+      });
+
+      if (newNamesMap.size === 0) {
+        toast.info("Все клиенты из договоров уже импортированы");
+        setImporting(false);
+        return;
+      }
+
+      const names: string[] = [];
+      const contractTypes: Record<string, string> = {};
+      // Get original casing from contracts
+      (contracts || []).forEach(c => {
+        const key = c.client_name.toLowerCase().trim();
+        if (newNamesMap.has(key) && !contractTypes[c.client_name]) {
+          names.push(c.client_name);
+          contractTypes[c.client_name] = c.contract_type || "";
+          newNamesMap.delete(key);
+        }
+      });
+
+      setImportConfirm({ names, contractTypes });
+    } catch {
+      toast.error("Ошибка при загрузке данных");
+    }
+    setImporting(false);
+  };
+
+  const confirmImport = async () => {
+    if (!importConfirm) return;
+    setImporting(true);
+    try {
+      const rows = importConfirm.names.map(name => {
+        const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
+        let serviceType: string | null = null;
+        if (ct.includes("ФРДО")) serviceType = "ФРДО";
+        else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
+        else if (ct) serviceType = "ПРОЧЕЕ";
+        return { name, service_type: serviceType };
+      });
+
+      const { error } = await supabase.from("clients").insert(rows as any);
+      if (error) throw error;
+
+      toast.success(`Импортировано ${rows.length} клиентов`);
+      queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+    } catch {
+      toast.error("Ошибка импорта");
+    }
+    setImportConfirm(null);
+    setImporting(false);
+  };
 
   const { data: clients = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin-clients"],
@@ -252,6 +326,10 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 min-w-[150px]" />
+        <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
+          {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
+          <span className="hidden sm:inline">Импорт из договоров</span>
+        </Button>
         <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
           {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
           <span className="hidden sm:inline">Синхр. все реквизиты</span>
@@ -259,6 +337,34 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
         <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
           <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Добавить</span>
         </Button>
+
+        <AlertDialog open={!!importConfirm} onOpenChange={(open) => !open && setImportConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Импорт клиентов из договоров</AlertDialogTitle>
+              <AlertDialogDescription>
+                Найдено {importConfirm?.names.length} новых клиентов. Создать карточки?
+                <div className="mt-2 max-h-40 overflow-y-auto text-xs space-y-1">
+                  {importConfirm?.names.map((n, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span>{n}</span>
+                      {importConfirm.contractTypes[n] && (
+                        <Badge variant="outline" className="ml-2 text-[10px]">{importConfirm.contractTypes[n]}</Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmImport} disabled={importing}>
+                {importing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Импортировать
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {showForm && (
