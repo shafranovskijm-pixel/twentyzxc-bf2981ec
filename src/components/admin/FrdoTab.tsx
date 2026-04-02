@@ -66,16 +66,27 @@ const FrdoTab = () => {
 
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
     const docs = FRDO_DOCUMENTS.filter((d) => selectedDocs.includes(d.id));
+    const isSinglePrikaz = selectedDocs.length === 1 && selectedDocs[0] === "prikaz";
 
     const linksHtml = docs
       .map((d) => `<li style="margin-bottom:8px;"><a href="${d.path}" style="color:#2563eb;">${d.label}</a></li>`)
       .join("");
 
+    let bodyText: string;
+    if (isSinglePrikaz) {
+      bodyText = `
+        <p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации.</p>
+        <p style="color:#555;">После подписать от руки и поставить печать, отсканировать в PDF, после чего PDF подписать электронной подписью.</p>
+      `;
+    } else {
+      bodyText = `<p style="color:#555;">Направляем вам пакет документов ФИС ФРДО для работы:</p>`;
+    }
+
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
-        <h2 style="color:#1a1a1a;">Документы ФИС ФРДО</h2>
+        <h2 style="color:#1a1a1a;">${isSinglePrikaz ? "Приказ ФИС ФРДО" : "Документы ФИС ФРДО"}</h2>
         <p style="color:#555;">Здравствуйте!</p>
-        <p style="color:#555;">Направляем вам пакет документов ФИС ФРДО для работы:</p>
+        ${bodyText}
         <ul style="list-style:none;padding:0;">${linksHtml}</ul>
         <p style="color:#555;margin-top:24px;">Пожалуйста, скачайте и ознакомьтесь с документами. При возникновении вопросов свяжитесь с нами.</p>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
@@ -88,7 +99,7 @@ const FrdoTab = () => {
       const { data, error } = await supabase.functions.invoke("send-document-email", {
         body: {
           to: email,
-          subject: `Документы ФИС ФРДО — ${clientName}`,
+          subject: isSinglePrikaz ? `Приказ ФИС ФРДО — ${clientName}` : `Документы ФИС ФРДО — ${clientName}`,
           html,
         },
       });
