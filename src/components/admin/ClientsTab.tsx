@@ -88,6 +88,79 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string> } | null>(null);
+
+  const handleImportFromContracts = async () => {
+    setImporting(true);
+    try {
+      const { data: contracts } = await supabase
+        .from("contracts")
+        .select("client_name, contract_type")
+        .eq("is_archived", false);
+      const { data: existingClients } = await supabase
+        .from("clients")
+        .select("name");
+
+      const existingNames = new Set((existingClients || []).map(c => c.name.toLowerCase().trim()));
+      const newNamesMap = new Map<string, string>();
+      
+      (contracts || []).forEach(c => {
+        const key = c.client_name.toLowerCase().trim();
+        if (!existingNames.has(key) && !newNamesMap.has(key)) {
+          newNamesMap.set(key, c.contract_type || "");
+        }
+      });
+
+      if (newNamesMap.size === 0) {
+        toast.info("Все клиенты из договоров уже импортированы");
+        setImporting(false);
+        return;
+      }
+
+      const names: string[] = [];
+      const contractTypes: Record<string, string> = {};
+      // Get original casing from contracts
+      (contracts || []).forEach(c => {
+        const key = c.client_name.toLowerCase().trim();
+        if (newNamesMap.has(key) && !contractTypes[c.client_name]) {
+          names.push(c.client_name);
+          contractTypes[c.client_name] = c.contract_type || "";
+          newNamesMap.delete(key);
+        }
+      });
+
+      setImportConfirm({ names, contractTypes });
+    } catch {
+      toast.error("Ошибка при загрузке данных");
+    }
+    setImporting(false);
+  };
+
+  const confirmImport = async () => {
+    if (!importConfirm) return;
+    setImporting(true);
+    try {
+      const rows = importConfirm.names.map(name => {
+        const ct = importConfirm.contractTypes[name]?.toUpperCase() || "";
+        let serviceType: string | null = null;
+        if (ct.includes("ФРДО")) serviceType = "ФРДО";
+        else if (ct.includes("САЙТ") || ct.includes("SITE")) serviceType = "САЙТ";
+        else if (ct) serviceType = "ПРОЧЕЕ";
+        return { name, service_type: serviceType };
+      });
+
+      const { error } = await supabase.from("clients").insert(rows as any);
+      if (error) throw error;
+
+      toast.success(`Импортировано ${rows.length} клиентов`);
+      queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+    } catch {
+      toast.error("Ошибка импорта");
+    }
+    setImportConfirm(null);
+    setImporting(false);
+  };
 
   const { data: clients = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin-clients"],
