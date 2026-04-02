@@ -334,6 +334,30 @@ const FilesTab = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Архивировать {selectedIds.size} папок?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Файлы будут удалены из хранилища, а договоры перемещены в архив. Это действие нельзя отменить.
+              <ul className="mt-2 space-y-1 text-sm">
+                {contracts.filter(c => selectedIds.has(c.id)).map(c => (
+                  <li key={c.id}>• {c.client_name}{c.contract_number ? ` №${c.contract_number}` : ""}</li>
+                ))}
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkArchive} disabled={bulkDeleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {bulkDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
