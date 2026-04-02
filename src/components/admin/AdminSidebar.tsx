@@ -11,7 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History, GraduationCap } from "lucide-react";
+import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History, GraduationCap, FileCheck } from "lucide-react";
 import {
   DndContext,
   closestCenter,
