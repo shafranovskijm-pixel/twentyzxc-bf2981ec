@@ -1,42 +1,45 @@
 
 
-## Plan: Auto-create Client When Generating a Document
+## Plan: Create "ФИС ФРДО" Admin Tab
 
-### Problem
-When generating a document for a new client (e.g. "ГРАНД АВТО", "АНТА"), the system auto-creates a **contract** record but does NOT create a **client** record. The user expects a client card to appear automatically.
+### What it does
+A new admin tab where you can select FRDO-related documents (инструкция, приказ, шаблоны ДПО/ПО, terms-of-use, etc.) via checkboxes and send them by email to a client.
 
-### Fix in `src/components/admin/DocumentsTab.tsx`
+### Steps
 
-After the contract auto-creation (Step 2, ~line 503), add a new step that:
+#### 1. Upload 7 FRDO documents to storage
+Upload all 7 files to the `document-assets` bucket under a `frdo/` prefix:
+- `frdo/terms-of-use.pdf`
+- `frdo/ДПО-06.11.2023.xlsx`
+- `frdo/ДПО-шаблон-образец.xlsx`
+- `frdo/инструкция.docx`
+- `frdo/По_образец.xlsx`
+- `frdo/ПО-06.11.2023.xlsx`
+- `frdo/Приказ_ФРДО_1.docx`
 
-1. Checks if a client with the given `clientName` already exists in the `clients` table
-2. If not found, inserts a new client record with all available requisites (name, INN, KPP, OGRN, address, director name/post, email)
-3. Invalidates the `doc-clients` and `planner-clients` query caches
+Since the `document-assets` bucket is public, files will be accessible via signed/public URLs for email links.
 
-This runs for ALL document types (contract, invoice, act), not just contracts.
+#### 2. Create `src/components/admin/FrdoTab.tsx`
+New component with:
+- **Client selector** — dropdown of clients from the `clients` table (with email). Filter/search by name.
+- **Email input** — auto-filled from selected client's email, editable manually.
+- **Document checklist** — 7 checkboxes (one per uploaded file) with human-readable labels. "Select all" toggle.
+- **Send button** — calls `send-document-email` edge function with an HTML body containing download links to all selected documents. The email includes a branded message explaining the FRDO document package.
+- Loading/success/error states with toast notifications.
 
-### Technical Details
+#### 3. Register tab in sidebar and Admin page
+- Add `{ id: "frdo", label: "ФИС ФРДО", icon: "GraduationCap" }` to `AdminSidebar.tsx` (use a different icon or reuse GraduationCap — will use `FileCheck` to distinguish from НМО).
+- Add `{activeSection === "frdo" && <FrdoTab />}` in `Admin.tsx`.
+- Import `FileCheck` in sidebar icon map.
 
-```typescript
-// After Step 2 (contract auto-creation), add Step 2.5:
-const existingClient = clients.find(c => c.name === clientName);
-if (!existingClient && clientName.trim()) {
-  const { error: clientError } = await supabase.from("clients").insert({
-    name: clientName,
-    inn: clientInn || null,
-    kpp: clientKpp || null,
-    ogrn: clientOgrn || null,
-    legal_address: clientAddress || null,
-    director_name: clientDirectorName || null,
-    director_post: clientDirectorPost || null,
-  });
-  if (!clientError) {
-    queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
-    queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
-  }
-}
-```
+#### 4. Email format
+The email sent via `send-document-email` will contain:
+- Subject: "Документы ФИС ФРДО — [Company Name]"
+- HTML body with a list of selected documents as download links (public URLs from `document-assets` bucket)
+- No PDF attachments — just download links to keep the email lightweight
 
-### Files to Modify
-- `src/components/admin/DocumentsTab.tsx` — add client auto-creation logic after Step 2
+### Files to create/modify
+- **Create**: `src/components/admin/FrdoTab.tsx`
+- **Edit**: `src/components/admin/AdminSidebar.tsx` — add "frdo" menu item + icon
+- **Edit**: `src/pages/Admin.tsx` — import FrdoTab, render it
 
