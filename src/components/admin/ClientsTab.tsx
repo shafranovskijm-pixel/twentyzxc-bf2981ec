@@ -656,6 +656,7 @@ interface ClientsTabProps {
 }
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
+  const queryClient = useQueryClient();
   const { data: contracts = [], isLoading: loadingContracts } = useQuery({
     queryKey: ["client-history-contracts", clientName],
     queryFn: async () => {
@@ -754,9 +755,19 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 <span className="text-muted-foreground">{formatDate(c.contract_date)}</span>
                 {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
                 {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
-                <Badge variant="outline" className={`text-xs ml-auto ${statusColor(c.payment_status)}`}>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const newStatus = c.payment_status === "оплачено" ? "не оплачено" : "оплачено";
+                    await supabase.from("contracts").update({ payment_status: newStatus } as any).eq("id", c.id);
+                    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+                    queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+                    toast.success(`Статус: ${newStatus}`);
+                  }}
+                  className={`text-xs ml-auto px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${statusColor(c.payment_status)}`}
+                >
                   {c.payment_status || "не оплачено"}
-                </Badge>
+                </button>
               </div>
             ))}
           </div>
