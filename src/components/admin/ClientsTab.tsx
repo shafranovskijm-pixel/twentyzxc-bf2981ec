@@ -389,9 +389,9 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmImport} disabled={importing || !importConfirm?.selectedNames.size}>
+              <AlertDialogAction onClick={confirmImport} disabled={importing || !(importConfirm?.selectedNames?.size)}>
                 {importing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Импортировать ({importConfirm?.selectedNames.size || 0})
+                Импортировать ({importConfirm?.selectedNames?.size || 0})
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
