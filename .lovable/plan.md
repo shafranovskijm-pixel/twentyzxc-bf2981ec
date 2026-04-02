@@ -1,28 +1,31 @@
 
 
-## Plan: Selectable import list with checkboxes
+## Plan: Add "Fill from contract" button to client requisites
 
 ### Problem
-The import dialog shows all 37 new clients and imports them all at once. The user wants to pick only 2-3 organizations from the list.
+The client card shows wrong requisites (INN `7841084450` instead of `2721223198` for ООО "АВРОРА") because DaData returned data for a different organization. The user wants to pull the correct INN directly from the contract documents.
 
 ### What changes
 
 #### Edit `src/components/admin/ClientsTab.tsx`
 
-1. **Add selection state**: Change `importConfirm` to also track a `selectedNames: Set<string>` — initially all unchecked (empty set), so the user opts in manually.
+1. **Add a "Из договора" button** next to the existing "Синхронизировать" button in the requisites section header (line ~486).
 
-2. **Add checkboxes to each row** in the import dialog list. Each row gets a `Checkbox` that toggles inclusion in `selectedNames`.
+2. **Add `fillFromContract` function** that:
+   - Queries `generated_documents` for the current client name (`name`) to get `client_inn`
+   - If INN found, sets it in the `inn` state field
+   - Then optionally calls DaData with this correct INN to fill KPP, OGRN, address, director
+   - Shows toast with result
 
-3. **Add "Select all / Deselect all" toggle** at the top of the list for convenience.
+3. **Button placement**: Next to the existing sync button, with a `FileText` icon and label "Из договора".
 
-4. **Update counter text**: Show "Выбрано X из Y" instead of just total count.
-
-5. **Disable "Импортировать" button** when `selectedNames` is empty.
-
-6. **Update `confirmImport`**: Only insert rows whose names are in `selectedNames`, not all names.
-
-7. **No auto-import on new contracts** — new contracts do NOT automatically create client records. The user must click "Импорт из договоров" each time. This keeps the client list clean and intentional.
+### Flow
+```text
+Click "Из договора" → query generated_documents by client_name
+→ get client_inn → set inn field → auto-call DaData with correct INN
+→ fill kpp, ogrn, legal_address, director_name, director_post
+```
 
 ### Files
-- **Edit**: `src/components/admin/ClientsTab.tsx` — add Checkbox import, selection state, update dialog UI and confirm logic
+- **Edit**: `src/components/admin/ClientsTab.tsx` — add button and fillFromContract logic
 
