@@ -209,6 +209,7 @@ const Admin = () => {
     requisites: "Реквизиты компании",
     history: "История документов",
     nmo: "НМО Портал",
+    frdo: "ФИС ФРДО",
   };
 
   return (
