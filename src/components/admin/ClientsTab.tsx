@@ -326,6 +326,10 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 min-w-[150px]" />
+        <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
+          {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
+          <span className="hidden sm:inline">Импорт из договоров</span>
+        </Button>
         <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
           {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
           <span className="hidden sm:inline">Синхр. все реквизиты</span>
@@ -333,6 +337,34 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
         <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
           <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Добавить</span>
         </Button>
+
+        <AlertDialog open={!!importConfirm} onOpenChange={(open) => !open && setImportConfirm(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Импорт клиентов из договоров</AlertDialogTitle>
+              <AlertDialogDescription>
+                Найдено {importConfirm?.names.length} новых клиентов. Создать карточки?
+                <div className="mt-2 max-h-40 overflow-y-auto text-xs space-y-1">
+                  {importConfirm?.names.map((n, i) => (
+                    <div key={i} className="flex justify-between">
+                      <span>{n}</span>
+                      {importConfirm.contractTypes[n] && (
+                        <Badge variant="outline" className="ml-2 text-[10px]">{importConfirm.contractTypes[n]}</Badge>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmImport} disabled={importing}>
+                {importing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Импортировать
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {showForm && (
