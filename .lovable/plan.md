@@ -1,28 +1,29 @@
 
 
-## Plan: Add bulk folder deletion to Files tab
+## Plan: Import clients from contracts
 
 ### What it does
-Adds a "Удалить папки" (Delete folders) button that enables a selection mode with checkboxes on each folder card. The user can check multiple folders, then confirm bulk deletion of the selected contracts' files and the contracts themselves.
+Adds a button "Импорт из договоров" in the Clients tab that finds all unique `client_name` values from the `contracts` table that don't already exist in `clients`, and creates client records for them automatically.
 
 ### Steps
 
-#### 1. Update `src/components/admin/FilesTab.tsx`
-- Add state: `selectMode: boolean`, `selectedIds: Set<string>`
-- Add a "Удалить папки" toggle button next to "Загрузить папку целиком" that toggles selection mode
-- In selection mode: show checkboxes on each folder row, a count of selected items, and "Удалить выбранные" / "Отмена" buttons
-- Bulk delete handler:
-  1. Show confirmation dialog (AlertDialog) listing selected folder names
-  2. For each selected contract: delete all files from storage (`contracts/{id}/...`), delete `contract_files` DB rows, then archive the contract (`is_archived = true`) — or fully delete if preferred
-  3. Invalidate queries and exit selection mode
-- Use `is_archived = true` approach (soft delete) to avoid data loss — matches the existing archive pattern in ContractsTab
+#### 1. Edit `src/components/admin/ClientsTab.tsx`
+- Add an "Импорт из договоров" button next to "Синхр. все реквизиты" and "+ Добавить"
+- On click, run the import logic:
+  1. Fetch all distinct `client_name` from `contracts`
+  2. Fetch all existing `name` from `clients`
+  3. Find the difference (contract names not in clients)
+  4. If none found — show toast "Все клиенты уже импортированы"
+  5. If found — show a confirmation dialog listing the count of new clients
+  6. On confirm: batch-insert new rows into `clients` with `name` set from `client_name`, and `service_type` derived from `contract_type` if available (e.g. "ФРДО" contracts → service_type "ФРДО")
+  7. Invalidate the clients query to refresh the list
+- Show a loading spinner during import
 
-#### 2. Update `src/components/admin/files/FilesFolderCard.tsx`
-- Add optional props: `selectable?: boolean`, `selected?: boolean`, `onSelect?: () => void`
-- When `selectable` is true, render a `Checkbox` before the folder icon
-- Clicking the checkbox calls `onSelect`; clicking the rest of the row still toggles open/close
+#### Details
+- For each new client, also pull `contract_number`, `contract_date` from the most recent contract for reference
+- Group duplicate/similar contract names by exact match only (no fuzzy matching — keep it simple)
+- No database migration needed — just inserting into existing `clients` table
 
 ### Files
-- **Edit**: `src/components/admin/FilesTab.tsx` — add selection mode, bulk archive logic, confirmation dialog
-- **Edit**: `src/components/admin/files/FilesFolderCard.tsx` — add checkbox prop support
+- **Edit**: `src/components/admin/ClientsTab.tsx` — add import button and logic
 
