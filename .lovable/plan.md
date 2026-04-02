@@ -1,20 +1,28 @@
 
 
-## Problem
+## Plan: Add bulk folder deletion to Files tab
 
-The "Действия" (Actions) column with the dropdown menu is cut off at the right edge of the contracts table. The table uses `min-w-[900px]` which is too narrow for all columns, and the container clips the last column.
+### What it does
+Adds a "Удалить папки" (Delete folders) button that enables a selection mode with checkboxes on each folder card. The user can check multiple folders, then confirm bulk deletion of the selected contracts' files and the contracts themselves.
 
-## Fix
+### Steps
 
-1. **Increase table min-width** from `900px` to `1100px` in `ContractsTab.tsx` (line 387) to ensure the Actions column has enough space.
+#### 1. Update `src/components/admin/FilesTab.tsx`
+- Add state: `selectMode: boolean`, `selectedIds: Set<string>`
+- Add a "Удалить папки" toggle button next to "Загрузить папку целиком" that toggles selection mode
+- In selection mode: show checkboxes on each folder row, a count of selected items, and "Удалить выбранные" / "Отмена" buttons
+- Bulk delete handler:
+  1. Show confirmation dialog (AlertDialog) listing selected folder names
+  2. For each selected contract: delete all files from storage (`contracts/{id}/...`), delete `contract_files` DB rows, then archive the contract (`is_archived = true`) — or fully delete if preferred
+  3. Invalidate queries and exit selection mode
+- Use `is_archived = true` approach (soft delete) to avoid data loss — matches the existing archive pattern in ContractsTab
 
-2. **Make the Actions column sticky** on the right side so it's always visible even when scrolling horizontally. Add `sticky right-0 bg-background` classes to both the `TableHead` and `TableCell` for the Actions column.
+#### 2. Update `src/components/admin/files/FilesFolderCard.tsx`
+- Add optional props: `selectable?: boolean`, `selected?: boolean`, `onSelect?: () => void`
+- When `selectable` is true, render a `Checkbox` before the folder icon
+- Clicking the checkbox calls `onSelect`; clicking the rest of the row still toggles open/close
 
-### File: `src/components/admin/ContractsTab.tsx`
-
-- Line 387: Change `min-w-[900px]` to `min-w-[1100px]`
-- Line 398: Add sticky positioning to the Actions `TableHead`: `className="w-[80px] text-right sticky right-0 bg-background"`
-- Line 438: Add sticky positioning to the Actions `TableCell`: `className="text-right sticky right-0 bg-background"`
-
-This ensures the action menu button (⋮) is always visible regardless of table width or horizontal scroll position.
+### Files
+- **Edit**: `src/components/admin/FilesTab.tsx` — add selection mode, bulk archive logic, confirmation dialog
+- **Edit**: `src/components/admin/files/FilesFolderCard.tsx` — add checkbox prop support
 
