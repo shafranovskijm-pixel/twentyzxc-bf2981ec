@@ -1,45 +1,20 @@
 
 
-## Plan: Create "ФИС ФРДО" Admin Tab
+## Problem
 
-### What it does
-A new admin tab where you can select FRDO-related documents (инструкция, приказ, шаблоны ДПО/ПО, terms-of-use, etc.) via checkboxes and send them by email to a client.
+The "Действия" (Actions) column with the dropdown menu is cut off at the right edge of the contracts table. The table uses `min-w-[900px]` which is too narrow for all columns, and the container clips the last column.
 
-### Steps
+## Fix
 
-#### 1. Upload 7 FRDO documents to storage
-Upload all 7 files to the `document-assets` bucket under a `frdo/` prefix:
-- `frdo/terms-of-use.pdf`
-- `frdo/ДПО-06.11.2023.xlsx`
-- `frdo/ДПО-шаблон-образец.xlsx`
-- `frdo/инструкция.docx`
-- `frdo/По_образец.xlsx`
-- `frdo/ПО-06.11.2023.xlsx`
-- `frdo/Приказ_ФРДО_1.docx`
+1. **Increase table min-width** from `900px` to `1100px` in `ContractsTab.tsx` (line 387) to ensure the Actions column has enough space.
 
-Since the `document-assets` bucket is public, files will be accessible via signed/public URLs for email links.
+2. **Make the Actions column sticky** on the right side so it's always visible even when scrolling horizontally. Add `sticky right-0 bg-background` classes to both the `TableHead` and `TableCell` for the Actions column.
 
-#### 2. Create `src/components/admin/FrdoTab.tsx`
-New component with:
-- **Client selector** — dropdown of clients from the `clients` table (with email). Filter/search by name.
-- **Email input** — auto-filled from selected client's email, editable manually.
-- **Document checklist** — 7 checkboxes (one per uploaded file) with human-readable labels. "Select all" toggle.
-- **Send button** — calls `send-document-email` edge function with an HTML body containing download links to all selected documents. The email includes a branded message explaining the FRDO document package.
-- Loading/success/error states with toast notifications.
+### File: `src/components/admin/ContractsTab.tsx`
 
-#### 3. Register tab in sidebar and Admin page
-- Add `{ id: "frdo", label: "ФИС ФРДО", icon: "GraduationCap" }` to `AdminSidebar.tsx` (use a different icon or reuse GraduationCap — will use `FileCheck` to distinguish from НМО).
-- Add `{activeSection === "frdo" && <FrdoTab />}` in `Admin.tsx`.
-- Import `FileCheck` in sidebar icon map.
+- Line 387: Change `min-w-[900px]` to `min-w-[1100px]`
+- Line 398: Add sticky positioning to the Actions `TableHead`: `className="w-[80px] text-right sticky right-0 bg-background"`
+- Line 438: Add sticky positioning to the Actions `TableCell`: `className="text-right sticky right-0 bg-background"`
 
-#### 4. Email format
-The email sent via `send-document-email` will contain:
-- Subject: "Документы ФИС ФРДО — [Company Name]"
-- HTML body with a list of selected documents as download links (public URLs from `document-assets` bucket)
-- No PDF attachments — just download links to keep the email lightweight
-
-### Files to create/modify
-- **Create**: `src/components/admin/FrdoTab.tsx`
-- **Edit**: `src/components/admin/AdminSidebar.tsx` — add "frdo" menu item + icon
-- **Edit**: `src/pages/Admin.tsx` — import FrdoTab, render it
+This ensures the action menu button (⋮) is always visible regardless of table width or horizontal scroll position.
 
