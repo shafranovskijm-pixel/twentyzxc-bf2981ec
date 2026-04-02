@@ -366,7 +366,7 @@ const ContractsTab = () => {
             </div>
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <Table>
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Организация</TableHead>
@@ -377,7 +377,7 @@ const ContractsTab = () => {
                     <TableHead>Сумма</TableHead>
                     <TableHead>Тип</TableHead>
                     <TableHead>Ответственный</TableHead>
-                    <TableHead className="w-[140px]"></TableHead>
+                    <TableHead className="w-[160px] text-right">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -417,8 +417,8 @@ const ContractsTab = () => {
                         </TooltipProvider>
                       </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-0.5 opacity-70 hover:opacity-100 transition-opacity">
+                      <TableCell className="text-right">
+                        <div className="inline-flex gap-0.5">
                           {c.file_path && (
                             <Button variant="outline" size="icon" className="w-8 h-8" onClick={() => downloadFile(c.file_path!)} title="Скачать"><Download className="w-4 h-4" /></Button>
                           )}
