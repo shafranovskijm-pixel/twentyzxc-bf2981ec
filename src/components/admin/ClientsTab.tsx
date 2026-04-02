@@ -131,7 +131,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
         }
       });
 
-      setImportConfirm({ names, contractTypes });
+      setImportConfirm({ names, contractTypes, selectedNames: new Set<string>() });
     } catch {
       toast.error("Ошибка при загрузке данных");
     }
