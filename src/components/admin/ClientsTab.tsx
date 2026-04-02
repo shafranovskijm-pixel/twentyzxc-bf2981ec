@@ -364,10 +364,10 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
               <AlertDialogDescription asChild>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span>Выбрано {importConfirm?.selectedNames.size || 0} из {importConfirm?.names.length}</span>
+                    <span>Выбрано {importConfirm?.selectedNames?.size || 0} из {importConfirm?.names?.length || 0}</span>
                     <Button variant="ghost" size="sm" onClick={toggleAllImport} className="text-xs h-7">
                       <CheckSquare className="w-3 h-3 mr-1" />
-                      {importConfirm?.selectedNames.size === importConfirm?.names.length ? "Снять все" : "Выбрать все"}
+                      {importConfirm?.selectedNames?.size === importConfirm?.names?.length ? "Снять все" : "Выбрать все"}
                     </Button>
                   </div>
                   <div className="max-h-60 overflow-y-auto text-xs space-y-1">
@@ -389,9 +389,9 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Отмена</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmImport} disabled={importing || !importConfirm?.selectedNames.size}>
+              <AlertDialogAction onClick={confirmImport} disabled={importing || !(importConfirm?.selectedNames?.size)}>
                 {importing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Импортировать ({importConfirm?.selectedNames.size || 0})
+                Импортировать ({importConfirm?.selectedNames?.size || 0})
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
