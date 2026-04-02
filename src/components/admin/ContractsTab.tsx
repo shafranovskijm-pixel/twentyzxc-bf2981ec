@@ -395,7 +395,7 @@ const ContractsTab = () => {
                     <TableHead>Сумма</TableHead>
                     <TableHead>Тип</TableHead>
                     <TableHead>Ответственный</TableHead>
-                    <TableHead className="w-[160px] text-right">Действия</TableHead>
+                    <TableHead className="w-[80px] text-right sticky right-0 bg-background">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
