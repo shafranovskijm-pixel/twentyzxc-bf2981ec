@@ -1,42 +1,42 @@
 
 
-## Plan: Add Google Verification File + Create sitemap.xml
+## Plan: Auto-create Client When Generating a Document
 
-### 1. Copy Google verification file to `public/`
-Copy `user-uploads://google4812de249c8bb9d5_4.html` → `public/google4812de249c8bb9d5.html` so it's served at `https://24zxc.ru/google4812de249c8bb9d5.html`.
+### Problem
+When generating a document for a new client (e.g. "ГРАНД АВТО", "АНТА"), the system auto-creates a **contract** record but does NOT create a **client** record. The user expects a client card to appear automatically.
 
-### 2. Create `public/sitemap.xml`
-Generate a sitemap with all public routes from the app (excluding `/admin`, `/p/:slug`, dynamic template previews):
+### Fix in `src/components/admin/DocumentsTab.tsx`
 
-- `/`
-- `/portfolio`
-- `/frdo`
-- `/licensing`
-- `/about`
-- `/policy`
-- `/templates`
-- `/services/landing`
-- `/services/corporate`
-- `/services/ecommerce`
-- `/services/webapp`
-- `/services/nmo`
-- `/projects/flowrish`
-- `/projects/chmuleva`
-- `/projects/lanmei`
-- `/projects/lady-frost`
-- `/projects/pr-nutrition`
-- `/projects/status`
-- `/projects/spinride`
-- `/reviews`
-- `/playground`
+After the contract auto-creation (Step 2, ~line 503), add a new step that:
 
-Base URL: `https://24zxc.ru`. Each entry gets `lastmod` set to today's date, priority based on page importance (1.0 for home, 0.8 for main sections, 0.6 for projects).
+1. Checks if a client with the given `clientName` already exists in the `clients` table
+2. If not found, inserts a new client record with all available requisites (name, INN, KPP, OGRN, address, director name/post, email)
+3. Invalidates the `doc-clients` and `planner-clients` query caches
 
-### 3. Update `public/robots.txt`
-Add `Sitemap: https://24zxc.ru/sitemap.xml` and `Disallow: /admin`.
+This runs for ALL document types (contract, invoice, act), not just contracts.
 
-### Files
-- **Copy**: Google verification HTML → `public/google4812de249c8bb9d5.html`
-- **Create**: `public/sitemap.xml`
-- **Edit**: `public/robots.txt`
+### Technical Details
+
+```typescript
+// After Step 2 (contract auto-creation), add Step 2.5:
+const existingClient = clients.find(c => c.name === clientName);
+if (!existingClient && clientName.trim()) {
+  const { error: clientError } = await supabase.from("clients").insert({
+    name: clientName,
+    inn: clientInn || null,
+    kpp: clientKpp || null,
+    ogrn: clientOgrn || null,
+    legal_address: clientAddress || null,
+    director_name: clientDirectorName || null,
+    director_post: clientDirectorPost || null,
+  });
+  if (!clientError) {
+    queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+    queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+  }
+}
+```
+
+### Files to Modify
+- `src/components/admin/DocumentsTab.tsx` — add client auto-creation logic after Step 2
 
