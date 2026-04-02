@@ -249,6 +249,37 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     setShowForm(true);
   };
 
+  const fillFromContract = async () => {
+    const clientName = name.trim();
+    if (!clientName) { toast.error("Укажите название клиента"); return; }
+    setSyncing(true);
+    try {
+      const { data } = await supabase.from("generated_documents")
+        .select("client_inn")
+        .eq("client_name", clientName)
+        .not("client_inn", "is", null)
+        .limit(1)
+        .maybeSingle();
+      if (data?.client_inn) {
+        setInn(data.client_inn);
+        toast.success(`ИНН из документа: ${data.client_inn}`);
+        // Auto-sync via DaData with the correct INN
+        const result = await fetchDadata({ inn: data.client_inn });
+        if (result) {
+          if (result.kpp) setKpp(result.kpp);
+          if (result.ogrn) setOgrn(result.ogrn);
+          if (result.legal_address) setLegalAddress(result.legal_address);
+          if (result.director_name) setDirectorName(result.director_name);
+          if (result.director_post) setDirectorPost(result.director_post);
+          toast.success("Реквизиты заполнены из договора");
+        }
+      } else {
+        toast.error("ИНН не найден в документах этого клиента");
+      }
+    } catch { toast.error("Ошибка при поиске ИНН в документах"); }
+    setSyncing(false);
+  };
+
   const syncRequisites = async (byInn = false) => {
     const innVal = inn.trim();
     const nameVal = name.trim();
