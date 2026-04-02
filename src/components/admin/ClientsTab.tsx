@@ -768,6 +768,21 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 >
                   {c.payment_status || "не оплачено"}
                 </button>
+                {c.file_path && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const { data } = await supabase.storage.from("contracts").createSignedUrl(c.file_path!, 300);
+                      if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                      else toast.error("Не удалось открыть файл");
+                    }}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
