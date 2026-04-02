@@ -185,10 +185,43 @@ const FilesTab = () => {
   };
 
   const handleEmailFile = (f: ContractFile) => {
-    // Try to find client email from contract
-    const contract = contracts.find(c => c.id === f.contract_id);
     setEmailFile(f);
     setEmailTo("");
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkArchive = async () => {
+    setBulkDeleting(true);
+    try {
+      for (const contractId of selectedIds) {
+        // Delete files from storage
+        const { data: files } = await supabase.from("contract_files").select("file_path").eq("contract_id", contractId);
+        if (files?.length) {
+          await supabase.storage.from("contracts").remove(files.map(f => f.file_path));
+        }
+        // Delete DB file records
+        await supabase.from("contract_files").delete().eq("contract_id", contractId);
+        // Archive the contract
+        await supabase.from("contracts").update({ is_archived: true }).eq("id", contractId);
+      }
+      queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+      toast.success(`Архивировано: ${selectedIds.size} папок`);
+    } catch {
+      toast.error("Ошибка при удалении");
+    }
+    setBulkDeleting(false);
+    setShowDeleteConfirm(false);
+    setSelectMode(false);
+    setSelectedIds(new Set());
   };
 
   const filtered = contracts.filter((c) => {
