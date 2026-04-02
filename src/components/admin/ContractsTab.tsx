@@ -384,7 +384,7 @@ const ContractsTab = () => {
             </div>
             {/* Desktop table */}
             <div className="hidden sm:block overflow-x-auto">
-              <Table className="min-w-[900px]">
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Организация</TableHead>
@@ -395,7 +395,7 @@ const ContractsTab = () => {
                     <TableHead>Сумма</TableHead>
                     <TableHead>Тип</TableHead>
                     <TableHead>Ответственный</TableHead>
-                    <TableHead className="w-[160px] text-right">Действия</TableHead>
+                    <TableHead className="w-[80px] text-right sticky right-0 bg-background">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -435,7 +435,7 @@ const ContractsTab = () => {
                         </TooltipProvider>
                       </TableCell>
                       <TableCell>{c.responsible || "—"}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right sticky right-0 bg-background">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" size="icon" className="w-9 h-9">
