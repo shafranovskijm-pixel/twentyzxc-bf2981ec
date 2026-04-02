@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Folder, FolderOpen, FileText, Upload, Trash2, Download, Loader2, Mail } from "lucide-react";
 
 interface ContractFile {
