@@ -802,6 +802,11 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 <span className="font-mono text-xs">№{d.doc_number}</span>
                 <span className="text-muted-foreground">{formatDate(d.doc_date)}</span>
                 {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+                {d.html_content && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPreviewHtml(d.html_content)}>
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
