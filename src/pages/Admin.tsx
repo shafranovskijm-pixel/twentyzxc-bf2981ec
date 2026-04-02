@@ -363,6 +363,7 @@ const Admin = () => {
               {activeSection === "requisites" && <RequisitesTab />}
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
+              {activeSection === "frdo" && <FrdoTab />}
                 </motion.div>
               </AnimatePresence>
             </main>
