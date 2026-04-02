@@ -36,6 +36,10 @@ const FilesTab = () => {
   const [emailTo, setEmailTo] = useState("");
   const [emailCc, setEmailCc] = useState("24@24zxc.ru");
   const [emailSending, setEmailSending] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
