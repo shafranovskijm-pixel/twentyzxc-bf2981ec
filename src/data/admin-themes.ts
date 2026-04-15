@@ -23,6 +23,8 @@ export interface AdminTheme {
   accentForeground: string;
   /** Animation id */
   animation: "leaves" | "fade" | "lights" | "gradient" | "glow" | "none";
+  /** Force light mode regardless of user preference */
+  forceLight?: boolean;
 }
 
 export const adminThemes: AdminTheme[] = [
@@ -38,6 +40,7 @@ export const adminThemes: AdminTheme[] = [
     accent: "152 60% 45%",
     accentForeground: "0 0% 100%",
     animation: "leaves",
+    forceLight: true,
   },
   {
     id: "office",
@@ -51,6 +54,7 @@ export const adminThemes: AdminTheme[] = [
     accent: "215 16% 42%",
     accentForeground: "0 0% 100%",
     animation: "fade",
+    forceLight: true,
   },
   {
     id: "newyork",
