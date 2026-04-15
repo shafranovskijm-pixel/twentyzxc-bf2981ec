@@ -246,6 +246,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     setNotes(c.notes || ""); setServiceType(c.service_type || "");
     setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || ""); setFrdoPasswordPo((c as any).frdo_password_po || "");
     setPaymentDate(c.payment_date || "");
+    setServiceDeadline((c as any).service_deadline || "");
     setInn(c.inn || ""); setKpp(c.kpp || ""); setOgrn(c.ogrn || "");
     setLegalAddress(c.legal_address || ""); setDirectorName(c.director_name || "");
     setDirectorPost(c.director_post || "");
