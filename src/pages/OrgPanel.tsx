@@ -94,7 +94,9 @@ const OrgPanel = () => {
         <div className="flex-1 flex flex-col min-h-screen">
           <header className="h-14 flex items-center border-b px-4 gap-3 sticky top-0 backdrop-blur-sm z-20 border-border bg-background/95">
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <Building2 className="h-5 w-5 text-primary" />
+              <a href="/" className="flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground font-bold text-sm shrink-0 hover:opacity-80 transition-opacity" title="На главную">
+                24
+              </a>
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-foreground leading-tight truncate">{organization?.name || "Организация"}</div>
                 <div className="text-[10px] text-muted-foreground leading-tight">Панель управления</div>
