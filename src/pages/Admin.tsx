@@ -361,7 +361,7 @@ const Admin = () => {
             {bannerUrl ? (
               <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
             ) : activeTheme ? (
-              <img src={activeTheme.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={activeTheme.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: activeTheme.bannerPosition || 'center' }} />
             ) : (
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10" />
@@ -462,7 +462,7 @@ const Admin = () => {
                                       activeTheme?.id === theme.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
                                     )}
                                   >
-                                    <img src={theme.bannerUrl} alt={theme.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                    <img src={theme.bannerUrl} alt={theme.label} className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: theme.previewPosition || 'center' }} loading="lazy" />
                                     <div className="absolute inset-0 bg-black/40 group-hover/theme:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
                                       {activeTheme?.id === theme.id && <Check className="h-5 w-5 text-white" />}
                                       <span className="text-xs font-medium text-white">{theme.emoji} {theme.label}</span>
