@@ -13,13 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import Footer from "@/components/Footer";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+// dropdown removed — settings moved to dedicated sections
 import ClientsTab from "@/components/admin/ClientsTab";
 import ContractsTab from "@/components/admin/ContractsTab";
 import FilesTab from "@/components/admin/FilesTab";
@@ -32,7 +26,7 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,6 +59,7 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
+  const [siteSettingsSubTab, setSiteSettingsSubTab] = useState("seo");
 
   // Theme state
   const [isDark, setIsDark] = useState(() => {
@@ -281,9 +276,11 @@ const Admin = () => {
     nmo: "НМО Портал",
     frdo: "ФИС ФРДО",
     "ai-chat": "AI Ассистент",
+    "site-settings": "Настройки сайта",
+    "profile": "Профиль",
   };
 
-  const secondaryItems = [
+  const siteSettingsTabs = [
     { id: "seo", label: "SEO", icon: Search },
     { id: "contacts", label: "Контакты", icon: Mail },
     { id: "promotions", label: "Акции", icon: Sparkles },
@@ -293,12 +290,49 @@ const Admin = () => {
     { id: "frdo", label: "ФИС ФРДО", icon: FileCheck },
   ];
 
+
+
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
         <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header ABOVE banner */}
+          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <span className="text-xl font-bold text-primary select-none">Σ</span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-foreground leading-tight truncate">СИНТАГМА</div>
+                <div className="text-[10px] text-muted-foreground leading-tight">Администратор</div>
+              </div>
+              <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-5 border-primary/30 text-primary cursor-pointer hover:bg-primary/10 transition-colors hidden sm:inline-flex">
+                <CreditCard className="h-3 w-3 mr-1" />Тариф
+              </Badge>
+            </div>
+            <h1 className="text-base font-medium text-muted-foreground hidden md:block">{sectionTitles[activeSection] || activeSection}</h1>
+            <div className="flex items-center gap-1">
+              <NotificationsPanel onNavigate={setActiveSection} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setIsDark(!isDark)}
+              >
+                {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 text-xs"
+                onClick={() => setActiveSection("profile")}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Профиль</span>
+              </Button>
+            </div>
+          </header>
+
           {/* Decorative banner */}
           <div className="h-32 relative overflow-hidden shrink-0 group">
             {bannerUrl ? (
@@ -310,7 +344,6 @@ const Admin = () => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
               </>
             )}
-            {/* Banner controls overlay */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                 {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
@@ -325,62 +358,6 @@ const Admin = () => {
             <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
           </div>
 
-          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
-            <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
-            <NotificationsPanel onNavigate={setActiveSection} />
-
-            {/* Theme toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setIsDark(!isDark)}
-            >
-              {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-            </Button>
-
-            {/* Settings dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {secondaryItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={activeSection === item.id ? "bg-primary/10 text-primary" : ""}
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5">
-                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5"><Palette className="h-3.5 w-3.5" />Фон</p>
-                  <div className="grid grid-cols-4 gap-1">
-                    {BG_PRESETS.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => handleBgChange(p.id)}
-                        title={p.label}
-                        className={cn(
-                          "w-8 h-8 rounded border-2 transition-all",
-                          bgPreset === p.id ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/50",
-                          p.id === "default" && "bg-background",
-                          p.id === "dark-grid" && "bg-[#0f0f14]",
-                          p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
-                          p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </header>
           <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -390,115 +367,214 @@ const Admin = () => {
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-              
-              {activeSection === "seo" && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5" />SEO-настройки</CardTitle>
-                      <CardDescription>Ключевые слова, заголовок и описание для поисковиков</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Ключевые слова</Label>
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {keywords.map((keyword) => (
-                            <Badge key={keyword} variant="secondary" className="gap-1 pr-1">
-                              {keyword}
-                              <button onClick={() => removeKeyword(keyword)} className="ml-1 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Input value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} onKeyDown={handleKeywordKeyDown} placeholder="Добавить ключевое слово..." />
-                          <Button variant="outline" size="icon" onClick={addKeyword} disabled={!newKeyword.trim()}><Plus className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="space-y-2"><Label htmlFor="seo-title">Title</Label><Input id="seo-title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Заголовок страницы" /></div>
-                      <div className="space-y-2"><Label htmlFor="seo-desc">Description</Label><Textarea id="seo-desc" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Описание для поисковиков" rows={3} /></div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" />Open Graph</CardTitle>
-                      <CardDescription>Заголовок и описание для ссылок в соцсетях</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2"><Label htmlFor="og-title">OG Title</Label><Input id="og-title" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder="Заголовок для соцсетей" /></div>
-                      <div className="space-y-2"><Label htmlFor="og-desc">OG Description</Label><Textarea id="og-desc" value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Описание для соцсетей" rows={3} /></div>
-                    </CardContent>
-                  </Card>
-                  <Button onClick={saveSeo} disabled={saving} className="w-full">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить SEO-настройки
-                  </Button>
-                </div>
-              )}
 
-              {activeSection === "contacts" && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Контактные данные</CardTitle>
-                      <CardDescription>Email, телефон и Telegram</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2"><Label htmlFor="contact-email">Email</Label><Input id="contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="info@24zxc.ru" /></div>
-                      <div className="space-y-2"><Label htmlFor="contact-phone">Телефон</Label><Input id="contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+7 (999) 123-45-67" /></div>
-                      <div className="space-y-2"><Label htmlFor="contact-tg">Telegram</Label><Input id="contact-tg" value={contactTelegram} onChange={(e) => setContactTelegram(e.target.value)} placeholder="@24zxc" /></div>
-                    </CardContent>
-                  </Card>
-                  <Button onClick={saveContacts} disabled={saving} className="w-full">
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить контакты
-                  </Button>
-                </div>
-              )}
+              {activeSection === "site-settings" && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-1.5 border-b border-border pb-3">
+                    {siteSettingsTabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setSiteSettingsSubTab(tab.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
+                          siteSettingsSubTab === tab.id
+                            ? "bg-primary/15 text-primary font-medium"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                      >
+                        <tab.icon className="h-3.5 w-3.5" />
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
 
-              {activeSection === "promotions" && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader><CardTitle>{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2"><Label>Заголовок</Label><Input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)} placeholder="Сайт + настройка рекламы" /></div>
-                      <div className="space-y-2"><Label>Описание</Label><Textarea value={promoDesc} onChange={(e) => setPromoDesc(e.target.value)} placeholder="Описание акции..." rows={2} /></div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Цена</Label><Input value={promoPrice} onChange={(e) => setPromoPrice(e.target.value)} placeholder="10 000 ₽" /></div>
-                        <div className="space-y-2"><Label>Старая цена</Label><Input value={promoOldPrice} onChange={(e) => setPromoOldPrice(e.target.value)} placeholder="15 000 ₽" /></div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Бейдж</Label><Input value={promoBadge} onChange={(e) => setPromoBadge(e.target.value)} placeholder="Акция" /></div>
-                        <div className="space-y-2"><Label>Иконка (Lucide)</Label><Input value={promoIcon} onChange={(e) => setPromoIcon(e.target.value)} placeholder="Monitor, GraduationCap..." /></div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button onClick={savePromo} disabled={saving} className="flex-1">
-                          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                          {editingPromo ? "Обновить" : "Добавить"}
-                        </Button>
-                        {editingPromo && <Button variant="outline" onClick={resetPromoForm}>Отмена</Button>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader><CardTitle>Текущие акции</CardTitle></CardHeader>
-                    <CardContent className="space-y-3">
-                      {promosLoading ? (
-                        <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-                      ) : promotions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">Нет акций</p>
-                      ) : (
-                        promotions.map((p) => (
-                          <div key={p.id} className="flex items-center justify-between p-3 border rounded-sm">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{p.title}</div>
-                              <div className="text-sm text-muted-foreground">{p.price}</div>
+                  {siteSettingsSubTab === "seo" && (
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5" />SEO-настройки</CardTitle>
+                          <CardDescription>Ключевые слова, заголовок и описание для поисковиков</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>Ключевые слова</Label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                              {keywords.map((keyword) => (
+                                <Badge key={keyword} variant="secondary" className="gap-1 pr-1">
+                                  {keyword}
+                                  <button onClick={() => removeKeyword(keyword)} className="ml-1 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                                </Badge>
+                              ))}
                             </div>
-                            <div className="flex items-center gap-3 ml-4">
-                              <Switch checked={p.is_active} onCheckedChange={(v) => togglePromoActive.mutate({ id: p.id, is_active: v })} />
-                              <Button variant="ghost" size="icon" onClick={() => startEditPromo(p)}><Save className="w-4 h-4" /></Button>
-                              <Button variant="ghost" size="icon" onClick={() => deletePromo.mutate(p.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                            <div className="flex gap-2">
+                              <Input value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} onKeyDown={handleKeywordKeyDown} placeholder="Добавить ключевое слово..." />
+                              <Button variant="outline" size="icon" onClick={addKeyword} disabled={!newKeyword.trim()}><Plus className="w-4 h-4" /></Button>
                             </div>
                           </div>
-                        ))
-                      )}
+                          <div className="space-y-2"><Label htmlFor="seo-title">Title</Label><Input id="seo-title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Заголовок страницы" /></div>
+                          <div className="space-y-2"><Label htmlFor="seo-desc">Description</Label><Textarea id="seo-desc" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Описание для поисковиков" rows={3} /></div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" />Open Graph</CardTitle>
+                          <CardDescription>Заголовок и описание для ссылок в соцсетях</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2"><Label htmlFor="og-title">OG Title</Label><Input id="og-title" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder="Заголовок для соцсетей" /></div>
+                          <div className="space-y-2"><Label htmlFor="og-desc">OG Description</Label><Textarea id="og-desc" value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Описание для соцсетей" rows={3} /></div>
+                        </CardContent>
+                      </Card>
+                      <Button onClick={saveSeo} disabled={saving} className="w-full">
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить SEO-настройки
+                      </Button>
+                    </div>
+                  )}
+
+                  {siteSettingsSubTab === "contacts" && (
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Контактные данные</CardTitle>
+                          <CardDescription>Email, телефон и Telegram</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2"><Label htmlFor="contact-email">Email</Label><Input id="contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="info@24zxc.ru" /></div>
+                          <div className="space-y-2"><Label htmlFor="contact-phone">Телефон</Label><Input id="contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+7 (999) 123-45-67" /></div>
+                          <div className="space-y-2"><Label htmlFor="contact-tg">Telegram</Label><Input id="contact-tg" value={contactTelegram} onChange={(e) => setContactTelegram(e.target.value)} placeholder="@24zxc" /></div>
+                        </CardContent>
+                      </Card>
+                      <Button onClick={saveContacts} disabled={saving} className="w-full">
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить контакты
+                      </Button>
+                    </div>
+                  )}
+
+                  {siteSettingsSubTab === "promotions" && (
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader><CardTitle>{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2"><Label>Заголовок</Label><Input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)} placeholder="Сайт + настройка рекламы" /></div>
+                          <div className="space-y-2"><Label>Описание</Label><Textarea value={promoDesc} onChange={(e) => setPromoDesc(e.target.value)} placeholder="Описание акции..." rows={2} /></div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>Цена</Label><Input value={promoPrice} onChange={(e) => setPromoPrice(e.target.value)} placeholder="10 000 ₽" /></div>
+                            <div className="space-y-2"><Label>Старая цена</Label><Input value={promoOldPrice} onChange={(e) => setPromoOldPrice(e.target.value)} placeholder="15 000 ₽" /></div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2"><Label>Бейдж</Label><Input value={promoBadge} onChange={(e) => setPromoBadge(e.target.value)} placeholder="Акция" /></div>
+                            <div className="space-y-2"><Label>Иконка (Lucide)</Label><Input value={promoIcon} onChange={(e) => setPromoIcon(e.target.value)} placeholder="Monitor, GraduationCap..." /></div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button onClick={savePromo} disabled={saving} className="flex-1">
+                              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                              {editingPromo ? "Обновить" : "Добавить"}
+                            </Button>
+                            {editingPromo && <Button variant="outline" onClick={resetPromoForm}>Отмена</Button>}
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader><CardTitle>Текущие акции</CardTitle></CardHeader>
+                        <CardContent className="space-y-3">
+                          {promosLoading ? (
+                            <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                          ) : promotions.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-4">Нет акций</p>
+                          ) : (
+                            promotions.map((p) => (
+                              <div key={p.id} className="flex items-center justify-between p-3 border rounded-sm">
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{p.title}</div>
+                                  <div className="text-sm text-muted-foreground">{p.price}</div>
+                                </div>
+                                <div className="flex items-center gap-3 ml-4">
+                                  <Switch checked={p.is_active} onCheckedChange={(v) => togglePromoActive.mutate({ id: p.id, is_active: v })} />
+                                  <Button variant="ghost" size="icon" onClick={() => startEditPromo(p)}><Save className="w-4 h-4" /></Button>
+                                  <Button variant="ghost" size="icon" onClick={() => deletePromo.mutate(p.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {siteSettingsSubTab === "requisites" && <RequisitesTab />}
+                  {siteSettingsSubTab === "history" && <HistoryTab />}
+                  {siteSettingsSubTab === "nmo" && <NmoTab />}
+                  {siteSettingsSubTab === "frdo" && <FrdoTab />}
+                </div>
+              )}
+
+              {activeSection === "profile" && (
+                <div className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Профиль</CardTitle>
+                      <CardDescription>Настройки отображения и оформления</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Тема</Label>
+                        <div className="flex items-center gap-3">
+                          <Button variant={isDark ? "outline" : "default"} size="sm" onClick={() => setIsDark(false)}><Sun className="h-4 w-4 mr-1.5" />Светлая</Button>
+                          <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2"><Palette className="h-4 w-4" />Фон панели</Label>
+                        <div className="grid grid-cols-4 gap-2">
+                          {BG_PRESETS.map(p => (
+                            <button
+                              key={p.id}
+                              onClick={() => handleBgChange(p.id)}
+                              className={cn(
+                                "h-16 rounded-lg border-2 transition-all flex items-end p-1.5",
+                                bgPreset === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50",
+                                p.id === "default" && "bg-background",
+                                p.id === "dark-grid" && "bg-[#0f0f14]",
+                                p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
+                                p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                              )}
+                            >
+                              <span className="text-[10px] text-muted-foreground">{p.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Баннер</Label>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
+                            {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Camera className="h-4 w-4 mr-1.5" />}
+                            Загрузить баннер
+                          </Button>
+                          {bannerUrl && (
+                            <Button variant="outline" size="sm" onClick={resetBanner}>
+                              <RotateCcw className="h-4 w-4 mr-1.5" />Сбросить
+                            </Button>
+                          )}
+                        </div>
+                        {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
+                        <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Тариф</CardTitle>
+                      <CardDescription>Текущий план и возможности</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
+                        <Badge variant="outline" className="text-sm px-3 py-1 border-primary/30 text-primary">Бесплатный</Badge>
+                        <span className="text-sm text-muted-foreground">Базовый функционал CRM</span>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -517,10 +593,6 @@ const Admin = () => {
                 setActiveSection("documents");
               }} />}
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); }} />}
-              {activeSection === "requisites" && <RequisitesTab />}
-              {activeSection === "history" && <HistoryTab />}
-              {activeSection === "nmo" && <NmoTab />}
-              {activeSection === "frdo" && <FrdoTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>
