@@ -141,9 +141,9 @@ serve(async (req) => {
       ? `🔔 <b>Тестовый отчёт по оплатам</b>\n\n`
       : `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
 
-    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && serviceReminderCount === 0) {
       text += `✅ Нет просроченных, истекающих или требующих продления договоров.\n`;
-      text += `📅 Напоминания активны для типов: Сайт, ФРДО\n`;
+      text += `📅 Напоминания активны для типов: Сайт, ФРДО, сроки услуг\n`;
     }
 
     if (overdueCount > 0) {
@@ -189,6 +189,15 @@ serve(async (req) => {
           ? new Date(c.paid_until).toLocaleDateString("ru-RU")
           : "—";
         text += `  • ${c.client_name} ${num} — ${amt} (до ${paidUntil})\n`;
+      }
+    }
+
+    if (serviceReminderCount > 0) {
+      text += `\n📋 <b>Истекающие сроки услуг (${serviceReminderCount}):</b>\n`;
+      for (const r of serviceReminders) {
+        const emoji = r.label === "1 мес" ? "🔴" : r.label === "2 мес" ? "🟠" : "🟡";
+        const dlStr = new Date(r.deadline).toLocaleDateString("ru-RU");
+        text += `  ${emoji} Через ${r.label}: ${r.name} (до ${dlStr})\n`;
       }
     }
 
