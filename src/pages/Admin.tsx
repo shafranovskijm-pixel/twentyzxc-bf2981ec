@@ -319,6 +319,61 @@ const Admin = () => {
         } as React.CSSProperties : undefined}
       >
         {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
+        
+        {/* Atmospheric banner bleed — decorative fragments from banner image */}
+        {activeTheme && (
+          <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+            {/* Bottom-right corner — main bleed */}
+            <img
+              src={bannerUrl || activeTheme.bannerUrl}
+              alt=""
+              className="absolute -bottom-16 -right-16 w-[45%] h-[40%] object-cover opacity-[0.07]"
+              style={{
+                filter: 'blur(30px) saturate(1.3)',
+                maskImage: 'radial-gradient(ellipse at 100% 100%, black 10%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 10%, transparent 70%)',
+                objectPosition: activeTheme.bannerPosition || 'center',
+              }}
+            />
+            {/* Bottom-left corner — secondary bleed */}
+            <img
+              src={bannerUrl || activeTheme.bannerUrl}
+              alt=""
+              className="absolute -bottom-20 -left-20 w-[35%] h-[35%] object-cover opacity-[0.05]"
+              style={{
+                filter: 'blur(40px) saturate(1.2)',
+                maskImage: 'radial-gradient(ellipse at 0% 100%, black 10%, transparent 65%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 0% 100%, black 10%, transparent 65%)',
+                objectPosition: activeTheme.bannerPosition || 'center',
+              }}
+            />
+            {/* Right edge mid — subtle side glow */}
+            <img
+              src={bannerUrl || activeTheme.bannerUrl}
+              alt=""
+              className="absolute top-1/3 -right-10 w-[25%] h-[30%] object-cover opacity-[0.04]"
+              style={{
+                filter: 'blur(50px) saturate(1.1)',
+                maskImage: 'radial-gradient(ellipse at 100% 50%, black 5%, transparent 60%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 100% 50%, black 5%, transparent 60%)',
+                objectPosition: activeTheme.bannerPosition || 'center',
+              }}
+            />
+            {/* Footer zone — wide horizontal strip */}
+            <img
+              src={bannerUrl || activeTheme.bannerUrl}
+              alt=""
+              className="absolute -bottom-8 left-1/4 w-[60%] h-[20%] object-cover opacity-[0.06]"
+              style={{
+                filter: 'blur(35px) saturate(1.2)',
+                maskImage: 'linear-gradient(to top, black 0%, transparent 80%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 80%)',
+                objectPosition: activeTheme.bannerPosition || 'center',
+              }}
+            />
+          </div>
+        )}
+
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
