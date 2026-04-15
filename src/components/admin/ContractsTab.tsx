@@ -154,6 +154,16 @@ const ContractsTab = () => {
   const saveContract = async () => {
     if (!clientName.trim()) return toast.error("Укажите организацию");
     setSaving(true);
+    // Auto-calculate paid_until from contract_date + 1 year if not one-time and no manual value
+    let computedPaidUntil = paidUntil || null;
+    if (!isOneTime && contractDate && !paidUntil) {
+      const d = new Date(contractDate);
+      d.setFullYear(d.getFullYear() + 1);
+      computedPaidUntil = d.toISOString().split("T")[0];
+    }
+    if (isOneTime) {
+      computedPaidUntil = null;
+    }
     const payload: Record<string, unknown> = {
       client_name: clientName.trim(),
       contract_number: contractNumber.trim() || null,
@@ -164,7 +174,8 @@ const ContractsTab = () => {
       contract_type: contractType.trim() || null,
       responsible: responsible.trim() || null,
       notes: notes.trim() || null,
-      paid_until: paidUntil || null,
+      paid_until: computedPaidUntil,
+      is_one_time: isOneTime,
     };
 
     // Optimistic update for edits
