@@ -13,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import TablePagination from "./TablePagination";
 
 interface Contract {
   id: string;
@@ -51,6 +52,8 @@ const ContractsTab = () => {
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
   const [inn, setInn] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [innLoading, setInnLoading] = useState(false);
 
   const { data: contracts = [], isLoading, error: contractsError } = useQuery({
@@ -338,6 +341,13 @@ const ContractsTab = () => {
     );
   }
 
+  // Reset page on search/tab change
+  const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
+  const handleTab = (v: string) => { setTab(v); setCurrentPage(1); };
+  const handlePageSize = (v: number) => { setPageSize(v); setCurrentPage(1); };
+
+  const paginatedItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   const renderTable = (items: Contract[], isArchive: boolean) => (
     <Card>
       <CardContent className="p-0">
@@ -501,6 +511,13 @@ const ContractsTab = () => {
                 </TableBody>
               </Table>
             </div>
+            <TablePagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={filtered.length}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={handlePageSize}
+            />
             <div className="flex justify-center py-4 border-t">
               <Button variant="outline" onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 <Plus className="w-4 h-4 mr-2" />Добавить договор
@@ -515,7 +532,7 @@ const ContractsTab = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Input placeholder="Поиск договоров..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1" />
+        <Input placeholder="Поиск договоров..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
         <Button onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
           <Plus className="w-4 h-4 mr-2" />Добавить
         </Button>
@@ -572,16 +589,16 @@ const ContractsTab = () => {
         </Card>
       )}
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={handleTab}>
         <TabsList>
           <TabsTrigger value="active">Активные ({activeCount})</TabsTrigger>
           <TabsTrigger value="archive" className="gap-2"><Archive className="w-4 h-4" />Архив ({archiveCount})</TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="mt-4">
-          {renderTable(filtered, false)}
+          {renderTable(paginatedItems, false)}
         </TabsContent>
         <TabsContent value="archive" className="mt-4">
-          {renderTable(filtered, true)}
+          {renderTable(paginatedItems, true)}
         </TabsContent>
       </Tabs>
     </div>

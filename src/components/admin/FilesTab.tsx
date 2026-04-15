@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Search, Trash2 } from "lucide-react";
+import TablePagination from "./TablePagination";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -40,6 +41,8 @@ const FilesTab = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const { data: contracts = [], isLoading: loadingContracts, error: contractsError } = useQuery({
     queryKey: ["files-contracts"],
@@ -252,7 +255,7 @@ const FilesTab = () => {
         <Input
           placeholder="Поиск по организации или номеру..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
           className="flex-1"
         />
         {!selectMode ? (
@@ -286,7 +289,7 @@ const FilesTab = () => {
             {search ? "Ничего не найдено" : "Нет договоров"}
           </p>
         ) : (
-          filtered.map((c) => (
+          filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((c) => (
             <FilesFolderCard
               key={c.id}
               contract={c}
@@ -310,6 +313,14 @@ const FilesTab = () => {
           ))
         )}
       </div>
+
+      <TablePagination
+        currentPage={currentPage}
+        pageSize={pageSize}
+        totalItems={filtered.length}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+      />
 
       {/* Email dialog */}
       <Dialog open={!!emailFile} onOpenChange={(open) => { if (!open) setEmailFile(null); }}>
