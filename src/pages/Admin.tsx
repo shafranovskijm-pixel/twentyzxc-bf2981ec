@@ -65,6 +65,7 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
+  const [siteSettingsSubTab, setSiteSettingsSubTab] = useState("seo");
 
   // Theme state
   const [isDark, setIsDark] = useState(() => {
