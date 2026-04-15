@@ -28,6 +28,7 @@ interface Client {
   frdo_password: string | null;
   frdo_password_po: string | null;
   payment_date: string | null;
+  service_deadline: string | null;
   inn: string | null;
   kpp: string | null;
   ogrn: string | null;
@@ -80,6 +81,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [frdoPassword, setFrdoPassword] = useState("");
   const [frdoPasswordPo, setFrdoPasswordPo] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
+  const [serviceDeadline, setServiceDeadline] = useState("");
   const [inn, setInn] = useState("");
   const [kpp, setKpp] = useState("");
   const [ogrn, setOgrn] = useState("");
@@ -233,6 +235,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const resetForm = () => {
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
     setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setFrdoPasswordPo(""); setPaymentDate("");
+    setServiceDeadline("");
     setInn(""); setKpp(""); setOgrn(""); setLegalAddress(""); setDirectorName(""); setDirectorPost("");
     setEditingId(null); setShowForm(false);
   };
@@ -354,6 +357,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
         frdo_password: frdoPassword.trim() || null,
         frdo_password_po: frdoPasswordPo.trim() || null,
         payment_date: paymentDate || null,
+        service_deadline: serviceDeadline || null,
         inn: inn.trim() || null,
         kpp: kpp.trim() || null,
         ogrn: ogrn.trim() || null,
@@ -530,6 +534,17 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                 <Label>Дата оплаты</Label>
                 <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
               </div>
+              <div className="space-y-2">
+                <Label>Срок оказания услуг (до)</Label>
+                <Input type="date" value={serviceDeadline} onChange={(e) => setServiceDeadline(e.target.value)} />
+                {serviceDeadline && (() => {
+                  const diff = Math.round((new Date(serviceDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  if (diff < 0) return <p className="text-xs text-destructive">Срок истёк {Math.abs(diff)} дн. назад</p>;
+                  if (diff <= 30) return <p className="text-xs text-destructive">Осталось {diff} дн.</p>;
+                  if (diff <= 90) return <p className="text-xs text-amber-400">Осталось {diff} дн.</p>;
+                  return <p className="text-xs text-muted-foreground">Осталось {diff} дн.</p>;
+                })()}
+              </div>
             </div>
 
             {/* Requisites section */}
@@ -634,6 +649,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                       <TableHead>Контактное лицо</TableHead>
                       <TableHead>Телефон</TableHead>
                       <TableHead>Оплата</TableHead>
+                      <TableHead>Срок услуг</TableHead>
                       <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -667,6 +683,14 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                           {c.payment_date
                             ? new Date(c.payment_date).toLocaleDateString("ru-RU")
                             : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {(c as any).service_deadline ? (() => {
+                            const dl = new Date((c as any).service_deadline);
+                            const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                            const color = diff < 0 ? "text-destructive" : diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
+                            return <span className={color}>{dl.toLocaleDateString("ru-RU")}</span>;
+                          })() : "—"}
                         </TableCell>
                         <TableCell>
                           <Button variant="ghost" size="icon" onClick={() => deleteClient(c.id)} className="text-destructive hover:text-destructive">
