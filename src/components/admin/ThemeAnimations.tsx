@@ -135,6 +135,37 @@ const ParticlesAnimation = () => {
   );
 };
 
+/** Drifting sand/dust particles for "Sunset" */
+const SandAnimation = () => {
+  const grains = useMemo(() => Array.from({ length: 30 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 2.5 + 0.8,
+    duration: Math.random() * 18 + 14,
+    delay: Math.random() * 10,
+    color: Math.random() > 0.6 ? "bg-amber-300/25" : "bg-orange-200/20",
+  })), []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {grains.map(g => (
+        <motion.div
+          key={g.id}
+          className={`absolute rounded-full ${g.color}`}
+          style={{ left: `${g.x}%`, top: `${g.y}%`, width: g.size, height: g.size }}
+          animate={{
+            x: [0, 40, 80],
+            y: [0, -15, -30],
+            opacity: [0.15, 0.5, 0.1],
+          }}
+          transition={{ duration: g.duration, delay: g.delay, repeat: Infinity, ease: "linear" }}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const ThemeAnimation = ({ animation }: { animation: string }) => {
   switch (animation) {
     case "leaves": return <LeavesAnimation />;
@@ -143,6 +174,7 @@ export const ThemeAnimation = ({ animation }: { animation: string }) => {
     case "gradient": return <GradientAnimation />;
     case "glow": return <GlowAnimation />;
     case "particles": return <ParticlesAnimation />;
+    case "sand": return <SandAnimation />;
     default: return null;
   }
 };
