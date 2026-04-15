@@ -828,7 +828,14 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
   const sendDocumentEmail = async () => {
     if (!emailTo.trim() || !previewHtml) return toast.error("Укажите email получателя");
     setEmailSending(true);
-    setEmailProgress({ step: 'Подготовка документа...', percent: 10 });
+    setEmailProgress({ step: 'Сохранение документа...', percent: 5 });
+
+    // Save/update document in DB before sending
+    try {
+      await saveDocumentToDB(previewHtml, previewInvoiceHtml || null);
+    } catch (e) {
+      console.error("[Email] saveDocumentToDB failed:", e);
+    }
     try {
       const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
       const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
