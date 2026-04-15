@@ -546,8 +546,9 @@ const Admin = () => {
                       </>
                     )}
 
-                    {profileSubTab === "seo" && (
-                      <div className="space-y-6">
+                    {profileSubTab === "site-settings" && (
+                      <div className="space-y-8">
+                        {/* SEO */}
                         <Card>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5" />SEO-настройки</CardTitle>
@@ -586,11 +587,8 @@ const Admin = () => {
                         <Button onClick={saveSeo} disabled={saving} className="w-full">
                           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить SEO-настройки
                         </Button>
-                      </div>
-                    )}
 
-                    {profileSubTab === "contacts" && (
-                      <div className="space-y-6">
+                        {/* Контакты */}
                         <Card>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Контактные данные</CardTitle>
@@ -605,13 +603,10 @@ const Admin = () => {
                         <Button onClick={saveContacts} disabled={saving} className="w-full">
                           {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить контакты
                         </Button>
-                      </div>
-                    )}
 
-                    {profileSubTab === "promotions" && (
-                      <div className="space-y-6">
+                        {/* Акции */}
                         <Card>
-                          <CardHeader><CardTitle>{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
+                          <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5" />{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
                           <CardContent className="space-y-4">
                             <div className="space-y-2"><Label>Заголовок</Label><Input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)} placeholder="Сайт + настройка рекламы" /></div>
                             <div className="space-y-2"><Label>Описание</Label><Textarea value={promoDesc} onChange={(e) => setPromoDesc(e.target.value)} placeholder="Описание акции..." rows={2} /></div>
@@ -656,10 +651,12 @@ const Admin = () => {
                             )}
                           </CardContent>
                         </Card>
+
+                        {/* Реквизиты */}
+                        <RequisitesTab />
                       </div>
                     )}
 
-                    {profileSubTab === "requisites" && <RequisitesTab />}
                     {profileSubTab === "history" && <HistoryTab />}
                     {profileSubTab === "nmo" && <NmoTab />}
                     {profileSubTab === "frdo" && <FrdoTab />}
