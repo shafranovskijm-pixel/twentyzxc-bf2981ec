@@ -128,12 +128,18 @@ const Admin = () => {
     toast.success("Баннер сброшен");
   };
 
-  const handleBgChange = (presetId: string) => {
-    setBgPreset(presetId);
-    localStorage.setItem("admin-bg-preset", presetId);
+  const handleThemeChange = (theme: AdminTheme | null) => {
+    setActiveTheme(theme);
+    if (theme) {
+      localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+      // Clear custom banner when switching to theme
+      setBannerUrl("");
+      localStorage.removeItem("admin-banner-url");
+    } else {
+      localStorage.removeItem(THEME_STORAGE_KEY);
+    }
+    toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
   };
-
-  const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
     queryFn: async () => {
       const { data, error } = await supabase.from("promotions").select("*").order("sort_order");
@@ -300,8 +306,15 @@ const Admin = () => {
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
-      <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
-        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
+      <div
+        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.bgClass || "bg-background")}
+        style={activeTheme ? {
+          "--theme-accent": activeTheme.accent,
+          "--theme-accent-foreground": activeTheme.accentForeground,
+        } as React.CSSProperties : undefined}
+      >
+        {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
+        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
           <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
