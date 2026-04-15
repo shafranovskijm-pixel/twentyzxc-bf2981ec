@@ -243,6 +243,30 @@ const ContractsTab = () => {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
   });
 
+  const togglePaymentStatus = useMutation({
+    mutationFn: async ({ id, current }: { id: string; current: string | null }) => {
+      const cycle = ["не оплачено", "частично", "оплачено"];
+      const idx = cycle.indexOf(current || "не оплачено");
+      const next = cycle[(idx + 1) % cycle.length];
+      const { error } = await supabase.from("contracts").update({ payment_status: next } as any).eq("id", id);
+      if (error) throw error;
+      return { id, next };
+    },
+    onMutate: async ({ id, current }) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-contracts"] });
+      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
+      const cycle = ["не оплачено", "частично", "оплачено"];
+      const idx = cycle.indexOf(current || "не оплачено");
+      const next = cycle[(idx + 1) % cycle.length];
+      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
+        old?.map((c) => c.id === id ? { ...c, payment_status: next } : c) ?? []
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка обновления статуса"); },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
+  });
+
   const downloadFile = async (filePath: string) => {
     const { data, error } = await supabase.storage.from("contracts").download(filePath);
     if (error || !data) return toast.error("Ошибка скачивания");
@@ -333,7 +357,11 @@ const ContractsTab = () => {
                     <button onClick={() => startEdit(c)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
                       {c.client_name}
                     </button>
-                    <Badge variant={statusColor(c.payment_status)} className="shrink-0 text-xs">{c.payment_status || "—"}</Badge>
+                    <Badge
+                      variant={statusColor(c.payment_status)}
+                      className="shrink-0 text-xs cursor-pointer hover:opacity-80 transition-opacity select-none"
+                      onClick={(e) => { e.stopPropagation(); togglePaymentStatus.mutate({ id: c.id, current: c.payment_status }); }}
+                    >{c.payment_status || "—"}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     {c.contract_number && <span className="font-mono">№{c.contract_number}</span>}
@@ -408,7 +436,13 @@ const ContractsTab = () => {
                       </TableCell>
                       <TableCell>{c.contract_number || "—"}</TableCell>
                       <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
-                      <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={statusColor(c.payment_status)}
+                          className="cursor-pointer hover:opacity-80 transition-opacity select-none"
+                          onClick={() => togglePaymentStatus.mutate({ id: c.id, current: c.payment_status })}
+                        >{c.payment_status || "—"}</Badge>
+                      </TableCell>
                       <TableCell>
                         {c.paid_until ? (
                           <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
