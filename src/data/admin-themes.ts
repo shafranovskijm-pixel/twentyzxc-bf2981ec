@@ -125,17 +125,18 @@ export const adminThemes: AdminTheme[] = [
     label: "Бирюза",
     emoji: "💎",
     bannerUrl: bannerTurquoise,
-    bgClass: "bg-gradient-to-b from-[#c0efe8] via-[#5ab8a8] via-[#1a4a50] to-[#050e12]",
-    headerClass: "bg-transparent backdrop-blur-md border-white/10",
-    cardClass: "border-cyan-400/15 bg-[#0e2830]/70 backdrop-blur-sm",
-    sidebarClass: "bg-[#1a4a50]/60 backdrop-blur-xl border-cyan-400/15",
+    bgClass: "", // inline background used instead
+    headerClass: "bg-white/5 backdrop-blur-xl border-white/8",
+    cardClass: "border-cyan-300/10 bg-white/5 backdrop-blur-md",
+    sidebarClass: "bg-white/5 backdrop-blur-xl border-cyan-300/10",
     accent: "170 80% 50%",
     accentForeground: "0 0% 100%",
     animation: "particles",
     bannerPosition: "center 50%",
     previewPosition: "center 50%",
     atmosphereBlur: "12px",
-    atmosphereOpacity: 0.22,
+    atmosphereOpacity: 0.25,
+    atmosphereSharp: true,
   },
 ];
 

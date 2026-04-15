@@ -309,10 +309,13 @@ const Admin = () => {
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div
-        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.bgClass || "bg-background")}
+        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.id !== 'turquoise' ? (activeTheme?.bgClass || "bg-background") : '')}
         style={activeTheme ? {
           "--theme-accent": activeTheme.accent,
           "--theme-accent-foreground": activeTheme.accentForeground,
+          ...(activeTheme.id === 'turquoise' ? {
+            background: 'linear-gradient(to bottom, #d4f5ef 0%, #8fd8ca 12%, #4db8a8 25%, #2a8a80 40%, #1a5a58 55%, #0f3a3e 70%, #0c2a30 85%, #050e12 100%)',
+          } : {}),
         } as React.CSSProperties : undefined}
       >
         {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
@@ -338,17 +341,22 @@ const Admin = () => {
               const tid = activeTheme.id;
               const useLinearMask = tid === 'minimalism' || tid === 'sunset';
               const isFreshness = tid === 'freshness';
+              const isTurquoise = tid === 'turquoise';
               let sharpMask: string;
               let sharpSize: string;
               let sharpPos: string;
               let sharpOpacity: number;
 
               if (isFreshness) {
-                // Only berries at the very bottom — narrow strip
                 sharpMask = 'linear-gradient(to top, black 10%, transparent 35%)';
                 sharpSize = 'w-full h-[50%]';
                 sharpPos = 'absolute bottom-0 left-0';
                 sharpOpacity = 0.4;
+              } else if (isTurquoise) {
+                sharpMask = 'linear-gradient(to top, black 20%, transparent 55%)';
+                sharpSize = 'w-full h-[60%]';
+                sharpPos = 'absolute bottom-0 left-0';
+                sharpOpacity = 0.35;
               } else if (useLinearMask) {
                 sharpMask = 'linear-gradient(to top, black 30%, transparent 60%)';
                 sharpSize = 'w-full h-[70%]';
@@ -375,6 +383,17 @@ const Admin = () => {
                 />
               );
             })()}
+            {/* Turquoise — extra teal glow overlay */}
+            {activeTheme.id === 'turquoise' && (
+              <>
+                <div className="absolute inset-0" style={{
+                  background: 'radial-gradient(ellipse at 50% 80%, rgba(45,212,191,0.12) 0%, transparent 60%)',
+                }} />
+                <div className="absolute bottom-0 left-0 w-full h-[40%]" style={{
+                  background: 'linear-gradient(to top, rgba(20,184,166,0.08) 0%, transparent 100%)',
+                }} />
+              </>
+            )}
             {/* Bottom-left corner — secondary bleed */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}
