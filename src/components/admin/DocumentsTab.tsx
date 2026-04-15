@@ -1026,10 +1026,6 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     setTelegramSending(false);
   };
 
-  if (settingsLoading || clientsLoading) {
-    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
-  }
-
   const loadDocumentForEdit = useCallback((doc: any) => {
     setDocType(doc.doc_type as DocType);
     setDocNumber(doc.doc_number);
@@ -1065,6 +1061,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     toast.info("Документ загружен в редактор");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [fillClientFromName]);
+
+  if (settingsLoading || clientsLoading) {
+    return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  }
 
   return (
     <div className="space-y-6 pb-20">
