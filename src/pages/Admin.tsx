@@ -77,6 +77,9 @@ const Admin = () => {
   const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem("admin-banner-url") || "");
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [bannerFit, setBannerFit] = useState<'cover' | 'contain' | 'tile' | 'stretch'>(() =>
+    (localStorage.getItem("admin-banner-fit") as any) || "cover"
+  );
 
   // SEO state
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -484,7 +487,11 @@ const Admin = () => {
           {/* Decorative banner */}
           <div className="h-32 relative overflow-hidden shrink-0 group">
             {bannerUrl ? (
-              <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              bannerFit === 'tile' ? (
+                <div className="absolute inset-0" style={{ backgroundImage: `url(${bannerUrl})`, backgroundRepeat: 'repeat', backgroundSize: 'auto' }} />
+              ) : (
+                <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full" style={{ objectFit: bannerFit === 'stretch' ? 'fill' : bannerFit, backgroundColor: bannerFit === 'contain' ? '#000' : undefined }} />
+              )
             ) : activeTheme ? (
               <img src={activeTheme.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: activeTheme.bannerPosition || 'center' }} />
             ) : (
@@ -611,7 +618,32 @@ const Admin = () => {
                                   </Button>
                                 )}
                               </div>
-                              {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
+                              {bannerUrl && (
+                                <>
+                                  <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />
+                                  <div className="flex gap-1.5 flex-wrap">
+                                    {([
+                                      { value: 'cover' as const, label: 'Заполнить' },
+                                      { value: 'contain' as const, label: 'Вписать' },
+                                      { value: 'tile' as const, label: 'Замостить' },
+                                      { value: 'stretch' as const, label: 'Растянуть' },
+                                    ]).map(opt => (
+                                      <Button
+                                        key={opt.value}
+                                        variant={bannerFit === opt.value ? "default" : "outline"}
+                                        size="sm"
+                                        className="text-xs h-7"
+                                        onClick={() => {
+                                          setBannerFit(opt.value);
+                                          localStorage.setItem("admin-banner-fit", opt.value);
+                                        }}
+                                      >
+                                        {opt.label}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
                               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
                             </div>
                           </CardContent>
