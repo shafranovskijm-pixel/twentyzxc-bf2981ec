@@ -131,7 +131,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass }:
     <TooltipProvider delayDuration={200}>
       <aside className={cn("w-16 shrink-0 border-r flex flex-col items-center py-4 gap-1.5 sticky top-0 h-screen z-30 transition-colors duration-500", themeClass || "border-border bg-card")}>
         {/* Logo */}
-        <div className="mb-4 text-xs font-bold text-primary tracking-widest select-none">24</div>
+        <a href="/" className="mb-4 text-xs font-bold text-primary tracking-widest select-none hover:opacity-80 transition-opacity" title="На главную">24</a>
 
         {/* Primary nav */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
