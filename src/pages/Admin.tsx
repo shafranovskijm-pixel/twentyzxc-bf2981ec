@@ -226,6 +226,7 @@ const Admin = () => {
     history: "История документов",
     nmo: "НМО Портал",
     frdo: "ФИС ФРДО",
+    "ai-chat": "AI Ассистент",
   };
 
   const secondaryItems = [
@@ -429,6 +430,7 @@ const Admin = () => {
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
               {activeSection === "frdo" && <FrdoTab />}
+              {activeSection === "ai-chat" && <SalesAssistant />}
                 </motion.div>
               </AnimatePresence>
             </main>
