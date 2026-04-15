@@ -1,49 +1,36 @@
 
 
-## Plan: Add "Edit/Reload" button to recent documents list
+## Plan: Сохранение документов только при отправке + перезапись дубликатов
 
-### Problem
-When a document has been created but not yet sent, there's no way to load it back into the editor to update the date, amount, or other fields. The user wants to click on an existing document and have it populate the editor form for re-generation.
+### Проблема
+Сейчас документ сохраняется в базу сразу при генерации (кнопка "Сформировать"). Если пользователь переформирует документ с тем же номером, создаётся дубликат. Нужно:
+1. **Не сохранять в БД при генерации** — только показать превью
+2. **Сохранять (или перезаписывать) при отправке** на email или в Telegram
+3. Если документ с таким же `doc_type + doc_number` уже есть — обновить его, а не создавать новый
 
-### Approach
+### Изменения
 
-**Store editor metadata alongside documents, then add an "Edit" button that loads it all back.**
+#### Файл: `src/components/admin/DocumentsTab.tsx`
 
-### Changes
+**1. Убрать сохранение из `generate()`**
+Весь блок "Save to DB in background" (строки ~471–600) — вынести в отдельную функцию `saveDocumentToDB()`. В `generate()` оставить только генерацию HTML и показ превью. Авто-создание контракта и клиента тоже перенести в `saveDocumentToDB`.
 
-#### 1. Database migration: add `metadata` column to `generated_documents`
-```sql
-ALTER TABLE public.generated_documents ADD COLUMN metadata jsonb;
+**2. Создать `saveDocumentToDB()`**
+Функция, которая:
+- Проверяет, есть ли уже запись с таким `doc_type` + `doc_number` → если да, делает `update`, иначе `insert`
+- Создаёт/обновляет контракт и клиента (как сейчас)
+- Возвращает ID сохранённого документа
+
+**3. Вызывать `saveDocumentToDB()` из `sendDocumentEmail()` и `sendDocumentTelegram()`**
+Перед отправкой письма/телеграма — сначала сохранить актуальную версию в БД. Это гарантирует, что в базе всегда актуальный документ.
+
+### Логика перезаписи
 ```
-This will store `{ contractSubType, subject, deadline, paymentTerms, discountAmount, discountDeadline, clientKpp, clientOgrn, clientAddress, clientDirectorName, clientDirectorPost }` — everything needed to fully restore the editor state.
-
-#### 2. Edit `src/components/admin/DocumentsTab.tsx`
-
-**2a. Save metadata on document generation** (in the `generate()` function, add `metadata` to the insert payload):
-```ts
-metadata: JSON.stringify({
-  contractSubType, subject, deadline, paymentTerms,
-  discountAmount, discountDeadline,
-  clientKpp, clientOgrn, clientAddress,
-  clientDirectorName, clientDirectorPost,
-})
+upsert: ищем по doc_type + doc_number
+  → найден → UPDATE (html_content, total_amount, services, metadata, doc_date, client_name...)
+  → не найден → INSERT
 ```
 
-**2b. Add `loadDocumentForEdit` function** that takes a saved document record and sets all state fields:
-- `docType`, `docNumber`, `docDate`, `clientName`, `clientInn`, `services` — from stored columns
-- `contractSubType`, `subject`, `deadline`, `paymentTerms`, `discountAmount`, `discountDeadline`, client requisites — from `metadata` JSON
-- `linkedContractId` — from `contract_id`
-- Scrolls to top of form
-
-**2c. Add Edit button (pencil icon) to the `RecentDocuments` component** in both mobile and desktop views, next to Eye/Download/Delete buttons. On click, calls `loadDocumentForEdit`.
-
-Since `RecentDocuments` is a separate component inside DocumentsTab, we'll need to either:
-- Lift it into the main component, or
-- Pass a callback `onEdit` prop from the parent
-
-We'll pass an `onEdit` callback prop.
-
-### Files
-- **Migration**: Add `metadata jsonb` column to `generated_documents`
-- **Edit**: `src/components/admin/DocumentsTab.tsx` — save metadata on generate, add edit button to RecentDocuments, load document data back into form
+### Файлы
+- **Редактирование**: `src/components/admin/DocumentsTab.tsx` — реструктуризация сохранения
 
