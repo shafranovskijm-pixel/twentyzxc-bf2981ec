@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Loader2, Building2, Trash2, ExternalLink, Eye } from "lucide-react";
+import { Plus, Loader2, Building2, Trash2, ExternalLink, Eye, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import OrgContractsTab from "@/components/org/OrgContractsTab";
+import OrgClientsTab from "@/components/org/OrgClientsTab";
+import OrgPlannerTab from "@/components/org/OrgPlannerTab";
+import OrgFilesTab from "@/components/org/OrgFilesTab";
+import OrgLandingEditor from "@/components/org/OrgLandingEditor";
+import InlineAIChat from "@/components/admin/InlineAIChat";
+import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface Organization {
   id: string;
@@ -23,6 +30,74 @@ interface Organization {
   updated_at: string;
 }
 
+const orgSections = [
+  { id: "contracts", label: "Договоры" },
+  { id: "clients", label: "Клиенты" },
+  { id: "planner", label: "Планер" },
+  { id: "files", label: "Файлы" },
+  { id: "landing", label: "Лендинг" },
+  { id: "ai-chat", label: "AI" },
+];
+
+const OrgInlineView = ({ org, onBack }: { org: Organization; onBack: () => void }) => {
+  const [tab, setTab] = useState("contracts");
+  const queryClient = useQueryClient();
+
+  return (
+    <div className="space-y-4 pb-20">
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="icon" onClick={onBack} className="h-8 w-8">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Building2 className="h-5 w-5 text-primary" />
+        <div>
+          <div className="font-semibold text-sm">{org.name}</div>
+          {org.inn && <div className="text-xs text-muted-foreground">ИНН: {org.inn}</div>}
+        </div>
+      </div>
+
+      <div className="flex gap-1 flex-wrap">
+        {orgSections.map((s) => (
+          <Button
+            key={s.id}
+            variant={tab === s.id ? "default" : "outline"}
+            size="sm"
+            className="text-xs h-7"
+            onClick={() => setTab(s.id)}
+          >
+            {s.label}
+          </Button>
+        ))}
+      </div>
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={tab}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.15 }}
+        >
+          {tab === "contracts" && <OrgContractsTab organizationId={org.id} />}
+          {tab === "clients" && <OrgClientsTab organizationId={org.id} />}
+          {tab === "planner" && <OrgPlannerTab organizationId={org.id} />}
+          {tab === "files" && <OrgFilesTab organizationId={org.id} />}
+          {tab === "landing" && (
+            <OrgLandingEditor
+              organizationId={org.id}
+              orgName={org.name || ""}
+              landingSlug={org.landing_slug}
+              landingConfig={(org.landing_config as any) || {}}
+              onUpdate={() => queryClient.invalidateQueries({ queryKey: ["admin-organizations"] })}
+            />
+          )}
+          {tab === "ai-chat" && <InlineAIChat />}
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+};
+
 const OrganizationsTab = () => {
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
@@ -31,6 +106,7 @@ const OrganizationsTab = () => {
   const [orgEmail, setOrgEmail] = useState("");
   const [orgPassword, setOrgPassword] = useState("");
   const [creating, setCreating] = useState(false);
+  const [viewingOrg, setViewingOrg] = useState<Organization | null>(null);
 
   const { data: organizations = [], isLoading } = useQuery({
     queryKey: ["admin-organizations"],
@@ -63,7 +139,6 @@ const OrganizationsTab = () => {
     }
     setCreating(true);
     try {
-      // 1. Create user via edge function (create-admin can be reused or we sign up)
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: orgEmail,
         password: orgPassword,
@@ -74,14 +149,12 @@ const OrganizationsTab = () => {
 
       const userId = signUpData.user.id;
 
-      // 2. Assign organization role
       const { error: roleError } = await supabase.from("user_roles").insert({
         user_id: userId,
         role: "organization" as any,
       });
       if (roleError) throw roleError;
 
-      // 3. Create organization record
       const { error: orgError } = await supabase.from("organizations").insert({
         user_id: userId,
         name: orgName,
@@ -101,6 +174,10 @@ const OrganizationsTab = () => {
     }
     setCreating(false);
   };
+
+  if (viewingOrg) {
+    return <OrgInlineView org={viewingOrg} onBack={() => setViewingOrg(null)} />;
+  }
 
   return (
     <div className="space-y-6 pb-20">
@@ -183,7 +260,7 @@ const OrganizationsTab = () => {
                       {new Date(org.created_at).toLocaleDateString("ru-RU")}
                     </TableCell>
                     <TableCell className="text-right sticky right-0 bg-card">
-                      <Button variant="ghost" size="icon" onClick={() => window.open(`/org?id=${org.id}`, '_blank')} title="Войти как организация">
+                      <Button variant="ghost" size="icon" onClick={() => setViewingOrg(org)} title="Войти как организация">
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => deleteOrg.mutate(org.id)} className="text-destructive hover:text-destructive">
