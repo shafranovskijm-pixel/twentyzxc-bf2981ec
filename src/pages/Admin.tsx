@@ -36,6 +36,7 @@ import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Setting
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 interface Promotion {
   id: string;
   title: string;
