@@ -32,7 +32,7 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import FloatingAIChat from "@/components/admin/FloatingAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, MoreVertical, Building2, History, GraduationCap, FileCheck } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +143,16 @@ const Admin = () => {
 
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
 
+  // Theme initialization
+  useEffect(() => {
+    const saved = localStorage.getItem("admin-theme");
+    if (saved === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
+
   useEffect(() => {
     if (settings.seo_keywords !== undefined) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
     if (settings.seo_title !== undefined) setSeoTitle(settings.seo_title);
@@ -234,13 +244,35 @@ const Admin = () => {
       <div className="min-h-screen flex w-full bg-background">
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
         <div className="flex-1 flex flex-col min-h-screen">
+          {/* Decorative banner */}
+          <div className="h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10 relative overflow-hidden shrink-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.15),transparent_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
+          </div>
+
           <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
             <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
             <NotificationsPanel onNavigate={setActiveSection} />
+
+            {/* Theme toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => {
+                const isDark = document.documentElement.classList.toggle("dark");
+                localStorage.setItem("admin-theme", isDark ? "dark" : "light");
+              }}
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
+
+            {/* Settings dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <MoreVertical className="h-5 w-5" />
+                  <Settings className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
