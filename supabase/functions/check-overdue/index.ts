@@ -97,14 +97,41 @@ serve(async (req) => {
       return diffDays >= 0 && diffDays <= 14;
     });
 
+    // 4. Service deadlines approaching (3 months, 2 months, 1 month)
+    const { data: allClientsWithDeadline, error: err4 } = await supabase
+      .from("clients")
+      .select("id, name, service_deadline")
+      .not("service_deadline", "is", null);
+
+    if (err4) {
+      console.error("Error fetching client deadlines:", err4);
+      throw err4;
+    }
+
+    const serviceReminders: { name: string; deadline: string; daysLeft: number; label: string }[] = [];
+    const todayMs = new Date(today).getTime();
+    for (const cl of (allClientsWithDeadline || [])) {
+      const dlMs = new Date(cl.service_deadline!).getTime();
+      const diffDays = Math.round((dlMs - todayMs) / (1000 * 60 * 60 * 24));
+      // Check for approximately 3 months (85-95 days), 2 months (55-65 days), 1 month (25-35 days)
+      if (diffDays >= 85 && diffDays <= 95) {
+        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "3 мес" });
+      } else if (diffDays >= 55 && diffDays <= 65) {
+        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "2 мес" });
+      } else if (diffDays >= 25 && diffDays <= 35) {
+        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "1 мес" });
+      }
+    }
+
     const overdueCount = overdue?.length || 0;
     const expiringCount = expiring?.length || 0;
     const renewalCount = renewalReminders.length;
+    const serviceReminderCount = serviceReminders.length;
 
-    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && !isTest) {
+    if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && serviceReminderCount === 0 && !isTest) {
       console.log("No notifications needed");
       return new Response(
-        JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0, renewals: 0 }),
+        JSON.stringify({ success: true, message: "No notifications needed", overdue: 0, expiring: 0, renewals: 0, serviceReminders: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -114,9 +141,9 @@ serve(async (req) => {
       ? `🔔 <b>Тестовый отчёт по оплатам</b>\n\n`
       : `📊 <b>Ежедневный отчёт по оплатам</b>\n\n`;
 
-    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0) {
+    if (isTest && overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && serviceReminderCount === 0) {
       text += `✅ Нет просроченных, истекающих или требующих продления договоров.\n`;
-      text += `📅 Напоминания активны для типов: Сайт, ФРДО\n`;
+      text += `📅 Напоминания активны для типов: Сайт, ФРДО, сроки услуг\n`;
     }
 
     if (overdueCount > 0) {
@@ -165,6 +192,15 @@ serve(async (req) => {
       }
     }
 
+    if (serviceReminderCount > 0) {
+      text += `\n📋 <b>Истекающие сроки услуг (${serviceReminderCount}):</b>\n`;
+      for (const r of serviceReminders) {
+        const emoji = r.label === "1 мес" ? "🔴" : r.label === "2 мес" ? "🟠" : "🟡";
+        const dlStr = new Date(r.deadline).toLocaleDateString("ru-RU");
+        text += `  ${emoji} Через ${r.label}: ${r.name} (до ${dlStr})\n`;
+      }
+    }
+
     // Send to Telegram
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: "POST",
@@ -183,10 +219,10 @@ serve(async (req) => {
       throw new Error(result.description || "Telegram API error");
     }
 
-    console.log(`Notification sent: ${overdueCount} overdue, ${expiringCount} expiring, ${renewalCount} renewals`);
+    console.log(`Notification sent: ${overdueCount} overdue, ${expiringCount} expiring, ${renewalCount} renewals, ${serviceReminderCount} service deadlines`);
 
     return new Response(
-      JSON.stringify({ success: true, overdue: overdueCount, expiring: expiringCount, renewals: renewalCount }),
+      JSON.stringify({ success: true, overdue: overdueCount, expiring: expiringCount, renewals: renewalCount, serviceReminders: serviceReminderCount }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

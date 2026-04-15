@@ -517,10 +517,36 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           }
         }
 
-        // Step 2.5: Auto-create or update client
+        // Step 2.5: Auto-create or update client (+ service_deadline)
         const existingClient = clients.find(c => c.name === clientName);
+        
+        // Parse service_deadline from deadline field
+        let parsedServiceDeadline: string | null = null;
+        if (deadline) {
+          // Try "DD.MM.YYYY по DD.MM.YYYY" format
+          const poMatch = deadline.match(/по\s+(\d{2})\.(\d{2})\.(\d{4})/);
+          if (poMatch) {
+            parsedServiceDeadline = `${poMatch[3]}-${poMatch[2]}-${poMatch[1]}`;
+          } else {
+            // Try single date "DD.MM.YYYY"
+            const singleMatch = deadline.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+            if (singleMatch) {
+              parsedServiceDeadline = `${singleMatch[3]}-${singleMatch[2]}-${singleMatch[1]}`;
+            } else {
+              // Try "N рабочих дней" - calculate from contract date
+              const daysMatch = deadline.match(/(\d+)\s*(рабоч|календар|дн)/i);
+              if (daysMatch && docDate) {
+                const days = parseInt(daysMatch[1]);
+                const start = new Date(docDate);
+                start.setDate(start.getDate() + days);
+                parsedServiceDeadline = start.toISOString().split("T")[0];
+              }
+            }
+          }
+        }
+
         if (clientName.trim()) {
-          const clientData = {
+          const clientData: Record<string, any> = {
             name: clientName,
             inn: clientInn || null,
             kpp: clientKpp || null,
@@ -529,31 +555,38 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
             director_name: clientDirectorName || null,
             director_post: clientDirectorPost || null,
           };
+          if (parsedServiceDeadline) {
+            clientData.service_deadline = parsedServiceDeadline;
+          }
           if (!existingClient) {
-            const { error: clientError } = await supabase.from("clients").insert(clientData);
+            const { error: clientError } = await supabase.from("clients").insert(clientData as any);
             if (!clientError) {
               console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
             } else {
               console.error("[DOC] Step 2.5 client creation failed:", clientError);
             }
           } else {
-            // Update existing client requisites
-            const { error: updateError } = await supabase.from("clients").update({
+            const updateData: Record<string, any> = {
               inn: clientInn || existingClient.inn || null,
               kpp: clientKpp || existingClient.kpp || null,
               ogrn: clientOgrn || existingClient.ogrn || null,
               legal_address: clientAddress || existingClient.legal_address || null,
               director_name: clientDirectorName || existingClient.director_name || null,
               director_post: clientDirectorPost || existingClient.director_post || null,
-            }).eq("id", existingClient.id);
+            };
+            if (parsedServiceDeadline) {
+              updateData.service_deadline = parsedServiceDeadline;
+            }
+            const { error: updateError } = await supabase.from("clients").update(updateData).eq("id", existingClient.id);
             if (!updateError) {
-              console.log("[DOC] Step 2.5 OK, client updated:", clientName);
+              console.log("[DOC] Step 2.5 OK, client updated:", clientName, parsedServiceDeadline ? `deadline: ${parsedServiceDeadline}` : "");
             } else {
               console.error("[DOC] Step 2.5 client update failed:", updateError);
             }
           }
           queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
           queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+          queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
         }
 
         // Step 3: Save files to storage (HTML first for reliability, then try PDF)
