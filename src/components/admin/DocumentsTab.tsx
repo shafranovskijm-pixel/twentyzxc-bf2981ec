@@ -559,7 +559,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
             clientData.service_deadline = parsedServiceDeadline;
           }
           if (!existingClient) {
-            const { error: clientError } = await supabase.from("clients").insert(clientData);
+            const { error: clientError } = await supabase.from("clients").insert(clientData as any);
             if (!clientError) {
               console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
             } else {
