@@ -1,0 +1,1 @@
+ALTER TABLE public.contracts ADD COLUMN is_one_time boolean NOT NULL DEFAULT false;

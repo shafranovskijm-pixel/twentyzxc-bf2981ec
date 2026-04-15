@@ -195,6 +195,7 @@ export type Database = {
           file_path: string | null
           id: string
           is_archived: boolean
+          is_one_time: boolean
           notes: string | null
           paid_until: string | null
           payment_status: string | null
@@ -212,6 +213,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           is_archived?: boolean
+          is_one_time?: boolean
           notes?: string | null
           paid_until?: string | null
           payment_status?: string | null
@@ -229,6 +231,7 @@ export type Database = {
           file_path?: string | null
           id?: string
           is_archived?: boolean
+          is_one_time?: boolean
           notes?: string | null
           paid_until?: string | null
           payment_status?: string | null
