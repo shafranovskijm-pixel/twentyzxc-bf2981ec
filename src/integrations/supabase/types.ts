@@ -95,6 +95,7 @@ export type Database = {
           ogrn: string | null
           payment_date: string | null
           phone: string | null
+          service_deadline: string | null
           service_type: string | null
           telegram: string | null
           updated_at: string
@@ -117,6 +118,7 @@ export type Database = {
           ogrn?: string | null
           payment_date?: string | null
           phone?: string | null
+          service_deadline?: string | null
           service_type?: string | null
           telegram?: string | null
           updated_at?: string
@@ -139,6 +141,7 @@ export type Database = {
           ogrn?: string | null
           payment_date?: string | null
           phone?: string | null
+          service_deadline?: string | null
           service_type?: string | null
           telegram?: string | null
           updated_at?: string
