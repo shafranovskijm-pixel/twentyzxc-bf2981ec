@@ -317,6 +317,8 @@ const Admin = () => {
           "--primary-foreground": activeTheme.accentForeground,
           ...(activeTheme.id === 'turquoise' ? {
             background: 'linear-gradient(to bottom, #d4f5ef 0%, #8fd8ca 12%, #4db8a8 25%, #2a8a80 40%, #1a5a58 55%, #0f3a3e 70%, #0c2a30 85%, #050e12 100%)',
+            "--foreground": "180 10% 10%",
+            "--muted-foreground": "180 8% 25%",
           } : {}),
         } as React.CSSProperties : undefined}
       >
