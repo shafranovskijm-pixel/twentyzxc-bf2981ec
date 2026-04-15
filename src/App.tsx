@@ -34,6 +34,8 @@ import Reviews from "./pages/Reviews";
 import Playground from "./pages/Playground";
 import PlaygroundView from "./pages/PlaygroundView";
 import Admin from "./pages/Admin";
+import OrgPanel from "./pages/OrgPanel";
+import OrgLanding from "./pages/OrgLanding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -76,6 +78,8 @@ const App = () => (
                 <Route path="/playground" element={<Playground />} />
                 <Route path="/p/:slug" element={<PlaygroundView />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/org" element={<OrgPanel />} />
+                <Route path="/shop/:slug" element={<OrgLanding />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
