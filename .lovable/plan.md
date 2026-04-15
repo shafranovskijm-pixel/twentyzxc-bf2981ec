@@ -1,21 +1,26 @@
 
 
-## Plan: Show discount fields for contracts too, not just invoices
+## Plan: Add "Период оказания услуг" to contract specifications
 
 ### Problem
-The discount input fields are currently wrapped in `docType === "invoice"` condition (line 1237), so they only appear when creating an invoice. The user wants them visible when creating a contract ("contract") as well.
+The service period (deadline) field is entered in the UI but never appears in the specification (Приложение №1) of FRDO, NMO, or generic contracts. The user wants the period displayed in the specification section.
 
 ### Changes
 
-#### Edit `src/components/admin/DocumentsTab.tsx`
-1. Change the condition on line 1237 from `docType === "invoice"` to `docType === "invoice" || docType === "contract"` so discount fields appear for both document types.
+#### 1. Edit `src/lib/frdo-contract-template.ts`
+After the client name line (line 244) and before the services table, add:
+```html
+<p>Период оказания услуг: <strong>${periodText}</strong></p>
+```
+The `periodText` variable already exists (line 109).
 
-2. Pass `discountAmount` and `discountDeadline` in the contract generation data object (around line 427) — they're already passed but need to ensure the contract template uses them.
+#### 2. Edit `src/lib/nmo-contract-template.ts`
+Same addition after the client name (line 235), before the services table. Extract `periodText` from `data.deadline` similarly to the FRDO template.
 
-#### Edit `src/lib/document-templates.ts`
-Add the discount block to the contract HTML template (similar to how it's done in the invoice template). If discount is set, show a line like: "При оплате до [дата] сумма составляет [сумма со скидкой] руб. (скидка [сумма] руб.)"
+#### 3. Edit `src/lib/document-templates.ts`
+For the generic contract — there's no separate specification appendix, but the deadline is shown in section 2.2. No change needed here unless we want consistency. If the generic contract has no appendix page, skip.
 
 ### Files
-- **Edit**: `src/components/admin/DocumentsTab.tsx` — expand condition to include "contract"
-- **Edit**: `src/lib/document-templates.ts` — add discount rendering to contract template
+- **Edit**: `src/lib/frdo-contract-template.ts` — add period line to specification
+- **Edit**: `src/lib/nmo-contract-template.ts` — add period line to specification
 
