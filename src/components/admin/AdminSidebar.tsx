@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, LayoutDashboard, CalendarDays, FileText, Users, FolderArchive, FileOutput, GripVertical, MessageSquare } from "lucide-react";
+import { LogOut, CalendarDays, FileText, Users, FolderArchive, FileOutput, GripVertical, MessageSquare } from "lucide-react";
 import {
   DndContext,
   closestCenter,
