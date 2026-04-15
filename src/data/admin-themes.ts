@@ -3,6 +3,7 @@ import bannerOffice from "@/assets/banners/banner-office.jpg";
 import bannerNewyork from "@/assets/banners/banner-newyork.jpg";
 import bannerSunset from "@/assets/banners/banner-sunset.jpg";
 import bannerMinimalism from "@/assets/banners/banner-minimalism.jpg";
+import bannerTurquoise from "@/assets/banners/banner-turquoise.jpg";
 
 export interface AdminTheme {
   id: string;
@@ -105,6 +106,21 @@ export const adminThemes: AdminTheme[] = [
     accentForeground: "0 0% 100%",
     animation: "glow",
     bannerPosition: "center 45%",
+    previewPosition: "center 50%",
+  },
+  {
+    id: "turquoise",
+    label: "Бирюза",
+    emoji: "💎",
+    bannerUrl: bannerTurquoise,
+    bgClass: "bg-gradient-to-br from-[#0a1a1f] via-[#0d2228] to-[#091518]",
+    headerClass: "bg-[#0d1e24]/95 border-cyan-800/30",
+    cardClass: "border-cyan-800/25 bg-[#0d1e24]/80",
+    sidebarClass: "bg-[#0a1a1f]/95 border-cyan-800/30",
+    accent: "180 60% 40%",
+    accentForeground: "0 0% 100%",
+    animation: "glow",
+    bannerPosition: "center 50%",
     previewPosition: "center 50%",
   },
 ];
