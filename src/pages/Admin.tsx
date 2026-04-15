@@ -32,7 +32,7 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
