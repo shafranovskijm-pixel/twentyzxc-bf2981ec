@@ -1602,6 +1602,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                       <span className="font-mono text-xs">№{doc.doc_number}</span>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
+                      {onEdit && <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-3.5 h-3.5" /></Button>}
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))}><Eye className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => {
                         const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;
