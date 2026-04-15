@@ -454,7 +454,7 @@ const Admin = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9"
+                className="h-9 w-9 hover:text-primary hover:bg-primary/10"
                 onClick={() => setIsDark(!isDark)}
               >
                 {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -462,7 +462,7 @@ const Admin = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 gap-1.5 text-xs"
+                className="h-9 gap-1.5 text-xs hover:text-primary hover:bg-primary/10"
                 onClick={() => setActiveSection("profile")}
               >
                 <User className="h-4 w-4" />
@@ -520,7 +520,7 @@ const Admin = () => {
                           "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left",
                           profileSubTab === tab.id
                             ? "bg-primary/15 text-primary font-medium"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                         )}
                       >
                         <tab.icon className="h-4 w-4 shrink-0" />
@@ -759,7 +759,7 @@ const Admin = () => {
                 </motion.div>
               </AnimatePresence>
             </main>
-            <div className={activeTheme ? "relative z-10 backdrop-blur-xl bg-background/40" : ""}>
+            <div className={activeTheme ? "relative z-10" : ""}>
               <Footer />
             </div>
           </div>
