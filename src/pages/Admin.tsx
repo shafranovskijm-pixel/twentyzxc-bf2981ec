@@ -335,23 +335,38 @@ const Admin = () => {
             />
             {/* Bottom-right corner — sharp layer (clear in corner, fading out) */}
             {activeTheme.atmosphereSharp && (() => {
-              const useLinearMask = activeTheme.id === 'minimalism' || activeTheme.id === 'freshness';
-              const sharpMask = useLinearMask
-                ? 'linear-gradient(to top, black 30%, transparent 60%)'
-                : 'radial-gradient(ellipse at 100% 100%, black 15%, transparent 55%)';
-              const sharpSize = useLinearMask
-                ? 'w-full h-[70%]'
-                : 'w-[55%] h-[50%]';
-              const sharpPos = useLinearMask
-                ? 'absolute bottom-0 left-0'
-                : 'absolute -bottom-8 -right-8';
+              const tid = activeTheme.id;
+              const useLinearMask = tid === 'minimalism' || tid === 'sunset';
+              const isFreshness = tid === 'freshness';
+              let sharpMask: string;
+              let sharpSize: string;
+              let sharpPos: string;
+              let sharpOpacity: number;
+
+              if (isFreshness) {
+                // Only berries at the very bottom — narrow strip
+                sharpMask = 'linear-gradient(to top, black 10%, transparent 35%)';
+                sharpSize = 'w-full h-[50%]';
+                sharpPos = 'absolute bottom-0 left-0';
+                sharpOpacity = 0.4;
+              } else if (useLinearMask) {
+                sharpMask = 'linear-gradient(to top, black 30%, transparent 60%)';
+                sharpSize = 'w-full h-[70%]';
+                sharpPos = 'absolute bottom-0 left-0';
+                sharpOpacity = 0.35;
+              } else {
+                sharpMask = 'radial-gradient(ellipse at 100% 100%, black 15%, transparent 55%)';
+                sharpSize = 'w-[55%] h-[50%]';
+                sharpPos = 'absolute -bottom-8 -right-8';
+                sharpOpacity = 0.3;
+              }
               return (
                 <img
                   src={bannerUrl || activeTheme.bannerUrl}
                   alt=""
                   className={`${sharpPos} ${sharpSize} object-cover`}
                   style={{
-                    opacity: useLinearMask ? 0.35 : 0.3,
+                    opacity: sharpOpacity,
                     filter: 'blur(0px) saturate(1.6)',
                     maskImage: sharpMask,
                     WebkitMaskImage: sharpMask,
