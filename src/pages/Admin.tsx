@@ -32,10 +32,11 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 interface Promotion {
   id: string;
   title: string;
@@ -48,6 +49,13 @@ interface Promotion {
   sort_order: number;
 }
 
+const BG_PRESETS = [
+  { id: "default", label: "По умолчанию", style: "bg-background" },
+  { id: "dark-grid", label: "Тёмная сетка", style: "bg-[#0f0f14] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px]" },
+  { id: "warm", label: "Тёплый", style: "bg-gradient-to-br from-[#1a1510] to-[#15171e]" },
+  { id: "ocean", label: "Океан", style: "bg-gradient-to-br from-[#0f1923] to-[#15171e]" },
+];
+
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
@@ -57,6 +65,20 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
+
+  // Theme state
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("admin-theme");
+    return saved !== "light";
+  });
+
+  // Banner state
+  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem("admin-banner-url") || "");
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // Background state
+  const [bgPreset, setBgPreset] = useState(() => localStorage.getItem("admin-bg-preset") || "default");
 
   // SEO state
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -80,6 +102,38 @@ const Admin = () => {
   const [promoIcon, setPromoIcon] = useState("");
   const [editingPromo, setEditingPromo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Banner upload handler
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `banner-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("admin-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("admin-assets").getPublicUrl(path);
+      setBannerUrl(publicUrl);
+      localStorage.setItem("admin-banner-url", publicUrl);
+      toast.success("Баннер обновлён");
+    } catch {
+      toast.error("Ошибка загрузки баннера");
+    }
+    setBannerUploading(false);
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
+  const resetBanner = () => {
+    setBannerUrl("");
+    localStorage.removeItem("admin-banner-url");
+    toast.success("Баннер сброшен");
+  };
+
+  const handleBgChange = (presetId: string) => {
+    setBgPreset(presetId);
+    localStorage.setItem("admin-bg-preset", presetId);
+  };
 
   const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
@@ -143,15 +197,16 @@ const Admin = () => {
 
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
 
-  // Theme initialization
+  // Theme sync
   useEffect(() => {
-    const saved = localStorage.getItem("admin-theme");
-    if (saved === "light") {
-      document.documentElement.classList.remove("dark");
-    } else {
+    if (isDark) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("admin-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("admin-theme", "light");
     }
-  }, []);
+  }, [isDark]);
 
   useEffect(() => {
     if (settings.seo_keywords !== undefined) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
@@ -241,13 +296,33 @@ const Admin = () => {
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Decorative banner */}
-          <div className="h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10 relative overflow-hidden shrink-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.15),transparent_70%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
+          <div className="h-32 relative overflow-hidden shrink-0 group">
+            {bannerUrl ? (
+              <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.15),transparent_70%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
+              </>
+            )}
+            {/* Banner controls overlay */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
+                {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                Изменить
+              </Button>
+              {bannerUrl && (
+                <Button variant="secondary" size="sm" className="gap-1.5" onClick={resetBanner}>
+                  <RotateCcw className="h-4 w-4" />Сбросить
+                </Button>
+              )}
+            </div>
+            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
           </div>
 
           <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
@@ -259,13 +334,9 @@ const Admin = () => {
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              onClick={() => {
-                const isDark = document.documentElement.classList.toggle("dark");
-                localStorage.setItem("admin-theme", isDark ? "dark" : "light");
-              }}
+              onClick={() => setIsDark(!isDark)}
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
 
             {/* Settings dropdown */}
@@ -286,6 +357,27 @@ const Admin = () => {
                     {item.label}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5"><Palette className="h-3.5 w-3.5" />Фон</p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {BG_PRESETS.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleBgChange(p.id)}
+                        title={p.label}
+                        className={cn(
+                          "w-8 h-8 rounded border-2 transition-all",
+                          bgPreset === p.id ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/50",
+                          p.id === "default" && "bg-background",
+                          p.id === "dark-grid" && "bg-[#0f0f14]",
+                          p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
+                          p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
