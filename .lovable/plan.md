@@ -1,24 +1,27 @@
 
 
-## Plan: Move document buttons to top of client edit form and ensure requisites are pre-filled
+## Plan: Add discount with deadline to invoices
 
-### Problem
-The "Договор", "Счёт", and "Telegram" buttons are at the bottom of the client edit form (line ~551-572), making them hard to find. The user wants them at the top. Additionally, the user wants requisites to be automatically filled in the document constructor when navigating from the client card.
+### What the user wants
+When creating an invoice (Счёт), add the ability to specify a discount amount (fixed sum, not percentage) and a deadline date. The invoice will show: "При оплате до [дата] сумма составляет [сумма со скидкой] руб." alongside the full price.
 
-### What changes
+### Changes
 
-#### Edit `src/components/admin/ClientsTab.tsx`
+#### 1. Edit `src/components/admin/DocumentsTab.tsx`
+- Add two new state fields: `discountAmount` (number, default 0) and `discountDeadline` (string/date, default empty)
+- Add UI fields below the services total (only visible when `docType === "invoice"`): an input for discount amount and a date picker for deadline
+- Show calculated discounted total in the UI
+- Pass `discountAmount` and `discountDeadline` to `generateInvoiceHtml`
 
-1. **Move the action buttons** (Договор, Счёт, Telegram) from the bottom `flex-wrap` block (lines 556-572) up into the card header area (line 470-473), next to the title "Редактировать клиента" and the close button. This makes them immediately visible when opening a client.
+#### 2. Edit `src/lib/document-templates.ts`
+- Add optional `discountAmount` and `discountDeadline` fields to the `DocumentData` interface
+- In `generateInvoiceHtml`, after the "Итого к оплате" line, add a conditional block:
+  - If discount is set, show: "При оплате до [formatted date] сумма составляет [total - discount] руб. (скидка [discount] руб.)"
 
-2. **Ensure requisites are saved before navigating**: Before calling `onNavigate("documents", ...)`, first save the current client data (call `saveClient`) so that when DocumentsTab loads and calls `fillClientFromName`, it finds the up-to-date requisites (INN, KPP, OGRN, address, director) in the `clients` table. This solves the "requisites not pulling" issue.
-
-3. **Keep the Save/Update button** at the bottom as-is, just remove the duplicate document buttons from there.
-
-### Technical detail
-- The DocumentsTab already has `fillClientFromName` that looks up the client by name in the `clients` array and fills all requisite fields. The problem is that if the client was just edited but not saved, the requisites aren't in the DB yet. The fix is to auto-save before navigating.
-- The header will have: title on the left, action buttons + close button on the right.
+### UI placement
+The discount fields appear right after the "Итого" line in the services card, only for invoices. Two fields side by side: "Сумма скидки" (number input) and "Оплата до" (date input).
 
 ### Files
-- **Edit**: `src/components/admin/ClientsTab.tsx`
+- **Edit**: `src/components/admin/DocumentsTab.tsx`
+- **Edit**: `src/lib/document-templates.ts`
 
