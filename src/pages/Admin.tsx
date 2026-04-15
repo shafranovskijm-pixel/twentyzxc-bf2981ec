@@ -445,6 +445,32 @@ const Admin = () => {
                               {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
                               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
                             </div>
+                            <div className="space-y-3">
+                              <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Готовые баннеры</Label>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {[
+                                  { id: "freshness", label: "🍉 Свежесть", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-freshness.jpg` },
+                                  { id: "office", label: "🏢 Офис", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-office.jpg` },
+                                  { id: "newyork", label: "🌆 Нью-Йорк", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-newyork.jpg` },
+                                  { id: "sunset", label: "🌅 Закат", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-sunset.jpg` },
+                                  { id: "minimalism", label: "🌿 Минимализм", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-minimalism.jpg` },
+                                ].map(b => (
+                                  <button
+                                    key={b.id}
+                                    onClick={() => { setBannerUrl(b.url); localStorage.setItem("admin-banner-url", b.url); toast.success(`Баннер «${b.label}» установлен`); }}
+                                    className={cn(
+                                      "relative h-20 rounded-lg border-2 overflow-hidden transition-all group/banner",
+                                      bannerUrl === b.url ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                                    )}
+                                  >
+                                    <img src={b.url} alt={b.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                    <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
+                                      <span className="text-[10px] text-white font-medium">{b.label}</span>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </CardContent>
                         </Card>
                       </>
