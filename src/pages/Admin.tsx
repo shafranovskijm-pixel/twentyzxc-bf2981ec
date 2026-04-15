@@ -26,11 +26,13 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { adminThemes, THEME_STORAGE_KEY, type AdminTheme } from "@/data/admin-themes";
+import { ThemeAnimation } from "@/components/admin/ThemeAnimations";
 interface Promotion {
   id: string;
   title: string;
@@ -43,12 +45,13 @@ interface Promotion {
   sort_order: number;
 }
 
-const BG_PRESETS = [
-  { id: "default", label: "По умолчанию", style: "bg-background" },
-  { id: "dark-grid", label: "Тёмная сетка", style: "bg-[#0f0f14] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px]" },
-  { id: "warm", label: "Тёплый", style: "bg-gradient-to-br from-[#1a1510] to-[#15171e]" },
-  { id: "ocean", label: "Океан", style: "bg-gradient-to-br from-[#0f1923] to-[#15171e]" },
-];
+const getInitialTheme = (): AdminTheme | null => {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved) return adminThemes.find(t => t.id === saved) || null;
+  } catch {}
+  return null;
+};
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
@@ -67,13 +70,13 @@ const Admin = () => {
     return saved !== "light";
   });
 
-  // Banner state
+  // Active theme
+  const [activeTheme, setActiveTheme] = useState<AdminTheme | null>(getInitialTheme);
+
+  // Banner state (custom override)
   const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem("admin-banner-url") || "");
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-
-  // Background state
-  const [bgPreset, setBgPreset] = useState(() => localStorage.getItem("admin-bg-preset") || "default");
 
   // SEO state
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -125,11 +128,18 @@ const Admin = () => {
     toast.success("Баннер сброшен");
   };
 
-  const handleBgChange = (presetId: string) => {
-    setBgPreset(presetId);
-    localStorage.setItem("admin-bg-preset", presetId);
+  const handleThemeChange = (theme: AdminTheme | null) => {
+    setActiveTheme(theme);
+    if (theme) {
+      localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+      // Clear custom banner when switching to theme
+      setBannerUrl("");
+      localStorage.removeItem("admin-banner-url");
+    } else {
+      localStorage.removeItem(THEME_STORAGE_KEY);
+    }
+    toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
   };
-
   const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
     queryFn: async () => {
@@ -297,11 +307,18 @@ const Admin = () => {
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
-      <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
-        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
+      <div
+        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.bgClass || "bg-background")}
+        style={activeTheme ? {
+          "--theme-accent": activeTheme.accent,
+          "--theme-accent-foreground": activeTheme.accentForeground,
+        } as React.CSSProperties : undefined}
+      >
+        {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
+        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
-          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
+          <header className={cn("h-14 flex items-center border-b px-4 gap-3 sticky top-0 backdrop-blur-sm z-20 transition-colors duration-500", activeTheme?.headerClass || "border-border bg-background/95")}>
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               <span className="text-xl font-bold text-primary select-none">Σ</span>
               <div className="min-w-0">
@@ -339,6 +356,8 @@ const Admin = () => {
           <div className="h-32 relative overflow-hidden shrink-0 group">
             {bannerUrl ? (
               <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : activeTheme ? (
+              <img src={activeTheme.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10" />
@@ -398,43 +417,62 @@ const Admin = () => {
                         <Card>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />Оформление</CardTitle>
-                            <CardDescription>Тема, фон и баннер</CardDescription>
+                            <CardDescription>Выберите тему — она изменит фон, баннер, акценты и анимации</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
+                            {/* Light/Dark toggle */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Тема</Label>
+                              <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Режим</Label>
                               <div className="flex items-center gap-3">
                                 <Button variant={isDark ? "outline" : "default"} size="sm" onClick={() => setIsDark(false)}><Sun className="h-4 w-4 mr-1.5" />Светлая</Button>
                                 <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
                               </div>
                             </div>
+
+                            {/* Theme grid */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Palette className="h-4 w-4" />Фон панели</Label>
-                              <div className="grid grid-cols-4 gap-2">
-                                {BG_PRESETS.map(p => (
+                              <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Готовые темы</Label>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {/* Reset to default */}
+                                <button
+                                  onClick={() => handleThemeChange(null)}
+                                  className={cn(
+                                    "relative h-24 rounded-xl border-2 overflow-hidden transition-all group/theme",
+                                    !activeTheme ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                                  )}
+                                >
+                                  <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/30 to-background" />
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                                    {!activeTheme && <Check className="h-5 w-5 text-primary" />}
+                                    <span className="text-xs font-medium text-foreground">По умолчанию</span>
+                                  </div>
+                                </button>
+                                {adminThemes.map(theme => (
                                   <button
-                                    key={p.id}
-                                    onClick={() => handleBgChange(p.id)}
+                                    key={theme.id}
+                                    onClick={() => handleThemeChange(theme)}
                                     className={cn(
-                                      "h-16 rounded-lg border-2 transition-all flex items-end p-1.5",
-                                      bgPreset === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50",
-                                      p.id === "default" && "bg-background",
-                                      p.id === "dark-grid" && "bg-[#0f0f14]",
-                                      p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
-                                      p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                                      "relative h-24 rounded-xl border-2 overflow-hidden transition-all group/theme",
+                                      activeTheme?.id === theme.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
                                     )}
                                   >
-                                    <span className="text-[10px] text-muted-foreground">{p.label}</span>
+                                    <img src={theme.bannerUrl} alt={theme.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                    <div className="absolute inset-0 bg-black/40 group-hover/theme:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                                      {activeTheme?.id === theme.id && <Check className="h-5 w-5 text-white" />}
+                                      <span className="text-xs font-medium text-white">{theme.emoji} {theme.label}</span>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
                             </div>
+
+                            {/* Custom banner upload */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Баннер</Label>
+                              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Свой баннер</Label>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                                   {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Camera className="h-4 w-4 mr-1.5" />}
-                                  Загрузить баннер
+                                  Загрузить
                                 </Button>
                                 {bannerUrl && (
                                   <Button variant="outline" size="sm" onClick={resetBanner}>
@@ -444,32 +482,6 @@ const Admin = () => {
                               </div>
                               {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
                               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
-                            </div>
-                            <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Готовые баннеры</Label>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {[
-                                  { id: "freshness", label: "🍉 Свежесть", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-freshness.jpg` },
-                                  { id: "office", label: "🏢 Офис", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-office.jpg` },
-                                  { id: "newyork", label: "🌆 Нью-Йорк", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-newyork.jpg` },
-                                  { id: "sunset", label: "🌅 Закат", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-sunset.jpg` },
-                                  { id: "minimalism", label: "🌿 Минимализм", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-minimalism.jpg` },
-                                ].map(b => (
-                                  <button
-                                    key={b.id}
-                                    onClick={() => { setBannerUrl(b.url); localStorage.setItem("admin-banner-url", b.url); toast.success(`Баннер «${b.label}» установлен`); }}
-                                    className={cn(
-                                      "relative h-20 rounded-lg border-2 overflow-hidden transition-all group/banner",
-                                      bannerUrl === b.url ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
-                                    )}
-                                  >
-                                    <img src={b.url} alt={b.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                                    <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
-                                      <span className="text-[10px] text-white font-medium">{b.label}</span>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
                             </div>
                           </CardContent>
                         </Card>

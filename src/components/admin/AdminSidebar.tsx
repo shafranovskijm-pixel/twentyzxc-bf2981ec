@@ -41,6 +41,7 @@ interface AdminSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   onSignOut: () => void;
+  themeClass?: string;
 }
 
 function SortableIconButton({
@@ -91,7 +92,7 @@ function SortableIconButton({
   );
 }
 
-const AdminSidebar = ({ activeSection, onSectionChange, onSignOut }: AdminSidebarProps) => {
+const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass }: AdminSidebarProps) => {
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -128,7 +129,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut }: AdminSideba
 
   return (
     <TooltipProvider delayDuration={200}>
-      <aside className="w-16 shrink-0 border-r border-border bg-card flex flex-col items-center py-4 gap-1.5 sticky top-0 h-screen z-30">
+      <aside className={cn("w-16 shrink-0 border-r flex flex-col items-center py-4 gap-1.5 sticky top-0 h-screen z-30 transition-colors duration-500", themeClass || "border-border bg-card")}>
         {/* Logo */}
         <div className="mb-4 text-xs font-bold text-primary tracking-widest select-none">24</div>
 
