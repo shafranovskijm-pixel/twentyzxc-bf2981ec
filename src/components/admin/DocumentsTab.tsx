@@ -485,6 +485,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
         total_amount: total,
         services: JSON.stringify(filteredServices),
         html_content: html,
+        metadata: JSON.stringify({
+          contractSubType, subject, deadline, paymentTerms,
+          discountAmount, discountDeadline,
+          clientKpp, clientOgrn, clientAddress,
+          clientDirectorName, clientDirectorPost,
+        }),
       });
       if (insertError) {
         console.error("[DOC] Step 1 FAILED:", insertError);
@@ -1441,7 +1447,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       </Dialog>
 
       {/* Recent Documents History */}
-      <RecentDocuments />
+      <RecentDocuments onEdit={loadDocumentForEdit} />
     </div>
   );
 };
