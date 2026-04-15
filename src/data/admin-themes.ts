@@ -30,6 +30,10 @@ export interface AdminTheme {
   bannerPosition?: string;
   /** CSS object-position for the theme selection preview card */
   previewPosition?: string;
+  /** Override blur for bottom-right atmospheric fragment */
+  atmosphereBlur?: string;
+  /** Override opacity for bottom-right atmospheric fragment */
+  atmosphereOpacity?: number;
 }
 
 export const adminThemes: AdminTheme[] = [
@@ -64,6 +68,8 @@ export const adminThemes: AdminTheme[] = [
     forceLight: true,
     bannerPosition: "center 40%",
     previewPosition: "center 40%",
+    atmosphereBlur: "8px",
+    atmosphereOpacity: 0.25,
   },
   {
     id: "newyork",
@@ -113,15 +119,17 @@ export const adminThemes: AdminTheme[] = [
     label: "Бирюза",
     emoji: "💎",
     bannerUrl: bannerTurquoise,
-    bgClass: "bg-gradient-to-br from-[#050e12] via-[#0a2028] to-[#071a20]",
-    headerClass: "bg-[#081820]/95 border-cyan-600/20",
-    cardClass: "border-cyan-600/20 bg-[#0a1c24]/80",
-    sidebarClass: "bg-[#050e12]/95 border-cyan-600/20",
+    bgClass: "bg-gradient-to-b from-[#1a4a50] via-[#0a2028] to-[#050e12]",
+    headerClass: "bg-[#0e2a30]/90 border-cyan-500/25",
+    cardClass: "border-cyan-500/20 bg-[#0a1c24]/80",
+    sidebarClass: "bg-[#081518]/95 border-cyan-500/20",
     accent: "170 80% 50%",
     accentForeground: "0 0% 100%",
     animation: "glow",
     bannerPosition: "center 50%",
     previewPosition: "center 50%",
+    atmosphereBlur: "12px",
+    atmosphereOpacity: 0.22,
   },
 ];
 

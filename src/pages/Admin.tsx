@@ -324,9 +324,10 @@ const Admin = () => {
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
-              className="absolute -bottom-8 -right-8 w-[55%] h-[50%] object-cover opacity-[0.18]"
+              className="absolute -bottom-8 -right-8 w-[55%] h-[50%] object-cover"
               style={{
-                filter: 'blur(20px) saturate(1.4)',
+                opacity: activeTheme.atmosphereOpacity ?? 0.18,
+                filter: `blur(${activeTheme.atmosphereBlur || '20px'}) saturate(1.4)`,
                 maskImage: 'radial-gradient(ellipse at 100% 100%, black 20%, transparent 75%)',
                 WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 20%, transparent 75%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
