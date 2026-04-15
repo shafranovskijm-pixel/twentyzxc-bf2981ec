@@ -149,6 +149,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
   // act-specific
   const [linkedContractId, setLinkedContractId] = useState("");
 
+  // discount (invoice-specific)
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [discountDeadline, setDiscountDeadline] = useState("");
+
   const [lookingUp, setLookingUp] = useState(false);
 
   // Helper: fill client requisites from clients array by client_name
@@ -413,6 +417,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       paymentTerms,
       contractNumber: linkedContract?.contract_number || "",
       contractDate: linkedContract?.contract_date ? formatDate(linkedContract.contract_date) : "",
+      discountAmount: discountAmount > 0 ? discountAmount : undefined,
+      discountDeadline: discountDeadline ? formatDate(discountDeadline) : undefined,
     };
 
     let html = "";
@@ -1218,6 +1224,28 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           <div className="mt-4 text-right font-semibold text-lg">
             Итого: {total.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
           </div>
+
+          {docType === "invoice" && (
+            <div className="mt-4 pt-4 border-t border-border space-y-3">
+              <Label className="text-sm font-medium">Скидка при досрочной оплате</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Сумма скидки, ₽</Label>
+                  <Input type="number" min={0} value={discountAmount || ""} onChange={e => setDiscountAmount(parseFloat(e.target.value) || 0)} placeholder="0" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Оплата до</Label>
+                  <Input type="date" value={discountDeadline} onChange={e => setDiscountDeadline(e.target.value)} />
+                </div>
+              </div>
+              {discountAmount > 0 && (
+                <div className="text-right text-sm text-muted-foreground">
+                  Сумма со скидкой: <span className="font-semibold text-foreground">{(total - discountAmount).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+                  {discountDeadline && <span> (при оплате до {new Date(discountDeadline).toLocaleDateString("ru-RU")})</span>}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
