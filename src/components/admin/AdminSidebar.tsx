@@ -33,7 +33,6 @@ const defaultMenuItems = [
   { id: "files", label: "Файлы", icon: FolderArchive },
   { id: "documents", label: "Документы", icon: FileOutput },
   { id: "ai-chat", label: "AI Ассистент", icon: MessageSquare },
-  { id: "site-settings", label: "Настройки сайта", icon: Settings2 },
 ];
 
 const STORAGE_KEY = "admin-sidebar-order-v2";
