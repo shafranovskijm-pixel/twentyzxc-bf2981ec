@@ -334,20 +334,32 @@ const Admin = () => {
               }}
             />
             {/* Bottom-right corner — sharp layer (clear in corner, fading out) */}
-            {activeTheme.atmosphereSharp && (
-              <img
-                src={bannerUrl || activeTheme.bannerUrl}
-                alt=""
-                className="absolute -bottom-8 -right-8 w-[55%] h-[50%] object-cover"
-                style={{
-                  opacity: 0.3,
-                  filter: 'blur(0px) saturate(1.6)',
-                  maskImage: 'radial-gradient(ellipse at 100% 100%, black 5%, transparent 40%)',
-                  WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 5%, transparent 40%)',
-                  objectPosition: activeTheme.bannerPosition || 'center',
-                }}
-              />
-            )}
+            {activeTheme.atmosphereSharp && (() => {
+              const isMinimalism = activeTheme.id === 'minimalism';
+              const sharpMask = isMinimalism
+                ? 'linear-gradient(to top, black 30%, transparent 60%)'
+                : 'radial-gradient(ellipse at 100% 100%, black 15%, transparent 55%)';
+              const sharpSize = isMinimalism
+                ? 'w-full h-[70%]'
+                : 'w-[55%] h-[50%]';
+              const sharpPos = isMinimalism
+                ? 'absolute bottom-0 left-0'
+                : 'absolute -bottom-8 -right-8';
+              return (
+                <img
+                  src={bannerUrl || activeTheme.bannerUrl}
+                  alt=""
+                  className={`${sharpPos} ${sharpSize} object-cover`}
+                  style={{
+                    opacity: isMinimalism ? 0.35 : 0.3,
+                    filter: 'blur(0px) saturate(1.6)',
+                    maskImage: sharpMask,
+                    WebkitMaskImage: sharpMask,
+                    objectPosition: activeTheme.bannerPosition || 'center',
+                  }}
+                />
+              );
+            })()}
             {/* Bottom-left corner — secondary bleed */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}

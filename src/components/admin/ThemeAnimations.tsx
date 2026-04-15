@@ -102,6 +102,39 @@ const GlowAnimation = () => (
   </div>
 );
 
+/** Drifting silver-turquoise sparkle particles */
+const ParticlesAnimation = () => {
+  const particles = useMemo(() => Array.from({ length: 25 }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    size: Math.random() * 3 + 1,
+    duration: Math.random() * 15 + 20,
+    delay: Math.random() * 10,
+    opacityDuration: Math.random() * 4 + 2,
+    color: Math.random() > 0.5 ? "bg-cyan-300/30" : "bg-white/20",
+  })), []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          className={`absolute rounded-full ${p.color}`}
+          style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
+          animate={{
+            y: [0, -60, -120],
+            x: [0, Math.random() * 30 - 15, Math.random() * 20 - 10],
+            opacity: [0.1, 0.7, 0.1],
+            scale: [0.8, 1.3, 0.8],
+          }}
+          transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+};
+
 export const ThemeAnimation = ({ animation }: { animation: string }) => {
   switch (animation) {
     case "leaves": return <LeavesAnimation />;
@@ -109,6 +142,7 @@ export const ThemeAnimation = ({ animation }: { animation: string }) => {
     case "lights": return <LightsAnimation />;
     case "gradient": return <GradientAnimation />;
     case "glow": return <GlowAnimation />;
+    case "particles": return <ParticlesAnimation />;
     default: return null;
   }
 };
