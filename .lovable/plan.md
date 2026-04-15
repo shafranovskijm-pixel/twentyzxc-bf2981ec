@@ -1,25 +1,18 @@
 
 
-## Plan: Center sidebar menu, add header banner area, and profile/theme settings
+## Plan: Убрать дашборд + кликабельный статус оплаты в договорах
 
-### Changes
+### Изменения
 
-#### 1. Edit `src/components/admin/AdminSidebar.tsx`
-- Center the nav items vertically in the sidebar (use `justify-center` on the nav container instead of `flex-1` top-aligned)
-- Keep logo at top, logout at bottom, nav centered in between
+#### 1. Убрать дашборд
+- **`src/components/admin/AdminSidebar.tsx`**: Удалить `{ id: "dashboard", ... }` из `defaultMenuItems`
+- **`src/pages/Admin.tsx`**: Убрать рендер `DashboardTab`, убрать импорт. Изменить начальный `activeSection` с `"dashboard"` на `"contracts"` (или `"planner"`)
 
-#### 2. Edit `src/pages/Admin.tsx`
-- **Header banner area**: Add a decorative banner strip above the header (gradient or uploadable background image placeholder). For now, a customizable gradient bar (~h-32) with a subtle pattern that can later support a background image upload
-- **Profile/theme dropdown** in top-right: Replace the `MoreVertical` dropdown with two separate controls:
-  - A profile/settings dropdown (`Settings` icon) containing: theme toggle (light/dark), and the secondary nav items (SEO, Contacts, Promotions, Requisites, History, NMO, FRDO)
-  - Theme toggle using a `Sun`/`Moon` icon button that switches between light and dark mode via Tailwind's `dark` class on `<html>`
-- Store theme preference in `localStorage`
+#### 2. Кликабельный статус оплаты в таблице договоров
+- **`src/components/admin/ContractsTab.tsx`**: Заменить `<Badge>` со статусом оплаты на кликабельный элемент, который циклически переключает статус: `не оплачено → частично → оплачено → не оплачено`. При клике — мгновенный `update` в Supabase + инвалидация кэша. Работает и в мобильной, и в десктопной версии таблицы.
 
-#### 3. Theme implementation
-- Add a simple theme toggler that sets `document.documentElement.classList.toggle('dark')` and persists to `localStorage` key `admin-theme`
-- Default to dark (current state)
-
-### Files
-- **Edit**: `src/components/admin/AdminSidebar.tsx` — center nav vertically
-- **Edit**: `src/pages/Admin.tsx` — add banner area, profile/theme toggle in header
+### Файлы
+- **Удалить из сайдбара**: `src/components/admin/AdminSidebar.tsx`
+- **Убрать дашборд из рендера**: `src/pages/Admin.tsx`
+- **Кликабельный статус**: `src/components/admin/ContractsTab.tsx`
 
