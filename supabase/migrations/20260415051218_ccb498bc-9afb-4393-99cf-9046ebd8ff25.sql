@@ -1,0 +1,2 @@
+UPDATE site_settings SET value = '"40802810200000522079"', updated_at = now() WHERE key = 'company_bank_account';
+UPDATE site_settings SET value = '"ООО «ОЗОН Банк»"', updated_at = now() WHERE key = 'company_bank_name';
