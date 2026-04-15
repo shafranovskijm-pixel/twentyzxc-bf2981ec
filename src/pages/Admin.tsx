@@ -140,6 +140,7 @@ const Admin = () => {
     }
     toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
   };
+  const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
     queryFn: async () => {
       const { data, error } = await supabase.from("promotions").select("*").order("sort_order");
