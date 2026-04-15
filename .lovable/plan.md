@@ -1,27 +1,30 @@
 
 
-## Plan: Add discount with deadline to invoices
+## Plan: Add "Акт" button to client card header with auto-fill from existing documents
 
-### What the user wants
-When creating an invoice (Счёт), add the ability to specify a discount amount (fixed sum, not percentage) and a deadline date. The invoice will show: "При оплате до [дата] сумма составляет [сумма со скидкой] руб." alongside the full price.
+### Problem
+No "Акт" button in client card header. When creating an act, user has to manually re-enter all data. The act should auto-fill services, contract number/date from previously generated documents for this client.
 
 ### Changes
 
-#### 1. Edit `src/components/admin/DocumentsTab.tsx`
-- Add two new state fields: `discountAmount` (number, default 0) and `discountDeadline` (string/date, default empty)
-- Add UI fields below the services total (only visible when `docType === "invoice"`): an input for discount amount and a date picker for deadline
-- Show calculated discounted total in the UI
-- Pass `discountAmount` and `discountDeadline` to `generateInvoiceHtml`
+#### 1. Edit `src/components/admin/ClientsTab.tsx`
+Add an "Акт" button next to "Договор" and "Счёт" in the header (line ~478). Same pattern: save client, then navigate with `docType: "act"`.
 
-#### 2. Edit `src/lib/document-templates.ts`
-- Add optional `discountAmount` and `discountDeadline` fields to the `DocumentData` interface
-- In `generateInvoiceHtml`, after the "Итого к оплате" line, add a conditional block:
-  - If discount is set, show: "При оплате до [formatted date] сумма составляет [total - discount] руб. (скидка [discount] руб.)"
+```tsx
+<Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "act" }); }} title="Сделать акт">
+  <CheckSquare className="w-4 h-4 mr-1" /> Акт
+</Button>
+```
 
-### UI placement
-The discount fields appear right after the "Итого" line in the services card, only for invoices. Two fields side by side: "Сумма скидки" (number input) and "Оплата до" (date input).
+#### 2. Edit `src/components/admin/DocumentsTab.tsx`
+In the "Pre-fill from client card navigation" `useEffect` (lines 225-238), when `docType === "act"`, auto-find the latest contract for this client from the `contracts` array and:
+- Set `linkedContractId` to that contract
+- Fill `services` from that contract's generated documents (using existing `fillServicesFromContract`)
+- Set contract number/date references
+
+This way the user only needs to set the act date — everything else pulls from existing data.
 
 ### Files
-- **Edit**: `src/components/admin/DocumentsTab.tsx`
-- **Edit**: `src/lib/document-templates.ts`
+- **Edit**: `src/components/admin/ClientsTab.tsx` — add Акт button
+- **Edit**: `src/components/admin/DocumentsTab.tsx` — auto-fill act data from client's latest contract
 
