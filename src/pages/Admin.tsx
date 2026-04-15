@@ -327,11 +327,11 @@ const Admin = () => {
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
-              className="absolute -bottom-16 -right-16 w-[45%] h-[40%] object-cover opacity-[0.07]"
+              className="absolute -bottom-8 -right-8 w-[55%] h-[50%] object-cover opacity-[0.18]"
               style={{
-                filter: 'blur(30px) saturate(1.3)',
-                maskImage: 'radial-gradient(ellipse at 100% 100%, black 10%, transparent 70%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 10%, transparent 70%)',
+                filter: 'blur(20px) saturate(1.4)',
+                maskImage: 'radial-gradient(ellipse at 100% 100%, black 20%, transparent 75%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 20%, transparent 75%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />
@@ -339,23 +339,23 @@ const Admin = () => {
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
-              className="absolute -bottom-20 -left-20 w-[35%] h-[35%] object-cover opacity-[0.05]"
+              className="absolute -bottom-10 -left-10 w-[45%] h-[45%] object-cover opacity-[0.14]"
               style={{
-                filter: 'blur(40px) saturate(1.2)',
-                maskImage: 'radial-gradient(ellipse at 0% 100%, black 10%, transparent 65%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at 0% 100%, black 10%, transparent 65%)',
+                filter: 'blur(25px) saturate(1.3)',
+                maskImage: 'radial-gradient(ellipse at 0% 100%, black 15%, transparent 70%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 0% 100%, black 15%, transparent 70%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />
-            {/* Right edge mid — subtle side glow */}
+            {/* Right edge mid — side glow */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
-              className="absolute top-1/3 -right-10 w-[25%] h-[30%] object-cover opacity-[0.04]"
+              className="absolute top-1/4 -right-4 w-[30%] h-[40%] object-cover opacity-[0.10]"
               style={{
-                filter: 'blur(50px) saturate(1.1)',
-                maskImage: 'radial-gradient(ellipse at 100% 50%, black 5%, transparent 60%)',
-                WebkitMaskImage: 'radial-gradient(ellipse at 100% 50%, black 5%, transparent 60%)',
+                filter: 'blur(30px) saturate(1.2)',
+                maskImage: 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
+                WebkitMaskImage: 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />
@@ -363,11 +363,11 @@ const Admin = () => {
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
-              className="absolute -bottom-8 left-1/4 w-[60%] h-[20%] object-cover opacity-[0.06]"
+              className="absolute -bottom-4 left-[10%] w-[80%] h-[25%] object-cover opacity-[0.15]"
               style={{
-                filter: 'blur(35px) saturate(1.2)',
-                maskImage: 'linear-gradient(to top, black 0%, transparent 80%)',
-                WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 80%)',
+                filter: 'blur(20px) saturate(1.3)',
+                maskImage: 'linear-gradient(to top, black 10%, transparent 85%)',
+                WebkitMaskImage: 'linear-gradient(to top, black 10%, transparent 85%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />

@@ -3,6 +3,7 @@ import bannerOffice from "@/assets/banners/banner-office.jpg";
 import bannerNewyork from "@/assets/banners/banner-newyork.jpg";
 import bannerSunset from "@/assets/banners/banner-sunset.jpg";
 import bannerMinimalism from "@/assets/banners/banner-minimalism.jpg";
+import bannerTurquoise from "@/assets/banners/banner-turquoise.jpg";
 
 export interface AdminTheme {
   id: string;
