@@ -1644,6 +1644,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          {onEdit && <Button variant="ghost" size="icon" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>}
                           <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))} title="Открыть"><Eye className="w-4 h-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => {
                             const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;
