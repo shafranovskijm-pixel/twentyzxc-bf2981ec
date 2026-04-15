@@ -296,7 +296,7 @@ const Admin = () => {
     { id: "frdo", label: "ФИС ФРДО", icon: FileCheck },
   ];
 
-  const [siteSettingsSubTab, setSiteSettingsSubTab] = useState("seo");
+
 
   return (
     <>
