@@ -335,14 +335,14 @@ const Admin = () => {
             />
             {/* Bottom-right corner — sharp layer (clear in corner, fading out) */}
             {activeTheme.atmosphereSharp && (() => {
-              const isMinimalism = activeTheme.id === 'minimalism';
-              const sharpMask = isMinimalism
+              const useLinearMask = activeTheme.id === 'minimalism' || activeTheme.id === 'freshness';
+              const sharpMask = useLinearMask
                 ? 'linear-gradient(to top, black 30%, transparent 60%)'
                 : 'radial-gradient(ellipse at 100% 100%, black 15%, transparent 55%)';
-              const sharpSize = isMinimalism
+              const sharpSize = useLinearMask
                 ? 'w-full h-[70%]'
                 : 'w-[55%] h-[50%]';
-              const sharpPos = isMinimalism
+              const sharpPos = useLinearMask
                 ? 'absolute bottom-0 left-0'
                 : 'absolute -bottom-8 -right-8';
               return (
@@ -351,7 +351,7 @@ const Admin = () => {
                   alt=""
                   className={`${sharpPos} ${sharpSize} object-cover`}
                   style={{
-                    opacity: isMinimalism ? 0.35 : 0.3,
+                    opacity: useLinearMask ? 0.35 : 0.3,
                     filter: 'blur(0px) saturate(1.6)',
                     maskImage: sharpMask,
                     WebkitMaskImage: sharpMask,

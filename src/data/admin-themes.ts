@@ -54,6 +54,7 @@ export const adminThemes: AdminTheme[] = [
     forceLight: true,
     bannerPosition: "center 60%",
     previewPosition: "center 50%",
+    atmosphereSharp: true,
   },
   {
     id: "office",
