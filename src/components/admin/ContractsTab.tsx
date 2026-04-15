@@ -599,7 +599,6 @@ const ContractsTab = () => {
               <Checkbox id="is-one-time" checked={isOneTime} onCheckedChange={(v) => { setIsOneTime(!!v); if (v) setPaidUntil(""); }} />
               <Label htmlFor="is-one-time" className="text-sm cursor-pointer">Единоразово (без периода оплаты)</Label>
             </div>
-            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Сумма</Label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="23000" /></div>
               <div className="space-y-2"><Label>Доп. сумма</Label><Input type="number" value={amountExtra} onChange={(e) => setAmountExtra(e.target.value)} placeholder="5000" /></div>
