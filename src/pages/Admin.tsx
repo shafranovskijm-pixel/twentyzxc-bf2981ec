@@ -758,7 +758,9 @@ const Admin = () => {
                 </motion.div>
               </AnimatePresence>
             </main>
-            <Footer />
+            <div className={activeTheme ? "relative z-10 backdrop-blur-md bg-background/30" : ""}>
+              <Footer />
+            </div>
           </div>
         </div>
       
