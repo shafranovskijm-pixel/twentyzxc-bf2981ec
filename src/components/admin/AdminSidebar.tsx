@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, LayoutDashboard, CalendarDays, FileText, Users, FolderArchive, FileOutput, GripVertical } from "lucide-react";
+import { LogOut, LayoutDashboard, CalendarDays, FileText, Users, FolderArchive, FileOutput, GripVertical, MessageSquare } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -33,6 +33,7 @@ const defaultMenuItems = [
   { id: "clients", label: "Клиенты", icon: Users },
   { id: "files", label: "Файлы", icon: FolderArchive },
   { id: "documents", label: "Документы", icon: FileOutput },
+  { id: "ai-chat", label: "AI Ассистент", icon: MessageSquare },
 ];
 
 const STORAGE_KEY = "admin-sidebar-order-v2";
