@@ -248,6 +248,7 @@ export type Database = {
           doc_type: string
           html_content: string
           id: string
+          metadata: Json | null
           services: Json
           total_amount: number | null
         }
@@ -261,6 +262,7 @@ export type Database = {
           doc_type: string
           html_content: string
           id?: string
+          metadata?: Json | null
           services?: Json
           total_amount?: number | null
         }
@@ -274,6 +276,7 @@ export type Database = {
           doc_type?: string
           html_content?: string
           id?: string
+          metadata?: Json | null
           services?: Json
           total_amount?: number | null
         }
