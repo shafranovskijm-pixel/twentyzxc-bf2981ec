@@ -295,13 +295,33 @@ const Admin = () => {
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Decorative banner */}
-          <div className="h-32 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10 relative overflow-hidden shrink-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.15),transparent_70%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
+          <div className="h-32 relative overflow-hidden shrink-0 group">
+            {bannerUrl ? (
+              <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.15),transparent_70%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
+              </>
+            )}
+            {/* Banner controls overlay */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
+                {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                Изменить
+              </Button>
+              {bannerUrl && (
+                <Button variant="secondary" size="sm" className="gap-1.5" onClick={resetBanner}>
+                  <RotateCcw className="h-4 w-4" />Сбросить
+                </Button>
+              )}
+            </div>
+            <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
           </div>
 
           <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
@@ -313,13 +333,9 @@ const Admin = () => {
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              onClick={() => {
-                const isDark = document.documentElement.classList.toggle("dark");
-                localStorage.setItem("admin-theme", isDark ? "dark" : "light");
-              }}
+              onClick={() => setIsDark(!isDark)}
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
 
             {/* Settings dropdown */}
