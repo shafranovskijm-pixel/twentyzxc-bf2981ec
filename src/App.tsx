@@ -34,6 +34,8 @@ import Reviews from "./pages/Reviews";
 import Playground from "./pages/Playground";
 import PlaygroundView from "./pages/PlaygroundView";
 import Admin from "./pages/Admin";
+import OrgPanel from "./pages/OrgPanel";
+import OrgLanding from "./pages/OrgLanding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
