@@ -70,13 +70,13 @@ const Admin = () => {
     return saved !== "light";
   });
 
-  // Banner state
+  // Active theme
+  const [activeTheme, setActiveTheme] = useState<AdminTheme | null>(getInitialTheme);
+
+  // Banner state (custom override)
   const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem("admin-banner-url") || "");
   const [bannerUploading, setBannerUploading] = useState(false);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-
-  // Background state
-  const [bgPreset, setBgPreset] = useState(() => localStorage.getItem("admin-bg-preset") || "default");
 
   // SEO state
   const [keywords, setKeywords] = useState<string[]>([]);
