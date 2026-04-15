@@ -71,7 +71,7 @@ function SortableIconButton({
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
               isActive
                 ? "bg-primary/20 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                : "text-muted-foreground hover:text-primary hover:bg-primary/15"
             )}
           >
             <Icon className="h-5 w-5" />
