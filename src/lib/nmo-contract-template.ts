@@ -233,6 +233,7 @@ export function generateNmoContractHtml(data: DocumentData): string {
       <p style="text-align:right;">Приложение №1 к договору №${num} от ${date}</p>
       <h1>Спецификация № 1</h1>
       <p>Наименование Заказчика: ${cl.name}</p>
+      <p>Период оказания услуг: <strong>${data.deadline || "12 месяцев с момента подписания договора"}</strong></p>
       <table class="services-table" style="margin-top:15px;">
         <thead>
           <tr>

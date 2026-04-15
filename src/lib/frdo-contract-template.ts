@@ -242,6 +242,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
       <p style="text-align:right;">Приложение №1 к договору №${num} от ${date}</p>
       <h1>Спецификация № 1</h1>
       <p>Наименование Заказчика: ${cl.name}</p>
+      <p>Период оказания услуг: <strong>${periodText}</strong></p>
       <table class="services-table" style="margin-top:15px;">
         <thead>
           <tr>
