@@ -356,6 +356,8 @@ const Admin = () => {
           <div className="h-32 relative overflow-hidden shrink-0 group">
             {bannerUrl ? (
               <img src={bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            ) : activeTheme ? (
+              <img src={activeTheme.bannerUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-primary/10 to-accent/10" />
