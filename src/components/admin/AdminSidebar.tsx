@@ -1,17 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarFooter,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Search, Mail, Sparkles, Users, FileText, FolderArchive, LogOut, GripVertical, CalendarDays, Building2, FileOutput, LayoutDashboard, History, GraduationCap, FileCheck } from "lucide-react";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LogOut, LayoutDashboard, CalendarDays, FileText, Users, FolderArchive, FileOutput, GripVertical } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -30,28 +24,18 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
 
 const defaultMenuItems = [
-  { id: "dashboard", label: "Дашборд", icon: "LayoutDashboard" },
-  { id: "seo", label: "SEO", icon: "Search" },
-  { id: "contacts", label: "Контакты", icon: "Mail" },
-  { id: "promotions", label: "Акции", icon: "Sparkles" },
-  { id: "clients", label: "Клиенты", icon: "Users" },
-  { id: "contracts", label: "Договоры", icon: "FileText" },
-  { id: "files", label: "Файлы", icon: "FolderArchive" },
-  { id: "planner", label: "Планер", icon: "CalendarDays" },
-  { id: "documents", label: "Документы", icon: "FileOutput" },
-  { id: "requisites", label: "Реквизиты", icon: "Building2" },
-  { id: "history", label: "История", icon: "History" },
-  { id: "nmo", label: "НМО Портал", icon: "GraduationCap" },
-  { id: "frdo", label: "ФИС ФРДО", icon: "FileCheck" },
+  { id: "dashboard", label: "Дашборд", icon: LayoutDashboard },
+  { id: "planner", label: "Планер", icon: CalendarDays },
+  { id: "contracts", label: "Договоры", icon: FileText },
+  { id: "clients", label: "Клиенты", icon: Users },
+  { id: "files", label: "Файлы", icon: FolderArchive },
+  { id: "documents", label: "Документы", icon: FileOutput },
 ];
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  Search, Mail, Sparkles, Users, FileText, FolderArchive, CalendarDays, FileOutput, Building2, LayoutDashboard, History, GraduationCap, FileCheck,
-};
-
-const STORAGE_KEY = "admin-sidebar-order";
+const STORAGE_KEY = "admin-sidebar-order-v2";
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -59,15 +43,13 @@ interface AdminSidebarProps {
   onSignOut: () => void;
 }
 
-function SortableMenuItem({
+function SortableIconButton({
   item,
   isActive,
-  collapsed,
   onClick,
 }: {
-  item: { id: string; label: string; icon: string };
+  item: (typeof defaultMenuItems)[0];
   isActive: boolean;
-  collapsed: boolean;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -76,38 +58,40 @@ function SortableMenuItem({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
-  const Icon = iconMap[item.icon];
+  const Icon = item.icon;
 
   return (
-    <SidebarMenuItem ref={setNodeRef} style={style}>
-      <div className="flex items-center group/item">
-        {!collapsed && (
-          <span
-            {...attributes}
-            {...listeners}
-            className="cursor-grab opacity-0 group-hover/item:opacity-60 transition-opacity p-1 shrink-0"
+    <div ref={setNodeRef} style={style} className="group/item relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onClick}
+            className={cn(
+              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
+              isActive
+                ? "bg-primary/20 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
           >
-            <GripVertical className="h-3 w-3" />
-          </span>
-        )}
-        <SidebarMenuButton
-          onClick={onClick}
-          isActive={isActive}
-          tooltip={item.label}
-          className="flex-1"
-        >
-          {Icon && <Icon className="h-4 w-4" />}
-          {!collapsed && <span>{item.label}</span>}
-        </SidebarMenuButton>
-      </div>
-    </SidebarMenuItem>
+            <Icon className="h-5 w-5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
+      <span
+        {...attributes}
+        {...listeners}
+        className="absolute -left-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity p-0.5"
+      >
+        <GripVertical className="h-3 w-3" />
+      </span>
+    </div>
   );
 }
 
 const AdminSidebar = ({ activeSection, onSectionChange, onSignOut }: AdminSidebarProps) => {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -143,35 +127,43 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut }: AdminSideba
   };
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                <SidebarMenu>
-                  {items.map((item) => (
-                    <SortableMenuItem
-                      key={item.id}
-                      item={item}
-                      isActive={activeSection === item.id}
-                      collapsed={collapsed}
-                      onClick={() => onSectionChange(item.id)}
-                    />
-                  ))}
-                </SidebarMenu>
-              </SortableContext>
-            </DndContext>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter>
-        <Button variant="ghost" size={collapsed ? "icon" : "sm"} onClick={onSignOut} className="w-full justify-start">
-          <LogOut className="h-4 w-4" />
-          {!collapsed && <span className="ml-2">Выйти</span>}
-        </Button>
-      </SidebarFooter>
-    </Sidebar>
+    <TooltipProvider delayDuration={200}>
+      <aside className="w-16 shrink-0 border-r border-border bg-card flex flex-col items-center py-4 gap-1.5 sticky top-0 h-screen z-30">
+        {/* Logo */}
+        <div className="mb-4 text-xs font-bold text-primary tracking-widest select-none">24</div>
+
+        {/* Primary nav */}
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+            <nav className="flex flex-col items-center gap-1.5 flex-1">
+              {items.map((item) => (
+                <SortableIconButton
+                  key={item.id}
+                  item={item}
+                  isActive={activeSection === item.id}
+                  onClick={() => onSectionChange(item.id)}
+                />
+              ))}
+            </nav>
+          </SortableContext>
+        </DndContext>
+
+        {/* Logout at bottom */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={onSignOut}
+              className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 mt-auto"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            Выйти
+          </TooltipContent>
+        </Tooltip>
+      </aside>
+    </TooltipProvider>
   );
 };
 

@@ -11,8 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import Footer from "@/components/Footer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import ClientsTab from "@/components/admin/ClientsTab";
 import ContractsTab from "@/components/admin/ContractsTab";
 import FilesTab from "@/components/admin/FilesTab";
@@ -25,11 +32,10 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import FloatingAIChat from "@/components/admin/FloatingAIChat";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, MoreVertical, Building2, History, GraduationCap, FileCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-
 interface Promotion {
   id: string;
   title: string;
@@ -212,19 +218,46 @@ const Admin = () => {
     frdo: "ФИС ФРДО",
   };
 
+  const secondaryItems = [
+    { id: "seo", label: "SEO", icon: Search },
+    { id: "contacts", label: "Контакты", icon: Mail },
+    { id: "promotions", label: "Акции", icon: Sparkles },
+    { id: "requisites", label: "Реквизиты", icon: Building2 },
+    { id: "history", label: "История", icon: History },
+    { id: "nmo", label: "НМО Портал", icon: GraduationCap },
+    { id: "frdo", label: "ФИС ФРДО", icon: FileCheck },
+  ];
+
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
-      <SidebarProvider>
-        <div className="min-h-screen flex w-full bg-background">
-          <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
-          <div className="flex-1 flex flex-col">
-            <header className="h-12 flex items-center border-b px-4 gap-3">
-              <SidebarTrigger />
-              <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
-              <NotificationsPanel onNavigate={setActiveSection} />
-            </header>
-            <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
+      <div className="min-h-screen flex w-full bg-background">
+        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
+        <div className="flex-1 flex flex-col min-h-screen">
+          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
+            <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
+            <NotificationsPanel onNavigate={setActiveSection} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {secondaryItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.id}
+                    onClick={() => setActiveSection(item.id)}
+                    className={activeSection === item.id ? "bg-primary/10 text-primary" : ""}
+                  >
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </header>
+          <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeSection}
@@ -367,9 +400,9 @@ const Admin = () => {
                 </motion.div>
               </AnimatePresence>
             </main>
+            <Footer />
           </div>
         </div>
-      </SidebarProvider>
       <FloatingAIChat />
     </>
   );
