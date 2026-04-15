@@ -1,55 +1,25 @@
 
 
-## Plan: Redesign admin panel layout (Syntagma-style)
+## Plan: Center sidebar menu, add header banner area, and profile/theme settings
 
-### What changes
+### Changes
 
-The admin panel gets a compact icon-only left sidebar (like the Syntagma example), a top header with a profile/settings dropdown menu in the top-right corner, and the site footer visible at the bottom.
+#### 1. Edit `src/components/admin/AdminSidebar.tsx`
+- Center the nav items vertically in the sidebar (use `justify-center` on the nav container instead of `flex-1` top-aligned)
+- Keep logo at top, logout at bottom, nav centered in between
 
-### Layout structure
+#### 2. Edit `src/pages/Admin.tsx`
+- **Header banner area**: Add a decorative banner strip above the header (gradient or uploadable background image placeholder). For now, a customizable gradient bar (~h-32) with a subtle pattern that can later support a background image upload
+- **Profile/theme dropdown** in top-right: Replace the `MoreVertical` dropdown with two separate controls:
+  - A profile/settings dropdown (`Settings` icon) containing: theme toggle (light/dark), and the secondary nav items (SEO, Contacts, Promotions, Requisites, History, NMO, FRDO)
+  - Theme toggle using a `Sun`/`Moon` icon button that switches between light and dark mode via Tailwind's `dark` class on `<html>`
+- Store theme preference in `localStorage`
 
-```text
-┌──────┬─────────────────────────────────┐
-│ Icon │  Header: Title    [🔔] [👤 ▾]  │
-│ bar  ├─────────────────────────────────┤
-│      │                                 │
-│ 📊   │  Main content area              │
-│ 📅   │                                 │
-│ 📄   │                                 │
-│ 👥   │                                 │
-│ 📁   │                                 │
-│      │                                 │
-│ 🚪   ├─────────────────────────────────┤
-│      │  Footer (site footer)           │
-└──────┴─────────────────────────────────┘
-```
-
-### Sidebar (left, icon-only ~w-16)
-Primary items always visible as icon buttons with tooltips:
-- **Дашборд** (LayoutDashboard)
-- **Планер** (CalendarDays)
-- **Договоры** (FileText)
-- **Клиенты** (Users)
-- **Файлы** (FolderArchive)
-- **Документы** (FileOutput)
-- **Выйти** (LogOut) — at bottom
-
-Active item highlighted with gold accent background, rounded. DND reordering preserved.
-
-### Top-right dropdown menu (⋮ or avatar icon)
-Secondary/settings items moved here:
-- SEO
-- Контакты
-- Акции
-- Реквизиты
-- История
-- НМО Портал
-- ФИС ФРДО
-
-### Footer
-Import and render the site `<Footer />` component below the main content area so the admin always sees the brand footer.
+#### 3. Theme implementation
+- Add a simple theme toggler that sets `document.documentElement.classList.toggle('dark')` and persists to `localStorage` key `admin-theme`
+- Default to dark (current state)
 
 ### Files
-- **Rewrite**: `src/components/admin/AdminSidebar.tsx` — compact icon-only sidebar with only primary items, always collapsed style
-- **Edit**: `src/pages/Admin.tsx` — add dropdown menu in header for secondary items, add Footer below main content
+- **Edit**: `src/components/admin/AdminSidebar.tsx` — center nav vertically
+- **Edit**: `src/pages/Admin.tsx` — add banner area, profile/theme toggle in header
 
