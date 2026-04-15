@@ -467,9 +467,28 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
       {showForm && (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-lg">{editingId ? "Редактировать клиента" : "Новый клиент"}</CardTitle>
-              <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
+              <div className="flex items-center gap-2">
+                {editingId && onNavigate && (
+                  <>
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "contract" }); }} title="Сделать договор">
+                      <FileText className="w-4 h-4 mr-1" /> Договор
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "invoice" }); }} title="Сделать счёт">
+                      <ClipboardList className="w-4 h-4 mr-1" /> Счёт
+                    </Button>
+                    {telegram && (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={`https://t.me/${telegram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer">
+                          <Send className="w-4 h-4 mr-1" /> Telegram
+                        </a>
+                      </Button>
+                    )}
+                  </>
+                )}
+                <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -548,29 +567,10 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
             {/* Client History Section - only when editing */}
             {editingId && <ClientHistory clientName={name} clientId={editingId} />}
 
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={saveClient} disabled={saving} className="flex-1 min-w-[120px]">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                {editingId ? "Обновить" : "Добавить"}
-              </Button>
-              {editingId && onNavigate && (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => onNavigate("documents", { clientName: name, docType: "contract" })} title="Сделать договор">
-                    <FileText className="w-4 h-4 mr-1" /> Договор
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onNavigate("documents", { clientName: name, docType: "invoice" })} title="Сделать счёт">
-                    <ClipboardList className="w-4 h-4 mr-1" /> Счёт
-                  </Button>
-                  {telegram && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={`https://t.me/${telegram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer">
-                        <Send className="w-4 h-4 mr-1" /> Telegram
-                      </a>
-                    </Button>
-                  )}
-                </>
-              )}
-            </div>
+            <Button onClick={saveClient} disabled={saving} className="w-full">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              {editingId ? "Обновить" : "Добавить"}
+            </Button>
           </CardContent>
         </Card>
       )}
