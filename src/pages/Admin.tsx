@@ -313,6 +313,8 @@ const Admin = () => {
         style={activeTheme ? {
           "--theme-accent": activeTheme.accent,
           "--theme-accent-foreground": activeTheme.accentForeground,
+          "--primary": activeTheme.accent,
+          "--primary-foreground": activeTheme.accentForeground,
           ...(activeTheme.id === 'turquoise' ? {
             background: 'linear-gradient(to bottom, #d4f5ef 0%, #8fd8ca 12%, #4db8a8 25%, #2a8a80 40%, #1a5a58 55%, #0f3a3e 70%, #0c2a30 85%, #050e12 100%)',
           } : {}),
