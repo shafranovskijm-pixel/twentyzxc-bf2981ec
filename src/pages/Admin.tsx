@@ -357,6 +357,27 @@ const Admin = () => {
                     {item.label}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5"><Palette className="h-3.5 w-3.5" />Фон</p>
+                  <div className="grid grid-cols-4 gap-1">
+                    {BG_PRESETS.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleBgChange(p.id)}
+                        title={p.label}
+                        className={cn(
+                          "w-8 h-8 rounded border-2 transition-all",
+                          bgPreset === p.id ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/50",
+                          p.id === "default" && "bg-background",
+                          p.id === "dark-grid" && "bg-[#0f0f14]",
+                          p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
+                          p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </header>
