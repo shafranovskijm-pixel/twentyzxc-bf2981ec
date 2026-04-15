@@ -233,6 +233,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           setDocNumber(lastDocNumbers[initialDocType] || "001");
         }
       }
+      // For act: auto-find latest contract and fill services
+      if (initialDocType === "act" && contracts.length > 0) {
+        const clientContracts = contracts.filter(c => c.client_name === initialClientName);
+        if (clientContracts.length > 0) {
+          const latest = clientContracts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+          setLinkedContractId(latest.id);
+          fillServicesFromContract(latest.id, latest);
+        }
+      }
       onMounted?.();
     }
   }, [initialClientName, clients]);
