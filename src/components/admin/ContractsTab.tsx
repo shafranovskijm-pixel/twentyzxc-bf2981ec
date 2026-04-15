@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Contract {
   id: string;
