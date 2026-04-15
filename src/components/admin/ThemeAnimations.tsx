@@ -102,31 +102,40 @@ const GlowAnimation = () => (
   </div>
 );
 
-/** Drifting silver-turquoise sparkle particles */
+/** Drifting silver-turquoise sparkle particles — layered with drops and dust */
 const ParticlesAnimation = () => {
-  const particles = useMemo(() => Array.from({ length: 25 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-    duration: Math.random() * 15 + 20,
-    delay: Math.random() * 10,
-    opacityDuration: Math.random() * 4 + 2,
-    color: Math.random() > 0.5 ? "bg-cyan-300/30" : "bg-white/20",
-  })), []);
+  const particles = useMemo(() => Array.from({ length: 45 }, (_, i) => {
+    const isLarge = i < 10; // first 10 are large shimmering drops
+    const isMedium = i >= 10 && i < 25;
+    return {
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: isLarge ? Math.random() * 4 + 3 : isMedium ? Math.random() * 2.5 + 1.5 : Math.random() * 1.5 + 0.5,
+      duration: isLarge ? Math.random() * 20 + 25 : Math.random() * 15 + 18,
+      delay: Math.random() * 12,
+      driftX: (Math.random() - 0.5) * 80,
+      color: isLarge
+        ? "bg-cyan-200/40"
+        : isMedium
+          ? (Math.random() > 0.5 ? "bg-cyan-300/25" : "bg-teal-200/20")
+          : "bg-white/15",
+      blur: isLarge ? 'blur-[0.5px]' : '',
+    };
+  }), []);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {particles.map(p => (
         <motion.div
           key={p.id}
-          className={`absolute rounded-full ${p.color}`}
+          className={`absolute rounded-full ${p.color} ${p.blur}`}
           style={{ left: `${p.x}%`, top: `${p.y}%`, width: p.size, height: p.size }}
           animate={{
-            y: [0, -60, -120],
-            x: [0, Math.random() * 30 - 15, Math.random() * 20 - 10],
-            opacity: [0.1, 0.7, 0.1],
-            scale: [0.8, 1.3, 0.8],
+            y: [0, -80, -160],
+            x: [0, p.driftX * 0.5, p.driftX],
+            opacity: [0.05, 0.65, 0.05],
+            scale: [0.7, 1.4, 0.7],
           }}
           transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
         />

@@ -309,10 +309,13 @@ const Admin = () => {
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div
-        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.bgClass || "bg-background")}
+        className={cn("min-h-screen flex w-full transition-colors duration-500", activeTheme?.id !== 'turquoise' ? (activeTheme?.bgClass || "bg-background") : '')}
         style={activeTheme ? {
           "--theme-accent": activeTheme.accent,
           "--theme-accent-foreground": activeTheme.accentForeground,
+          ...(activeTheme.id === 'turquoise' ? {
+            background: 'linear-gradient(to bottom, #d4f5ef 0%, #8fd8ca 12%, #4db8a8 25%, #2a8a80 40%, #1a5a58 55%, #0f3a3e 70%, #0c2a30 85%, #050e12 100%)',
+          } : {}),
         } as React.CSSProperties : undefined}
       >
         {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
