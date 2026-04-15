@@ -15,7 +15,12 @@ import {
   PremiumGalleryPreview,
   DashboardProPreview,
   CRMElitePreview,
-  PlatformXPreview
+  PlatformXPreview,
+  NatureFlowPreview,
+  UrbanPulsePreview,
+  CleanStudioPreview,
+  NeonDrivePreview,
+  WarmCraftPreview
 } from "@/components/templates/previews/unique";
 import { Button } from "@/components/ui/button";
 import { X, ExternalLink, ArrowLeft } from "lucide-react";
@@ -98,6 +103,18 @@ const TemplatePreview = () => {
         return <CRMElitePreview template={template} />;
       case "platform-x":
         return <PlatformXPreview template={template} />;
+      
+      // New landing service templates
+      case "nature-flow":
+        return <NatureFlowPreview template={template} />;
+      case "urban-pulse":
+        return <UrbanPulsePreview template={template} />;
+      case "clean-studio":
+        return <CleanStudioPreview template={template} />;
+      case "neon-drive":
+        return <NeonDrivePreview template={template} />;
+      case "warm-craft":
+        return <WarmCraftPreview template={template} />;
       
       // Fallback to category-based preview for templates without unique preview
       default:

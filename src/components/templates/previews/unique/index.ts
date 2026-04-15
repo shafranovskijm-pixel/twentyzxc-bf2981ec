@@ -17,3 +17,10 @@ export { PremiumGalleryPreview } from './PremiumGalleryPreview';
 export { DashboardProPreview } from './DashboardProPreview';
 export { CRMElitePreview } from './CRMElitePreview';
 export { PlatformXPreview } from './PlatformXPreview';
+
+// New landing service templates
+export { NatureFlowPreview } from './NatureFlowPreview';
+export { UrbanPulsePreview } from './UrbanPulsePreview';
+export { CleanStudioPreview } from './CleanStudioPreview';
+export { NeonDrivePreview } from './NeonDrivePreview';
+export { WarmCraftPreview } from './WarmCraftPreview';
