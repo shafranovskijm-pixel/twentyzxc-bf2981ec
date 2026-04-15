@@ -26,11 +26,13 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { adminThemes, THEME_STORAGE_KEY, type AdminTheme } from "@/data/admin-themes";
+import { ThemeAnimation } from "@/components/admin/ThemeAnimations";
 interface Promotion {
   id: string;
   title: string;
@@ -43,12 +45,13 @@ interface Promotion {
   sort_order: number;
 }
 
-const BG_PRESETS = [
-  { id: "default", label: "По умолчанию", style: "bg-background" },
-  { id: "dark-grid", label: "Тёмная сетка", style: "bg-[#0f0f14] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px]" },
-  { id: "warm", label: "Тёплый", style: "bg-gradient-to-br from-[#1a1510] to-[#15171e]" },
-  { id: "ocean", label: "Океан", style: "bg-gradient-to-br from-[#0f1923] to-[#15171e]" },
-];
+const getInitialTheme = (): AdminTheme | null => {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved) return adminThemes.find(t => t.id === saved) || null;
+  } catch {}
+  return null;
+};
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
