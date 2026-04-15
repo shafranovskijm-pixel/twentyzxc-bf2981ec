@@ -419,11 +419,13 @@ const Admin = () => {
                 opacity: activeTheme.id === 'newyork' ? 0.42 : 0.10,
                 filter: activeTheme.id === 'newyork' ? 'saturate(1.5)' : 'blur(30px) saturate(1.2)',
                 maskImage: activeTheme.id === 'newyork'
-                  ? 'radial-gradient(ellipse at 100% 50%, black 30%, transparent 80%)'
+                  ? 'linear-gradient(to right, transparent 0%, black 30%, black 100%), radial-gradient(ellipse at 100% 50%, black 30%, transparent 80%)'
                   : 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
+                maskComposite: 'intersect' as any,
                 WebkitMaskImage: activeTheme.id === 'newyork'
-                  ? 'radial-gradient(ellipse at 100% 50%, black 30%, transparent 80%)'
+                  ? 'linear-gradient(to right, transparent 0%, black 30%, black 100%), radial-gradient(ellipse at 100% 50%, black 30%, transparent 80%)'
                   : 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
+                WebkitMaskComposite: 'source-in' as any,
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />
