@@ -320,7 +320,7 @@ const Admin = () => {
         {/* Atmospheric banner bleed — decorative fragments from banner image */}
         {activeTheme && (
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-            {/* Bottom-right corner — main bleed */}
+            {/* Bottom-right corner — main bleed (blurred layer) */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}
               alt=""
@@ -333,6 +333,21 @@ const Admin = () => {
                 objectPosition: activeTheme.bannerPosition || 'center',
               }}
             />
+            {/* Bottom-right corner — sharp layer (clear in corner, fading out) */}
+            {activeTheme.atmosphereSharp && (
+              <img
+                src={bannerUrl || activeTheme.bannerUrl}
+                alt=""
+                className="absolute -bottom-8 -right-8 w-[55%] h-[50%] object-cover"
+                style={{
+                  opacity: 0.3,
+                  filter: 'blur(0px) saturate(1.6)',
+                  maskImage: 'radial-gradient(ellipse at 100% 100%, black 5%, transparent 40%)',
+                  WebkitMaskImage: 'radial-gradient(ellipse at 100% 100%, black 5%, transparent 40%)',
+                  objectPosition: activeTheme.bannerPosition || 'center',
+                }}
+              />
+            )}
             {/* Bottom-left corner — secondary bleed */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}
