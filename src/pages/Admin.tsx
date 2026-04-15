@@ -280,7 +280,8 @@ const Admin = () => {
     "profile": "Профиль",
   };
 
-  const siteSettingsTabs = [
+  const profileTabs = [
+    { id: "appearance", label: "Оформление", icon: Palette },
     { id: "seo", label: "SEO", icon: Search },
     { id: "contacts", label: "Контакты", icon: Mail },
     { id: "promotions", label: "Акции", icon: Sparkles },
@@ -288,6 +289,7 @@ const Admin = () => {
     { id: "history", label: "История", icon: History },
     { id: "nmo", label: "НМО Портал", icon: GraduationCap },
     { id: "frdo", label: "ФИС ФРДО", icon: FileCheck },
+    { id: "tariff", label: "Тариф", icon: CreditCard },
   ];
 
 
