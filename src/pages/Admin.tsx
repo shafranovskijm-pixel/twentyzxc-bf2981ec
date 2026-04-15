@@ -281,9 +281,11 @@ const Admin = () => {
     nmo: "НМО Портал",
     frdo: "ФИС ФРДО",
     "ai-chat": "AI Ассистент",
+    "site-settings": "Настройки сайта",
+    "profile": "Профиль",
   };
 
-  const secondaryItems = [
+  const siteSettingsTabs = [
     { id: "seo", label: "SEO", icon: Search },
     { id: "contacts", label: "Контакты", icon: Mail },
     { id: "promotions", label: "Акции", icon: Sparkles },
@@ -293,12 +295,49 @@ const Admin = () => {
     { id: "frdo", label: "ФИС ФРДО", icon: FileCheck },
   ];
 
+  const [siteSettingsSubTab, setSiteSettingsSubTab] = useState("seo");
+
   return (
     <>
       <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
       <div className={cn("min-h-screen flex w-full", BG_PRESETS.find(p => p.id === bgPreset)?.style || "bg-background")}>
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} />
         <div className="flex-1 flex flex-col min-h-screen">
+          {/* Header ABOVE banner */}
+          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <span className="text-xl font-bold text-primary select-none">Σ</span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-foreground leading-tight truncate">СИНТАГМА</div>
+                <div className="text-[10px] text-muted-foreground leading-tight">Администратор</div>
+              </div>
+              <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-5 border-primary/30 text-primary cursor-pointer hover:bg-primary/10 transition-colors hidden sm:inline-flex">
+                <CreditCard className="h-3 w-3 mr-1" />Тариф
+              </Badge>
+            </div>
+            <h1 className="text-base font-medium text-muted-foreground hidden md:block">{sectionTitles[activeSection] || activeSection}</h1>
+            <div className="flex items-center gap-1">
+              <NotificationsPanel onNavigate={setActiveSection} />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setIsDark(!isDark)}
+              >
+                {isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 text-xs"
+                onClick={() => setActiveSection("profile")}
+              >
+                <User className="h-4 w-4" />
+                <span className="hidden sm:inline">Профиль</span>
+              </Button>
+            </div>
+          </header>
+
           {/* Decorative banner */}
           <div className="h-32 relative overflow-hidden shrink-0 group">
             {bannerUrl ? (
@@ -310,7 +349,6 @@ const Admin = () => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
               </>
             )}
-            {/* Banner controls overlay */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                 {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
@@ -325,62 +363,6 @@ const Admin = () => {
             <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
           </div>
 
-          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
-            <h1 className="text-lg font-semibold text-foreground flex-1">{sectionTitles[activeSection]}</h1>
-            <NotificationsPanel onNavigate={setActiveSection} />
-
-            {/* Theme toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setIsDark(!isDark)}
-            >
-              {isDark ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-            </Button>
-
-            {/* Settings dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {secondaryItems.map((item) => (
-                  <DropdownMenuItem
-                    key={item.id}
-                    onClick={() => setActiveSection(item.id)}
-                    className={activeSection === item.id ? "bg-primary/10 text-primary" : ""}
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    {item.label}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5">
-                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 mb-1.5"><Palette className="h-3.5 w-3.5" />Фон</p>
-                  <div className="grid grid-cols-4 gap-1">
-                    {BG_PRESETS.map(p => (
-                      <button
-                        key={p.id}
-                        onClick={() => handleBgChange(p.id)}
-                        title={p.label}
-                        className={cn(
-                          "w-8 h-8 rounded border-2 transition-all",
-                          bgPreset === p.id ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/50",
-                          p.id === "default" && "bg-background",
-                          p.id === "dark-grid" && "bg-[#0f0f14]",
-                          p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
-                          p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </header>
           <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
