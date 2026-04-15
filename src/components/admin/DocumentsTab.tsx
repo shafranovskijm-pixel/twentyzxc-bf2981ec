@@ -1234,7 +1234,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
             Итого: {total.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
           </div>
 
-          {docType === "invoice" && (
+          {(docType === "invoice" || docType === "contract") && (
             <div className="mt-4 pt-4 border-t border-border space-y-3">
               <Label className="text-sm font-medium">Скидка при досрочной оплате</Label>
               <div className="grid grid-cols-2 gap-3">

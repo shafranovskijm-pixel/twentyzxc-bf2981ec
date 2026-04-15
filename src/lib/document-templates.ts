@@ -228,6 +228,7 @@ export function generateContractHtml(data: DocumentData): string {
       <p>1.1. Исполнитель обязуется оказать Заказчику следующие услуги${data.subject ? `: ${data.subject}` : ""}:</p>
       ${servicesTableHtml(services)}
       <p style="margin-top:10px;">1.2. Общая стоимость услуг по настоящему Договору составляет <strong>${formatMoney(total)} руб.</strong></p>
+      ${data.discountAmount && data.discountDeadline ? `<p style="margin-top:10px;font-size:11pt;"><strong>При оплате до ${data.discountDeadline} сумма составляет ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : data.discountAmount ? `<p style="margin-top:10px;font-size:11pt;"><strong>Сумма со скидкой: ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : ''}
     </div>
     <div class="section">
       <h2>2. СРОКИ И ПОРЯДОК ОПЛАТЫ</h2>
