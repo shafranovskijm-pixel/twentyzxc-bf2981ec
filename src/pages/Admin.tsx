@@ -430,7 +430,7 @@ const Admin = () => {
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
               {activeSection === "frdo" && <FrdoTab />}
-              {activeSection === "ai-chat" && <SalesAssistant />}
+              {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>
             </main>
