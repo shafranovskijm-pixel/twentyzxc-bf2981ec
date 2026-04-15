@@ -48,6 +48,13 @@ interface Promotion {
   sort_order: number;
 }
 
+const BG_PRESETS = [
+  { id: "default", label: "По умолчанию", style: "bg-background" },
+  { id: "dark-grid", label: "Тёмная сетка", style: "bg-[#0f0f14] bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:24px_24px]" },
+  { id: "warm", label: "Тёплый", style: "bg-gradient-to-br from-[#1a1510] to-[#15171e]" },
+  { id: "ocean", label: "Океан", style: "bg-gradient-to-br from-[#0f1923] to-[#15171e]" },
+];
+
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
@@ -57,6 +64,20 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const queryClient = useQueryClient();
+
+  // Theme state
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("admin-theme");
+    return saved !== "light";
+  });
+
+  // Banner state
+  const [bannerUrl, setBannerUrl] = useState(() => localStorage.getItem("admin-banner-url") || "");
+  const [bannerUploading, setBannerUploading] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // Background state
+  const [bgPreset, setBgPreset] = useState(() => localStorage.getItem("admin-bg-preset") || "default");
 
   // SEO state
   const [keywords, setKeywords] = useState<string[]>([]);
@@ -80,6 +101,38 @@ const Admin = () => {
   const [promoIcon, setPromoIcon] = useState("");
   const [editingPromo, setEditingPromo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Banner upload handler
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `banner-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("admin-assets").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from("admin-assets").getPublicUrl(path);
+      setBannerUrl(publicUrl);
+      localStorage.setItem("admin-banner-url", publicUrl);
+      toast.success("Баннер обновлён");
+    } catch {
+      toast.error("Ошибка загрузки баннера");
+    }
+    setBannerUploading(false);
+    if (bannerInputRef.current) bannerInputRef.current.value = "";
+  };
+
+  const resetBanner = () => {
+    setBannerUrl("");
+    localStorage.removeItem("admin-banner-url");
+    toast.success("Баннер сброшен");
+  };
+
+  const handleBgChange = (presetId: string) => {
+    setBgPreset(presetId);
+    localStorage.setItem("admin-bg-preset", presetId);
+  };
 
   const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
