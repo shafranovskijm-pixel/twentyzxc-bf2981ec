@@ -219,10 +219,10 @@ serve(async (req) => {
       throw new Error(result.description || "Telegram API error");
     }
 
-    console.log(`Notification sent: ${overdueCount} overdue, ${expiringCount} expiring, ${renewalCount} renewals`);
+    console.log(`Notification sent: ${overdueCount} overdue, ${expiringCount} expiring, ${renewalCount} renewals, ${serviceReminderCount} service deadlines`);
 
     return new Response(
-      JSON.stringify({ success: true, overdue: overdueCount, expiring: expiringCount, renewals: renewalCount }),
+      JSON.stringify({ success: true, overdue: overdueCount, expiring: expiringCount, renewals: renewalCount, serviceReminders: serviceReminderCount }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
