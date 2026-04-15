@@ -30,6 +30,7 @@ interface Contract {
   notes: string | null;
   paid_until: string | null;
   is_archived: boolean;
+  is_one_time: boolean;
   created_at: string;
 }
 
