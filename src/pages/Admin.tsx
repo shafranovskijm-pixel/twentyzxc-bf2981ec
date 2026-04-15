@@ -268,7 +268,7 @@ const Admin = () => {
     promotions: "Акции",
     clients: "Клиенты",
     contracts: "Договоры",
-    files: "Файлы договоров",
+    files: "Файлы",
     planner: "Планер",
     documents: "Конструктор документов",
     requisites: "Реквизиты компании",
