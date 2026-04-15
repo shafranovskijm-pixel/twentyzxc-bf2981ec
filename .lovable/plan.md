@@ -1,31 +1,24 @@
 
 
-## Plan: Add "Fill from contract" button to client requisites
+## Plan: Move document buttons to top of client edit form and ensure requisites are pre-filled
 
 ### Problem
-The client card shows wrong requisites (INN `7841084450` instead of `2721223198` for ООО "АВРОРА") because DaData returned data for a different organization. The user wants to pull the correct INN directly from the contract documents.
+The "Договор", "Счёт", and "Telegram" buttons are at the bottom of the client edit form (line ~551-572), making them hard to find. The user wants them at the top. Additionally, the user wants requisites to be automatically filled in the document constructor when navigating from the client card.
 
 ### What changes
 
 #### Edit `src/components/admin/ClientsTab.tsx`
 
-1. **Add a "Из договора" button** next to the existing "Синхронизировать" button in the requisites section header (line ~486).
+1. **Move the action buttons** (Договор, Счёт, Telegram) from the bottom `flex-wrap` block (lines 556-572) up into the card header area (line 470-473), next to the title "Редактировать клиента" and the close button. This makes them immediately visible when opening a client.
 
-2. **Add `fillFromContract` function** that:
-   - Queries `generated_documents` for the current client name (`name`) to get `client_inn`
-   - If INN found, sets it in the `inn` state field
-   - Then optionally calls DaData with this correct INN to fill KPP, OGRN, address, director
-   - Shows toast with result
+2. **Ensure requisites are saved before navigating**: Before calling `onNavigate("documents", ...)`, first save the current client data (call `saveClient`) so that when DocumentsTab loads and calls `fillClientFromName`, it finds the up-to-date requisites (INN, KPP, OGRN, address, director) in the `clients` table. This solves the "requisites not pulling" issue.
 
-3. **Button placement**: Next to the existing sync button, with a `FileText` icon and label "Из договора".
+3. **Keep the Save/Update button** at the bottom as-is, just remove the duplicate document buttons from there.
 
-### Flow
-```text
-Click "Из договора" → query generated_documents by client_name
-→ get client_inn → set inn field → auto-call DaData with correct INN
-→ fill kpp, ogrn, legal_address, director_name, director_post
-```
+### Technical detail
+- The DocumentsTab already has `fillClientFromName` that looks up the client by name in the `clients` array and fills all requisite fields. The problem is that if the client was just edited but not saved, the requisites aren't in the DB yet. The fix is to auto-save before navigating.
+- The header will have: title on the left, action buttons + close button on the right.
 
 ### Files
-- **Edit**: `src/components/admin/ClientsTab.tsx` — add button and fillFromContract logic
+- **Edit**: `src/components/admin/ClientsTab.tsx`
 
