@@ -476,6 +476,221 @@ export type Database = {
           },
         ]
       }
+      org_clients: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_contracts: {
+        Row: {
+          amount: number | null
+          client_name: string
+          contract_date: string | null
+          contract_number: string | null
+          contract_type: string | null
+          created_at: string
+          id: string
+          is_archived: boolean
+          notes: string | null
+          organization_id: string
+          paid_until: string | null
+          payment_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          client_name: string
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_type?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          notes?: string | null
+          organization_id: string
+          paid_until?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          client_name?: string
+          contract_date?: string | null
+          contract_number?: string | null
+          contract_type?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          notes?: string | null
+          organization_id?: string
+          paid_until?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contracts_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          organization_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          organization_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          organization_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_files_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          organization_id: string
+          sort_order: number
+          status: string
+          task_date: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id: string
+          sort_order?: number
+          status?: string
+          task_date?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          organization_id?: string
+          sort_order?: number
+          status?: string
+          task_date?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          inn: string | null
+          landing_config: Json
+          landing_slug: string | null
+          logo_url: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inn?: string | null
+          landing_config?: Json
+          landing_slug?: string | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inn?: string | null
+          landing_config?: Json
+          landing_slug?: string | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       playground_feedback: {
         Row: {
           content: string
@@ -964,9 +1179,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_org_owner: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "organization"
       listing_status: "pending" | "active" | "rejected" | "archived"
       price_type: "fixed" | "negotiable" | "free"
     }
@@ -1096,7 +1315,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "organization"],
       listing_status: ["pending", "active", "rejected", "archived"],
       price_type: ["fixed", "negotiable", "free"],
     },
