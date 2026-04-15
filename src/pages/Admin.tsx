@@ -370,215 +370,219 @@ const Admin = () => {
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
 
-              {activeSection === "site-settings" && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-1.5 border-b border-border pb-3">
-                    {siteSettingsTabs.map((tab) => (
+              {activeSection === "profile" && (
+                <div className="flex gap-6">
+                  {/* Vertical tabs */}
+                  <nav className="w-44 shrink-0 space-y-1">
+                    {profileTabs.map((tab) => (
                       <button
                         key={tab.id}
-                        onClick={() => setSiteSettingsSubTab(tab.id)}
+                        onClick={() => setProfileSubTab(tab.id)}
                         className={cn(
-                          "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
-                          siteSettingsSubTab === tab.id
+                          "w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors text-left",
+                          profileSubTab === tab.id
                             ? "bg-primary/15 text-primary font-medium"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                         )}
                       >
-                        <tab.icon className="h-3.5 w-3.5" />
+                        <tab.icon className="h-4 w-4 shrink-0" />
                         {tab.label}
                       </button>
                     ))}
-                  </div>
+                  </nav>
 
-                  {siteSettingsSubTab === "seo" && (
-                    <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5" />SEO-настройки</CardTitle>
-                          <CardDescription>Ключевые слова, заголовок и описание для поисковиков</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>Ключевые слова</Label>
-                            <div className="flex flex-wrap gap-2 mb-2">
-                              {keywords.map((keyword) => (
-                                <Badge key={keyword} variant="secondary" className="gap-1 pr-1">
-                                  {keyword}
-                                  <button onClick={() => removeKeyword(keyword)} className="ml-1 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
-                                </Badge>
-                              ))}
+                  {/* Content */}
+                  <div className="flex-1 min-w-0 space-y-6">
+                    {profileSubTab === "appearance" && (
+                      <>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />Оформление</CardTitle>
+                            <CardDescription>Тема, фон и баннер</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-6">
+                            <div className="space-y-3">
+                              <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Тема</Label>
+                              <div className="flex items-center gap-3">
+                                <Button variant={isDark ? "outline" : "default"} size="sm" onClick={() => setIsDark(false)}><Sun className="h-4 w-4 mr-1.5" />Светлая</Button>
+                                <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="flex items-center gap-2"><Palette className="h-4 w-4" />Фон панели</Label>
+                              <div className="grid grid-cols-4 gap-2">
+                                {BG_PRESETS.map(p => (
+                                  <button
+                                    key={p.id}
+                                    onClick={() => handleBgChange(p.id)}
+                                    className={cn(
+                                      "h-16 rounded-lg border-2 transition-all flex items-end p-1.5",
+                                      bgPreset === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50",
+                                      p.id === "default" && "bg-background",
+                                      p.id === "dark-grid" && "bg-[#0f0f14]",
+                                      p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
+                                      p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                                    )}
+                                  >
+                                    <span className="text-[10px] text-muted-foreground">{p.label}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-3">
+                              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Баннер</Label>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
+                                  {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Camera className="h-4 w-4 mr-1.5" />}
+                                  Загрузить баннер
+                                </Button>
+                                {bannerUrl && (
+                                  <Button variant="outline" size="sm" onClick={resetBanner}>
+                                    <RotateCcw className="h-4 w-4 mr-1.5" />Сбросить
+                                  </Button>
+                                )}
+                              </div>
+                              {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
+                              <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    )}
+
+                    {profileSubTab === "seo" && (
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Search className="w-5 h-5" />SEO-настройки</CardTitle>
+                            <CardDescription>Ключевые слова, заголовок и описание для поисковиков</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Ключевые слова</Label>
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {keywords.map((keyword) => (
+                                  <Badge key={keyword} variant="secondary" className="gap-1 pr-1">
+                                    {keyword}
+                                    <button onClick={() => removeKeyword(keyword)} className="ml-1 hover:text-destructive transition-colors"><X className="w-3 h-3" /></button>
+                                  </Badge>
+                                ))}
+                              </div>
+                              <div className="flex gap-2">
+                                <Input value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} onKeyDown={handleKeywordKeyDown} placeholder="Добавить ключевое слово..." />
+                                <Button variant="outline" size="icon" onClick={addKeyword} disabled={!newKeyword.trim()}><Plus className="w-4 h-4" /></Button>
+                              </div>
+                            </div>
+                            <div className="space-y-2"><Label htmlFor="seo-title">Title</Label><Input id="seo-title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Заголовок страницы" /></div>
+                            <div className="space-y-2"><Label htmlFor="seo-desc">Description</Label><Textarea id="seo-desc" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Описание для поисковиков" rows={3} /></div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" />Open Graph</CardTitle>
+                            <CardDescription>Заголовок и описание для ссылок в соцсетях</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2"><Label htmlFor="og-title">OG Title</Label><Input id="og-title" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder="Заголовок для соцсетей" /></div>
+                            <div className="space-y-2"><Label htmlFor="og-desc">OG Description</Label><Textarea id="og-desc" value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Описание для соцсетей" rows={3} /></div>
+                          </CardContent>
+                        </Card>
+                        <Button onClick={saveSeo} disabled={saving} className="w-full">
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить SEO-настройки
+                        </Button>
+                      </div>
+                    )}
+
+                    {profileSubTab === "contacts" && (
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Контактные данные</CardTitle>
+                            <CardDescription>Email, телефон и Telegram</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2"><Label htmlFor="contact-email">Email</Label><Input id="contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="info@24zxc.ru" /></div>
+                            <div className="space-y-2"><Label htmlFor="contact-phone">Телефон</Label><Input id="contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+7 (999) 123-45-67" /></div>
+                            <div className="space-y-2"><Label htmlFor="contact-tg">Telegram</Label><Input id="contact-tg" value={contactTelegram} onChange={(e) => setContactTelegram(e.target.value)} placeholder="@24zxc" /></div>
+                          </CardContent>
+                        </Card>
+                        <Button onClick={saveContacts} disabled={saving} className="w-full">
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить контакты
+                        </Button>
+                      </div>
+                    )}
+
+                    {profileSubTab === "promotions" && (
+                      <div className="space-y-6">
+                        <Card>
+                          <CardHeader><CardTitle>{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2"><Label>Заголовок</Label><Input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)} placeholder="Сайт + настройка рекламы" /></div>
+                            <div className="space-y-2"><Label>Описание</Label><Textarea value={promoDesc} onChange={(e) => setPromoDesc(e.target.value)} placeholder="Описание акции..." rows={2} /></div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2"><Label>Цена</Label><Input value={promoPrice} onChange={(e) => setPromoPrice(e.target.value)} placeholder="10 000 ₽" /></div>
+                              <div className="space-y-2"><Label>Старая цена</Label><Input value={promoOldPrice} onChange={(e) => setPromoOldPrice(e.target.value)} placeholder="15 000 ₽" /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2"><Label>Бейдж</Label><Input value={promoBadge} onChange={(e) => setPromoBadge(e.target.value)} placeholder="Акция" /></div>
+                              <div className="space-y-2"><Label>Иконка (Lucide)</Label><Input value={promoIcon} onChange={(e) => setPromoIcon(e.target.value)} placeholder="Monitor, GraduationCap..." /></div>
                             </div>
                             <div className="flex gap-2">
-                              <Input value={newKeyword} onChange={(e) => setNewKeyword(e.target.value)} onKeyDown={handleKeywordKeyDown} placeholder="Добавить ключевое слово..." />
-                              <Button variant="outline" size="icon" onClick={addKeyword} disabled={!newKeyword.trim()}><Plus className="w-4 h-4" /></Button>
+                              <Button onClick={savePromo} disabled={saving} className="flex-1">
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                                {editingPromo ? "Обновить" : "Добавить"}
+                              </Button>
+                              {editingPromo && <Button variant="outline" onClick={resetPromoForm}>Отмена</Button>}
                             </div>
-                          </div>
-                          <div className="space-y-2"><Label htmlFor="seo-title">Title</Label><Input id="seo-title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} placeholder="Заголовок страницы" /></div>
-                          <div className="space-y-2"><Label htmlFor="seo-desc">Description</Label><Textarea id="seo-desc" value={seoDescription} onChange={(e) => setSeoDescription(e.target.value)} placeholder="Описание для поисковиков" rows={3} /></div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader><CardTitle>Текущие акции</CardTitle></CardHeader>
+                          <CardContent className="space-y-3">
+                            {promosLoading ? (
+                              <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+                            ) : promotions.length === 0 ? (
+                              <p className="text-sm text-muted-foreground text-center py-4">Нет акций</p>
+                            ) : (
+                              promotions.map((p) => (
+                                <div key={p.id} className="flex items-center justify-between p-3 border rounded-sm">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">{p.title}</div>
+                                    <div className="text-sm text-muted-foreground">{p.price}</div>
+                                  </div>
+                                  <div className="flex items-center gap-3 ml-4">
+                                    <Switch checked={p.is_active} onCheckedChange={(v) => togglePromoActive.mutate({ id: p.id, is_active: v })} />
+                                    <Button variant="ghost" size="icon" onClick={() => startEditPromo(p)}><Save className="w-4 h-4" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => deletePromo.mutate(p.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+
+                    {profileSubTab === "requisites" && <RequisitesTab />}
+                    {profileSubTab === "history" && <HistoryTab />}
+                    {profileSubTab === "nmo" && <NmoTab />}
+                    {profileSubTab === "frdo" && <FrdoTab />}
+
+                    {profileSubTab === "tariff" && (
                       <Card>
                         <CardHeader>
-                          <CardTitle className="flex items-center gap-2"><Share2 className="w-5 h-5" />Open Graph</CardTitle>
-                          <CardDescription>Заголовок и описание для ссылок в соцсетях</CardDescription>
+                          <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Тариф</CardTitle>
+                          <CardDescription>Текущий план и возможности</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2"><Label htmlFor="og-title">OG Title</Label><Input id="og-title" value={ogTitle} onChange={(e) => setOgTitle(e.target.value)} placeholder="Заголовок для соцсетей" /></div>
-                          <div className="space-y-2"><Label htmlFor="og-desc">OG Description</Label><Textarea id="og-desc" value={ogDescription} onChange={(e) => setOgDescription(e.target.value)} placeholder="Описание для соцсетей" rows={3} /></div>
-                        </CardContent>
-                      </Card>
-                      <Button onClick={saveSeo} disabled={saving} className="w-full">
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить SEO-настройки
-                      </Button>
-                    </div>
-                  )}
-
-                  {siteSettingsSubTab === "contacts" && (
-                    <div className="space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2"><Mail className="w-5 h-5" />Контактные данные</CardTitle>
-                          <CardDescription>Email, телефон и Telegram</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2"><Label htmlFor="contact-email">Email</Label><Input id="contact-email" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="info@24zxc.ru" /></div>
-                          <div className="space-y-2"><Label htmlFor="contact-phone">Телефон</Label><Input id="contact-phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="+7 (999) 123-45-67" /></div>
-                          <div className="space-y-2"><Label htmlFor="contact-tg">Telegram</Label><Input id="contact-tg" value={contactTelegram} onChange={(e) => setContactTelegram(e.target.value)} placeholder="@24zxc" /></div>
-                        </CardContent>
-                      </Card>
-                      <Button onClick={saveContacts} disabled={saving} className="w-full">
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Сохранить контакты
-                      </Button>
-                    </div>
-                  )}
-
-                  {siteSettingsSubTab === "promotions" && (
-                    <div className="space-y-6">
-                      <Card>
-                        <CardHeader><CardTitle>{editingPromo ? "Редактировать акцию" : "Новая акция"}</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                          <div className="space-y-2"><Label>Заголовок</Label><Input value={promoTitle} onChange={(e) => setPromoTitle(e.target.value)} placeholder="Сайт + настройка рекламы" /></div>
-                          <div className="space-y-2"><Label>Описание</Label><Textarea value={promoDesc} onChange={(e) => setPromoDesc(e.target.value)} placeholder="Описание акции..." rows={2} /></div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label>Цена</Label><Input value={promoPrice} onChange={(e) => setPromoPrice(e.target.value)} placeholder="10 000 ₽" /></div>
-                            <div className="space-y-2"><Label>Старая цена</Label><Input value={promoOldPrice} onChange={(e) => setPromoOldPrice(e.target.value)} placeholder="15 000 ₽" /></div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2"><Label>Бейдж</Label><Input value={promoBadge} onChange={(e) => setPromoBadge(e.target.value)} placeholder="Акция" /></div>
-                            <div className="space-y-2"><Label>Иконка (Lucide)</Label><Input value={promoIcon} onChange={(e) => setPromoIcon(e.target.value)} placeholder="Monitor, GraduationCap..." /></div>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button onClick={savePromo} disabled={saving} className="flex-1">
-                              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                              {editingPromo ? "Обновить" : "Добавить"}
-                            </Button>
-                            {editingPromo && <Button variant="outline" onClick={resetPromoForm}>Отмена</Button>}
+                        <CardContent>
+                          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
+                            <Badge variant="outline" className="text-sm px-3 py-1 border-primary/30 text-primary">Бесплатный</Badge>
+                            <span className="text-sm text-muted-foreground">Базовый функционал CRM</span>
                           </div>
                         </CardContent>
                       </Card>
-                      <Card>
-                        <CardHeader><CardTitle>Текущие акции</CardTitle></CardHeader>
-                        <CardContent className="space-y-3">
-                          {promosLoading ? (
-                            <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
-                          ) : promotions.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">Нет акций</p>
-                          ) : (
-                            promotions.map((p) => (
-                              <div key={p.id} className="flex items-center justify-between p-3 border rounded-sm">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate">{p.title}</div>
-                                  <div className="text-sm text-muted-foreground">{p.price}</div>
-                                </div>
-                                <div className="flex items-center gap-3 ml-4">
-                                  <Switch checked={p.is_active} onCheckedChange={(v) => togglePromoActive.mutate({ id: p.id, is_active: v })} />
-                                  <Button variant="ghost" size="icon" onClick={() => startEditPromo(p)}><Save className="w-4 h-4" /></Button>
-                                  <Button variant="ghost" size="icon" onClick={() => deletePromo.mutate(p.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-
-                  {siteSettingsSubTab === "requisites" && <RequisitesTab />}
-                  {siteSettingsSubTab === "history" && <HistoryTab />}
-                  {siteSettingsSubTab === "nmo" && <NmoTab />}
-                  {siteSettingsSubTab === "frdo" && <FrdoTab />}
-                </div>
-              )}
-
-              {activeSection === "profile" && (
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" />Профиль</CardTitle>
-                      <CardDescription>Настройки отображения и оформления</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-3">
-                        <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Тема</Label>
-                        <div className="flex items-center gap-3">
-                          <Button variant={isDark ? "outline" : "default"} size="sm" onClick={() => setIsDark(false)}><Sun className="h-4 w-4 mr-1.5" />Светлая</Button>
-                          <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="flex items-center gap-2"><Palette className="h-4 w-4" />Фон панели</Label>
-                        <div className="grid grid-cols-4 gap-2">
-                          {BG_PRESETS.map(p => (
-                            <button
-                              key={p.id}
-                              onClick={() => handleBgChange(p.id)}
-                              className={cn(
-                                "h-16 rounded-lg border-2 transition-all flex items-end p-1.5",
-                                bgPreset === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50",
-                                p.id === "default" && "bg-background",
-                                p.id === "dark-grid" && "bg-[#0f0f14]",
-                                p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
-                                p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
-                              )}
-                            >
-                              <span className="text-[10px] text-muted-foreground">{p.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Баннер</Label>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
-                            {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Camera className="h-4 w-4 mr-1.5" />}
-                            Загрузить баннер
-                          </Button>
-                          {bannerUrl && (
-                            <Button variant="outline" size="sm" onClick={resetBanner}>
-                              <RotateCcw className="h-4 w-4 mr-1.5" />Сбросить
-                            </Button>
-                          )}
-                        </div>
-                        {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
-                        <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><CreditCard className="h-5 w-5" />Тариф</CardTitle>
-                      <CardDescription>Текущий план и возможности</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border">
-                        <Badge variant="outline" className="text-sm px-3 py-1 border-primary/30 text-primary">Бесплатный</Badge>
-                        <span className="text-sm text-muted-foreground">Базовый функционал CRM</span>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    )}
+                  </div>
                 </div>
               )}
 
