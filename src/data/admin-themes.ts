@@ -45,6 +45,8 @@ export const adminThemes: AdminTheme[] = [
     accentForeground: "0 0% 100%",
     animation: "leaves",
     forceLight: true,
+    bannerPosition: "center 60%",
+    previewPosition: "center 50%",
   },
   {
     id: "office",
@@ -59,6 +61,8 @@ export const adminThemes: AdminTheme[] = [
     accentForeground: "0 0% 100%",
     animation: "fade",
     forceLight: true,
+    bannerPosition: "center 40%",
+    previewPosition: "center 40%",
   },
   {
     id: "newyork",
@@ -85,6 +89,8 @@ export const adminThemes: AdminTheme[] = [
     accent: "25 95% 53%",
     accentForeground: "0 0% 100%",
     animation: "gradient",
+    bannerPosition: "center 30%",
+    previewPosition: "center 40%",
   },
   {
     id: "minimalism",
@@ -98,6 +104,8 @@ export const adminThemes: AdminTheme[] = [
     accent: "270 60% 60%",
     accentForeground: "0 0% 100%",
     animation: "glow",
+    bannerPosition: "center 45%",
+    previewPosition: "center 50%",
   },
 ];
 
