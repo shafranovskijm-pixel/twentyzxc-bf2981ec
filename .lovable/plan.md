@@ -1,36 +1,55 @@
 
 
-## Plan: Сохранение документов только при отправке + перезапись дубликатов
+## Plan: Redesign admin panel layout (Syntagma-style)
 
-### Проблема
-Сейчас документ сохраняется в базу сразу при генерации (кнопка "Сформировать"). Если пользователь переформирует документ с тем же номером, создаётся дубликат. Нужно:
-1. **Не сохранять в БД при генерации** — только показать превью
-2. **Сохранять (или перезаписывать) при отправке** на email или в Telegram
-3. Если документ с таким же `doc_type + doc_number` уже есть — обновить его, а не создавать новый
+### What changes
 
-### Изменения
+The admin panel gets a compact icon-only left sidebar (like the Syntagma example), a top header with a profile/settings dropdown menu in the top-right corner, and the site footer visible at the bottom.
 
-#### Файл: `src/components/admin/DocumentsTab.tsx`
+### Layout structure
 
-**1. Убрать сохранение из `generate()`**
-Весь блок "Save to DB in background" (строки ~471–600) — вынести в отдельную функцию `saveDocumentToDB()`. В `generate()` оставить только генерацию HTML и показ превью. Авто-создание контракта и клиента тоже перенести в `saveDocumentToDB`.
-
-**2. Создать `saveDocumentToDB()`**
-Функция, которая:
-- Проверяет, есть ли уже запись с таким `doc_type` + `doc_number` → если да, делает `update`, иначе `insert`
-- Создаёт/обновляет контракт и клиента (как сейчас)
-- Возвращает ID сохранённого документа
-
-**3. Вызывать `saveDocumentToDB()` из `sendDocumentEmail()` и `sendDocumentTelegram()`**
-Перед отправкой письма/телеграма — сначала сохранить актуальную версию в БД. Это гарантирует, что в базе всегда актуальный документ.
-
-### Логика перезаписи
-```
-upsert: ищем по doc_type + doc_number
-  → найден → UPDATE (html_content, total_amount, services, metadata, doc_date, client_name...)
-  → не найден → INSERT
+```text
+┌──────┬─────────────────────────────────┐
+│ Icon │  Header: Title    [🔔] [👤 ▾]  │
+│ bar  ├─────────────────────────────────┤
+│      │                                 │
+│ 📊   │  Main content area              │
+│ 📅   │                                 │
+│ 📄   │                                 │
+│ 👥   │                                 │
+│ 📁   │                                 │
+│      │                                 │
+│ 🚪   ├─────────────────────────────────┤
+│      │  Footer (site footer)           │
+└──────┴─────────────────────────────────┘
 ```
 
-### Файлы
-- **Редактирование**: `src/components/admin/DocumentsTab.tsx` — реструктуризация сохранения
+### Sidebar (left, icon-only ~w-16)
+Primary items always visible as icon buttons with tooltips:
+- **Дашборд** (LayoutDashboard)
+- **Планер** (CalendarDays)
+- **Договоры** (FileText)
+- **Клиенты** (Users)
+- **Файлы** (FolderArchive)
+- **Документы** (FileOutput)
+- **Выйти** (LogOut) — at bottom
+
+Active item highlighted with gold accent background, rounded. DND reordering preserved.
+
+### Top-right dropdown menu (⋮ or avatar icon)
+Secondary/settings items moved here:
+- SEO
+- Контакты
+- Акции
+- Реквизиты
+- История
+- НМО Портал
+- ФИС ФРДО
+
+### Footer
+Import and render the site `<Footer />` component below the main content area so the admin always sees the brand footer.
+
+### Files
+- **Rewrite**: `src/components/admin/AdminSidebar.tsx` — compact icon-only sidebar with only primary items, always collapsed style
+- **Edit**: `src/pages/Admin.tsx` — add dropdown menu in header for secondary items, add Footer below main content
 
