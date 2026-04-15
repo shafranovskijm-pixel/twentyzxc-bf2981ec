@@ -1,31 +1,29 @@
 
 
-## План: Исправить футер и добавить акцентную подсветку при hover
+## План: Hover-подсветка кнопок в цвет активной темы
 
-### Проблема 1: Футер полностью размыт
-Сейчас весь `<Footer />` обёрнут в `backdrop-blur-xl bg-background/40` — это размывает всё, включая чёткий баннер внизу. Нужно размыть только **под текстовыми столбиками** («Сообщество» и «Компания»), а сам фоновый баннер должен проступать чётко.
-
-### Проблема 2: Hover на кнопках не использует акцентный цвет темы
-При наведении на кнопки сайдбара и хедера используется `hover:bg-muted/50` — нейтральный серый. Нужно, чтобы при hover кнопки подсвечивались в акцентном цвете текущей темы (`--primary`).
+### Проблема
+Кнопки при hover всегда подсвечиваются золотым, потому что `hover:bg-primary/15` ссылается на CSS-переменную `--primary`, которая захардкожена как золотой (`45 65% 45%`). Тема записывает акцент в `--theme-accent`, но `--primary` не переопределяется.
 
 ### Решение
+В `Admin.tsx` при активной теме переопределить `--primary` и `--primary-foreground` через inline style, используя значения `accent` / `accentForeground` из темы. Это автоматически заставит все `hover:bg-primary/*`, `hover:text-primary`, `bg-primary`, `text-primary` и т.д. работать в цвете активной темы — без изменения отдельных компонентов.
 
-#### 1. Футер — убрать общий blur, добавить локальный (`Admin.tsx` + `Footer.tsx`)
-
-- **Admin.tsx**: Убрать `backdrop-blur-xl bg-background/40` с обёртки Footer — вернуть чёткость баннера.
-- **Footer.tsx**: Добавить `backdrop-blur-md bg-background/30 rounded-lg` только на два текстовых столбика (grid с «Сообщество» и «Компания»), чтобы текст читался, а остальной фон оставался чётким.
-
-#### 2. Hover-подсветка в акцентном цвете (`AdminSidebar.tsx` + `Admin.tsx`)
-
-- **AdminSidebar.tsx**: Заменить `hover:bg-muted/50` на `hover:bg-primary/15 hover:text-primary` для неактивных кнопок сайдбара.
-- **Admin.tsx** (хедер): Аналогично для кнопок профиля, темы, уведомлений — добавить `hover:text-primary hover:bg-primary/10`.
-
-### Файлы
+### Файл
 
 | Файл | Изменение |
 |------|-----------|
-| `src/pages/Admin.tsx` | Убрать общий blur с footer-обёртки |
-| `src/components/Footer.tsx` | Локальный blur только на текстовых столбиках |
-| `src/components/admin/AdminSidebar.tsx` | Hover в акцентном цвете primary |
-| `src/pages/Admin.tsx` | Hover кнопок хедера в акцентном цвете |
+| `src/pages/Admin.tsx` | Добавить `"--primary": activeTheme.accent` и `"--primary-foreground": activeTheme.accentForeground` в inline style на корневом div |
+
+### Код (суть изменения)
+```typescript
+style={activeTheme ? {
+  "--theme-accent": activeTheme.accent,
+  "--theme-accent-foreground": activeTheme.accentForeground,
+  "--primary": activeTheme.accent,                    // <-- добавить
+  "--primary-foreground": activeTheme.accentForeground, // <-- добавить
+  ...
+} as React.CSSProperties : undefined}
+```
+
+Это одна строка — мгновенно переключает все кнопки, сайдбар, hover-эффекты на палитру текущей темы.
 
