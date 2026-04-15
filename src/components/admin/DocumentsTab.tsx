@@ -468,203 +468,213 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     setPreviewInvoiceHtml(embedDocImages(invoiceHtml));
     setPreviewTab("contract");
 
-    // Save to DB in background
+    toast.success("Документ сформирован. Для сохранения отправьте на email или в Telegram.");
+  };
+
+  // Save document to DB with upsert logic (called on send)
+  const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
     let targetContractId = linkedContractId || null;
-    try {
-      const filteredServices = services.filter(s => s.name.trim());
-      
-      // Step 1: Save main document
-      console.log("[DOC] Step 1: Saving document to generated_documents...");
-      const { error: insertError } = await supabase.from("generated_documents").insert({
-        doc_type: docType,
-        doc_number: docNumber,
-        doc_date: docDate,
-        client_name: clientName,
-        client_inn: clientInn || null,
-        contract_id: targetContractId,
-        total_amount: total,
-        services: JSON.stringify(filteredServices),
-        html_content: html,
-        metadata: JSON.stringify({
-          contractSubType, subject, deadline, paymentTerms,
-          discountAmount, discountDeadline,
-          clientKpp, clientOgrn, clientAddress,
-          clientDirectorName, clientDirectorPost,
-        }),
-      });
+    const filteredServices = services.filter(s => s.name.trim());
+
+    // Step 1: Upsert main document (check by doc_type + doc_number)
+    console.log("[DOC] Step 1: Upsert document...");
+    const { data: existing } = await supabase
+      .from("generated_documents")
+      .select("id")
+      .eq("doc_type", docType)
+      .eq("doc_number", docNumber)
+      .maybeSingle();
+
+    const docPayload = {
+      doc_type: docType,
+      doc_number: docNumber,
+      doc_date: docDate,
+      client_name: clientName,
+      client_inn: clientInn || null,
+      contract_id: targetContractId,
+      total_amount: total,
+      services: JSON.stringify(filteredServices),
+      html_content: html,
+      metadata: JSON.stringify({
+        contractSubType, subject, deadline, paymentTerms,
+        discountAmount, discountDeadline,
+        clientKpp: clientKpp, clientOgrn: clientOgrn, clientAddress: clientAddress,
+        clientDirectorName, clientDirectorPost,
+      }),
+    };
+
+    if (existing) {
+      const { error: updateError } = await supabase.from("generated_documents").update(docPayload).eq("id", existing.id);
+      if (updateError) {
+        console.error("[DOC] Update FAILED:", updateError);
+        toast.error(`Ошибка обновления документа: ${updateError.message}`);
+        return null;
+      }
+      console.log("[DOC] Step 1 OK — updated existing", existing.id);
+    } else {
+      const { error: insertError } = await supabase.from("generated_documents").insert(docPayload);
       if (insertError) {
-        console.error("[DOC] Step 1 FAILED:", insertError);
+        console.error("[DOC] Insert FAILED:", insertError);
         toast.error(`Ошибка сохранения документа: ${insertError.message}`);
+        return null;
+      }
+      console.log("[DOC] Step 1 OK — inserted new");
+    }
+    queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+
+    // Step 2: Auto-create contract record
+    if (docType === "contract" && !linkedContractId) {
+      console.log("[DOC] Step 2: Auto-creating contract...");
+      const year = new Date(docDate).getFullYear();
+      const contractNumber = `${docNumber}-${year}`;
+      const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
+        client_name: clientName,
+        contract_number: contractNumber,
+        contract_date: docDate,
+        amount: total || null,
+        contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
+        payment_status: "не оплачено",
+      }).select("id").single();
+      if (contractError) {
+        console.error("[DOC] Step 2 FAILED:", contractError);
       } else {
-        console.log("[DOC] Step 1 OK");
-        queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+        console.log("[DOC] Step 2 OK, contract id:", newContract.id);
+        targetContractId = newContract.id;
+        queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+      }
+    }
 
-        // Step 2: Auto-create contract record
-        if (docType === "contract" && !linkedContractId) {
-          console.log("[DOC] Step 2: Auto-creating contract...");
-          const year = new Date(docDate).getFullYear();
-          const contractNumber = `${docNumber}-${year}`;
-          const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
-            client_name: clientName,
-            contract_number: contractNumber,
-            contract_date: docDate,
-            amount: total || null,
-            contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
-            payment_status: "не оплачено",
-          }).select("id").single();
-          if (contractError) {
-            console.error("[DOC] Step 2 FAILED:", contractError);
-            toast.error(`Договор не создан в CRM: ${contractError.message}`);
-          } else {
-            console.log("[DOC] Step 2 OK, contract id:", newContract.id);
-            targetContractId = newContract.id;
-            queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
-            queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-          }
-        }
-
-        // Step 2.5: Auto-create or update client (+ service_deadline)
-        const existingClient = clients.find(c => c.name === clientName);
-        
-        // Parse service_deadline from deadline field
-        let parsedServiceDeadline: string | null = null;
-        if (deadline) {
-          // Try "DD.MM.YYYY по DD.MM.YYYY" format
-          const poMatch = deadline.match(/по\s+(\d{2})\.(\d{2})\.(\d{4})/);
-          if (poMatch) {
-            parsedServiceDeadline = `${poMatch[3]}-${poMatch[2]}-${poMatch[1]}`;
-          } else {
-            // Try single date "DD.MM.YYYY"
-            const singleMatch = deadline.match(/(\d{2})\.(\d{2})\.(\d{4})/);
-            if (singleMatch) {
-              parsedServiceDeadline = `${singleMatch[3]}-${singleMatch[2]}-${singleMatch[1]}`;
-            } else {
-              // Try "N рабочих дней" - calculate from contract date
-              const daysMatch = deadline.match(/(\d+)\s*(рабоч|календар|дн)/i);
-              if (daysMatch && docDate) {
-                const days = parseInt(daysMatch[1]);
-                const start = new Date(docDate);
-                start.setDate(start.getDate() + days);
-                parsedServiceDeadline = start.toISOString().split("T")[0];
-              }
-            }
-          }
-        }
-
-        if (clientName.trim()) {
-          const clientData: Record<string, any> = {
-            name: clientName,
-            inn: clientInn || null,
-            kpp: clientKpp || null,
-            ogrn: clientOgrn || null,
-            legal_address: clientAddress || null,
-            director_name: clientDirectorName || null,
-            director_post: clientDirectorPost || null,
-          };
-          if (parsedServiceDeadline) {
-            clientData.service_deadline = parsedServiceDeadline;
-          }
-          if (!existingClient) {
-            const { error: clientError } = await supabase.from("clients").insert(clientData as any);
-            if (!clientError) {
-              console.log("[DOC] Step 2.5 OK, client auto-created:", clientName);
-            } else {
-              console.error("[DOC] Step 2.5 client creation failed:", clientError);
-            }
-          } else {
-            const updateData: Record<string, any> = {
-              inn: clientInn || existingClient.inn || null,
-              kpp: clientKpp || existingClient.kpp || null,
-              ogrn: clientOgrn || existingClient.ogrn || null,
-              legal_address: clientAddress || existingClient.legal_address || null,
-              director_name: clientDirectorName || existingClient.director_name || null,
-              director_post: clientDirectorPost || existingClient.director_post || null,
-            };
-            if (parsedServiceDeadline) {
-              updateData.service_deadline = parsedServiceDeadline;
-            }
-            const { error: updateError } = await supabase.from("clients").update(updateData).eq("id", existingClient.id);
-            if (!updateError) {
-              console.log("[DOC] Step 2.5 OK, client updated:", clientName, parsedServiceDeadline ? `deadline: ${parsedServiceDeadline}` : "");
-            } else {
-              console.error("[DOC] Step 2.5 client update failed:", updateError);
-            }
-          }
-          queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
-          queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
-          queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
-        }
-
-        // Step 3: Save files to storage (HTML first for reliability, then try PDF)
-        if (targetContractId) {
-          const translitDocLabel = (type: DocType) => type === "contract" ? "Dogovor" : type === "invoice" ? "Schet" : "Akt";
-
-          const saveFileToFolder = async (content: Blob, displayName: string, storageFileName: string, contractId: string) => {
-            const storagePath = `${contractId}/${Date.now()}-${storageFileName}`;
-            const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, content);
-            if (uploadErr) {
-              console.error(`[DOC] Upload FAILED for ${displayName}:`, uploadErr);
-              return null;
-            }
-            await supabase.from("contract_files").insert({
-              contract_id: contractId,
-              file_name: displayName,
-              file_path: storagePath,
-              file_size: content.size,
-            });
-            console.log(`[DOC] Saved ${displayName} to folder`);
-            return storagePath;
-          };
-
-          // Save PDF files directly
-          try {
-            toast.info("Генерация PDF...");
-            const pdfBase64 = await generatePdfBase64(html);
-            const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-            const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-            const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-            const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
-            await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
-
-            if (docType === "contract" && invoiceHtml) {
-              const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
-              const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
-              const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-              const invoicePdfDisplayName = `Счёт_${docNumber}_${docDate}.pdf`;
-              const invoicePdfStorageName = `Schet_${docNumber}_${docDate}.pdf`;
-              await saveFileToFolder(invoicePdfBlob, invoicePdfDisplayName, invoicePdfStorageName, targetContractId);
-
-              // Save invoice to generated_documents
-              await supabase.from("generated_documents").insert({
-                doc_type: "invoice",
-                doc_number: docNumber,
-                doc_date: docDate,
-                client_name: clientName,
-                client_inn: clientInn || null,
-                contract_id: targetContractId,
-                total_amount: total,
-                services: JSON.stringify(filteredServices),
-                html_content: invoiceHtml,
-              });
-            }
-
-            queryClient.invalidateQueries({ queryKey: ["contract-files"] });
-            queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
-            queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
-            queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
-            toast.success("PDF-документы сохранены в файлы");
-          } catch (pdfErr) {
-            console.error("[DOC] PDF generation/save error:", pdfErr);
-            toast.error("Не удалось сохранить PDF в файлы");
-          }
+    // Step 2.5: Auto-create or update client (+ service_deadline)
+    const existingClient = clients.find(c => c.name === clientName);
+    
+    let parsedServiceDeadline: string | null = null;
+    if (deadline) {
+      const poMatch = deadline.match(/по\s+(\d{2})\.(\d{2})\.(\d{4})/);
+      if (poMatch) {
+        parsedServiceDeadline = `${poMatch[3]}-${poMatch[2]}-${poMatch[1]}`;
+      } else {
+        const singleMatch = deadline.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+        if (singleMatch) {
+          parsedServiceDeadline = `${singleMatch[3]}-${singleMatch[2]}-${singleMatch[1]}`;
         } else {
-          toast.success("Документ сохранён");
+          const daysMatch = deadline.match(/(\d+)\s*(рабоч|календар|дн)/i);
+          if (daysMatch && docDate) {
+            const days = parseInt(daysMatch[1]);
+            const start = new Date(docDate);
+            start.setDate(start.getDate() + days);
+            parsedServiceDeadline = start.toISOString().split("T")[0];
+          }
         }
       }
-    } catch (err) {
-      console.error("[DOC] Save exception:", err);
-      toast.error("Не удалось сохранить документ");
     }
+
+    if (clientName.trim()) {
+      const clientData: Record<string, any> = {
+        name: clientName,
+        inn: clientInn || null,
+        kpp: clientKpp || null,
+        ogrn: clientOgrn || null,
+        legal_address: clientAddress || null,
+        director_name: clientDirectorName || null,
+        director_post: clientDirectorPost || null,
+      };
+      if (parsedServiceDeadline) {
+        clientData.service_deadline = parsedServiceDeadline;
+      }
+      if (!existingClient) {
+        const { error: clientError } = await supabase.from("clients").insert(clientData as any);
+        if (!clientError) console.log("[DOC] Client auto-created:", clientName);
+      } else {
+        const updateData: Record<string, any> = {
+          inn: clientInn || existingClient.inn || null,
+          kpp: clientKpp || existingClient.kpp || null,
+          ogrn: clientOgrn || existingClient.ogrn || null,
+          legal_address: clientAddress || existingClient.legal_address || null,
+          director_name: clientDirectorName || existingClient.director_name || null,
+          director_post: clientDirectorPost || existingClient.director_post || null,
+        };
+        if (parsedServiceDeadline) {
+          updateData.service_deadline = parsedServiceDeadline;
+        }
+        await supabase.from("clients").update(updateData).eq("id", existingClient.id);
+      }
+      queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+    }
+
+    // Step 3: Save files to storage
+    if (targetContractId) {
+      const translitDocLabel = (type: DocType) => type === "contract" ? "Dogovor" : type === "invoice" ? "Schet" : "Akt";
+
+      const saveFileToFolder = async (content: Blob, displayName: string, storageFileName: string, contractId: string) => {
+        const storagePath = `${contractId}/${Date.now()}-${storageFileName}`;
+        const { error: uploadErr } = await supabase.storage.from("contracts").upload(storagePath, content);
+        if (uploadErr) {
+          console.error(`[DOC] Upload FAILED for ${displayName}:`, uploadErr);
+          return null;
+        }
+        await supabase.from("contract_files").insert({
+          contract_id: contractId,
+          file_name: displayName,
+          file_path: storagePath,
+          file_size: content.size,
+        });
+        return storagePath;
+      };
+
+      try {
+        const pdfBase64 = await generatePdfBase64(html);
+        const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+        const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
+        await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
+
+        if (docType === "contract" && invoiceHtml) {
+          const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
+          const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
+          const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
+          await saveFileToFolder(invoicePdfBlob, `Счёт_${docNumber}_${docDate}.pdf`, `Schet_${docNumber}_${docDate}.pdf`, targetContractId);
+
+          // Upsert invoice document too
+          const { data: existingInvoice } = await supabase
+            .from("generated_documents")
+            .select("id")
+            .eq("doc_type", "invoice")
+            .eq("doc_number", docNumber)
+            .maybeSingle();
+
+          const invoicePayload = {
+            doc_type: "invoice" as string,
+            doc_number: docNumber,
+            doc_date: docDate,
+            client_name: clientName,
+            client_inn: clientInn || null,
+            contract_id: targetContractId,
+            total_amount: total,
+            services: JSON.stringify(filteredServices),
+            html_content: invoiceHtml,
+          };
+
+          if (existingInvoice) {
+            await supabase.from("generated_documents").update(invoicePayload).eq("id", existingInvoice.id);
+          } else {
+            await supabase.from("generated_documents").insert(invoicePayload);
+          }
+        }
+
+        queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+        queryClient.invalidateQueries({ queryKey: ["contract-file-counts"] });
+        queryClient.invalidateQueries({ queryKey: ["files-contracts"] });
+        queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      } catch (pdfErr) {
+        console.error("[DOC] PDF generation/save error:", pdfErr);
+      }
+    }
+
+    return targetContractId;
   };
 
   const generatePdfBase64 = async (htmlContent: string): Promise<string> => {
