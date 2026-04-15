@@ -48,6 +48,7 @@ const ContractsTab = () => {
   const [responsible, setResponsible] = useState("");
   const [notes, setNotes] = useState("");
   const [paidUntil, setPaidUntil] = useState("");
+  const [isOneTime, setIsOneTime] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -95,7 +96,7 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false); setIsOneTime(false);
   };
 
   const lookupByValue = async (searchValue: string) => {
@@ -136,6 +137,7 @@ const ContractsTab = () => {
     setAmount(c.amount?.toString() || ""); setAmountExtra(c.amount_extra?.toString() || "");
     setContractType(c.contract_type || ""); setResponsible(c.responsible || "");
     setNotes(c.notes || ""); setPaidUntil(c.paid_until || ""); setFile(null); setShowForm(true);
+    setIsOneTime(c.is_one_time ?? false);
   };
 
   const uploadFile = async (contractId: string): Promise<string | null> => {
