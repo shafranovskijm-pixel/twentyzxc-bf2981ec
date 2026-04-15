@@ -341,17 +341,22 @@ const Admin = () => {
               const tid = activeTheme.id;
               const useLinearMask = tid === 'minimalism' || tid === 'sunset';
               const isFreshness = tid === 'freshness';
+              const isTurquoise = tid === 'turquoise';
               let sharpMask: string;
               let sharpSize: string;
               let sharpPos: string;
               let sharpOpacity: number;
 
               if (isFreshness) {
-                // Only berries at the very bottom — narrow strip
                 sharpMask = 'linear-gradient(to top, black 10%, transparent 35%)';
                 sharpSize = 'w-full h-[50%]';
                 sharpPos = 'absolute bottom-0 left-0';
                 sharpOpacity = 0.4;
+              } else if (isTurquoise) {
+                sharpMask = 'linear-gradient(to top, black 20%, transparent 55%)';
+                sharpSize = 'w-full h-[60%]';
+                sharpPos = 'absolute bottom-0 left-0';
+                sharpOpacity = 0.35;
               } else if (useLinearMask) {
                 sharpMask = 'linear-gradient(to top, black 30%, transparent 60%)';
                 sharpSize = 'w-full h-[70%]';
@@ -378,6 +383,17 @@ const Admin = () => {
                 />
               );
             })()}
+            {/* Turquoise — extra teal glow overlay */}
+            {activeTheme.id === 'turquoise' && (
+              <>
+                <div className="absolute inset-0" style={{
+                  background: 'radial-gradient(ellipse at 50% 80%, rgba(45,212,191,0.12) 0%, transparent 60%)',
+                }} />
+                <div className="absolute bottom-0 left-0 w-full h-[40%]" style={{
+                  background: 'linear-gradient(to top, rgba(20,184,166,0.08) 0%, transparent 100%)',
+                }} />
+              </>
+            )}
             {/* Bottom-left corner — secondary bleed */}
             <img
               src={bannerUrl || activeTheme.bannerUrl}
