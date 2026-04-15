@@ -25,6 +25,10 @@ export interface AdminTheme {
   animation: "leaves" | "fade" | "lights" | "gradient" | "glow" | "none";
   /** Force light mode regardless of user preference */
   forceLight?: boolean;
+  /** CSS object-position for the main header banner */
+  bannerPosition?: string;
+  /** CSS object-position for the theme selection preview card */
+  previewPosition?: string;
 }
 
 export const adminThemes: AdminTheme[] = [
