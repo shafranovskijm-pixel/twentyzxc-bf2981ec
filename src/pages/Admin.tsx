@@ -202,16 +202,20 @@ const Admin = () => {
 
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
 
-  // Theme sync
+   // Theme sync — forceLight themes override dark mode
   useEffect(() => {
-    if (isDark) {
+    const forcedLight = activeTheme?.forceLight;
+    if (forcedLight) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("admin-theme", "light");
+    } else if (isDark) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("admin-theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
       localStorage.setItem("admin-theme", "light");
     }
-  }, [isDark]);
+  }, [isDark, activeTheme]);
 
   useEffect(() => {
     if (settings.seo_keywords !== undefined) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
@@ -420,7 +424,8 @@ const Admin = () => {
                             <CardDescription>Выберите тему — она изменит фон, баннер, акценты и анимации</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
-                            {/* Light/Dark toggle */}
+                            {/* Light/Dark toggle — hidden when theme forces light */}
+                            {!activeTheme?.forceLight && (
                             <div className="space-y-3">
                               <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Режим</Label>
                               <div className="flex items-center gap-3">
@@ -428,6 +433,7 @@ const Admin = () => {
                                 <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
                               </div>
                             </div>
+                            )}
 
                             {/* Theme grid */}
                             <div className="space-y-3">
