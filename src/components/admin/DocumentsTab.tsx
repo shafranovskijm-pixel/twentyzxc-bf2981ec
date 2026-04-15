@@ -1004,6 +1004,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     if (!previewHtml) return;
     setTelegramSending(true);
     try {
+      // Save/update document in DB before sending
+      try {
+        await saveDocumentToDB(previewHtml, previewInvoiceHtml || null);
+      } catch (e) {
+        console.error("[Telegram] saveDocumentToDB failed:", e);
+      }
+
       toast.info("Генерация PDF...");
       const pdfBase64 = await generatePdfBase64(previewHtml);
       const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
