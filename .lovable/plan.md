@@ -1,30 +1,21 @@
 
 
-## Plan: Add "Акт" button to client card header with auto-fill from existing documents
+## Plan: Show discount fields for contracts too, not just invoices
 
 ### Problem
-No "Акт" button in client card header. When creating an act, user has to manually re-enter all data. The act should auto-fill services, contract number/date from previously generated documents for this client.
+The discount input fields are currently wrapped in `docType === "invoice"` condition (line 1237), so they only appear when creating an invoice. The user wants them visible when creating a contract ("contract") as well.
 
 ### Changes
 
-#### 1. Edit `src/components/admin/ClientsTab.tsx`
-Add an "Акт" button next to "Договор" and "Счёт" in the header (line ~478). Same pattern: save client, then navigate with `docType: "act"`.
+#### Edit `src/components/admin/DocumentsTab.tsx`
+1. Change the condition on line 1237 from `docType === "invoice"` to `docType === "invoice" || docType === "contract"` so discount fields appear for both document types.
 
-```tsx
-<Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "act" }); }} title="Сделать акт">
-  <CheckSquare className="w-4 h-4 mr-1" /> Акт
-</Button>
-```
+2. Pass `discountAmount` and `discountDeadline` in the contract generation data object (around line 427) — they're already passed but need to ensure the contract template uses them.
 
-#### 2. Edit `src/components/admin/DocumentsTab.tsx`
-In the "Pre-fill from client card navigation" `useEffect` (lines 225-238), when `docType === "act"`, auto-find the latest contract for this client from the `contracts` array and:
-- Set `linkedContractId` to that contract
-- Fill `services` from that contract's generated documents (using existing `fillServicesFromContract`)
-- Set contract number/date references
-
-This way the user only needs to set the act date — everything else pulls from existing data.
+#### Edit `src/lib/document-templates.ts`
+Add the discount block to the contract HTML template (similar to how it's done in the invoice template). If discount is set, show a line like: "При оплате до [дата] сумма составляет [сумма со скидкой] руб. (скидка [сумма] руб.)"
 
 ### Files
-- **Edit**: `src/components/admin/ClientsTab.tsx` — add Акт button
-- **Edit**: `src/components/admin/DocumentsTab.tsx` — auto-fill act data from client's latest contract
+- **Edit**: `src/components/admin/DocumentsTab.tsx` — expand condition to include "contract"
+- **Edit**: `src/lib/document-templates.ts` — add discount rendering to contract template
 
