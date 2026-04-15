@@ -469,7 +469,9 @@ const ContractsTab = () => {
                         >{c.payment_status || "—"}</Badge>
                       </TableCell>
                       <TableCell>
-                        {c.paid_until ? (
+                        {c.is_one_time ? (
+                          <Badge variant="outline" className="text-xs">Единоразово</Badge>
+                        ) : c.paid_until ? (
                           <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
                             {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
                             {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
