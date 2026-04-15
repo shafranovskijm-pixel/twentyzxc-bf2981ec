@@ -265,6 +265,7 @@ const ContractsTab = () => {
     },
     onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка обновления статуса"); },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
+  });
 
   const downloadFile = async (filePath: string) => {
     const { data, error } = await supabase.storage.from("contracts").download(filePath);
