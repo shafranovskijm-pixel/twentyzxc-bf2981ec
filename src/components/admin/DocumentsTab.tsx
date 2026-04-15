@@ -1030,6 +1030,42 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
+  const loadDocumentForEdit = useCallback((doc: any) => {
+    setDocType(doc.doc_type as DocType);
+    setDocNumber(doc.doc_number);
+    setDocDate(doc.doc_date);
+    setClientName(doc.client_name);
+    setClientInn(doc.client_inn || "");
+    setLinkedContractId(doc.contract_id || "");
+
+    try {
+      const parsed = typeof doc.services === 'string' ? JSON.parse(doc.services) : doc.services;
+      if (Array.isArray(parsed) && parsed.length > 0) setServices(parsed);
+    } catch { /* keep current */ }
+
+    if (doc.metadata) {
+      try {
+        const meta = typeof doc.metadata === 'string' ? JSON.parse(doc.metadata) : doc.metadata;
+        if (meta.contractSubType) setContractSubType(meta.contractSubType as ContractSubType);
+        if (meta.subject !== undefined) setSubject(meta.subject);
+        if (meta.deadline !== undefined) setDeadline(meta.deadline);
+        if (meta.paymentTerms !== undefined) setPaymentTerms(meta.paymentTerms);
+        if (meta.discountAmount !== undefined) setDiscountAmount(meta.discountAmount || 0);
+        if (meta.discountDeadline !== undefined) setDiscountDeadline(meta.discountDeadline || "");
+        if (meta.clientKpp !== undefined) setClientKpp(meta.clientKpp);
+        if (meta.clientOgrn !== undefined) setClientOgrn(meta.clientOgrn);
+        if (meta.clientAddress !== undefined) setClientAddress(meta.clientAddress);
+        if (meta.clientDirectorName !== undefined) setClientDirectorName(meta.clientDirectorName);
+        if (meta.clientDirectorPost !== undefined) setClientDirectorPost(meta.clientDirectorPost);
+      } catch { /* keep current */ }
+    } else {
+      fillClientFromName(doc.client_name);
+    }
+
+    toast.info("Документ загружен в редактор");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [fillClientFromName]);
+
   return (
     <div className="space-y-6 pb-20">
       {/* Sample download buttons */}
