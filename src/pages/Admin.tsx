@@ -196,15 +196,16 @@ const Admin = () => {
 
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
 
-  // Theme initialization
+  // Theme sync
   useEffect(() => {
-    const saved = localStorage.getItem("admin-theme");
-    if (saved === "light") {
-      document.documentElement.classList.remove("dark");
-    } else {
+    if (isDark) {
       document.documentElement.classList.add("dark");
+      localStorage.setItem("admin-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("admin-theme", "light");
     }
-  }, []);
+  }, [isDark]);
 
   useEffect(() => {
     if (settings.seo_keywords !== undefined) setKeywords(settings.seo_keywords.split(",").map((k: string) => k.trim()).filter(Boolean));
