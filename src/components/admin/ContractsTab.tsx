@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Contract {
   id: string;
@@ -29,6 +30,7 @@ interface Contract {
   notes: string | null;
   paid_until: string | null;
   is_archived: boolean;
+  is_one_time: boolean;
   created_at: string;
 }
 
@@ -46,6 +48,7 @@ const ContractsTab = () => {
   const [responsible, setResponsible] = useState("");
   const [notes, setNotes] = useState("");
   const [paidUntil, setPaidUntil] = useState("");
+  const [isOneTime, setIsOneTime] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -93,7 +96,7 @@ const ContractsTab = () => {
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
-    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false);
+    setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false); setIsOneTime(false);
   };
 
   const lookupByValue = async (searchValue: string) => {
@@ -134,6 +137,7 @@ const ContractsTab = () => {
     setAmount(c.amount?.toString() || ""); setAmountExtra(c.amount_extra?.toString() || "");
     setContractType(c.contract_type || ""); setResponsible(c.responsible || "");
     setNotes(c.notes || ""); setPaidUntil(c.paid_until || ""); setFile(null); setShowForm(true);
+    setIsOneTime(c.is_one_time ?? false);
   };
 
   const uploadFile = async (contractId: string): Promise<string | null> => {
@@ -150,6 +154,16 @@ const ContractsTab = () => {
   const saveContract = async () => {
     if (!clientName.trim()) return toast.error("Укажите организацию");
     setSaving(true);
+    // Auto-calculate paid_until from contract_date + 1 year if not one-time and no manual value
+    let computedPaidUntil = paidUntil || null;
+    if (!isOneTime && contractDate && !paidUntil) {
+      const d = new Date(contractDate);
+      d.setFullYear(d.getFullYear() + 1);
+      computedPaidUntil = d.toISOString().split("T")[0];
+    }
+    if (isOneTime) {
+      computedPaidUntil = null;
+    }
     const payload: Record<string, unknown> = {
       client_name: clientName.trim(),
       contract_number: contractNumber.trim() || null,
@@ -160,7 +174,8 @@ const ContractsTab = () => {
       contract_type: contractType.trim() || null,
       responsible: responsible.trim() || null,
       notes: notes.trim() || null,
-      paid_until: paidUntil || null,
+      paid_until: computedPaidUntil,
+      is_one_time: isOneTime,
     };
 
     // Optimistic update for edits
@@ -454,7 +469,9 @@ const ContractsTab = () => {
                         >{c.payment_status || "—"}</Badge>
                       </TableCell>
                       <TableCell>
-                        {c.paid_until ? (
+                        {c.is_one_time ? (
+                          <Badge variant="outline" className="text-xs">Единоразово</Badge>
+                        ) : c.paid_until ? (
                           <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
                             {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
                             {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
@@ -571,8 +588,18 @@ const ContractsTab = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
-              <div className="space-y-2"><Label>Оплачено до</Label><Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} /></div>
+              <div className="space-y-2">
+                <Label>Оплачено до</Label>
+                <Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} disabled={isOneTime} className={isOneTime ? "opacity-50" : ""} />
+                {!isOneTime && contractDate && !paidUntil && (
+                  <p className="text-[11px] text-muted-foreground">Авто: {(() => { const d = new Date(contractDate); d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString("ru-RU"); })()}</p>
+                )}
+              </div>
               <div className="space-y-2"><Label>Тип договора</Label><Input value={contractType} onChange={(e) => setContractType(e.target.value)} placeholder="фрдо, разработка..." /></div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="is-one-time" checked={isOneTime} onCheckedChange={(v) => { setIsOneTime(!!v); if (v) setPaidUntil(""); }} />
+              <Label htmlFor="is-one-time" className="text-sm cursor-pointer">Единоразово (без периода оплаты)</Label>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Сумма</Label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="23000" /></div>
