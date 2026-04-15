@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { History, Eye, Download, Trash2, Loader2, X } from "lucide-react";
+import TablePagination from "./TablePagination";
 import { preloadDocumentImages } from "@/lib/document-images";
 
 const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -51,6 +52,8 @@ const generatePdfBase64 = async (html: string): Promise<string> => {
 const HistoryTab = () => {
   const queryClient = useQueryClient();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const docImagesRef = useRef<{ signature: string; stamp: string } | null>(null);
 
@@ -96,8 +99,7 @@ const HistoryTab = () => {
       const queryPromise = supabase
         .from("generated_documents" as any)
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .order("created_at", { ascending: false });
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
       if (error) throw error;
       return data as any[];
@@ -159,7 +161,7 @@ const HistoryTab = () => {
         <CardContent>
           {/* Mobile cards */}
           <div className="sm:hidden divide-y">
-            {docs.map((doc: any) => {
+            {docs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((doc: any) => {
               const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
               return (
                 <div key={doc.id} className="p-3 space-y-2">
@@ -197,7 +199,7 @@ const HistoryTab = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {docs.map((doc: any) => {
+                {docs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((doc: any) => {
                   const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || { label: doc.doc_type, color: "" };
                   return (
                     <TableRow key={doc.id}>
@@ -227,6 +229,13 @@ const HistoryTab = () => {
               </TableBody>
             </Table>
           </div>
+          <TablePagination
+            currentPage={currentPage}
+            pageSize={pageSize}
+            totalItems={docs.length}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+          />
         </CardContent>
       </Card>
 

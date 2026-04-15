@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare, Eye } from "lucide-react";
+import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -90,6 +91,8 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   const [directorPost, setDirectorPost] = useState("");
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [syncing, setSyncing] = useState(false);
   const [syncingAll, setSyncingAll] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -415,7 +418,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => setSearch(e.target.value)} className="flex-1 min-w-[150px]" />
+        <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[150px]" />
         <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
           {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
           <span className="hidden sm:inline">Импорт из договоров</span>
@@ -614,7 +617,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
             <>
               {/* Mobile cards */}
               <div className="sm:hidden divide-y">
-                {filtered.map((c) => (
+                {filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((c) => (
                   <div key={c.id} className="p-3 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <button
@@ -655,7 +658,7 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filtered.map((c) => (
+                    {filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((c) => (
                       <TableRow key={c.id}>
                         <TableCell>
                           <button
@@ -703,6 +706,13 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                   </TableBody>
                 </Table>
               </div>
+              <TablePagination
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalItems={filtered.length}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+              />
             </>
           )}
         </CardContent>
