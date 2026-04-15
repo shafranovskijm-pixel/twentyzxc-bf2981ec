@@ -78,6 +78,8 @@ const App = () => (
                 <Route path="/playground" element={<Playground />} />
                 <Route path="/p/:slug" element={<PlaygroundView />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/org" element={<OrgPanel />} />
+                <Route path="/shop/:slug" element={<OrgLanding />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
