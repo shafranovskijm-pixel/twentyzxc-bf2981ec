@@ -412,8 +412,8 @@ const Admin = () => {
               alt=""
               className="absolute top-1/4 -right-4 w-[30%] h-[40%] object-cover"
               style={{
-                opacity: activeTheme.id === 'newyork' ? 0.28 : 0.10,
-                filter: activeTheme.id === 'newyork' ? 'blur(8px) saturate(1.4)' : 'blur(30px) saturate(1.2)',
+                opacity: activeTheme.id === 'newyork' ? 0.38 : 0.10,
+                filter: activeTheme.id === 'newyork' ? 'blur(2px) saturate(1.5)' : 'blur(30px) saturate(1.2)',
                 maskImage: 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
                 WebkitMaskImage: 'radial-gradient(ellipse at 100% 50%, black 10%, transparent 65%)',
                 objectPosition: activeTheme.bannerPosition || 'center',
