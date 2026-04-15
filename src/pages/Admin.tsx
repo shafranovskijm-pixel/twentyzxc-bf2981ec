@@ -415,43 +415,62 @@ const Admin = () => {
                         <Card>
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />Оформление</CardTitle>
-                            <CardDescription>Тема, фон и баннер</CardDescription>
+                            <CardDescription>Выберите тему — она изменит фон, баннер, акценты и анимации</CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-6">
+                            {/* Light/Dark toggle */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Тема</Label>
+                              <Label className="flex items-center gap-2">{isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}Режим</Label>
                               <div className="flex items-center gap-3">
                                 <Button variant={isDark ? "outline" : "default"} size="sm" onClick={() => setIsDark(false)}><Sun className="h-4 w-4 mr-1.5" />Светлая</Button>
                                 <Button variant={isDark ? "default" : "outline"} size="sm" onClick={() => setIsDark(true)}><Moon className="h-4 w-4 mr-1.5" />Тёмная</Button>
                               </div>
                             </div>
+
+                            {/* Theme grid */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Palette className="h-4 w-4" />Фон панели</Label>
-                              <div className="grid grid-cols-4 gap-2">
-                                {BG_PRESETS.map(p => (
+                              <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Готовые темы</Label>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                {/* Reset to default */}
+                                <button
+                                  onClick={() => handleThemeChange(null)}
+                                  className={cn(
+                                    "relative h-24 rounded-xl border-2 overflow-hidden transition-all group/theme",
+                                    !activeTheme ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
+                                  )}
+                                >
+                                  <div className="absolute inset-0 bg-gradient-to-br from-background via-muted/30 to-background" />
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                                    {!activeTheme && <Check className="h-5 w-5 text-primary" />}
+                                    <span className="text-xs font-medium text-foreground">По умолчанию</span>
+                                  </div>
+                                </button>
+                                {adminThemes.map(theme => (
                                   <button
-                                    key={p.id}
-                                    onClick={() => handleBgChange(p.id)}
+                                    key={theme.id}
+                                    onClick={() => handleThemeChange(theme)}
                                     className={cn(
-                                      "h-16 rounded-lg border-2 transition-all flex items-end p-1.5",
-                                      bgPreset === p.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50",
-                                      p.id === "default" && "bg-background",
-                                      p.id === "dark-grid" && "bg-[#0f0f14]",
-                                      p.id === "warm" && "bg-gradient-to-br from-[#1a1510] to-[#15171e]",
-                                      p.id === "ocean" && "bg-gradient-to-br from-[#0f1923] to-[#15171e]",
+                                      "relative h-24 rounded-xl border-2 overflow-hidden transition-all group/theme",
+                                      activeTheme?.id === theme.id ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
                                     )}
                                   >
-                                    <span className="text-[10px] text-muted-foreground">{p.label}</span>
+                                    <img src={theme.bannerUrl} alt={theme.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+                                    <div className="absolute inset-0 bg-black/40 group-hover/theme:bg-black/50 transition-colors flex flex-col items-center justify-center gap-1">
+                                      {activeTheme?.id === theme.id && <Check className="h-5 w-5 text-white" />}
+                                      <span className="text-xs font-medium text-white">{theme.emoji} {theme.label}</span>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
                             </div>
+
+                            {/* Custom banner upload */}
                             <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Баннер</Label>
+                              <Label className="flex items-center gap-2"><Camera className="h-4 w-4" />Свой баннер</Label>
                               <div className="flex gap-2">
                                 <Button variant="outline" size="sm" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                                   {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Camera className="h-4 w-4 mr-1.5" />}
-                                  Загрузить баннер
+                                  Загрузить
                                 </Button>
                                 {bannerUrl && (
                                   <Button variant="outline" size="sm" onClick={resetBanner}>
@@ -461,32 +480,6 @@ const Admin = () => {
                               </div>
                               {bannerUrl && <img src={bannerUrl} alt="Текущий баннер" className="h-20 w-full object-cover rounded-md border" />}
                               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
-                            </div>
-                            <div className="space-y-3">
-                              <Label className="flex items-center gap-2"><Sparkles className="h-4 w-4" />Готовые баннеры</Label>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                {[
-                                  { id: "freshness", label: "🍉 Свежесть", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-freshness.jpg` },
-                                  { id: "office", label: "🏢 Офис", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-office.jpg` },
-                                  { id: "newyork", label: "🌆 Нью-Йорк", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-newyork.jpg` },
-                                  { id: "sunset", label: "🌅 Закат", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-sunset.jpg` },
-                                  { id: "minimalism", label: "🌿 Минимализм", url: `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/admin-assets/banners/banner-minimalism.jpg` },
-                                ].map(b => (
-                                  <button
-                                    key={b.id}
-                                    onClick={() => { setBannerUrl(b.url); localStorage.setItem("admin-banner-url", b.url); toast.success(`Баннер «${b.label}» установлен`); }}
-                                    className={cn(
-                                      "relative h-20 rounded-lg border-2 overflow-hidden transition-all group/banner",
-                                      bannerUrl === b.url ? "border-primary ring-2 ring-primary/30" : "border-border hover:border-primary/50"
-                                    )}
-                                  >
-                                    <img src={b.url} alt={b.label} className="absolute inset-0 w-full h-full object-cover" loading="lazy" />
-                                    <div className="absolute inset-0 bg-black/40 flex items-end p-1.5">
-                                      <span className="text-[10px] text-white font-medium">{b.label}</span>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
                             </div>
                           </CardContent>
                         </Card>
