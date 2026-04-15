@@ -31,7 +31,7 @@ import HistoryTab from "@/components/admin/HistoryTab";
 import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
-import FloatingAIChat from "@/components/admin/FloatingAIChat";
+import InlineAIChat from "@/components/admin/InlineAIChat";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Settings, Building2, History, GraduationCap, FileCheck, Sun, Moon } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -226,6 +226,7 @@ const Admin = () => {
     history: "История документов",
     nmo: "НМО Портал",
     frdo: "ФИС ФРДО",
+    "ai-chat": "AI Ассистент",
   };
 
   const secondaryItems = [
@@ -429,13 +430,14 @@ const Admin = () => {
               {activeSection === "history" && <HistoryTab />}
               {activeSection === "nmo" && <NmoTab />}
               {activeSection === "frdo" && <FrdoTab />}
+              {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>
             </main>
             <Footer />
           </div>
         </div>
-      <FloatingAIChat />
+      
     </>
   );
 };
