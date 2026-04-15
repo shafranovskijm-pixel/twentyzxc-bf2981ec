@@ -99,8 +99,7 @@ const HistoryTab = () => {
       const queryPromise = supabase
         .from("generated_documents" as any)
         .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50);
+        .order("created_at", { ascending: false });
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
       if (error) throw error;
       return data as any[];
