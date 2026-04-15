@@ -16,7 +16,7 @@ import Footer from "@/components/Footer";
 // dropdown removed — settings moved to dedicated sections
 import ClientsTab from "@/components/admin/ClientsTab";
 import ContractsTab from "@/components/admin/ContractsTab";
-import FilesTab from "@/components/admin/FilesTab";
+import OrganizationsTab from "@/components/admin/OrganizationsTab";
 import PlannerTab from "@/components/admin/PlannerTab";
 import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
@@ -282,7 +282,7 @@ const Admin = () => {
     promotions: "Акции",
     clients: "Клиенты",
     contracts: "Договоры",
-    files: "Файлы",
+    organizations: "Организации",
     planner: "Планер",
     documents: "Конструктор документов",
     requisites: "Реквизиты компании",
@@ -636,7 +636,7 @@ const Admin = () => {
                 setActiveSection(section);
               }} />}
               {activeSection === "contracts" && <ContractsTab />}
-              {activeSection === "files" && <FilesTab />}
+              {activeSection === "organizations" && <OrganizationsTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
                 setDocInitialContractId(task.contract_id || "");
                 setDocInitialDocType(docType || "");
