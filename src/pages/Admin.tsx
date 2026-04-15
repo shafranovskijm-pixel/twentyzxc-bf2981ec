@@ -318,7 +318,7 @@ const Admin = () => {
         <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
-          <header className="h-14 flex items-center border-b border-border px-4 gap-3 sticky top-0 bg-background/95 backdrop-blur-sm z-20">
+          <header className={cn("h-14 flex items-center border-b px-4 gap-3 sticky top-0 backdrop-blur-sm z-20 transition-colors duration-500", activeTheme?.headerClass || "border-border bg-background/95")}>
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               <span className="text-xl font-bold text-primary select-none">Σ</span>
               <div className="min-w-0">
