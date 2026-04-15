@@ -34,6 +34,8 @@ export interface AdminTheme {
   atmosphereBlur?: string;
   /** Override opacity for bottom-right atmospheric fragment */
   atmosphereOpacity?: number;
+  /** Show a sharp (unblurred) layer in the bottom-right corner */
+  atmosphereSharp?: boolean;
 }
 
 export const adminThemes: AdminTheme[] = [
@@ -70,6 +72,7 @@ export const adminThemes: AdminTheme[] = [
     previewPosition: "center 40%",
     atmosphereBlur: "8px",
     atmosphereOpacity: 0.25,
+    atmosphereSharp: true,
   },
   {
     id: "newyork",
@@ -119,10 +122,10 @@ export const adminThemes: AdminTheme[] = [
     label: "Бирюза",
     emoji: "💎",
     bannerUrl: bannerTurquoise,
-    bgClass: "bg-gradient-to-b from-[#1a4a50] via-[#0a2028] to-[#050e12]",
-    headerClass: "bg-[#0e2a30]/90 border-cyan-500/25",
+    bgClass: "bg-gradient-to-b from-[#c0efe8] via-[#1a4a50] via-[#0a2028] to-[#050e12]",
+    headerClass: "bg-[#b8e8e0]/85 border-cyan-300/30 backdrop-blur-md",
     cardClass: "border-cyan-500/20 bg-[#0a1c24]/80",
-    sidebarClass: "bg-[#081518]/95 border-cyan-500/20",
+    sidebarClass: "bg-[#a8ddd4]/90 border-cyan-300/25 backdrop-blur-md",
     accent: "170 80% 50%",
     accentForeground: "0 0% 100%",
     animation: "glow",
