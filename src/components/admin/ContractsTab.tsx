@@ -333,7 +333,11 @@ const ContractsTab = () => {
                     <button onClick={() => startEdit(c)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
                       {c.client_name}
                     </button>
-                    <Badge variant={statusColor(c.payment_status)} className="shrink-0 text-xs">{c.payment_status || "—"}</Badge>
+                    <Badge
+                      variant={statusColor(c.payment_status)}
+                      className="shrink-0 text-xs cursor-pointer hover:opacity-80 transition-opacity select-none"
+                      onClick={(e) => { e.stopPropagation(); togglePaymentStatus.mutate({ id: c.id, current: c.payment_status }); }}
+                    >{c.payment_status || "—"}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     {c.contract_number && <span className="font-mono">№{c.contract_number}</span>}
@@ -408,7 +412,13 @@ const ContractsTab = () => {
                       </TableCell>
                       <TableCell>{c.contract_number || "—"}</TableCell>
                       <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
-                      <TableCell><Badge variant={statusColor(c.payment_status)}>{c.payment_status || "—"}</Badge></TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={statusColor(c.payment_status)}
+                          className="cursor-pointer hover:opacity-80 transition-opacity select-none"
+                          onClick={() => togglePaymentStatus.mutate({ id: c.id, current: c.payment_status })}
+                        >{c.payment_status || "—"}</Badge>
+                      </TableCell>
                       <TableCell>
                         {c.paid_until ? (
                           <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
