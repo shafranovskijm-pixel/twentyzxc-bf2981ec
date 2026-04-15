@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -485,6 +485,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
         total_amount: total,
         services: JSON.stringify(filteredServices),
         html_content: html,
+        metadata: JSON.stringify({
+          contractSubType, subject, deadline, paymentTerms,
+          discountAmount, discountDeadline,
+          clientKpp, clientOgrn, clientAddress,
+          clientDirectorName, clientDirectorPost,
+        }),
       });
       if (insertError) {
         console.error("[DOC] Step 1 FAILED:", insertError);
@@ -1020,6 +1026,42 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     setTelegramSending(false);
   };
 
+  const loadDocumentForEdit = useCallback((doc: any) => {
+    setDocType(doc.doc_type as DocType);
+    setDocNumber(doc.doc_number);
+    setDocDate(doc.doc_date);
+    setClientName(doc.client_name);
+    setClientInn(doc.client_inn || "");
+    setLinkedContractId(doc.contract_id || "");
+
+    try {
+      const parsed = typeof doc.services === 'string' ? JSON.parse(doc.services) : doc.services;
+      if (Array.isArray(parsed) && parsed.length > 0) setServices(parsed);
+    } catch { /* keep current */ }
+
+    if (doc.metadata) {
+      try {
+        const meta = typeof doc.metadata === 'string' ? JSON.parse(doc.metadata) : doc.metadata;
+        if (meta.contractSubType) setContractSubType(meta.contractSubType as ContractSubType);
+        if (meta.subject !== undefined) setSubject(meta.subject);
+        if (meta.deadline !== undefined) setDeadline(meta.deadline);
+        if (meta.paymentTerms !== undefined) setPaymentTerms(meta.paymentTerms);
+        if (meta.discountAmount !== undefined) setDiscountAmount(meta.discountAmount || 0);
+        if (meta.discountDeadline !== undefined) setDiscountDeadline(meta.discountDeadline || "");
+        if (meta.clientKpp !== undefined) setClientKpp(meta.clientKpp);
+        if (meta.clientOgrn !== undefined) setClientOgrn(meta.clientOgrn);
+        if (meta.clientAddress !== undefined) setClientAddress(meta.clientAddress);
+        if (meta.clientDirectorName !== undefined) setClientDirectorName(meta.clientDirectorName);
+        if (meta.clientDirectorPost !== undefined) setClientDirectorPost(meta.clientDirectorPost);
+      } catch { /* keep current */ }
+    } else {
+      fillClientFromName(doc.client_name);
+    }
+
+    toast.info("Документ загружен в редактор");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [fillClientFromName]);
+
   if (settingsLoading || clientsLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
@@ -1441,7 +1483,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       </Dialog>
 
       {/* Recent Documents History */}
-      <RecentDocuments />
+      <RecentDocuments onEdit={loadDocumentForEdit} />
     </div>
   );
 };
@@ -1453,7 +1495,7 @@ const DOC_TYPE_LABELS_HIST: Record<string, { label: string; color: string }> = {
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 };
 
-const RecentDocuments = () => {
+const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
   const queryClient = useQueryClient();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -1560,6 +1602,7 @@ const RecentDocuments = () => {
                       <span className="font-mono text-xs">№{doc.doc_number}</span>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
+                      {onEdit && <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-3.5 h-3.5" /></Button>}
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))}><Eye className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => {
                         const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;
@@ -1586,7 +1629,7 @@ const RecentDocuments = () => {
                   <TableHead>Дата</TableHead>
                   <TableHead>Клиент</TableHead>
                   <TableHead>Сумма</TableHead>
-                  <TableHead className="w-28"></TableHead>
+                  <TableHead className="w-36"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1601,6 +1644,7 @@ const RecentDocuments = () => {
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          {onEdit && <Button variant="ghost" size="icon" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>}
                           <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))} title="Открыть"><Eye className="w-4 h-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => {
                             const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;
