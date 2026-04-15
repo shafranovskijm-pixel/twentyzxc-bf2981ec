@@ -23,7 +23,7 @@ export interface AdminTheme {
   /** HSL accent foreground */
   accentForeground: string;
   /** Animation id */
-  animation: "leaves" | "fade" | "lights" | "gradient" | "glow" | "particles" | "none";
+  animation: "leaves" | "fade" | "lights" | "gradient" | "glow" | "particles" | "sand" | "none";
   /** Force light mode regardless of user preference */
   forceLight?: boolean;
   /** CSS object-position for the main header banner */
@@ -99,9 +99,10 @@ export const adminThemes: AdminTheme[] = [
     sidebarClass: "bg-white/95 dark:bg-[#1a130e]/95 border-orange-200/40 dark:border-orange-900/30",
     accent: "25 95% 53%",
     accentForeground: "0 0% 100%",
-    animation: "gradient",
+    animation: "sand",
     bannerPosition: "center 30%",
     previewPosition: "center 40%",
+    atmosphereSharp: true,
   },
   {
     id: "minimalism",
