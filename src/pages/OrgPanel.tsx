@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Helmet } from "react-helmet-async";
+import { useSearchParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOrgAuth } from "@/hooks/use-org-auth";
 import { AdminLoginDialog } from "@/components/portfolio/AdminLoginDialog";
@@ -21,19 +22,23 @@ import { cn } from "@/lib/utils";
 
 const OrgPanel = () => {
   const { user, isOrg, isLoading: authLoading, signIn, signOut } = useOrgAuth();
+  const [searchParams] = useSearchParams();
+  const overrideOrgId = searchParams.get("id");
   const [showLogin, setShowLogin] = useState(false);
   const [activeSection, setActiveSection] = useState("contracts");
   const [isDark, setIsDark] = useState(() => localStorage.getItem("org-theme") !== "light");
   const queryClient = useQueryClient();
 
   const { data: organization } = useQuery({
-    queryKey: ["my-organization", user?.id],
+    queryKey: ["my-organization", user?.id, overrideOrgId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("user_id", user!.id)
-        .maybeSingle();
+      let query = supabase.from("organizations").select("*");
+      if (overrideOrgId) {
+        query = query.eq("id", overrideOrgId);
+      } else {
+        query = query.eq("user_id", user!.id);
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data;
     },

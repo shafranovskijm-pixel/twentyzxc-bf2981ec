@@ -183,6 +183,9 @@ const OrganizationsTab = () => {
                       {new Date(org.created_at).toLocaleDateString("ru-RU")}
                     </TableCell>
                     <TableCell className="text-right sticky right-0 bg-card">
+                      <Button variant="ghost" size="icon" onClick={() => window.open(`/org?id=${org.id}`, '_blank')} title="Войти как организация">
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => deleteOrg.mutate(org.id)} className="text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>

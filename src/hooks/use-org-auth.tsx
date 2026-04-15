@@ -39,14 +39,26 @@ export const useOrgAuth = () => {
       const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
         setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 5000)
       );
-      const query = supabase.rpc("has_role", {
+
+      // Check both organization and admin roles in parallel
+      const orgQuery = supabase.rpc("has_role", {
         _user_id: userId,
         _role: "organization" as any,
       }).then((res) => res);
 
-      const result = await Promise.race([query, timeout]);
-      if (result.error) return false;
-      return !!result.data;
+      const adminQuery = supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin" as any,
+      }).then((res) => res);
+
+      const [orgResult, adminResult] = await Promise.race([
+        Promise.all([orgQuery, adminQuery]),
+        timeout.then(t => [t, t] as const),
+      ]);
+
+      const isOrgUser = !orgResult.error && !!orgResult.data;
+      const isAdmin = !adminResult.error && !!adminResult.data;
+      return isOrgUser || isAdmin;
     } catch {
       return false;
     }
