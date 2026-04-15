@@ -1629,7 +1629,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                   <TableHead>Дата</TableHead>
                   <TableHead>Клиент</TableHead>
                   <TableHead>Сумма</TableHead>
-                  <TableHead className="w-28"></TableHead>
+                  <TableHead className="w-36"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
