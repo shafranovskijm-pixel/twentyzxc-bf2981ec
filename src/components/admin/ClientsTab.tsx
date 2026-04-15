@@ -478,6 +478,9 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
                     <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "invoice" }); }} title="Сделать счёт">
                       <ClipboardList className="w-4 h-4 mr-1" /> Счёт
                     </Button>
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "act" }); }} title="Сделать акт">
+                      <CheckSquare className="w-4 h-4 mr-1" /> Акт
+                    </Button>
                     {telegram && (
                       <Button variant="outline" size="sm" asChild>
                         <a href={`https://t.me/${telegram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer">
