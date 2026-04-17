@@ -357,14 +357,50 @@
 
 .warm-card-glow {
   position: relative;
-  transition: box-shadow 0.5s ease, transform 0.4s ease;
+  transition: box-shadow 0.5s ease, transform 0.4s ease, border-color 0.4s ease;
 }
 
 .warm-card-glow:hover {
+  transform: translateY(-4px);
   box-shadow:
-    0 10px 40px -10px hsl(20 85% 55% / 0.25),
-    0 0 60px -20px hsl(14 85% 65% / 0.2),
-    0 0 80px -30px hsl(var(--primary) / 0.15);
+    0 18px 50px -12px hsl(20 85% 55% / 0.3),
+    0 0 80px -20px hsl(14 85% 65% / 0.22),
+    0 0 100px -30px hsl(var(--primary) / 0.18);
+}
+
+/* Tropical card — soft warm card with rounded corners */
+.tropical-card {
+  border-radius: 1.5rem;
+  background: linear-gradient(135deg,
+    hsl(20 40% 12% / 0.55) 0%,
+    hsl(220 8% 14% / 0.65) 50%,
+    hsl(14 35% 13% / 0.55) 100%);
+  border: 1px solid hsl(45 65% 52% / 0.18);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 hsl(45 70% 70% / 0.06),
+    0 4px 24px hsl(0 0% 0% / 0.25);
+  transition: all 0.4s ease;
+}
+
+.tropical-card:hover {
+  border-color: hsl(45 70% 60% / 0.4);
+  background: linear-gradient(135deg,
+    hsl(20 50% 14% / 0.65) 0%,
+    hsl(220 8% 16% / 0.7) 50%,
+    hsl(14 45% 15% / 0.65) 100%);
+}
+
+/* Tropical pill button base */
+.tropical-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  padding: 0.625rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 @keyframes palm-sway {
