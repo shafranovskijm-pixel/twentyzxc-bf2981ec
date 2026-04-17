@@ -552,7 +552,11 @@ const Admin = () => {
           </header>
 
           {/* Decorative banner */}
-          <div className="h-32 relative overflow-hidden shrink-0 group">
+          <div
+            className="h-24 sm:h-32 relative overflow-hidden shrink-0 group select-none"
+            onTouchStart={handleBannerTouchStart}
+            onTouchEnd={handleBannerTouchEnd}
+          >
             {bannerUrl ? (
               bannerFit === 'tile' ? (
                 <div className="absolute inset-0" style={{ backgroundImage: `url(${bannerUrl})`, backgroundRepeat: 'repeat', backgroundSize: 'auto' }} />
@@ -568,7 +572,36 @@ const Admin = () => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
               </>
             )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+
+            {/* Theme cycle arrows */}
+            <button
+              type="button"
+              aria-label="Предыдущая тема"
+              onClick={() => cycleTheme(-1)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Следующая тема"
+              onClick={() => cycleTheme(1)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+
+            {/* Theme name pill (transient feedback) */}
+            <div
+              className={cn(
+                "absolute bottom-2 left-1/2 -translate-x-1/2 z-10 bg-black/55 backdrop-blur text-white text-xs px-2.5 py-1 rounded-full pointer-events-none transition-opacity duration-300",
+                themePillVisible ? "opacity-100" : "opacity-0"
+              )}
+            >
+              {activeTheme ? `${activeTheme.emoji} ${activeTheme.label}` : "✨ По умолчанию"}
+            </div>
+
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 z-20">
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                 {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                 Изменить
