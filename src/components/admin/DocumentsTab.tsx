@@ -936,8 +936,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       // 2b. Upload invoice PDF if exists
       let invoiceStoragePath: string | null = null;
-      const invoiceFilename = `Счёт_${docNumber}_${docDate}.pdf`;
-      const invoiceStorageName = `Schet_${docNumber}_${docDate}.pdf`;
+      const invoiceFilename = `Счёт_${safeNum}_${docDate}.pdf`;
+      const invoiceStorageName = `Schet_${safeNum}_${docDate}.pdf`;
       if (invoicePdfBase64) {
         const invoiceBlob = b64ToBlob(invoicePdfBase64);
         invoiceStoragePath = linkedContractId
