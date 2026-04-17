@@ -1064,7 +1064,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       toast.info("Генерация PDF...");
       const pdfBase64 = await generatePdfBase64(previewHtml);
-      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+      const tgSafeNum = safeFilename(docNumber);
+      const pdfFilename = `${DOC_LABELS[docType]}_${tgSafeNum}_${docDate}.pdf`;
 
       const documents: { pdfBase64: string; filename: string }[] = [
         { pdfBase64, filename: pdfFilename },
@@ -1076,7 +1077,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           const invoiceBase64 = await generatePdfBase64(previewInvoiceHtml);
           documents.push({
             pdfBase64: invoiceBase64,
-            filename: `Счёт_${docNumber}_${docDate}.pdf`,
+            filename: `Счёт_${tgSafeNum}_${docDate}.pdf`,
           });
         } catch (e) {
           console.error("Invoice PDF failed for Telegram:", e);
