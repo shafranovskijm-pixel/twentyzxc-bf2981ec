@@ -378,8 +378,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
   };
 
-  const generate = async () => {
-    console.log("[DOC] generate called", { docNumber, clientName, services });
+  const generate = async (typeOverride?: DocType) => {
+    const effectiveType: DocType = typeOverride || docType;
+    console.log("[DOC] generate called", { effectiveType, docNumber, clientName, services });
     if (!docNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
     if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
