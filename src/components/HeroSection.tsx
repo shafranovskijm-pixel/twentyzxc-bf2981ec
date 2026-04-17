@@ -35,7 +35,7 @@ const HeroSection = () => {
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden md:block absolute top-20 left-4 lg:left-12 w-44 h-44 lg:w-52 lg:h-52 opacity-35 -rotate-[35deg] palm-sway pointer-events-none select-none z-[5]"
+        className="hidden md:block absolute top-2 left-1/3 lg:left-[38%] w-32 h-32 lg:w-40 lg:h-40 opacity-30 -rotate-[55deg] palm-sway pointer-events-none select-none z-[5]"
       />
       <img
         src={palmLeaf}
