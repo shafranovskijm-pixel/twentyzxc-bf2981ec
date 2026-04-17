@@ -1,9 +1,18 @@
-import { Mail, Phone, Send, Diamond, Copy, ExternalLink, Lock } from "lucide-react";
+import { Mail, Phone, Send, Copy, ExternalLink, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAchievements } from "@/contexts/AchievementsContext";
+import heroSunset from "@/assets/hero-tropical-sunset.jpg";
+import palmLeaf from "@/assets/palm-leaf.png";
+
+// Tiny palm leaf SVG for divider accent
+const PalmAccent = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 2c-1 3-3 5-6 6 2 1 4 3 5 5-1-1-3-2-5-2 1 2 2 5 2 8 1-3 2-5 4-7 0 2-1 4-2 5 2-1 4-3 5-5-1 0-2 0-3 1 1-2 2-4 2-7-2 1-3 3-4 5 0-3 1-6 2-9z" />
+  </svg>
+);
 
 const Footer = () => {
   const { toast } = useToast();

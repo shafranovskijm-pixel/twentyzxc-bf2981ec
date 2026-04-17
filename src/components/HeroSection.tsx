@@ -27,36 +27,22 @@ const HeroSection = () => {
         }} />
       </div>
 
-      {/* Palm leaf decorations — desktop only */}
+      {/* Palm leaf decorations — desktop only.
+          Layout per spec: top-left palm sits between 24ZXC logo and edu menu (around top: 80px, smaller).
+          Top-right and bottom-left removed. Bottom-right kept. */}
       <img
         src={palmLeaf}
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden md:block absolute -top-10 -left-20 w-72 h-72 opacity-40 -rotate-45 palm-sway pointer-events-none select-none"
+        className="hidden md:block absolute top-20 left-4 lg:left-12 w-44 h-44 lg:w-52 lg:h-52 opacity-35 -rotate-[35deg] palm-sway pointer-events-none select-none z-[5]"
       />
       <img
         src={palmLeaf}
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden md:block absolute -top-16 -right-24 w-80 h-80 opacity-40 rotate-[200deg] scale-x-[-1] palm-sway pointer-events-none select-none"
-        style={{ animationDelay: "1.5s" }}
-      />
-      <img
-        src={palmLeaf}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        className="hidden lg:block absolute bottom-10 -left-16 w-56 h-56 opacity-25 rotate-[20deg] palm-sway pointer-events-none select-none"
-        style={{ animationDelay: "3s" }}
-      />
-      <img
-        src={palmLeaf}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        className="hidden lg:block absolute bottom-8 -right-12 w-52 h-52 opacity-25 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none"
+        className="hidden lg:block absolute bottom-8 -right-12 w-60 h-60 opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none"
         style={{ animationDelay: "4.5s" }}
       />
 
