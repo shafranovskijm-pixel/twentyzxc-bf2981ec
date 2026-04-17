@@ -1359,10 +1359,27 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       </Card>
 
       {/* Generate */}
-      <Button onClick={generate} size="lg" className="w-full">
+      <Button onClick={() => generate()} size="lg" className="w-full">
         <Printer className="w-5 h-5 mr-2" />
         Сформировать {DOC_LABELS[docType]}
       </Button>
+
+      {(docType !== "invoice" || docType !== "act") && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {docType !== "invoice" && (
+            <Button onClick={() => generate("invoice")} variant="outline" size="default" className="w-full">
+              <Printer className="w-4 h-4 mr-2" />
+              Сформировать Счёт
+            </Button>
+          )}
+          {docType !== "act" && (
+            <Button onClick={() => generate("act")} variant="outline" size="default" className="w-full">
+              <Printer className="w-4 h-4 mr-2" />
+              Сформировать Акт
+            </Button>
+          )}
+        </div>
+      )}
 
 
       {/* Document Preview Modal */}
