@@ -100,24 +100,41 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  // Auto-generate doc number from last document
+  // Year derived from docDate — used for auto-numbering and reset every Jan 1
+  const docYear = useMemo(() => {
+    const y = new Date(docDate).getFullYear();
+    return isNaN(y) ? new Date().getFullYear() : y;
+  }, [docDate]);
+
+  // Replace "/" with "-" so doc_number can be safely used in filenames / storage paths
+  const safeFilename = useCallback((num: string) => num.replace(/\//g, "-"), []);
+
+  // Auto-generate next doc number for current year. Format: "NNN/YYYY".
+  // Numeration resets to 001 each new year because we filter by current year.
   const { data: lastDocNumbers } = useQuery({
-    queryKey: ["last-doc-numbers"],
+    queryKey: ["last-doc-numbers", docYear],
     queryFn: async () => {
       const result: Record<string, string> = {};
+      const yearSuffix = `/${docYear}`;
       for (const type of ["contract", "invoice", "act"] as DocType[]) {
+        // Fetch all current-year doc numbers for this type, then compute max prefix
         const { data } = await supabase
           .from("generated_documents" as any)
           .select("doc_number")
           .eq("doc_type", type)
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .like("doc_number", `%${yearSuffix}`);
+        let maxNum = 0;
         if (data && data.length > 0) {
-          const lastNum = parseInt((data[0] as any).doc_number, 10);
-          result[type] = String(isNaN(lastNum) ? 1 : lastNum + 1).padStart(3, "0");
-        } else {
-          result[type] = "001";
+          for (const row of data as any[]) {
+            const match = String(row.doc_number).match(/^(\d+)\/(\d{4})$/);
+            if (match && match[2] === String(docYear)) {
+              const n = parseInt(match[1], 10);
+              if (!isNaN(n) && n > maxNum) maxNum = n;
+            }
+          }
         }
+        const next = String(maxNum + 1).padStart(3, "0");
+        result[type] = `${next}/${docYear}`;
       }
       return result;
     },
@@ -125,9 +142,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   useEffect(() => {
     if (lastDocNumbers && !docNumber) {
-      setDocNumber(lastDocNumbers[docType] || "001");
+      setDocNumber(lastDocNumbers[docType] || `001/${docYear}`);
     }
-  }, [lastDocNumbers, docType]);
+  }, [lastDocNumbers, docType, docYear, docNumber]);
 
   // client
   const [clientSearch, setClientSearch] = useState("");
