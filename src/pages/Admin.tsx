@@ -59,6 +59,7 @@ const Admin = () => {
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
   const [activeSection, setActiveSection] = useState("contracts");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
@@ -519,9 +520,31 @@ const Admin = () => {
         <div className="hidden md:block">
           <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         </div>
+
+        {/* Mobile sidebar inside Sheet */}
+        <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+          <SheetContent side="left" className="p-0 w-16 border-r-0 [&>button]:hidden">
+            <AdminSidebar
+              activeSection={activeSection}
+              onSectionChange={(s) => { setActiveSection(s); setMobileSidebarOpen(false); }}
+              onSignOut={() => { signOut(); setMobileSidebarOpen(false); }}
+              themeClass={activeTheme?.sidebarClass}
+              inSheet
+            />
+          </SheetContent>
+        </Sheet>
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
-          <header className={cn("h-14 flex items-center border-b px-4 gap-3 sticky top-0 backdrop-blur-sm z-20 transition-colors duration-500", activeTheme?.headerClass || "border-border bg-background/95")}>
+          <header className={cn("h-14 flex items-center border-b px-3 sm:px-4 gap-2 sm:gap-3 sticky top-0 backdrop-blur-sm z-20 transition-colors duration-500", activeTheme?.headerClass || "border-border bg-background/95")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 md:hidden -ml-1 hover:text-primary hover:bg-primary/10"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Открыть меню"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               <span className="text-xl font-bold text-primary select-none">Σ</span>
               <div className="min-w-0">
