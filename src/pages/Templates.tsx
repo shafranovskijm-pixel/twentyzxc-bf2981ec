@@ -98,8 +98,8 @@ const Templates = () => {
   return (
     <>
       <Helmet>
-        <title>Шаблоны сайтов — Готовые решения | 24ZXC</title>
-        <meta name="description" content="Каталог готовых шаблонов сайтов от 24ZXC. Лендинги, корпоративные сайты, интернет-магазины и веб-приложения." />
+        <title>Веб-разработка — Готовые решения и шаблоны | 24ZXC</title>
+        <meta name="description" content="Веб-разработка под ключ: лендинги, корпоративные сайты, интернет-магазины и веб-приложения. Готовые премиум-шаблоны от 24ZXC." />
         <link rel="canonical" href="https://24zxc.ru/templates" />
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
@@ -241,10 +241,10 @@ const Templates = () => {
               <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
             </div>
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              Каталог <span className="gradient-gold-text">шаблонов</span>
+              <span className="gradient-gold-text">Веб-разработка</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto">
-              Премиальные шаблоны сайтов класса люкс. Современный дизайн, продуманная UX и безупречное качество кода
+              Премиальные сайты класса люкс под ключ. Готовые шаблоны, индивидуальный дизайн, продуманный UX и безупречный код
             </p>
           </AnimatedSection>
         </div>

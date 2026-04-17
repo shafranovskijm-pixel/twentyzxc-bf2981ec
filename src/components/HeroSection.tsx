@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles, GraduationCap } from "lucide-react";
+import { ArrowRight, Sparkles, GraduationCap, Code2, Megaphone, AppWindow } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import heroSunset from "@/assets/hero-tropical-sunset.jpg";
 import palmLeaf from "@/assets/palm-leaf.png";
@@ -115,12 +115,12 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Bottom services preview */}
-        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '0.7s' }}>
-          <ServiceStat number="01" label="Веб-разработка" />
-          <ServiceStat number="02" label="Реклама" />
-          <ServiceStat number="03" label="Веб-приложения" />
-          <ServiceStat number="04" label="Образование" />
+        {/* Bottom services pill navigation */}
+        <div className="mt-16 flex flex-wrap justify-center gap-3 max-w-3xl mx-auto animate-fade-in" style={{ animationDelay: '0.7s' }}>
+          <ServicePill icon={Code2} label="Веб-разработка" to="/templates" />
+          <ServicePill icon={Megaphone} label="Реклама" to="/#advertising" />
+          <ServicePill icon={AppWindow} label="Веб-приложения" to="/services/webapp" />
+          <ServicePill icon={GraduationCap} label="Образование" to="/services/nmo" />
         </div>
       </div>
 
@@ -135,16 +135,23 @@ const HeroSection = () => {
   );
 };
 
-const ServiceStat = ({ number, label }: { number: string; label: string }) => (
-  <div className="text-center group cursor-pointer">
-    <div className="text-3xl font-display font-bold text-primary/40 group-hover:text-primary transition-colors mb-2">
-      {number}
-    </div>
-    <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors tracking-wide">
-      {label}
-    </div>
-    <div className="h-px w-0 group-hover:w-full bg-gradient-to-r from-primary/60 via-primary/80 to-primary/60 mx-auto mt-3 transition-all duration-500" />
-  </div>
+const ServicePill = ({
+  icon: Icon,
+  label,
+  to,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  to: string;
+}) => (
+  <Link
+    to={to}
+    className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-orange-500/10 backdrop-blur-sm text-sm text-foreground/90 hover:border-amber-400 hover:bg-amber-500/15 hover:shadow-[0_8px_24px_-8px_hsl(20_85%_55%/0.4)] transition-all duration-300 group"
+  >
+    <Icon className="w-4 h-4 text-primary" />
+    <span>{label}</span>
+    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+  </Link>
 );
 
 export default HeroSection;
