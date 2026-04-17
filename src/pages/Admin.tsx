@@ -26,7 +26,8 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -514,7 +515,10 @@ const Admin = () => {
           </div>
         )}
 
-        <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
+        {/* Desktop sidebar (hidden on mobile) */}
+        <div className="hidden md:block">
+          <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
+        </div>
         <div className="flex-1 flex flex-col min-h-screen">
           {/* Header ABOVE banner */}
           <header className={cn("h-14 flex items-center border-b px-4 gap-3 sticky top-0 backdrop-blur-sm z-20 transition-colors duration-500", activeTheme?.headerClass || "border-border bg-background/95")}>
