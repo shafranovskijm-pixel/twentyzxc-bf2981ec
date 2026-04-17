@@ -144,6 +144,39 @@ const Admin = () => {
     }
     toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
   };
+
+  // Theme cycling via swipe / arrows on the banner
+  const [themePillVisible, setThemePillVisible] = useState(false);
+  const pillTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const cycleTheme = (direction: 1 | -1) => {
+    const themesList: (AdminTheme | null)[] = [null, ...adminThemes];
+    const currentIdx = activeTheme
+      ? themesList.findIndex((t) => t?.id === activeTheme.id)
+      : 0;
+    const nextIdx = (currentIdx + direction + themesList.length) % themesList.length;
+    handleThemeChange(themesList[nextIdx]);
+    setThemePillVisible(true);
+    if (pillTimeoutRef.current) clearTimeout(pillTimeoutRef.current);
+    pillTimeoutRef.current = setTimeout(() => setThemePillVisible(false), 1500);
+  };
+
+  const handleBannerTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleBannerTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    cycleTheme(dx < 0 ? 1 : -1);
+  };
   const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
     queryFn: async () => {
