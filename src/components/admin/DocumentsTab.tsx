@@ -423,7 +423,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     // downstream save/send uses the right values.
     let effectiveNumber = docNumber;
     if (typeOverride && typeOverride !== docType) {
-      const nextNumber = (lastDocNumbers && lastDocNumbers[typeOverride]) || "001";
+      const nextNumber = (lastDocNumbers && lastDocNumbers[typeOverride]) || `001/${docYear}`;
       effectiveNumber = nextNumber;
       setDocType(typeOverride);
       setDocNumber(nextNumber);
