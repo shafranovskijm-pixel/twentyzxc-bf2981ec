@@ -26,7 +26,7 @@ import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
-import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings } from "lucide-react";
+import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,6 +143,39 @@ const Admin = () => {
       localStorage.removeItem(THEME_STORAGE_KEY);
     }
     toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
+  };
+
+  // Theme cycling via swipe / arrows on the banner
+  const [themePillVisible, setThemePillVisible] = useState(false);
+  const pillTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const cycleTheme = (direction: 1 | -1) => {
+    const themesList: (AdminTheme | null)[] = [null, ...adminThemes];
+    const currentIdx = activeTheme
+      ? themesList.findIndex((t) => t?.id === activeTheme.id)
+      : 0;
+    const nextIdx = (currentIdx + direction + themesList.length) % themesList.length;
+    handleThemeChange(themesList[nextIdx]);
+    setThemePillVisible(true);
+    if (pillTimeoutRef.current) clearTimeout(pillTimeoutRef.current);
+    pillTimeoutRef.current = setTimeout(() => setThemePillVisible(false), 1500);
+  };
+
+  const handleBannerTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleBannerTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    touchStartRef.current = null;
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx)) return;
+    cycleTheme(dx < 0 ? 1 : -1);
   };
   const { data: promotions = [], isLoading: promosLoading } = useQuery({
     queryKey: ["admin-promotions"],
@@ -519,7 +552,11 @@ const Admin = () => {
           </header>
 
           {/* Decorative banner */}
-          <div className="h-32 relative overflow-hidden shrink-0 group">
+          <div
+            className="h-24 sm:h-32 relative overflow-hidden shrink-0 group select-none"
+            onTouchStart={handleBannerTouchStart}
+            onTouchEnd={handleBannerTouchEnd}
+          >
             {bannerUrl ? (
               bannerFit === 'tile' ? (
                 <div className="absolute inset-0" style={{ backgroundImage: `url(${bannerUrl})`, backgroundRepeat: 'repeat', backgroundSize: 'auto' }} />
@@ -535,7 +572,36 @@ const Admin = () => {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_30%,hsl(var(--accent)/0.1),transparent_60%)]" />
               </>
             )}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+
+            {/* Theme cycle arrows */}
+            <button
+              type="button"
+              aria-label="Предыдущая тема"
+              onClick={() => cycleTheme(-1)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              aria-label="Следующая тема"
+              onClick={() => cycleTheme(1)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+
+            {/* Theme name pill (transient feedback) */}
+            <div
+              className={cn(
+                "absolute bottom-2 left-1/2 -translate-x-1/2 z-10 bg-black/55 backdrop-blur text-white text-xs px-2.5 py-1 rounded-full pointer-events-none transition-opacity duration-300",
+                themePillVisible ? "opacity-100" : "opacity-0"
+              )}
+            >
+              {activeTheme ? `${activeTheme.emoji} ${activeTheme.label}` : "✨ По умолчанию"}
+            </div>
+
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 z-20">
               <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => bannerInputRef.current?.click()} disabled={bannerUploading}>
                 {bannerUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                 Изменить
