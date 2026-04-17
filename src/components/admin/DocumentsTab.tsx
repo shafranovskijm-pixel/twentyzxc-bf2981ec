@@ -416,7 +416,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     const linkedContract = contracts.find(c => c.id === linkedContractId);
 
     const docData: DocumentData = {
-      type: docType,
+      type: effectiveType,
       number: docNumber,
       date: formatDate(docDate),
       company,
@@ -433,7 +433,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
 
     let html = "";
     try {
-      switch (docType) {
+      switch (effectiveType) {
         case "contract":
           if (contractSubType === "frdo") {
             html = generateFrdoContractHtml(docData);
