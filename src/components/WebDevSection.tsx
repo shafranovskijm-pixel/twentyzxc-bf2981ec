@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Code2, Layers, Zap, ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
+import palmLeaf from "@/assets/palm-leaf.png";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
 import { ServiceKey3D } from "@/components/game/ServiceKey3D";
