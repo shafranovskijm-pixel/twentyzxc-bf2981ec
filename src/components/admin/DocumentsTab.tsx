@@ -248,6 +248,25 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     }
   }, [initialClientName, clients]);
 
+  // Auto-flow: when "Сделать акт и отправить" is triggered, generate doc then open email dialog
+  useEffect(() => {
+    if (!pendingAutoSend) return;
+    if (docType !== "act") return;
+    if (!clientName) return;
+    const hasService = services.some(s => s.name.trim());
+    if (!hasService) return;
+    // Step 1: generate preview if not already
+    if (!previewHtml) {
+      generate("act");
+      return;
+    }
+    // Step 2: open email dialog with prefilled email
+    const client = clients.find(c => c.name === clientName);
+    setEmailTo(client?.email || "");
+    setEmailDialogOpen(true);
+    setPendingAutoSend(false);
+  }, [pendingAutoSend, docType, clientName, services, previewHtml, clients]);
+
   // Auto-fill template data when contract subtype changes
   useEffect(() => {
     if (contractSubType === "nmo") {
