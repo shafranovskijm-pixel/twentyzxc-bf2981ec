@@ -574,8 +574,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     // Step 2: Auto-create contract record
     if (docType === "contract" && !linkedContractId) {
       console.log("[DOC] Step 2: Auto-creating contract...");
-      const year = new Date(docDate).getFullYear();
-      const contractNumber = `${docNumber}-${year}`;
+      // docNumber already includes year suffix (e.g. "001/2026") — use as-is
+      const contractNumber = docNumber;
       const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
         client_name: clientName,
         contract_number: contractNumber,
