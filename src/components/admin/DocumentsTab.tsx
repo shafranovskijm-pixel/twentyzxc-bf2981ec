@@ -401,8 +401,18 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   const generate = async (typeOverride?: DocType) => {
     const effectiveType: DocType = typeOverride || docType;
-    console.log("[DOC] generate called", { effectiveType, docNumber, clientName, services });
-    if (!docNumber.trim()) return toast.error("Укажите номер документа");
+    // When user generates a different doc type via the secondary buttons,
+    // auto-pick the next free number for that type and switch state so that
+    // downstream save/send uses the right values.
+    let effectiveNumber = docNumber;
+    if (typeOverride && typeOverride !== docType) {
+      const nextNumber = (lastDocNumbers && lastDocNumbers[typeOverride]) || "001";
+      effectiveNumber = nextNumber;
+      setDocType(typeOverride);
+      setDocNumber(nextNumber);
+    }
+    console.log("[DOC] generate called", { effectiveType, effectiveNumber, clientName, services });
+    if (!effectiveNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
     if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
 
