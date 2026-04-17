@@ -152,8 +152,7 @@ const ContractsTab = () => {
     window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
     toast.success("Открываю конструктор Акта...");
   };
-
-
+  const uploadFile = async (contractId: string): Promise<string | null> => {
     if (!file) return null;
     setUploading(true);
     const ext = file.name.split(".").pop();
