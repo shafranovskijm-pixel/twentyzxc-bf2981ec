@@ -195,9 +195,9 @@ const ContactSection = () => {
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover opacity-75"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/55 via-background/35 to-background/70" />
         <div
           className="absolute inset-0"
           style={{
