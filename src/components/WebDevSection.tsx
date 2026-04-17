@@ -18,7 +18,7 @@ const PalmAccent = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-// Syntagma card with tropical styling
+// Syntagma card — modern minimalist style aligned with sintagma.com.ru
 const SyntagmaCard = () => {
   const { unlockAchievement } = useAchievements();
   const [hasHovered, setHasHovered] = useState(false);
@@ -35,18 +35,24 @@ const SyntagmaCard = () => {
       className="tropical-card warm-card-glow p-8 md:p-12 mb-16 relative group"
       onMouseEnter={handleMouseEnter}
     >
-      {/* Background S */}
-      <div className="absolute top-8 right-8 text-8xl font-display font-bold text-amber-500/[0.06] group-hover:text-amber-500/[0.12] transition-colors duration-700">
-        S
-      </div>
-
       <div className="relative z-10">
-        <span className="text-xs tracking-[0.3em] uppercase text-primary italic font-display mb-4 block">Flagship Project</span>
-        <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 relative inline-block">
-          <span className="gradient-gold-text">Синтагма</span>
-          <span className="absolute inset-0 gradient-gold-text shimmer">Синтагма</span>
+        {/* Logo block: Σ mark + brand */}
+        <div className="flex items-center gap-4 mb-8 flex-wrap">
+          <div className="syntagma-logo-mark">Σ</div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="font-syntagma-brand text-base text-foreground/95">СИНТАГМА</span>
+            <span className="w-1 h-1 rounded-full bg-[hsl(var(--syntagma-accent))]" />
+            <span className="text-sm text-muted-foreground font-sans">Облачная LMS-платформа</span>
+          </div>
+        </div>
+
+        {/* Headline — modern serif */}
+        <h3 className="font-syntagma text-4xl md:text-5xl font-semibold leading-[1.1] mb-5 text-foreground/95 max-w-2xl">
+          Обучение и документы<br />в одной системе
         </h3>
-        <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed">
+        <div className="syntagma-accent-line mb-8" />
+
+        <p className="text-muted-foreground max-w-2xl mb-10 leading-relaxed font-sans">
           Облачная LMS-платформа для автоматизации образовательных процессов. Разработка любых решений с использованием облачных технологий для компаний любого размера.
         </p>
 
@@ -56,12 +62,10 @@ const SyntagmaCard = () => {
           <FeatureItem icon={<Code2 />} title="Интеграции" desc="Moodle, ФРДО, API" />
         </div>
 
-        <Button variant="hero" size="lg" asChild>
-          <a href="https://синтагма.рф" target="_blank" rel="noopener noreferrer">
-            Подробнее о проекте
-            <ArrowUpRight className="w-4 h-4" />
-          </a>
-        </Button>
+        <a href="https://синтагма.рф" target="_blank" rel="noopener noreferrer" className="syntagma-pill">
+          Подробнее о проекте
+          <ArrowUpRight className="w-4 h-4" />
+        </a>
       </div>
     </div>
   );
