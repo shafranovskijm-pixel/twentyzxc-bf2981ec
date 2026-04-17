@@ -140,7 +140,20 @@ const ContractsTab = () => {
     setIsOneTime(c.is_one_time ?? false);
   };
 
-  const uploadFile = async (contractId: string): Promise<string | null> => {
+  const isPaid = (status: string | null) => (status || "").toLowerCase().trim() === "оплачено";
+
+  const createActAndSend = (c: Contract) => {
+    sessionStorage.setItem("pending_act", JSON.stringify({
+      contractId: c.id,
+      clientName: c.client_name,
+      autoSend: true,
+    }));
+    // Notify Admin layout to switch to Documents tab
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
+    toast.success("Открываю конструктор Акта...");
+  };
+
+
     if (!file) return null;
     setUploading(true);
     const ext = file.name.split(".").pop();
