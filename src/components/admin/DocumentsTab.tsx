@@ -677,15 +677,16 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         const pdfBase64 = await generatePdfBase64(html);
         const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
         const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-        const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
+        const safeNum = safeFilename(docNumber);
+        const pdfDisplayName = `${DOC_LABELS[docType]}_${safeNum}_${docDate}.pdf`;
+        const pdfStorageName = `${translitDocLabel(docType)}_${safeNum}_${docDate}.pdf`;
         await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
 
         if (docType === "contract" && invoiceHtml) {
           const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
           const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
           const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-          await saveFileToFolder(invoicePdfBlob, `Счёт_${docNumber}_${docDate}.pdf`, `Schet_${docNumber}_${docDate}.pdf`, targetContractId);
+          await saveFileToFolder(invoicePdfBlob, `Счёт_${safeNum}_${docDate}.pdf`, `Schet_${safeNum}_${docDate}.pdf`, targetContractId);
 
           // Upsert invoice document too
           const { data: existingInvoice } = await supabase
