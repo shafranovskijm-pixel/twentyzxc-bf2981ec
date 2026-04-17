@@ -31,9 +31,46 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border">
+    <footer className="relative border-t border-amber-500/20 overflow-hidden">
+      {/* Tropical sunset background */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroSunset}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="w-full h-full object-cover opacity-50"
+        />
+        {/* Dark wash for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/90" />
+        {/* Warm vignette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)",
+          }}
+        />
+      </div>
+
+      {/* Decorative palm leaves */}
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -top-4 -left-12 w-44 h-44 opacity-30 -rotate-[20deg] palm-sway pointer-events-none select-none z-[1]"
+      />
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -bottom-8 -right-10 w-48 h-48 opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none z-[1]"
+        style={{ animationDelay: "3s" }}
+      />
+
       {/* Main Footer Content */}
-      <div className="py-16">
+      <div className="relative z-10 py-16">
         <div className="container px-4">
           <div className="max-w-6xl mx-auto">
             {/* Top section */}
