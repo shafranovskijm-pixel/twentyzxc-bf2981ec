@@ -1,9 +1,18 @@
-import { Mail, Phone, Send, Diamond, Copy, ExternalLink, Lock } from "lucide-react";
+import { Mail, Phone, Send, Copy, ExternalLink, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAchievements } from "@/contexts/AchievementsContext";
+import heroSunset from "@/assets/hero-tropical-sunset.jpg";
+import palmLeaf from "@/assets/palm-leaf.png";
+
+// Tiny palm leaf SVG for divider accent
+const PalmAccent = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 2c-1 3-3 5-6 6 2 1 4 3 5 5-1-1-3-2-5-2 1 2 2 5 2 8 1-3 2-5 4-7 0 2-1 4-2 5 2-1 4-3 5-5-1 0-2 0-3 1 1-2 2-4 2-7-2 1-3 3-4 5 0-3 1-6 2-9z" />
+  </svg>
+);
 
 const Footer = () => {
   const { toast } = useToast();
@@ -22,9 +31,46 @@ const Footer = () => {
   };
 
   return (
-    <footer className="border-t border-border">
+    <footer className="relative border-t border-amber-500/20 overflow-hidden">
+      {/* Tropical sunset background */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroSunset}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="w-full h-full object-cover opacity-50"
+        />
+        {/* Dark wash for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/70 to-background/90" />
+        {/* Warm vignette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)",
+          }}
+        />
+      </div>
+
+      {/* Decorative palm leaves */}
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -top-4 -left-12 w-44 h-44 opacity-30 -rotate-[20deg] palm-sway pointer-events-none select-none z-[1]"
+      />
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -bottom-8 -right-10 w-48 h-48 opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none z-[1]"
+        style={{ animationDelay: "3s" }}
+      />
+
       {/* Main Footer Content */}
-      <div className="py-16">
+      <div className="relative z-10 py-16">
         <div className="container px-4">
           <div className="max-w-6xl mx-auto">
             {/* Top section */}
@@ -175,7 +221,7 @@ const Footer = () => {
             {/* Bottom */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <Diamond className="w-3 h-3 text-primary" />
+                <PalmAccent className="w-3.5 h-3.5 text-amber-500/80" />
                 <span>© 2024 24ZXC. Все права защищены.</span>
               </div>
               <div className="flex items-center gap-4">
