@@ -219,6 +219,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           setDocNumber(lastDocNumbers[initialDocType] || "001");
         }
       }
+      if (initialAutoSend) setPendingAutoSend(true);
       onMounted?.();
     }
   }, [initialContractId, contracts, clients]);
