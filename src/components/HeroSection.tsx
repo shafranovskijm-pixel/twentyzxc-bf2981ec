@@ -113,24 +113,6 @@ const HeroSection = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
-
-          {/* Education full-cycle pitch */}
-          <div className="mt-6 max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: '0.65s' }}>
-            <p className="text-sm md:text-base text-foreground/85 leading-relaxed text-center">
-              <span className="text-primary font-medium">Для образовательных организаций — полный цикл:</span>{" "}
-              документация, лицензирование, ФИС ФРДО, регистрация на НМО-портале, LMS-платформа и сопровождение.
-            </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {["Документация", "Лицензирование", "ФИС ФРДО", "НМО Портал", "LMS Синтагма", "Сопровождение"].map((tag) => (
-                <span
-                  key={tag}
-                  className="text-xs px-3 py-1 rounded-full border border-amber-500/25 bg-amber-500/[0.06] text-foreground/75 backdrop-blur-sm"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Bottom services preview */}
