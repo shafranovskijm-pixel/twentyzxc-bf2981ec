@@ -1,58 +1,85 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import heroSunset from "@/assets/hero-tropical-sunset.jpg";
+import palmLeaf from "@/assets/palm-leaf.png";
 
 const HeroSection = () => {
   const navigate = useNavigate();
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Decorative corner elements */}
-      <div className="absolute top-20 left-20 w-px h-40 bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
-      <div className="absolute top-40 left-20 w-20 h-px bg-gradient-to-r from-primary/30 to-transparent" />
-      <div className="absolute top-20 left-20 w-3 h-3 border border-primary/30 rotate-45" />
-      
-      <div className="absolute bottom-20 right-20 w-px h-40 bg-gradient-to-b from-transparent via-primary/30 to-transparent" />
-      <div className="absolute bottom-40 right-20 w-20 h-px bg-gradient-to-l from-primary/30 to-transparent" />
-      <div className="absolute bottom-20 right-20 w-3 h-3 border border-primary/30 rotate-45" />
+      {/* Tropical sunset background */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroSunset}
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+          className="w-full h-full object-cover opacity-70"
+        />
+        {/* Vignette top */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-transparent to-transparent" />
+        {/* Dark fade to bottom for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/20" />
+        {/* Side warm glow vignette */}
+        <div className="absolute inset-0 bg-radial-vignette" style={{
+          background: "radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)",
+        }} />
+      </div>
 
-      {/* Additional corner ornaments */}
-      <div className="absolute top-20 right-20 w-16 h-16 border-t border-r border-primary/15" />
-      <div className="absolute bottom-20 left-20 w-16 h-16 border-b border-l border-primary/15" />
-      
-      {/* Floating orbs */}
+      {/* Palm leaf decorations — desktop only */}
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -top-10 -left-20 w-72 h-72 opacity-40 -rotate-45 palm-sway pointer-events-none select-none"
+      />
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden md:block absolute -top-16 -right-24 w-80 h-80 opacity-40 rotate-[200deg] scale-x-[-1] palm-sway pointer-events-none select-none"
+        style={{ animationDelay: "1.5s" }}
+      />
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden lg:block absolute bottom-10 -left-16 w-56 h-56 opacity-25 rotate-[20deg] palm-sway pointer-events-none select-none"
+        style={{ animationDelay: "3s" }}
+      />
+      <img
+        src={palmLeaf}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="hidden lg:block absolute bottom-8 -right-12 w-52 h-52 opacity-25 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none"
+        style={{ animationDelay: "4.5s" }}
+      />
+
+      {/* Floating orbs (kept, softened) */}
       <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full border border-primary/10 animate-float" style={{ animationDelay: '0s' }} />
       <div className="absolute bottom-1/3 left-1/4 w-48 h-48 rounded-full border border-primary/5 animate-float" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-1/3 left-1/3 w-32 h-32 rounded-full bg-primary/5 blur-2xl animate-float" style={{ animationDelay: '4s' }} />
-      <div className="absolute bottom-1/4 right-1/3 w-24 h-24 rounded-full bg-primary/8 blur-xl animate-float" style={{ animationDelay: '1s' }} />
-      
-
-      {/* Decorative diamonds scattered */}
-      <div className="absolute top-[15%] left-[10%] w-2 h-2 bg-primary/20 rotate-45" />
-      <div className="absolute top-[25%] right-[15%] w-1.5 h-1.5 bg-primary/15 rotate-45" />
-      <div className="absolute bottom-[30%] left-[15%] w-2.5 h-2.5 border border-primary/20 rotate-45" />
-      <div className="absolute bottom-[20%] right-[10%] w-2 h-2 border border-primary/15 rotate-45" />
-
-      {/* Horizontal gold lines */}
-      <div className="absolute top-[30%] left-0 w-32 h-px bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
-      <div className="absolute bottom-[35%] right-0 w-40 h-px bg-gradient-to-l from-transparent via-primary/15 to-transparent" />
 
       <div className="container relative z-10 px-4 py-20">
         <div className="max-w-4xl mx-auto text-center">
           {/* Tagline */}
           <div className="inline-flex items-center gap-3 mb-8 animate-fade-in">
-            <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/50" />
-            <span className="text-sm tracking-[0.3em] uppercase text-primary font-light">Premium Digital Solutions</span>
-            <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/50" />
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/60" />
+            <span className="text-xs sm:text-sm tracking-[0.3em] uppercase text-primary font-light">Под ключ · Под пальмами</span>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/60" />
           </div>
 
-          {/* Main heading with golden glow */}
+          {/* Main heading */}
           <h1
             className="mb-8 animate-fade-in relative cursor-pointer"
             style={{ animationDelay: '0.1s' }}
             onClick={() => navigate('/admin')}
             title="Админ-панель"
           >
-            {/* Glow layer behind text */}
             <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-8xl lg:text-9xl font-display font-bold text-primary/30 blur-2xl" aria-hidden="true">
               24ZXC
             </span>
@@ -64,13 +91,13 @@ const HeroSection = () => {
 
           {/* Divider */}
           <div className="divider-gold w-48 mx-auto mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }} />
-          
-          <p className="text-xl md:text-2xl text-muted-foreground mb-4 font-light tracking-wide animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            Эксклюзивные цифровые решения
+
+          <p className="text-xl md:text-3xl font-display italic text-foreground/95 mb-4 tracking-wide animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            Доверьте сайт, рекламу и приложения — <br className="hidden sm:block" /> а сами отдыхайте
           </p>
-          
-          <p className="text-base text-muted-foreground/70 max-w-xl mx-auto mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            Веб-разработка премиум-класса, стратегическая реклама и полный спектр бизнес-услуг
+
+          <p className="text-base text-muted-foreground/80 max-w-xl mx-auto mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            Веб-разработка, реклама в Яндекс Директ и веб-приложения премиум-класса. Полный цикл — от идеи до запуска и поддержки.
           </p>
 
           {/* CTA Buttons */}
@@ -99,10 +126,10 @@ const HeroSection = () => {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
-        <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+        <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
           <span className="text-xs tracking-widest uppercase">Scroll</span>
-          <div className="w-px h-8 bg-gradient-to-b from-primary/50 to-transparent" />
+          <div className="w-px h-8 bg-gradient-to-b from-primary/60 to-transparent" />
         </div>
       </div>
     </section>
@@ -117,7 +144,7 @@ const ServiceStat = ({ number, label }: { number: string; label: string }) => (
     <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors tracking-wide">
       {label}
     </div>
-    <div className="h-px w-0 group-hover:w-full bg-primary/30 mx-auto mt-3 transition-all duration-500" />
+    <div className="h-px w-0 group-hover:w-full bg-gradient-to-r from-primary/60 via-orange-400/60 to-primary/60 mx-auto mt-3 transition-all duration-500" />
   </div>
 );
 
