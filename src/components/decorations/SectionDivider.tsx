@@ -2,12 +2,41 @@ import { motion } from "framer-motion";
 import { useInView } from "@/hooks/use-in-view";
 
 interface SectionDividerProps {
-  variant?: "simple" | "ornate" | "diamond";
+  variant?: "simple" | "ornate" | "diamond" | "palm";
   className?: string;
 }
 
 export function SectionDivider({ variant = "ornate", className = "" }: SectionDividerProps) {
   const [ref, isInView] = useInView<HTMLDivElement>({ threshold: 0.5, triggerOnce: true });
+
+  if (variant === "palm") {
+    return (
+      <div ref={ref} className={`flex items-center justify-center gap-5 py-12 ${className}`}>
+        <motion.div
+          className="h-px w-24 md:w-40 bg-gradient-to-r from-transparent via-amber-500/40 to-amber-500/30"
+          initial={{ scaleX: 0, originX: 1 }}
+          animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
+          transition={{ duration: 0.7 }}
+        />
+        <motion.svg
+          viewBox="0 0 24 24"
+          className="w-6 h-6 text-amber-500/70"
+          fill="currentColor"
+          initial={{ opacity: 0, scale: 0, rotate: -30 }}
+          animate={isInView ? { opacity: 1, scale: 1, rotate: 0 } : { opacity: 0, scale: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <path d="M12 2c-1 3-3 5-6 6 2 1 4 3 5 5-1-1-3-2-5-2 1 2 2 5 2 8 1-3 2-5 4-7 0 2-1 4-2 5 2-1 4-3 5-5-1 0-2 0-3 1 1-2 2-4 2-7-2 1-3 3-4 5 0-3 1-6 2-9z" />
+        </motion.svg>
+        <motion.div
+          className="h-px w-24 md:w-40 bg-gradient-to-l from-transparent via-amber-500/40 to-amber-500/30"
+          initial={{ scaleX: 0, originX: 0 }}
+          animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
+          transition={{ duration: 0.7 }}
+        />
+      </div>
+    );
+  }
 
   if (variant === "simple") {
     return (

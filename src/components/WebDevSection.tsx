@@ -1,12 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Code2, Layers, Zap, ArrowUpRight, Diamond, Check } from "lucide-react";
+import { Code2, Layers, Zap, ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
 import { ServiceKey3D } from "@/components/game/ServiceKey3D";
 
-// Syntagma card with fade-in hover effect
+// Tiny palm accent
+const PalmAccent = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 2c-1 3-3 5-6 6 2 1 4 3 5 5-1-1-3-2-5-2 1 2 2 5 2 8 1-3 2-5 4-7 0 2-1 4-2 5 2-1 4-3 5-5-1 0-2 0-3 1 1-2 2-4 2-7-2 1-3 3-4 5 0-3 1-6 2-9z" />
+  </svg>
+);
+
+// Syntagma card with tropical styling
 const SyntagmaCard = () => {
   const { unlockAchievement } = useAchievements();
   const [hasHovered, setHasHovered] = useState(false);
@@ -19,18 +26,17 @@ const SyntagmaCard = () => {
   };
 
   return (
-    <div 
-      className="luxury-card rounded-sm p-12 mb-16 relative group transition-all duration-500 hover:-translate-y-1"
+    <div
+      className="tropical-card warm-card-glow p-8 md:p-12 mb-16 relative group"
       onMouseEnter={handleMouseEnter}
     >
       {/* Background S */}
-      <div className="absolute top-8 right-8 text-8xl font-display font-bold text-primary/5 group-hover:text-primary/10 transition-colors duration-700">
+      <div className="absolute top-8 right-8 text-8xl font-display font-bold text-amber-500/[0.06] group-hover:text-amber-500/[0.12] transition-colors duration-700">
         S
       </div>
-      
-      {/* Content - always visible with hover enhancement */}
+
       <div className="relative z-10">
-        <span className="text-xs tracking-[0.3em] uppercase text-primary mb-4 block">Flagship Project</span>
+        <span className="text-xs tracking-[0.3em] uppercase text-primary italic font-display mb-4 block">Flagship Project</span>
         <h3 className="text-4xl md:text-5xl font-display font-bold mb-6 relative inline-block">
           <span className="gradient-gold-text">Синтагма</span>
           <span className="absolute inset-0 gradient-gold-text shimmer">Синтагма</span>
@@ -45,15 +51,12 @@ const SyntagmaCard = () => {
           <FeatureItem icon={<Code2 />} title="Интеграции" desc="Moodle, ФРДО, API" />
         </div>
 
-        <a 
-          href="https://синтагма.рф" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 px-8 py-3 bg-primary text-primary-foreground rounded-sm hover:bg-primary/90 hover:shadow-[0_0_20px_hsl(42_75%_42%/0.2)]"
-        >
-          Подробнее о проекте
-          <ArrowUpRight className="w-4 h-4" />
-        </a>
+        <Button variant="hero" size="lg" asChild>
+          <a href="https://синтагма.рф" target="_blank" rel="noopener noreferrer">
+            Подробнее о проекте
+            <ArrowUpRight className="w-4 h-4" />
+          </a>
+        </Button>
       </div>
     </div>
   );
@@ -62,54 +65,21 @@ const SyntagmaCard = () => {
 const WebDevSection = () => {
   return (
     <section id="webdev" className="py-32 relative overflow-hidden">
-      {/* Background decorations */}
+      {/* Soft warm background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Glowing orbs */}
-        <div className="absolute top-20 -right-32 w-80 h-80 bg-primary/8 rounded-full blur-[100px]" />
-        <div className="absolute bottom-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-[80px]" />
-        
-        {/* Geometric shapes */}
-        <div className="absolute top-1/4 right-[5%] w-24 h-24 border border-primary/10 rotate-45 animate-float" />
-        <div className="absolute bottom-1/3 left-[8%] w-16 h-16 border border-primary/5 rotate-12 animate-float" style={{ animationDelay: '3s' }} />
-        <div className="absolute top-[60%] right-[15%] w-12 h-12 border border-primary/10 rotate-[30deg] animate-float" style={{ animationDelay: '5s' }} />
-        
-        {/* Diamond accents */}
-        <div className="absolute top-[15%] left-[12%] w-3 h-3 bg-primary/20 rotate-45" />
-        <div className="absolute top-[45%] right-[8%] w-2 h-2 bg-primary/30 rotate-45" />
-        <div className="absolute bottom-[20%] left-[5%] w-2 h-2 bg-primary/20 rotate-45" />
-        <div className="absolute top-[75%] right-[25%] w-2 h-2 bg-primary/15 rotate-45" />
-        
-        {/* Dot grid pattern */}
-        <div className="absolute inset-0 opacity-[0.015]" style={{
-          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
-          backgroundSize: '50px 50px'
-        }} />
-        
-        {/* Decorative lines */}
-        <div className="absolute top-[30%] left-0 w-20 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-        <div className="absolute top-[70%] right-0 w-28 h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-        
-        {/* Corner ornaments */}
-        <svg className="absolute top-8 right-8 w-16 h-16 text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-          <path d="M100 50 L50 100 M100 30 L30 100 M100 10 L10 100" strokeWidth="1" />
-        </svg>
-        <svg className="absolute bottom-8 left-8 w-16 h-16 text-primary/10" viewBox="0 0 100 100" fill="none" stroke="currentColor">
-          <path d="M0 50 L50 0 M0 70 L70 0 M0 90 L90 0" strokeWidth="1" />
-        </svg>
+        <div className="absolute top-20 -right-32 w-80 h-80 bg-orange-500/[0.06] rounded-full blur-[120px]" />
+        <div className="absolute bottom-20 -left-20 w-64 h-64 bg-amber-500/[0.05] rounded-full blur-[100px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-rose-500/[0.03] rounded-full blur-[140px]" />
       </div>
-      
-      {/* Decorative corner borders */}
-      <div className="absolute top-0 left-0 w-32 h-32 border-l border-t border-primary/20" />
-      <div className="absolute bottom-0 right-0 w-32 h-32 border-r border-b border-primary/20" />
-      
+
       <div className="container relative z-10 px-4">
         <div className="max-w-6xl mx-auto">
           {/* Section header */}
           <div className="grid lg:grid-cols-2 gap-16 items-start mb-20">
             <div>
-              <div className="flex items-center gap-4 mb-6">
-                <Diamond className="w-5 h-5 text-primary" />
-                <span className="text-sm tracking-[0.2em] uppercase text-primary">Веб-разработка</span>
+              <div className="flex items-center gap-3 mb-6">
+                <PalmAccent className="w-5 h-5 text-amber-500/70" />
+                <span className="text-sm tracking-[0.3em] uppercase text-primary italic font-display">Веб-разработка</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-display font-bold leading-tight mb-6">
                 Создаём
@@ -135,21 +105,10 @@ const WebDevSection = () => {
           {/* Syntagma feature */}
           <SyntagmaCard />
 
-          {/* Services grid */}
+          {/* Services grid — no corner brackets, soft tropical cards */}
           <div className="relative overflow-visible">
-            {/* Corner ornaments */}
-            <div className="absolute -top-4 -left-4 w-8 h-8 border-l-2 border-t-2 border-primary/30" />
-            <div className="absolute -top-4 -right-4 w-8 h-8 border-r-2 border-t-2 border-primary/30" />
-            <div className="absolute -bottom-4 -left-4 w-8 h-8 border-l-2 border-b-2 border-primary/30" />
-            <div className="absolute -bottom-4 -right-4 w-8 h-8 border-r-2 border-b-2 border-primary/30" />
-            
-            {/* Center cross ornament */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-              <Diamond className="w-4 h-4 text-primary/50" />
-            </div>
-            
-            <div id="service-keys" className="grid md:grid-cols-2 overflow-visible">
-              <ServiceCard 
+            <div id="service-keys" className="grid md:grid-cols-2 gap-6 overflow-visible">
+              <ServiceCard
                 title="Лендинги"
                 price="от 15 000 ₽"
                 description="Продающие страницы с высокой конверсией"
@@ -158,7 +117,7 @@ const WebDevSection = () => {
                 keyId="landing"
                 keyVariant="gold"
               />
-              <ServiceCard 
+              <ServiceCard
                 title="Корпоративные сайты"
                 price="от 50 000 ₽"
                 description="Многостраничные решения для бизнеса"
@@ -167,7 +126,7 @@ const WebDevSection = () => {
                 keyId="corporate"
                 keyVariant="silver"
               />
-              <ServiceCard 
+              <ServiceCard
                 title="Интернет-магазины"
                 price="от 100 000 ₽"
                 description="E-commerce платформы любой сложности"
@@ -176,7 +135,7 @@ const WebDevSection = () => {
                 keyId="ecommerce"
                 keyVariant="bronze"
               />
-              <ServiceCard 
+              <ServiceCard
                 title="Веб-приложения"
                 price="индивидуально"
                 description="SPA, PWA, сложные системы"
@@ -195,7 +154,7 @@ const WebDevSection = () => {
 
 const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
   <div className="flex items-start gap-4">
-    <div className="w-12 h-12 rounded-sm border border-primary/30 flex items-center justify-center text-primary">
+    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/10 border border-amber-500/30 flex items-center justify-center text-primary shadow-[inset_0_1px_0_hsl(45_70%_70%/0.15)] shrink-0">
       {icon}
     </div>
     <div>
@@ -205,18 +164,18 @@ const FeatureItem = ({ icon, title, desc }: { icon: React.ReactNode; title: stri
   </div>
 );
 
-const ServiceCard = ({ 
-  title, 
-  price, 
-  description, 
-  href, 
+const ServiceCard = ({
+  title,
+  price,
+  description,
+  href,
   number,
   keyId,
   keyVariant = 'gold'
-}: { 
-  title: string; 
-  price: string; 
-  description: string; 
+}: {
+  title: string;
+  price: string;
+  description: string;
   href: string;
   number: string;
   keyId?: string;
@@ -229,81 +188,62 @@ const ServiceCard = ({
   const handleTakeKey = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (!keyId || isCollected) return;
-    
-    // Get button position for flying animation
+
     const button = e.currentTarget as HTMLElement;
     const rect = button.getBoundingClientRect();
     const startPosition = {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
     };
-    
+
     addKey(keyId, title, startPosition);
   };
 
   return (
-    <div 
-      className="relative bg-card p-10 group transition-all duration-500 block border border-border/30 hover:border-primary/30 warm-card-glow"
+    <div
+      className="relative tropical-card warm-card-glow p-8 md:p-10 group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 3D Key - clickable */}
+      {/* 3D Key — clickable */}
       {keyId && !isCollected && (
-        <button 
+        <button
           onClick={handleTakeKey}
           className="absolute bottom-4 right-4 w-16 h-20 z-20 cursor-pointer hover:scale-110 transition-transform"
         >
-          {/* Glow effect behind the key */}
-          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
+          <div className="absolute inset-0 bg-amber-500/25 rounded-full blur-xl" />
           <ServiceKey3D variant={keyVariant} isHovered={isHovered} className="w-full h-full relative z-10" />
         </button>
       )}
-      
+
       {/* Collected badge */}
       {keyId && isCollected && (
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 text-primary text-xs z-20">
+        <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/30 text-primary text-xs z-20">
           <Check className="w-3 h-3" />
           Собран
         </div>
       )}
-      
+
       {/* Background number */}
-      <div className="absolute top-4 left-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-primary/10">
+      <div className="absolute top-4 left-4 text-7xl font-display font-bold text-transparent opacity-0 group-hover:opacity-100 transition-all duration-700 group-hover:text-amber-500/[0.10]">
         {number}
       </div>
-      
-      {/* Decorative corner lines */}
-      <div className="absolute top-0 left-0 w-12 h-[1px] bg-gradient-to-r from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="absolute top-0 left-0 w-[1px] h-12 bg-gradient-to-b from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="absolute bottom-0 right-0 w-12 h-[1px] bg-gradient-to-l from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="absolute bottom-0 right-0 w-[1px] h-12 bg-gradient-to-t from-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      {/* Background pattern */}
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-[0.02] transition-opacity duration-500"
-        style={{
-          backgroundImage: 'radial-gradient(hsl(45 80% 55%) 1px, transparent 1px)',
-          backgroundSize: '20px 20px'
-        }}
-      />
-      
+
       <div className="relative z-10 flex items-start justify-between mb-4">
         <h4 className="text-xl font-display font-semibold group-hover:text-primary transition-colors">{title}</h4>
         <span className="text-primary text-sm font-medium shimmer">{price}</span>
       </div>
       <p className="relative z-10 text-muted-foreground text-sm mb-6">{description}</p>
-      
+
       <div className="relative z-10 flex items-center justify-between gap-4">
-        <Link 
+        <Link
           to={href}
-          className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground group-hover:text-primary transition-colors"
         >
           <span>Подробнее</span>
           <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300" />
         </Link>
-        
       </div>
     </div>
   );
