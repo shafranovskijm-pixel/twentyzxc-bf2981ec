@@ -529,6 +529,11 @@ const ContractsTab = () => {
                                 <Download className="w-4 h-4 mr-2" /> Скачать файл
                               </DropdownMenuItem>
                             )}
+                            {isPaid(c.payment_status) && !isArchive && (
+                              <DropdownMenuItem onClick={() => createActAndSend(c)}>
+                                <FileCheck className="w-4 h-4 mr-2" /> Сделать акт и отправить
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
                               {isArchive ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
                               {isArchive ? "Восстановить" : "В архив"}
