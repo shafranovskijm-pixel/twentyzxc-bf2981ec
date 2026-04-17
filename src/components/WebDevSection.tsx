@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Code2, Layers, Zap, ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import webdevTropicalBg from "@/assets/webdev-tropical-bg.jpg";
+import cardBgLanding from "@/assets/card-bg-landing.jpg";
+import cardBgCorporate from "@/assets/card-bg-corporate.jpg";
+import cardBgEcommerce from "@/assets/card-bg-ecommerce.jpg";
+import cardBgWebapp from "@/assets/card-bg-webapp.jpg";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
 import { ServiceKey3D } from "@/components/game/ServiceKey3D";
@@ -128,6 +132,7 @@ const WebDevSection = () => {
                 number="01"
                 keyId="landing"
                 keyVariant="gold"
+                bgImage={cardBgLanding}
               />
               <ServiceCard
                 title="Корпоративные сайты"
@@ -137,6 +142,7 @@ const WebDevSection = () => {
                 number="02"
                 keyId="corporate"
                 keyVariant="silver"
+                bgImage={cardBgCorporate}
               />
               <ServiceCard
                 title="Интернет-магазины"
@@ -146,6 +152,7 @@ const WebDevSection = () => {
                 number="03"
                 keyId="ecommerce"
                 keyVariant="bronze"
+                bgImage={cardBgEcommerce}
               />
               <ServiceCard
                 title="Веб-приложения"
@@ -155,6 +162,7 @@ const WebDevSection = () => {
                 number="04"
                 keyId="webapp"
                 keyVariant="emerald"
+                bgImage={cardBgWebapp}
               />
             </div>
           </div>
@@ -183,7 +191,8 @@ const ServiceCard = ({
   href,
   number,
   keyId,
-  keyVariant = 'gold'
+  keyVariant = 'gold',
+  bgImage,
 }: {
   title: string;
   price: string;
@@ -192,6 +201,7 @@ const ServiceCard = ({
   number: string;
   keyId?: string;
   keyVariant?: 'gold' | 'silver' | 'bronze' | 'emerald';
+  bgImage?: string;
 }) => {
   const { addKey, isKeyCollected } = useInventory();
   const [isHovered, setIsHovered] = useState(false);
@@ -214,10 +224,25 @@ const ServiceCard = ({
 
   return (
     <div
-      className="relative tropical-card warm-card-glow p-8 md:p-10 group"
+      className="relative tropical-card warm-card-glow p-8 md:p-10 group overflow-hidden"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* AI-painted tropical background */}
+      {bgImage && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img
+            src={bgImage}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            width={1024}
+            height={768}
+            className="w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/70 to-background/90" />
+        </div>
+      )}
       {/* 3D Key — clickable */}
       {keyId && !isCollected && (
         <button
