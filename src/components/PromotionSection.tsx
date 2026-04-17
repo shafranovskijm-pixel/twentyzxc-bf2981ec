@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Diamond, Sparkles, Lock, Check, icons } from "lucide-react";
+import { ArrowRight, Sparkles, Lock, Check, icons } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import AnimatedSection from "@/components/AnimatedSection";
@@ -26,6 +26,13 @@ const DynamicIcon = ({ name, className }: { name: string; className?: string }) 
   if (!LucideIcon) return null;
   return <LucideIcon className={className} />;
 };
+
+// Tiny palm leaf SVG accent
+const PalmAccent = ({ className = "" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+    <path d="M12 2c-1 3-3 5-6 6 2 1 4 3 5 5-1-1-3-2-5-2 1 2 2 5 2 8 1-3 2-5 4-7 0 2-1 4-2 5 2-1 4-3 5-5-1 0-2 0-3 1 1-2 2-4 2-7-2 1-3 3-4 5 0-3 1-6 2-9z" />
+  </svg>
+);
 
 const keyVariants: Array<'gold' | 'silver' | 'bronze' | 'emerald'> = ['gold', 'silver', 'bronze', 'emerald'];
 
@@ -60,7 +67,7 @@ const CountdownTimer = () => {
     <div className="flex items-center gap-1.5 md:gap-2">
       {units.map((u, i) => (
         <div key={u.label} className="flex items-center gap-1.5 md:gap-2">
-          <div className="flex flex-col items-center min-w-[2.5rem] md:min-w-[3rem] py-1.5 px-1 rounded-sm bg-primary/10 border border-primary/20">
+          <div className="flex flex-col items-center min-w-[2.5rem] md:min-w-[3rem] py-1.5 px-1 rounded-2xl bg-gradient-to-b from-amber-500/15 to-orange-500/10 border border-amber-500/25">
             <span className="text-base md:text-lg font-display font-bold text-primary tabular-nums leading-none">
               {String(u.value).padStart(2, "0")}
             </span>
@@ -101,7 +108,6 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
       return;
     }
 
-    // Use the key and scroll to contact
     useKey(keyId);
     const contactSection = document.getElementById("contact");
     if (contactSection) {
@@ -111,12 +117,10 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
 
   return (
     <div
-      className="relative luxury-card rounded-sm border-l-2 border-primary/40 border-t border-r border-b border-t-primary/15 border-r-primary/15 border-b-primary/15 hover:border-l-primary/70 hover:border-t-primary/25 hover:border-r-primary/25 hover:border-b-primary/25 transition-all duration-300 hover:-translate-y-0.5 warm-card-glow group"
+      className="relative tropical-card warm-card-glow group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="absolute inset-0 rounded-sm bg-primary/0 group-hover:bg-primary/[0.02] transition-colors duration-300" />
-
       {/* 3D Key */}
       {!collected && (
          <button
@@ -124,14 +128,14 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
           className="absolute top-3 right-3 w-12 h-16 z-20 cursor-pointer hover:scale-110 transition-transform"
           title="Забрать ключ сотрудничества"
         >
-          <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
+          <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-xl" />
           <ServiceKey3D variant={variant} isHovered={isHovered} className="w-full h-full relative z-10" />
         </button>
       )}
 
       {/* Collected badge */}
       {collected && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-sm bg-primary/10 border border-primary/30 text-primary text-xs z-20">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/30 text-primary text-xs z-20">
           <Check className="w-3 h-3" />
           Ключ собран
         </div>
@@ -141,14 +145,14 @@ const PromoCard = ({ promo, index }: { promo: Promotion; index: number }) => {
         <div className="flex flex-col items-center gap-3 shrink-0">
           {promo.icon && (
             <div className="relative">
-              <div className="absolute inset-0 rounded-full bg-primary/10 blur-lg scale-150" />
-              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-amber-500/15 blur-xl scale-150" />
+              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-amber-500/25 via-amber-400/15 to-orange-500/10 border border-amber-500/30 flex items-center justify-center shadow-[inset_0_1px_0_hsl(45_70%_70%/0.15)]">
                 <DynamicIcon name={promo.icon} className="w-7 h-7 text-primary" />
               </div>
             </div>
           )}
           {promo.badge && (
-            <Badge className="bg-primary/10 text-primary border-primary/30 hover:bg-primary/15 text-xs px-3 py-0.5">
+            <Badge className="bg-gradient-to-r from-amber-500/20 to-orange-500/15 text-primary border-amber-500/30 hover:bg-amber-500/25 text-xs px-3 py-0.5 rounded-full">
               <Sparkles className="w-3 h-3 mr-1" />
               {promo.badge}
             </Badge>
@@ -207,19 +211,21 @@ const PromotionSection = () => {
   if (promotions.length === 0) return null;
 
   return (
-    <section id="promotions" className="py-32 relative overflow-hidden bg-secondary/30">
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+    <section id="promotions" className="py-32 relative overflow-hidden">
+      {/* Soft warm sunset wash */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/10 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
       </div>
 
       <div className="container relative z-10 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-4 mb-6">
-              <Diamond className="w-5 h-5 text-primary" />
-              <span className="text-sm tracking-[0.2em] uppercase text-primary">Специальное предложение</span>
-              <Diamond className="w-5 h-5 text-primary" />
+              <PalmAccent className="w-5 h-5 text-amber-500/70" />
+              <span className="text-sm tracking-[0.3em] uppercase text-primary italic font-display">Специальное предложение</span>
+              <PalmAccent className="w-5 h-5 text-amber-500/70 scale-x-[-1]" />
             </div>
             <h2 className="text-4xl md:text-6xl font-display font-bold mb-6 gold-glow-text">
               <span className="gradient-gold-text">Акции</span>
