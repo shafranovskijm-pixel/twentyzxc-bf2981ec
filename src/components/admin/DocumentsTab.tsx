@@ -378,8 +378,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
   };
 
-  const generate = async () => {
-    console.log("[DOC] generate called", { docNumber, clientName, services });
+  const generate = async (typeOverride?: DocType) => {
+    const effectiveType: DocType = typeOverride || docType;
+    console.log("[DOC] generate called", { effectiveType, docNumber, clientName, services });
     if (!docNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
     if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
@@ -415,7 +416,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
     const linkedContract = contracts.find(c => c.id === linkedContractId);
 
     const docData: DocumentData = {
-      type: docType,
+      type: effectiveType,
       number: docNumber,
       date: formatDate(docDate),
       company,
@@ -432,7 +433,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
 
     let html = "";
     try {
-      switch (docType) {
+      switch (effectiveType) {
         case "contract":
           if (contractSubType === "frdo") {
             html = generateFrdoContractHtml(docData);
@@ -453,7 +454,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
 
     // Generate invoice HTML upfront if contract type
     let invoiceHtml: string | null = null;
-    if (docType === "contract") {
+    if (effectiveType === "contract") {
       try {
         const invoiceDocData = { ...docData, type: "invoice" as const };
         invoiceHtml = generateInvoiceHtml(invoiceDocData);
@@ -1358,10 +1359,25 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       </Card>
 
       {/* Generate */}
-      <Button onClick={generate} size="lg" className="w-full">
+      <Button onClick={() => generate()} size="lg" className="w-full">
         <Printer className="w-5 h-5 mr-2" />
         Сформировать {DOC_LABELS[docType]}
       </Button>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {docType !== "invoice" && (
+          <Button onClick={() => generate("invoice")} variant="outline" size="default" className="w-full">
+            <Printer className="w-4 h-4 mr-2" />
+            Сформировать Счёт
+          </Button>
+        )}
+        {docType !== "act" && (
+          <Button onClick={() => generate("act")} variant="outline" size="default" className="w-full">
+            <Printer className="w-4 h-4 mr-2" />
+            Сформировать Акт
+          </Button>
+        )}
+      </div>
 
 
       {/* Document Preview Modal */}
