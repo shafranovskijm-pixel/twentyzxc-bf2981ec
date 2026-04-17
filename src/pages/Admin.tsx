@@ -573,28 +573,28 @@ const Admin = () => {
               </>
             )}
 
-            {/* Theme cycle arrows */}
+            {/* Theme cycle arrows — always visible, above hover overlay */}
             <button
               type="button"
               aria-label="Предыдущая тема"
-              onClick={() => cycleTheme(-1)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+              onClick={(e) => { e.stopPropagation(); cycleTheme(-1); }}
+              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center rounded-full bg-black/55 hover:bg-black/75 text-white backdrop-blur-md ring-1 ring-white/30 shadow-lg transition-colors active:scale-95"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
             </button>
             <button
               type="button"
               aria-label="Следующая тема"
-              onClick={() => cycleTheme(1)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-9 w-9 sm:h-9 sm:w-9 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 text-white backdrop-blur-sm transition-colors"
+              onClick={(e) => { e.stopPropagation(); cycleTheme(1); }}
+              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 h-10 w-10 sm:h-11 sm:w-11 flex items-center justify-center rounded-full bg-black/55 hover:bg-black/75 text-white backdrop-blur-md ring-1 ring-white/30 shadow-lg transition-colors active:scale-95"
             >
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2.5} />
             </button>
 
             {/* Theme name pill (transient feedback) */}
             <div
               className={cn(
-                "absolute bottom-2 left-1/2 -translate-x-1/2 z-10 bg-black/55 backdrop-blur text-white text-xs px-2.5 py-1 rounded-full pointer-events-none transition-opacity duration-300",
+                "absolute bottom-2 left-1/2 -translate-x-1/2 z-30 bg-black/65 backdrop-blur text-white text-xs px-3 py-1 rounded-full pointer-events-none transition-opacity duration-300 ring-1 ring-white/20",
                 themePillVisible ? "opacity-100" : "opacity-0"
               )}
             >
