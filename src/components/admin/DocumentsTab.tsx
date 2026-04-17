@@ -100,24 +100,41 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 
-  // Auto-generate doc number from last document
+  // Year derived from docDate — used for auto-numbering and reset every Jan 1
+  const docYear = useMemo(() => {
+    const y = new Date(docDate).getFullYear();
+    return isNaN(y) ? new Date().getFullYear() : y;
+  }, [docDate]);
+
+  // Replace "/" with "-" so doc_number can be safely used in filenames / storage paths
+  const safeFilename = useCallback((num: string) => num.replace(/\//g, "-"), []);
+
+  // Auto-generate next doc number for current year. Format: "NNN/YYYY".
+  // Numeration resets to 001 each new year because we filter by current year.
   const { data: lastDocNumbers } = useQuery({
-    queryKey: ["last-doc-numbers"],
+    queryKey: ["last-doc-numbers", docYear],
     queryFn: async () => {
       const result: Record<string, string> = {};
+      const yearSuffix = `/${docYear}`;
       for (const type of ["contract", "invoice", "act"] as DocType[]) {
+        // Fetch all current-year doc numbers for this type, then compute max prefix
         const { data } = await supabase
           .from("generated_documents" as any)
           .select("doc_number")
           .eq("doc_type", type)
-          .order("created_at", { ascending: false })
-          .limit(1);
+          .like("doc_number", `%${yearSuffix}`);
+        let maxNum = 0;
         if (data && data.length > 0) {
-          const lastNum = parseInt((data[0] as any).doc_number, 10);
-          result[type] = String(isNaN(lastNum) ? 1 : lastNum + 1).padStart(3, "0");
-        } else {
-          result[type] = "001";
+          for (const row of data as any[]) {
+            const match = String(row.doc_number).match(/^(\d+)\/(\d{4})$/);
+            if (match && match[2] === String(docYear)) {
+              const n = parseInt(match[1], 10);
+              if (!isNaN(n) && n > maxNum) maxNum = n;
+            }
+          }
         }
+        const next = String(maxNum + 1).padStart(3, "0");
+        result[type] = `${next}/${docYear}`;
       }
       return result;
     },
@@ -125,9 +142,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   useEffect(() => {
     if (lastDocNumbers && !docNumber) {
-      setDocNumber(lastDocNumbers[docType] || "001");
+      setDocNumber(lastDocNumbers[docType] || `001/${docYear}`);
     }
-  }, [lastDocNumbers, docType]);
+  }, [lastDocNumbers, docType, docYear, docNumber]);
 
   // client
   const [clientSearch, setClientSearch] = useState("");
@@ -216,7 +233,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
         setDocType(initialDocType as DocType);
         if (lastDocNumbers) {
-          setDocNumber(lastDocNumbers[initialDocType] || "001");
+          setDocNumber(lastDocNumbers[initialDocType] || `001/${docYear}`);
         }
       }
       if (initialAutoSend) setPendingAutoSend(true);
@@ -232,7 +249,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
         setDocType(initialDocType as DocType);
         if (lastDocNumbers) {
-          setDocNumber(lastDocNumbers[initialDocType] || "001");
+          setDocNumber(lastDocNumbers[initialDocType] || `001/${docYear}`);
         }
       }
       // For act: auto-find latest contract and fill services
@@ -406,7 +423,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     // downstream save/send uses the right values.
     let effectiveNumber = docNumber;
     if (typeOverride && typeOverride !== docType) {
-      const nextNumber = (lastDocNumbers && lastDocNumbers[typeOverride]) || "001";
+      const nextNumber = (lastDocNumbers && lastDocNumbers[typeOverride]) || `001/${docYear}`;
       effectiveNumber = nextNumber;
       setDocType(typeOverride);
       setDocNumber(nextNumber);
@@ -557,8 +574,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     // Step 2: Auto-create contract record
     if (docType === "contract" && !linkedContractId) {
       console.log("[DOC] Step 2: Auto-creating contract...");
-      const year = new Date(docDate).getFullYear();
-      const contractNumber = `${docNumber}-${year}`;
+      // docNumber already includes year suffix (e.g. "001/2026") — use as-is
+      const contractNumber = docNumber;
       const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
         client_name: clientName,
         contract_number: contractNumber,
@@ -660,15 +677,16 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         const pdfBase64 = await generatePdfBase64(html);
         const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
         const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const pdfDisplayName = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-        const pdfStorageName = `${translitDocLabel(docType)}_${docNumber}_${docDate}.pdf`;
+        const safeNum = safeFilename(docNumber);
+        const pdfDisplayName = `${DOC_LABELS[docType]}_${safeNum}_${docDate}.pdf`;
+        const pdfStorageName = `${translitDocLabel(docType)}_${safeNum}_${docDate}.pdf`;
         await saveFileToFolder(pdfBlob, pdfDisplayName, pdfStorageName, targetContractId);
 
         if (docType === "contract" && invoiceHtml) {
           const invoicePdfBase64 = await generatePdfBase64(invoiceHtml);
           const invoicePdfBytes = Uint8Array.from(atob(invoicePdfBase64), c => c.charCodeAt(0));
           const invoicePdfBlob = new Blob([invoicePdfBytes], { type: 'application/pdf' });
-          await saveFileToFolder(invoicePdfBlob, `Счёт_${docNumber}_${docDate}.pdf`, `Schet_${docNumber}_${docDate}.pdf`, targetContractId);
+          await saveFileToFolder(invoicePdfBlob, `Счёт_${safeNum}_${docDate}.pdf`, `Schet_${safeNum}_${docDate}.pdf`, targetContractId);
 
           // Upsert invoice document too
           const { data: existingInvoice } = await supabase
@@ -869,8 +887,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       console.error("[Email] saveDocumentToDB failed:", e);
     }
     try {
-      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
+      const safeNum = safeFilename(docNumber);
+      const pdfFilename = `${DOC_LABELS[docType]}_${safeNum}_${docDate}.pdf`;
+      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${safeNum}_${docDate}.pdf`;
 
       // 1. Generate main PDF
       setEmailProgress({ step: 'Генерация PDF...', percent: 15 });
@@ -917,8 +936,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       // 2b. Upload invoice PDF if exists
       let invoiceStoragePath: string | null = null;
-      const invoiceFilename = `Счёт_${docNumber}_${docDate}.pdf`;
-      const invoiceStorageName = `Schet_${docNumber}_${docDate}.pdf`;
+      const invoiceFilename = `Счёт_${safeNum}_${docDate}.pdf`;
+      const invoiceStorageName = `Schet_${safeNum}_${docDate}.pdf`;
       if (invoicePdfBase64) {
         const invoiceBlob = b64ToBlob(invoicePdfBase64);
         invoiceStoragePath = linkedContractId
@@ -1045,7 +1064,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       toast.info("Генерация PDF...");
       const pdfBase64 = await generatePdfBase64(previewHtml);
-      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
+      const tgSafeNum = safeFilename(docNumber);
+      const pdfFilename = `${DOC_LABELS[docType]}_${tgSafeNum}_${docDate}.pdf`;
 
       const documents: { pdfBase64: string; filename: string }[] = [
         { pdfBase64, filename: pdfFilename },
@@ -1057,7 +1077,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           const invoiceBase64 = await generatePdfBase64(previewInvoiceHtml);
           documents.push({
             pdfBase64: invoiceBase64,
-            filename: `Счёт_${docNumber}_${docDate}.pdf`,
+            filename: `Счёт_${tgSafeNum}_${docDate}.pdf`,
           });
         } catch (e) {
           console.error("Invoice PDF failed for Telegram:", e);
@@ -1176,7 +1196,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           )}
           <div className="space-y-1">
             <Label>Номер</Label>
-            <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder="001" />
+            <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder={`001/${docYear}`} />
+            <p className="text-[10px] text-muted-foreground">Формат: NNN/{docYear}. Нумерация сбрасывается ежегодно.</p>
           </div>
           <div className="space-y-1">
             <Label>Дата</Label>
@@ -1459,7 +1480,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
                     if (!previewHtml) return;
                     const currentHtml = previewTab === "invoice" && previewInvoiceHtml ? previewInvoiceHtml : previewHtml;
                     const label = previewTab === "invoice" ? "Счёт" : DOC_LABELS[docType];
-                    const fileName = `${label}_${docNumber}_${docDate}.pdf`;
+                    const fileName = `${label}_${safeFilename(docNumber)}_${docDate}.pdf`;
                     downloadPdfFromHtml(currentHtml, fileName);
                   }}
                 >
