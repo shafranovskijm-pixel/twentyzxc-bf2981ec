@@ -1214,7 +1214,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           <div className="space-y-1">
             <Label>Номер</Label>
             <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder={`001/${docYear}`} />
-            <p className="text-[10px] text-muted-foreground">Формат: NNN/{docYear}. Нумерация сбрасывается ежегодно.</p>
+            <p className="text-[10px] text-muted-foreground">Формат: NNN/{docYear}. Для договоров номер продолжается по реестру договоров за этот год.</p>
           </div>
           <div className="space-y-1">
             <Label>Дата</Label>
