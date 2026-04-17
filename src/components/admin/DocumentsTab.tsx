@@ -1479,7 +1479,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
                     if (!previewHtml) return;
                     const currentHtml = previewTab === "invoice" && previewInvoiceHtml ? previewInvoiceHtml : previewHtml;
                     const label = previewTab === "invoice" ? "Счёт" : DOC_LABELS[docType];
-                    const fileName = `${label}_${docNumber}_${docDate}.pdf`;
+                    const fileName = `${label}_${safeFilename(docNumber)}_${docDate}.pdf`;
                     downloadPdfFromHtml(currentHtml, fileName);
                   }}
                 >
