@@ -52,21 +52,13 @@ const Footer = () => {
         />
       </div>
 
-      {/* Decorative palm leaves */}
+      {/* Decorative palm leaf — centered top */}
       <img
         src={palmLeaf}
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden md:block absolute -top-4 -left-12 w-44 h-44 opacity-30 -rotate-[20deg] palm-sway pointer-events-none select-none z-[1]"
-      />
-      <img
-        src={palmLeaf}
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        className="hidden md:block absolute -bottom-8 -right-10 w-48 h-48 opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none z-[1]"
-        style={{ animationDelay: "3s" }}
+        className="hidden md:block absolute -top-6 left-1/2 -translate-x-1/2 w-40 h-40 opacity-25 palm-sway pointer-events-none select-none z-[1]"
       />
 
       {/* Main Footer Content */}

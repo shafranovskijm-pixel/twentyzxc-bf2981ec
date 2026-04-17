@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Code2, Layers, Zap, ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
-import palmLeaf from "@/assets/palm-leaf.png";
+import webdevTropicalBg from "@/assets/webdev-tropical-bg.jpg";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
 import { ServiceKey3D } from "@/components/game/ServiceKey3D";
@@ -66,42 +66,21 @@ const SyntagmaCard = () => {
 const WebDevSection = () => {
   return (
     <section id="webdev" className="py-32 relative overflow-hidden">
-      {/* Tropical palm decorations — around cards, not inside */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Top-right palm — near Syntagma card */}
+      {/* Painted tropical background */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
         <img
-          src={palmLeaf}
+          src={webdevTropicalBg}
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="hidden md:block absolute top-16 -right-12 lg:right-4 w-44 h-44 lg:w-56 lg:h-56 opacity-25 rotate-[35deg] palm-sway select-none"
+          className="w-full h-full object-cover opacity-55"
         />
-        {/* Left palm — between Syntagma and service cards */}
-        <img
-          src={palmLeaf}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="hidden lg:block absolute top-1/2 -left-16 w-48 h-48 opacity-20 -rotate-[20deg] scale-x-[-1] palm-sway select-none"
-          style={{ animationDelay: "2s" }}
-        />
-        {/* Bottom-right palm — under service cards */}
-        <img
-          src={palmLeaf}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="hidden md:block absolute -bottom-8 -right-16 lg:right-0 w-52 h-52 lg:w-64 lg:h-64 opacity-25 rotate-[140deg] scale-x-[-1] palm-sway select-none"
-          style={{ animationDelay: "4s" }}
-        />
-        {/* Bottom-left palm — under service cards */}
-        <img
-          src={palmLeaf}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          className="hidden md:block absolute -bottom-12 -left-12 w-44 h-44 lg:w-52 lg:h-52 opacity-20 -rotate-[160deg] palm-sway select-none"
-          style={{ animationDelay: "5.5s" }}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/45 to-background/80" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 30%, hsl(var(--background) / 0.7) 100%)",
+          }}
         />
       </div>
 
