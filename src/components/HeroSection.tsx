@@ -78,41 +78,6 @@ const HeroSection = () => {
           {/* Divider */}
           <div className="divider-gold w-48 mx-auto mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }} />
 
-          <p className="text-xl md:text-3xl font-display italic text-foreground/95 mb-4 tracking-wide animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            Доверьте сайт, рекламу и приложения — <br className="hidden sm:block" /> а сами отдыхайте
-          </p>
-
-          <p className="text-base text-muted-foreground/80 max-w-xl mx-auto mb-12 leading-relaxed animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            Веб-разработка, реклама в Яндекс Директ и веб-приложения премиум-класса. Полный цикл — от идеи до запуска и поддержки.
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <Button variant="hero" size="xl" asChild>
-              <a href="#contact">
-                <Sparkles className="w-5 h-5" />
-                Начать проект
-              </a>
-            </Button>
-            <Button variant="heroOutline" size="xl" asChild>
-              <Link to="/portfolio">
-                Портфолио
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Education organisations CTA */}
-          <div className="mt-6 flex justify-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
-            <Link
-              to="/services/nmo"
-              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-orange-500/10 backdrop-blur-sm text-sm text-foreground/90 hover:border-amber-400 hover:bg-amber-500/15 hover:shadow-[0_8px_24px_-8px_hsl(20_85%_55%/0.4)] transition-all duration-300 group"
-            >
-              <GraduationCap className="w-4 h-4 text-primary" />
-              <span>Образовательным организациям</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
         </div>
 
         {/* Bottom services pill navigation */}
