@@ -454,7 +454,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
 
     // Generate invoice HTML upfront if contract type
     let invoiceHtml: string | null = null;
-    if (docType === "contract") {
+    if (effectiveType === "contract") {
       try {
         const invoiceDocData = { ...docData, type: "invoice" as const };
         invoiceHtml = generateInvoiceHtml(invoiceDocData);
