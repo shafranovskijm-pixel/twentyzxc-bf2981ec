@@ -42,6 +42,8 @@ interface AdminSidebarProps {
   onSectionChange: (section: string) => void;
   onSignOut: () => void;
   themeClass?: string;
+  inSheet?: boolean;
+  className?: string;
 }
 
 function SortableIconButton({
@@ -92,7 +94,7 @@ function SortableIconButton({
   );
 }
 
-const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass }: AdminSidebarProps) => {
+const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, inSheet, className }: AdminSidebarProps) => {
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -129,7 +131,12 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass }:
 
   return (
     <TooltipProvider delayDuration={200}>
-      <aside className={cn("w-16 shrink-0 border-r flex flex-col items-center py-4 gap-1.5 sticky top-0 h-screen z-30 transition-colors duration-500", themeClass || "border-border bg-card")}>
+      <aside className={cn(
+        "w-16 shrink-0 border-r flex flex-col items-center py-4 gap-1.5 z-30 transition-colors duration-500",
+        inSheet ? "h-full" : "sticky top-0 h-screen",
+        themeClass || "border-border bg-card",
+        className
+      )}>
         {/* Logo */}
         <a href="/" className="mb-4 text-xs font-bold text-primary tracking-widest select-none hover:opacity-80 transition-opacity" title="На главную">24</a>
 
