@@ -588,32 +588,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     }
     queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
 
-    // Step 2: Auto-create contract record
-    if (docType === "contract" && !linkedContractId) {
-      console.log("[DOC] Step 2: Auto-creating contract...");
-      // docNumber already includes year suffix (e.g. "001/2026") — use as-is
-      const contractNumber = docNumber;
-      const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
-        client_name: clientName,
-        contract_number: contractNumber,
-        contract_date: docDate,
-        amount: total || null,
-        contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
-        payment_status: "не оплачено",
-      }).select("id").single();
-      if (contractError) {
-        console.error("[DOC] Step 2 FAILED:", contractError);
-      } else {
-        console.log("[DOC] Step 2 OK, contract id:", newContract.id);
-        targetContractId = newContract.id;
-        queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
-        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-      }
-    }
-
-    // Step 2.5: Auto-create or update client (+ service_deadline)
-    const existingClient = clients.find(c => c.name === clientName);
-    
+    // Parse service deadline from "Период оказания услуг" (used for both clients.service_deadline and contracts.paid_until)
     let parsedServiceDeadline: string | null = null;
     if (deadline) {
       const poMatch = deadline.match(/по\s+(\d{2})\.(\d{2})\.(\d{4})/);
@@ -634,6 +609,45 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         }
       }
     }
+
+    // Step 2: Auto-create contract record (or update paid_until on existing)
+    if (docType === "contract" && !linkedContractId) {
+      console.log("[DOC] Step 2: Auto-creating contract...");
+      // docNumber already includes year suffix (e.g. "001/2026") — use as-is
+      const contractNumber = docNumber;
+      const { data: newContract, error: contractError } = await supabase.from("contracts").insert({
+        client_name: clientName,
+        contract_number: contractNumber,
+        contract_date: docDate,
+        amount: total || null,
+        contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
+        payment_status: "не оплачено",
+        paid_until: parsedServiceDeadline,
+      }).select("id").single();
+      if (contractError) {
+        console.error("[DOC] Step 2 FAILED:", contractError);
+      } else {
+        console.log("[DOC] Step 2 OK, contract id:", newContract.id, "paid_until:", parsedServiceDeadline);
+        targetContractId = newContract.id;
+        queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+      }
+    } else if (docType === "contract" && linkedContractId && parsedServiceDeadline) {
+      // Sync paid_until on already linked contract
+      const { error: updErr } = await supabase
+        .from("contracts")
+        .update({ paid_until: parsedServiceDeadline })
+        .eq("id", linkedContractId);
+      if (updErr) console.error("[DOC] Failed to sync paid_until on linked contract:", updErr);
+      else {
+        console.log("[DOC] Synced paid_until on contract", linkedContractId, "→", parsedServiceDeadline);
+        queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+      }
+    }
+
+    // Step 2.5: Auto-create or update client (+ service_deadline)
+    const existingClient = clients.find(c => c.name === clientName);
 
     if (clientName.trim()) {
       const clientData: Record<string, any> = {
