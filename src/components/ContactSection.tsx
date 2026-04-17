@@ -12,6 +12,7 @@ import { useAchievements } from "@/contexts/AchievementsContext";
 import { TreasureChest3D } from "@/components/game/TreasureChest3D";
 import { sendToTelegram } from "@/lib/telegram";
 import { motion, AnimatePresence } from "framer-motion";
+import pirateBeachBg from "@/assets/pirate-beach-bg.jpg";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Введите ваше имя").max(100, "Имя слишком длинное"),
@@ -187,6 +188,23 @@ const ContactSection = () => {
 
   return (
     <section id="contact" ref={sectionRef} className="py-16 relative overflow-hidden bg-secondary/30">
+      {/* Pirate beach background */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={pirateBeachBg}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="w-full h-full object-cover opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/50 to-background/80" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse at center, transparent 25%, hsl(var(--background) / 0.65) 100%)",
+          }}
+        />
+      </div>
       <div className="container relative z-10 px-4">
         <div className="max-w-4xl mx-auto">
 
