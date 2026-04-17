@@ -1213,7 +1213,24 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           )}
           <div className="space-y-1">
             <Label>Номер</Label>
-            <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder={`001/${docYear}`} />
+            <div className="flex gap-2">
+              <Input value={docNumber} onChange={e => setDocNumber(e.target.value)} placeholder={`001/${docYear}`} />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                title="Подставить актуальный следующий номер"
+                onClick={async () => {
+                  const res = await queryClient.refetchQueries({ queryKey: ["last-doc-numbers", docYear] });
+                  const fresh = (res?.[0]?.data as Record<string, string> | undefined) || lastDocNumbers;
+                  const next = (fresh && fresh[docType]) || `001/${docYear}`;
+                  setDocNumber(next);
+                  toast.success(`Подставлен номер ${next}`);
+                }}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
             <p className="text-[10px] text-muted-foreground">Формат: NNN/{docYear}. Для договоров номер продолжается по реестру договоров за этот год.</p>
           </div>
           <div className="space-y-1">
