@@ -448,7 +448,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     const docData: DocumentData = {
       type: effectiveType,
-      number: docNumber,
+      number: effectiveNumber,
       date: formatDate(docDate),
       company,
       client,
