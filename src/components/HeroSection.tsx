@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, GraduationCap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import heroSunset from "@/assets/hero-tropical-sunset.jpg";
 import palmLeaf from "@/assets/palm-leaf.png";
@@ -115,13 +115,26 @@ const HeroSection = () => {
               </Link>
             </Button>
           </div>
+
+          {/* Education organisations CTA */}
+          <div className="mt-6 flex justify-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <Link
+              to="/services/nmo"
+              className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-orange-500/10 backdrop-blur-sm text-sm text-foreground/90 hover:border-amber-400 hover:bg-amber-500/15 hover:shadow-[0_8px_24px_-8px_hsl(20_85%_55%/0.4)] transition-all duration-300 group"
+            >
+              <GraduationCap className="w-4 h-4 text-primary" />
+              <span>Образовательным организациям</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
 
         {/* Bottom services preview */}
-        <div className="mt-24 grid grid-cols-3 gap-8 max-w-3xl mx-auto animate-fade-in" style={{ animationDelay: '0.7s' }}>
+        <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto animate-fade-in" style={{ animationDelay: '0.7s' }}>
           <ServiceStat number="01" label="Веб-разработка" />
           <ServiceStat number="02" label="Реклама" />
-          <ServiceStat number="03" label="Услуги" />
+          <ServiceStat number="03" label="Веб-приложения" />
+          <ServiceStat number="04" label="Образование" />
         </div>
       </div>
 

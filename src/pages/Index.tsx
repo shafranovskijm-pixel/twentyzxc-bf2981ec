@@ -28,9 +28,9 @@ const Index = () => {
         <Header />
         <main className="relative z-10">
           <HeroSection />
-          <SectionDivider variant="ornate" />
+          <SectionDivider variant="palm" />
           <WebDevSection />
-          <SectionDivider variant="diamond" />
+          <SectionDivider variant="palm" />
           <PromotionSection />
           <SectionDivider variant="simple" />
           <ContactSection />
