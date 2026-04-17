@@ -144,7 +144,7 @@ const ServiceStat = ({ number, label }: { number: string; label: string }) => (
     <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors tracking-wide">
       {label}
     </div>
-    <div className="h-px w-0 group-hover:w-full bg-gradient-to-r from-primary/60 via-orange-400/60 to-primary/60 mx-auto mt-3 transition-all duration-500" />
+    <div className="h-px w-0 group-hover:w-full bg-gradient-to-r from-primary/60 via-primary/80 to-primary/60 mx-auto mt-3 transition-all duration-500" />
   </div>
 );
 
