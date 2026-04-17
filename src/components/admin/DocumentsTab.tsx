@@ -249,7 +249,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       if (initialDocType && ["contract", "invoice", "act"].includes(initialDocType)) {
         setDocType(initialDocType as DocType);
         if (lastDocNumbers) {
-          setDocNumber(lastDocNumbers[initialDocType] || "001");
+          setDocNumber(lastDocNumbers[initialDocType] || `001/${docYear}`);
         }
       }
       // For act: auto-find latest contract and fill services
