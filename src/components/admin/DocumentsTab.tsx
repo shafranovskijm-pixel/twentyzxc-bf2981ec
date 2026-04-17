@@ -109,33 +109,50 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Replace "/" with "-" so doc_number can be safely used in filenames / storage paths
   const safeFilename = useCallback((num: string) => num.replace(/\//g, "-"), []);
 
+  const parseSequentialNumber = useCallback((value: string | null | undefined, targetYear: number) => {
+    if (!value) return null;
+    const match = String(value).trim().match(/^(\d+)[/-](\d{4})$/);
+    if (!match || match[2] !== String(targetYear)) return null;
+    const parsed = parseInt(match[1], 10);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, []);
+
   // Auto-generate next doc number for current year. Format: "NNN/YYYY".
-  // Numeration resets to 001 each new year because we filter by current year.
+  // For contracts we continue the sequence from both generated documents and real contract records,
+  // so older entries like "018-2026" are also respected.
   const { data: lastDocNumbers } = useQuery({
     queryKey: ["last-doc-numbers", docYear],
     queryFn: async () => {
       const result: Record<string, string> = {};
-      const yearSuffix = `/${docYear}`;
+
+      const [{ data: generatedDocs, error: generatedError }, { data: contractRows, error: contractsError }] = await Promise.all([
+        supabase.from("generated_documents" as any).select("doc_type, doc_number"),
+        supabase.from("contracts").select("contract_number"),
+      ]);
+
+      if (generatedError) throw generatedError;
+      if (contractsError) throw contractsError;
+
       for (const type of ["contract", "invoice", "act"] as DocType[]) {
-        // Fetch all current-year doc numbers for this type, then compute max prefix
-        const { data } = await supabase
-          .from("generated_documents" as any)
-          .select("doc_number")
-          .eq("doc_type", type)
-          .like("doc_number", `%${yearSuffix}`);
         let maxNum = 0;
-        if (data && data.length > 0) {
-          for (const row of data as any[]) {
-            const match = String(row.doc_number).match(/^(\d+)\/(\d{4})$/);
-            if (match && match[2] === String(docYear)) {
-              const n = parseInt(match[1], 10);
-              if (!isNaN(n) && n > maxNum) maxNum = n;
-            }
+
+        for (const row of (generatedDocs as any[]) || []) {
+          if (row.doc_type !== type) continue;
+          const parsed = parseSequentialNumber(row.doc_number, docYear);
+          if (parsed !== null && parsed > maxNum) maxNum = parsed;
+        }
+
+        if (type === "contract") {
+          for (const row of contractRows || []) {
+            const parsed = parseSequentialNumber(row.contract_number, docYear);
+            if (parsed !== null && parsed > maxNum) maxNum = parsed;
           }
         }
+
         const next = String(maxNum + 1).padStart(3, "0");
         result[type] = `${next}/${docYear}`;
       }
+
       return result;
     },
   });
