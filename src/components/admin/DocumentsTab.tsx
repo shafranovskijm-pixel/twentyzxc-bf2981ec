@@ -44,7 +44,7 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
-const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, onMounted }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; onMounted?: () => void }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -95,6 +95,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
   });
 
   const [docType, setDocType] = useState<DocType>("contract");
+  const [pendingAutoSend, setPendingAutoSend] = useState(false);
   const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -218,6 +219,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
           setDocNumber(lastDocNumbers[initialDocType] || "001");
         }
       }
+      if (initialAutoSend) setPendingAutoSend(true);
       onMounted?.();
     }
   }, [initialContractId, contracts, clients]);
@@ -245,6 +247,25 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, on
       onMounted?.();
     }
   }, [initialClientName, clients]);
+
+  // Auto-flow: when "Сделать акт и отправить" is triggered, generate doc then open email dialog
+  useEffect(() => {
+    if (!pendingAutoSend) return;
+    if (docType !== "act") return;
+    if (!clientName) return;
+    const hasService = services.some(s => s.name.trim());
+    if (!hasService) return;
+    // Step 1: generate preview if not already
+    if (!previewHtml) {
+      generate("act");
+      return;
+    }
+    // Step 2: open email dialog with prefilled email
+    const client = clients.find(c => c.name === clientName);
+    setEmailTo(client?.email || "");
+    setEmailDialogOpen(true);
+    setPendingAutoSend(false);
+  }, [pendingAutoSend, docType, clientName, services, previewHtml, clients]);
 
   // Auto-fill template data when contract subtype changes
   useEffect(() => {

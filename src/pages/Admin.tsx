@@ -61,6 +61,7 @@ const Admin = () => {
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
+  const [docInitialAutoSend, setDocInitialAutoSend] = useState(false);
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
 
@@ -204,6 +205,39 @@ const Admin = () => {
   };
 
   useEffect(() => { if (!authLoading && !isAdmin) setShowLogin(true); }, [authLoading, isAdmin]);
+
+  // Listen for cross-tab navigation (e.g., "Сделать акт" from contracts)
+  useEffect(() => {
+    const consumePendingAct = () => {
+      const raw = sessionStorage.getItem("pending_act");
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        setDocInitialContractId(data.contractId || "");
+        setDocInitialClientName(data.clientName || "");
+        setDocInitialDocType("act");
+        setDocInitialAutoSend(!!data.autoSend);
+        setActiveSection("documents");
+        sessionStorage.removeItem("pending_act");
+        return true;
+      } catch {
+        sessionStorage.removeItem("pending_act");
+        return false;
+      }
+    };
+    consumePendingAct();
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {};
+      if (detail.section === "documents") {
+        consumePendingAct() || setActiveSection("documents");
+      } else if (detail.section) {
+        setActiveSection(detail.section);
+      }
+    };
+    window.addEventListener("admin:navigate", handler);
+    return () => window.removeEventListener("admin:navigate", handler);
+  }, []);
+
 
    // Theme sync — forceLight themes override dark mode
   useEffect(() => {
@@ -796,7 +830,7 @@ const Admin = () => {
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); }} />}
               {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>

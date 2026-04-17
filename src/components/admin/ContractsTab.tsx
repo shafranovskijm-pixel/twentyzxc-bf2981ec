@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -140,6 +140,18 @@ const ContractsTab = () => {
     setIsOneTime(c.is_one_time ?? false);
   };
 
+  const isPaid = (status: string | null) => (status || "").toLowerCase().trim() === "оплачено";
+
+  const createActAndSend = (c: Contract) => {
+    sessionStorage.setItem("pending_act", JSON.stringify({
+      contractId: c.id,
+      clientName: c.client_name,
+      autoSend: true,
+    }));
+    // Notify Admin layout to switch to Documents tab
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
+    toast.success("Открываю конструктор Акта...");
+  };
   const uploadFile = async (contractId: string): Promise<string | null> => {
     if (!file) return null;
     setUploading(true);
@@ -421,6 +433,11 @@ const ContractsTab = () => {
                             <Download className="w-4 h-4 mr-2" /> Скачать файл
                           </DropdownMenuItem>
                         )}
+                        {isPaid(c.payment_status) && !isArchive && (
+                          <DropdownMenuItem onClick={() => createActAndSend(c)}>
+                            <FileCheck className="w-4 h-4 mr-2" /> Сделать акт и отправить
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
                           {isArchive ? <ArchiveRestore className="w-4 h-4 mr-2" /> : <Archive className="w-4 h-4 mr-2" />}
                           {isArchive ? "Восстановить" : "В архив"}
@@ -510,6 +527,11 @@ const ContractsTab = () => {
                             {c.file_path && (
                               <DropdownMenuItem onClick={() => downloadFile(c.file_path!)}>
                                 <Download className="w-4 h-4 mr-2" /> Скачать файл
+                              </DropdownMenuItem>
+                            )}
+                            {isPaid(c.payment_status) && !isArchive && (
+                              <DropdownMenuItem onClick={() => createActAndSend(c)}>
+                                <FileCheck className="w-4 h-4 mr-2" /> Сделать акт и отправить
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem onClick={() => toggleArchive.mutate({ id: c.id, archive: !isArchive })}>
