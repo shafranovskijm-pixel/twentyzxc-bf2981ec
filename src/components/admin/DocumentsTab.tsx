@@ -887,8 +887,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       console.error("[Email] saveDocumentToDB failed:", e);
     }
     try {
-      const pdfFilename = `${DOC_LABELS[docType]}_${docNumber}_${docDate}.pdf`;
-      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${docNumber}_${docDate}.pdf`;
+      const safeNum = safeFilename(docNumber);
+      const pdfFilename = `${DOC_LABELS[docType]}_${safeNum}_${docDate}.pdf`;
+      const pdfStorageName = `${docType === "contract" ? "Dogovor" : docType === "invoice" ? "Schet" : "Akt"}_${safeNum}_${docDate}.pdf`;
 
       // 1. Generate main PDF
       setEmailProgress({ step: 'Генерация PDF...', percent: 15 });
