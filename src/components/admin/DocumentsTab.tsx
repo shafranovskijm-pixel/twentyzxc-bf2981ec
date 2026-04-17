@@ -95,6 +95,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   });
 
   const [docType, setDocType] = useState<DocType>("contract");
+  const [pendingAutoSend, setPendingAutoSend] = useState(false);
   const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
