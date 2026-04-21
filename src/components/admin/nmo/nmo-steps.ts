@@ -18,7 +18,7 @@ export interface NmoStepDef {
   short: string;
   instruction: string;
   link?: { url: string; label: string };
-  copyFields?: Array<"organization_name" | "organization_abbr" | "inn" | "kpp" | "ogrn" | "legal_address" | "actual_address" | "license_number" | "license_date" | "responsible_name" | "responsible_email" | "responsible_mobile" | "responsible_birth_date" | "responsible_snils" | "responsible_position" | "responsible_login">;
+  copyFields?: string[];
   actionType?: "open-link" | "copy" | "extension" | "generate-docs" | "upload-docs" | "mail-tracking" | "manual";
 }
 
