@@ -358,6 +358,17 @@ const NmoTab = () => {
                             onToggle={(d) => {
                               const updated = { ...checklist, [step.key]: d };
                               updateChecklist.mutate({ id: reg.id, checklist: updated });
+                              if (d && step.key === "cabinet_opened" && !checklist.cabinet_opened) {
+                                const text =
+                                  `🎉 НМО: ЛК организации открыт\n\n` +
+                                  `Организация: ${reg.organization_name}\n` +
+                                  (reg.inn ? `ИНН: ${reg.inn}\n` : "") +
+                                  (reg.responsible_name ? `Ответственный: ${reg.responsible_name}\n` : "") +
+                                  `\nЗаявка переведена в этап «ЛК открыт методистом».`;
+                                supabase.functions
+                                  .invoke("send-bot-message", { body: { chat_id: 1248037753, text } })
+                                  .catch((e) => console.error("[NMO TG notify]", e));
+                              }
                             }}
                             onGenerateDocs={() => generate(reg)}
                             generating={generating}
