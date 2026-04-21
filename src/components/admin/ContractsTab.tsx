@@ -15,6 +15,7 @@ import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveResto
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
+import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
 
 interface Contract {
   id: string;
