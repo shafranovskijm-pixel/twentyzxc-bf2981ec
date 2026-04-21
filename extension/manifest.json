@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "НМО Автозаполнение",
+  "version": "1.0.0",
+  "description": "Автозаполнение форм регистрации на nmfo-vo.edu.rosminzdrav.ru и org.edu.rosminzdrav.ru данными из админ-панели 24zxc.ru",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": [
+    "https://nmfo-vo.edu.rosminzdrav.ru/*",
+    "https://org.edu.rosminzdrav.ru/*",
+    "https://24zxc.ru/*",
+    "https://*.lovable.app/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon128.png",
+    "default_title": "НМО Автозаполнение"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://nmfo-vo.edu.rosminzdrav.ru/*",
+        "https://org.edu.rosminzdrav.ru/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://24zxc.ru/*",
+        "https://*.lovable.app/*"
+      ],
+      "js": ["bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icons/icon128.png",
+    "128": "icons/icon128.png"
+  }
+}

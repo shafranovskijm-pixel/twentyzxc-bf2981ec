@@ -411,61 +411,162 @@ export type Database = {
           },
         ]
       }
+      nmo_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          registration_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          registration_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          registration_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nmo_documents_registration_id_fkey"
+            columns: ["registration_id"]
+            isOneToOne: false
+            referencedRelation: "nmo_registrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       nmo_registrations: {
         Row: {
+          actual_address: string | null
+          application_date: string | null
+          application_number: string | null
           checklist: Json
           client_id: string | null
           created_at: string
+          has_dpo_appendix: boolean | null
           id: string
           inn: string | null
           kpp: string | null
+          legal_address: string | null
           license_date: string | null
           license_number: string | null
+          mail_sent_date: string | null
+          mail_track_number: string | null
           notes: string | null
+          ogrn: string | null
+          organization_abbr: string | null
+          organization_email: string | null
           organization_name: string
+          organization_phone: string | null
+          organization_website: string | null
+          region: string | null
+          responsible_birth_date: string | null
           responsible_email: string | null
+          responsible_gender: string | null
+          responsible_login: string | null
+          responsible_main_workplace: string | null
+          responsible_mobile: string | null
           responsible_name: string | null
+          responsible_password: string | null
           responsible_phone: string | null
           responsible_position: string | null
+          responsible_region: string | null
           responsible_snils: string | null
+          responsible_work_phone: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          actual_address?: string | null
+          application_date?: string | null
+          application_number?: string | null
           checklist?: Json
           client_id?: string | null
           created_at?: string
+          has_dpo_appendix?: boolean | null
           id?: string
           inn?: string | null
           kpp?: string | null
+          legal_address?: string | null
           license_date?: string | null
           license_number?: string | null
+          mail_sent_date?: string | null
+          mail_track_number?: string | null
           notes?: string | null
+          ogrn?: string | null
+          organization_abbr?: string | null
+          organization_email?: string | null
           organization_name: string
+          organization_phone?: string | null
+          organization_website?: string | null
+          region?: string | null
+          responsible_birth_date?: string | null
           responsible_email?: string | null
+          responsible_gender?: string | null
+          responsible_login?: string | null
+          responsible_main_workplace?: string | null
+          responsible_mobile?: string | null
           responsible_name?: string | null
+          responsible_password?: string | null
           responsible_phone?: string | null
           responsible_position?: string | null
+          responsible_region?: string | null
           responsible_snils?: string | null
+          responsible_work_phone?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          actual_address?: string | null
+          application_date?: string | null
+          application_number?: string | null
           checklist?: Json
           client_id?: string | null
           created_at?: string
+          has_dpo_appendix?: boolean | null
           id?: string
           inn?: string | null
           kpp?: string | null
+          legal_address?: string | null
           license_date?: string | null
           license_number?: string | null
+          mail_sent_date?: string | null
+          mail_track_number?: string | null
           notes?: string | null
+          ogrn?: string | null
+          organization_abbr?: string | null
+          organization_email?: string | null
           organization_name?: string
+          organization_phone?: string | null
+          organization_website?: string | null
+          region?: string | null
+          responsible_birth_date?: string | null
           responsible_email?: string | null
+          responsible_gender?: string | null
+          responsible_login?: string | null
+          responsible_main_workplace?: string | null
+          responsible_mobile?: string | null
           responsible_name?: string | null
+          responsible_password?: string | null
           responsible_phone?: string | null
           responsible_position?: string | null
+          responsible_region?: string | null
           responsible_snils?: string | null
+          responsible_work_phone?: string | null
           status?: string
           updated_at?: string
         }
