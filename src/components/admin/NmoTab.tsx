@@ -1,49 +1,25 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   Plus, Loader2, Save, Trash2, FileText, Download, ChevronDown, ChevronUp,
-  CheckCircle2, Circle, ExternalLink, Users,
+  ExternalLink, Users, BookOpen,
 } from "lucide-react";
-
-interface NmoRegistration {
-  id: string;
-  client_id: string | null;
-  organization_name: string;
-  inn: string | null;
-  kpp: string | null;
-  license_number: string | null;
-  license_date: string | null;
-  responsible_name: string | null;
-  responsible_email: string | null;
-  responsible_phone: string | null;
-  responsible_snils: string | null;
-  responsible_position: string | null;
-  status: string;
-  checklist: Record<string, boolean>;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-const checklistLabels: Record<string, string> = {
-  docs_collected: "Документы собраны",
-  employee_registered: "Сотрудник зарегистрирован на Портале",
-  application_submitted: "Заявка подана на org.edu.rosminzdrav.ru",
-  originals_sent: "Оригиналы отправлены почтой",
-  cabinet_opened: "ЛК организации открыт",
-  dpp_passports_filled: "Паспорта ДПП заполнены",
-};
+import { NmoStepCard } from "./nmo/NmoStepCard";
+import { NmoDocumentsList } from "./nmo/NmoDocumentsList";
+import { NMO_STEPS, PORTAL_STATUS_LABELS, NMO_INSTRUCTION_PDF } from "./nmo/nmo-steps";
+import { useGenerateNmoDocs } from "./nmo/use-generate-nmo-docs";
+import type { NmoRegistrationFull } from "./nmo/types";
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   new: { label: "Новая", color: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
