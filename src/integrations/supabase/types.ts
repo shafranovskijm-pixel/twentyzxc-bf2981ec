@@ -1268,12 +1268,44 @@ export type Database = {
       }
     }
     Functions: {
+      get_active_listings: {
+        Args: never
+        Returns: {
+          category_id: string
+          created_at: string
+          description: string
+          expires_at: string
+          id: string
+          images: string[]
+          location: string
+          price: number
+          price_type: Database["public"]["Enums"]["price_type"]
+          slug: string
+          status: Database["public"]["Enums"]["listing_status"]
+          title: string
+          updated_at: string
+          user_id: string
+          views_count: number
+        }[]
+      }
       get_listing_contact_info: {
         Args: { listing_id: string }
         Returns: {
           contact_email: string
           contact_phone: string
           contact_telegram: string
+        }[]
+      }
+      get_org_by_slug: {
+        Args: { _slug: string }
+        Returns: {
+          created_at: string
+          id: string
+          landing_config: Json
+          landing_slug: string
+          logo_url: string
+          name: string
+          updated_at: string
         }[]
       }
       has_role: {
