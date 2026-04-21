@@ -16,13 +16,9 @@ const OrgLanding = () => {
   const { data: org, isLoading, error } = useQuery({
     queryKey: ["org-landing", slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("organizations")
-        .select("*")
-        .eq("landing_slug", slug)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_org_by_slug", { _slug: slug! });
       if (error) throw error;
-      return data;
+      return (data && data[0]) || null;
     },
     enabled: !!slug,
   });
