@@ -15,6 +15,7 @@ import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveResto
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
+import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
 
 interface Contract {
   id: string;
@@ -607,6 +608,12 @@ const ContractsTab = () => {
               </div>
               <div className="space-y-2"><Label>Номер договора</Label><Input value={contractNumber} onChange={(e) => setContractNumber(e.target.value)} placeholder="140-2024" /></div>
             </div>
+            <OrgRequisitesBlock
+              clientName={clientName}
+              inn={inn}
+              defaultOpen={!!editingId}
+              onInnDetected={(detected) => { if (!inn) setInn(detected); }}
+            />
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
