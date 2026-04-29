@@ -12,10 +12,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck } from "lucide-react";
+import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { resendContractEmail } from "@/lib/resend-contract";
 
 interface Contract {
   id: string;
@@ -59,6 +62,13 @@ const ContractsTab = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [innLoading, setInnLoading] = useState(false);
+
+  // Resend (повторная отправка) state
+  const [resendOpen, setResendOpen] = useState(false);
+  const [resendContract, setResendContract] = useState<Contract | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendIncludeInvoice, setResendIncludeInvoice] = useState(true);
+  const [resendSending, setResendSending] = useState(false);
 
   const { data: contracts = [], isLoading, error: contractsError } = useQuery({
     queryKey: ["admin-contracts"],
@@ -307,6 +317,42 @@ const ContractsTab = () => {
     URL.revokeObjectURL(url);
   };
 
+  const openResend = async (c: Contract) => {
+    setResendContract(c);
+    setResendEmail("");
+    setResendIncludeInvoice(true);
+    setResendOpen(true);
+    // Prefill email from clients table
+    const { data } = await supabase.from("clients").select("email").eq("name", c.client_name).maybeSingle();
+    if (data?.email) setResendEmail(data.email);
+  };
+
+  const doResend = async () => {
+    if (!resendContract) return;
+    const email = resendEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return toast.error("Введите корректный email");
+    }
+    setResendSending(true);
+    const tid = toast.loading("Отправка договора и счёта...");
+    try {
+      await resendContractEmail({
+        contractId: resendContract.id,
+        contractNumber: resendContract.contract_number,
+        clientName: resendContract.client_name,
+        email,
+        includeInvoice: resendIncludeInvoice,
+      });
+      toast.success(`Отправлено повторно на ${email}`, { id: tid });
+      setResendOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+    } catch (err: any) {
+      toast.error(err?.message || "Не удалось отправить", { id: tid });
+    } finally {
+      setResendSending(false);
+    }
+  };
+
   const filtered = contracts.filter((c) => {
     const isArchived = (c as any).is_archived ?? false;
     if (tab === "active" && isArchived) return false;
@@ -434,6 +480,9 @@ const ContractsTab = () => {
                             <Download className="w-4 h-4 mr-2" /> Скачать файл
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuItem onClick={() => openResend(c)}>
+                          <Send className="w-4 h-4 mr-2" /> Отправить повторно
+                        </DropdownMenuItem>
                         {isPaid(c.payment_status) && !isArchive && (
                           <DropdownMenuItem onClick={() => createActAndSend(c)}>
                             <FileCheck className="w-4 h-4 mr-2" /> Сделать акт и отправить
@@ -530,6 +579,9 @@ const ContractsTab = () => {
                                 <Download className="w-4 h-4 mr-2" /> Скачать файл
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onClick={() => openResend(c)}>
+                              <Send className="w-4 h-4 mr-2" /> Отправить повторно
+                            </DropdownMenuItem>
                             {isPaid(c.payment_status) && !isArchive && (
                               <DropdownMenuItem onClick={() => createActAndSend(c)}>
                                 <FileCheck className="w-4 h-4 mr-2" /> Сделать акт и отправить
@@ -657,6 +709,52 @@ const ContractsTab = () => {
           {renderTable(paginatedItems, true)}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={resendOpen} onOpenChange={setResendOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Отправить договор повторно</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {resendContract?.client_name}
+              {resendContract?.contract_number ? ` · №${resendContract.contract_number}` : ""}
+            </div>
+            <div className="space-y-2">
+              <Label>Email клиента</Label>
+              <Input
+                type="email"
+                value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)}
+                placeholder="client@example.com"
+                autoFocus
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="resend-invoice"
+                checked={resendIncludeInvoice}
+                onCheckedChange={(v) => setResendIncludeInvoice(!!v)}
+              />
+              <Label htmlFor="resend-invoice" className="text-sm cursor-pointer">
+                Приложить счёт (если есть)
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              PDF будут заново сгенерированы из последнего сохранённого документа в Конструкторе. Ссылки в письме действуют 7 дней.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setResendOpen(false)} disabled={resendSending}>
+              Отмена
+            </Button>
+            <Button onClick={doResend} disabled={resendSending || !resendEmail.trim()}>
+              {resendSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+              Отправить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
