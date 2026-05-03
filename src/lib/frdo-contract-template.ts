@@ -85,10 +85,10 @@ const baseStyles = `
     .header-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
     .section { margin: 15px 0; }
     .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
-    .signature-block { width: 45%; position: relative; }
-    .signature-line { border-bottom: 1px solid #000; margin-top: 40px; padding-bottom: 2px; position: relative; }
-    .signature-img { position: absolute; height: 50px; bottom: 0; left: 80px; }
-    .stamp-img { position: absolute; height: 110px; opacity: 0.85; bottom: -40px; left: 10px; }
+    .signature-block { width: 45%; position: relative; padding-bottom: 40px; }
+    .signature-line { border-bottom: 1px solid #000; margin-top: 70px; padding-bottom: 2px; position: relative; }
+    .signature-img { position: absolute; height: 48px; bottom: 2px; left: 80px; }
+    .stamp-img { position: absolute; height: 100px; opacity: 0.9; bottom: -10px; left: 0; }
     p { margin: 5px 0; }
     .indent { text-indent: 30px; }
     .page-break { page-break-before: always; margin-top: 30px; }
