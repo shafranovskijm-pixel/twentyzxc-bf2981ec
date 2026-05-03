@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useInView } from "@/hooks/use-in-view";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
-import { TreasureChest3D } from "@/components/game/TreasureChest3D";
+import { TreasureChest3DLazy as TreasureChest3D } from "@/components/game/TreasureChest3DLazy";
 import { sendToTelegram } from "@/lib/telegram";
 import { motion, AnimatePresence } from "framer-motion";
 import pirateBeachBg from "@/assets/pirate-beach-bg.jpg";
