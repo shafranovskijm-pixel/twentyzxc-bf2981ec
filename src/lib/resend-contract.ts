@@ -70,7 +70,46 @@ function formatDate(iso: string) {
   return d.toLocaleDateString("ru-RU");
 }
 
-/** Generate PDF from HTML using html2canvas + jsPDF (same as DocumentsTab). */
+/** Find latest stored PDF in contract_files for a contract by name pattern. */
+async function findStoredPdf(
+  contractId: string,
+  kind: "contract" | "invoice"
+): Promise<{ file_path: string; file_name: string } | null> {
+  const patterns =
+    kind === "contract"
+      ? ["Договор%", "Dogovor%"]
+      : ["Счёт%", "Счет%", "Schet%"];
+
+  for (const p of patterns) {
+    const { data } = await supabase
+      .from("contract_files")
+      .select("file_path,file_name,created_at")
+      .eq("contract_id", contractId)
+      .ilike("file_name", `${p}%.pdf`)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data && data.length) return data[0] as any;
+  }
+  return null;
+}
+
+/** Try to create a signed URL for a stored file; returns null if missing. */
+async function trySignedUrl(filePath: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.storage
+      .from("contracts")
+      .createSignedUrl(filePath, 60 * 60 * 24 * 7);
+    if (error || !data?.signedUrl) return null;
+    // HEAD-проверка, что файл реально существует
+    const head = await fetch(data.signedUrl, { method: "HEAD" });
+    if (!head.ok) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
+}
+
+/** Generate PDF from HTML using html2canvas + jsPDF (matches DocumentsTab quality). */
 async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   const html2canvas = (await import("html2canvas")).default;
   const { jsPDF } = await import("jspdf");
@@ -87,18 +126,19 @@ async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     const t = setTimeout(() => reject(new Error("iframe timeout")), 10000);
     iframe.onload = () => { clearTimeout(t); resolve(); };
   });
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 500));
 
   const body = iframe.contentDocument!.body;
   iframe.style.height = body.scrollHeight + "px";
 
   const canvas = await html2canvas(body, {
-    scale: 1.2, useCORS: true, width: 794, height: body.scrollHeight,
+    scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff",
+    width: 794, height: body.scrollHeight,
     windowWidth: 794, windowHeight: body.scrollHeight, logging: false, imageTimeout: 5000,
   });
   document.body.removeChild(iframe);
 
-  const imgData = canvas.toDataURL("image/jpeg", 0.65);
+  const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -110,27 +150,44 @@ async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   while (heightLeft > 0) {
     if (page > 0) pdf.addPage();
     const yOffset = margin - page * usable;
-    pdf.addImage(imgData, "JPEG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
+    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
     heightLeft -= usable;
     page++;
   }
   return pdf.output("blob");
 }
 
-async function uploadAndSign(blob: Blob, filename: string, contractId: string): Promise<string> {
-  const path = `${contractId}/resend-${Date.now()}-${safeFilename(filename)}`;
+/**
+ * Upload PDF under deterministic name and register in contract_files.
+ * Used as fallback when no stored PDF exists.
+ */
+async function uploadAndSign(
+  blob: Blob,
+  displayName: string,
+  storageName: string,
+  contractId: string
+): Promise<string> {
+  const path = `${contractId}/${storageName}`;
   const { error: upErr } = await supabase.storage
     .from("contracts")
-    .upload(path, blob, { contentType: "application/pdf", upsert: false });
+    .upload(path, blob, { contentType: "application/pdf", upsert: true });
   if (upErr) throw new Error(`Upload: ${upErr.message}`);
 
-  // Register in contract_files
-  await supabase.from("contract_files").insert({
-    contract_id: contractId,
-    file_name: filename,
-    file_path: path,
-    file_size: blob.size,
-  });
+  // Register in contract_files (avoid duplicate by path)
+  const { data: existing } = await supabase
+    .from("contract_files")
+    .select("id")
+    .eq("contract_id", contractId)
+    .eq("file_path", path)
+    .maybeSingle();
+  if (!existing) {
+    await supabase.from("contract_files").insert({
+      contract_id: contractId,
+      file_name: displayName,
+      file_path: path,
+      file_size: blob.size,
+    });
+  }
 
   const { data, error } = await supabase.storage
     .from("contracts")
@@ -139,30 +196,52 @@ async function uploadAndSign(blob: Blob, filename: string, contractId: string): 
   return data.signedUrl;
 }
 
+/**
+ * Get signed URL for a kind of document — prefer stored PDF, fallback to regenerating from HTML.
+ * Returns { url, label } or null if neither stored file nor source HTML exist.
+ */
+async function getOrBuildPdfUrl(
+  kind: "contract" | "invoice",
+  opts: ResendOptions
+): Promise<{ url: string; label: string } | null> {
+  // 1. Try stored PDF
+  const stored = await findStoredPdf(opts.contractId, kind);
+  if (stored) {
+    const url = await trySignedUrl(stored.file_path);
+    if (url) {
+      // Try to enrich label from generated_documents (number/date) — fallback to file_name
+      const doc = await findLatestDoc(kind, opts);
+      const label = doc
+        ? `${kind === "contract" ? "Договор" : "Счёт"} №${doc.doc_number} от ${formatDate(doc.doc_date)}`
+        : stored.file_name;
+      return { url, label };
+    }
+  }
+
+  // 2. Fallback — regenerate from stored HTML
+  const doc = await findLatestDoc(kind, opts);
+  if (!doc) return null;
+
+  const blob = await generatePdfBlob(doc.html_content);
+  const safeNum = safeFilename(doc.doc_number);
+  const displayName = `${kind === "contract" ? "Договор" : "Счёт"}_${safeNum}_${doc.doc_date}.pdf`;
+  const storageName = `${kind === "contract" ? "Dogovor" : "Schet"}_${safeNum}_${doc.doc_date}.pdf`;
+  const url = await uploadAndSign(blob, displayName, storageName, opts.contractId);
+  return { url, label: `${kind === "contract" ? "Договор" : "Счёт"} №${doc.doc_number} от ${formatDate(doc.doc_date)}` };
+}
+
 /** Resend an existing contract (and optionally invoice) PDF by email. */
 export async function resendContractEmail(opts: ResendOptions): Promise<void> {
-  const contractDoc = await findLatestDoc("contract", opts);
-  if (!contractDoc) {
-    throw new Error("Договор не найден в Конструкторе. Сначала сгенерируйте его.");
+  const contractRes = await getOrBuildPdfUrl("contract", opts);
+  if (!contractRes) {
+    throw new Error("Договор не найден ни в файлах, ни в Конструкторе. Сначала создайте документ.");
   }
 
-  const invoiceDoc = opts.includeInvoice
-    ? await findLatestDoc("invoice", opts)
-    : null;
+  const invoiceRes = opts.includeInvoice ? await getOrBuildPdfUrl("invoice", opts) : null;
 
-  // Generate PDFs from stored HTML and upload
-  const contractFilename = `Договор_${safeFilename(contractDoc.doc_number)}_${contractDoc.doc_date}.pdf`;
-  const contractBlob = await generatePdfBlob(contractDoc.html_content);
-  const contractUrl = await uploadAndSign(contractBlob, contractFilename, opts.contractId);
-
-  let invoiceUrl: string | null = null;
-  if (invoiceDoc) {
-    const invoiceFilename = `Счет_${safeFilename(invoiceDoc.doc_number)}_${invoiceDoc.doc_date}.pdf`;
-    const invoiceBlob = await generatePdfBlob(invoiceDoc.html_content);
-    invoiceUrl = await uploadAndSign(invoiceBlob, invoiceFilename, opts.contractId);
-  }
-
-  const docLabel = `Договор №${contractDoc.doc_number} от ${formatDate(contractDoc.doc_date)}`;
+  const contractUrl = contractRes.url;
+  const invoiceUrl = invoiceRes?.url ?? null;
+  const docLabel = contractRes.label;
   const invoiceBtn = invoiceUrl
     ? `<p style="margin: 24px 0;"><a href="${invoiceUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;font-weight:500;">📎 Скачать Счёт (PDF)</a></p>`
     : "";
