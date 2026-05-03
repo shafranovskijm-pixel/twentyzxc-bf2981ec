@@ -20,20 +20,77 @@
     <meta name="twitter:description" content="Цифровые решения для бизнеса" />
     <meta name="twitter:image" content="https://24zxc.ru/og-image.png" />
 
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="canonical" href="https://24zxc.ru" />
     <!-- No external font CDNs at boot. System fonts are used as a fast fallback.
          Web fonts (Google/Yandex) are loaded lazily from main.tsx after first paint
          so the page never blocks on fonts.googleapis.com (which can hang in
          Yandex Browser without a VPN). -->
+    <style>
+      html, body { background: #15171e; color: #e9e3c8; margin: 0; }
+      .__boot {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 18px;
+        background: radial-gradient(ellipse at center, #1d2030 0%, #0e1018 100%);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        text-align: center; padding: 24px; z-index: 1;
+      }
+      .__boot h1 {
+        font-size: clamp(48px, 10vw, 96px); font-weight: 800; letter-spacing: 0.04em;
+        color: #d4be37; margin: 0;
+        text-shadow: 0 0 40px rgba(212,190,55,0.45), 0 0 80px rgba(212,190,55,0.2);
+      }
+      .__boot p { color: rgba(233,227,200,0.7); font-size: 14px; margin: 0; max-width: 360px; }
+      .__boot .__sp {
+        width: 28px; height: 28px; border-radius: 50%;
+        border: 2px solid rgba(212,190,55,0.25); border-top-color: #d4be37;
+        animation: __spin 0.9s linear infinite;
+      }
+      .__boot .__retry {
+        display: none; margin-top: 8px; padding: 10px 18px;
+        border: 1px solid rgba(212,190,55,0.5); background: transparent;
+        color: #d4be37; border-radius: 999px; cursor: pointer; font-size: 14px;
+      }
+      @keyframes __spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
 
   <body>
     <!-- Yandex.Metrika is initialised lazily from src/lib/lazy-third-party.ts
-         after first paint, with a queue stub so ym() calls never throw. -->
-    <noscript><div><img src="https://mc.yandex.ru/watch/101339397" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-
-    <div id="root"></div>
+         after first paint. The noscript pixel was removed because it pings
+         mc.yandex.ru even before JS runs and can hang Yandex Browser without VPN. -->
+    <div id="root">
+      <div class="__boot" id="__boot">
+        <h1>24ZXC</h1>
+        <div class="__sp" aria-hidden="true"></div>
+        <p id="__boot-text">Загружаем сайт…</p>
+        <button class="__retry" id="__boot-retry" onclick="location.reload()">Обновить страницу</button>
+      </div>
+    </div>
+    <script>
+      // If the React bundle hasn't booted in 8 seconds, surface a retry button
+      // so the user is never stuck on a blank screen (Yandex Browser without VPN).
+      (function () {
+        var t = setTimeout(function () {
+          var b = document.getElementById('__boot-text');
+          var r = document.getElementById('__boot-retry');
+          if (b) b.textContent = 'Загрузка занимает дольше обычного. Попробуйте обновить страницу.';
+          if (r) r.style.display = 'inline-block';
+        }, 8000);
+        window.addEventListener('error', function (e) {
+          // Chunk / script load errors -> show retry button immediately
+          if (e && (e.message || '').toString().toLowerCase().indexOf('chunk') !== -1) {
+            var r = document.getElementById('__boot-retry');
+            if (r) r.style.display = 'inline-block';
+          }
+        });
+        window.__clearBoot = function () {
+          clearTimeout(t);
+          var el = document.getElementById('__boot');
+          if (el && el.parentNode) el.parentNode.removeChild(el);
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

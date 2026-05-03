@@ -6,22 +6,12 @@
  * where fonts.googleapis.com can be slow or unreachable and freeze the page.
  */
 
-const FONTS_HREF =
-  "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter+Tight:wght@500;600;700;800&display=swap";
-
 const METRIKA_ID = 101339397;
 
-function injectFonts() {
-  if (document.getElementById("__google_fonts")) return;
-  const link = document.createElement("link");
-  link.id = "__google_fonts";
-  link.rel = "stylesheet";
-  link.href = FONTS_HREF;
-  link.crossOrigin = "anonymous";
-  // Don't block rendering even if the request hangs.
-  (link as any).fetchPriority = "low";
-  document.head.appendChild(link);
-}
+// Google Fonts intentionally NOT loaded on the home page anymore. The site
+// uses safe system-font stacks defined in index.css. Loading them — even
+// lazily — was still hurting Yandex Browser users without VPN, where
+// fonts.googleapis.com / fonts.gstatic.com can hang for many seconds.
 
 function injectYandexMetrika() {
   const w = window as any;
@@ -72,8 +62,7 @@ export function bootLazyThirdParty() {
   if (typeof window === "undefined") return;
 
   const start = () => {
-    whenIdle(injectFonts);
-    // Defer analytics a bit more so it never competes with first paint.
+    // Defer analytics so it never competes with first paint.
     whenIdle(injectYandexMetrika, 4000);
   };
 
