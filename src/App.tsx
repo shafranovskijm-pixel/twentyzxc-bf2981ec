@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,35 +11,44 @@ import { AchievementsProvider } from "@/contexts/AchievementsContext";
 import { InventoryBar } from "@/components/game/InventoryBar";
 import { FlyingKey } from "@/components/game/FlyingKey";
 import Index from "./pages/Index";
-import Portfolio from "./pages/Portfolio";
-import Frdo from "./pages/Frdo";
-import Licensing from "./pages/Licensing";
-import About from "./pages/About";
-import Policy from "./pages/Policy";
-import Templates from "./pages/Templates";
-import TemplateDetail from "./pages/TemplateDetail";
-import TemplatePreview from "./pages/TemplatePreview";
-import Landing from "./pages/services/Landing";
-import Corporate from "./pages/services/Corporate";
-import Ecommerce from "./pages/services/Ecommerce";
-import WebApp from "./pages/services/WebApp";
-import Nmo from "./pages/services/Nmo";
-import Flowrish from "./pages/projects/Flowrish";
-import Chmuleva from "./pages/projects/Chmuleva";
-import Lanmei from "./pages/projects/Lanmei";
-import LadyFrost from "./pages/projects/LadyFrost";
-import PrNutrition from "./pages/projects/PrNutrition";
-import Status from "./pages/projects/Status";
-import SpinRide from "./pages/projects/SpinRide";
-import Reviews from "./pages/Reviews";
-import Playground from "./pages/Playground";
-import PlaygroundView from "./pages/PlaygroundView";
-import Admin from "./pages/Admin";
-import OrgPanel from "./pages/OrgPanel";
-import OrgLanding from "./pages/OrgLanding";
-import NotFound from "./pages/NotFound";
+
+// Lazy-load every non-home route so the initial JS bundle is small enough
+// to start fast even on slow / region-throttled connections (Yandex Browser
+// without VPN). This keeps Three.js, dnd-kit, recharts, jspdf, html2canvas
+// and admin code out of the home-page chunk.
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Frdo = lazy(() => import("./pages/Frdo"));
+const Licensing = lazy(() => import("./pages/Licensing"));
+const About = lazy(() => import("./pages/About"));
+const Policy = lazy(() => import("./pages/Policy"));
+const Templates = lazy(() => import("./pages/Templates"));
+const TemplateDetail = lazy(() => import("./pages/TemplateDetail"));
+const TemplatePreview = lazy(() => import("./pages/TemplatePreview"));
+const Landing = lazy(() => import("./pages/services/Landing"));
+const Corporate = lazy(() => import("./pages/services/Corporate"));
+const Ecommerce = lazy(() => import("./pages/services/Ecommerce"));
+const WebApp = lazy(() => import("./pages/services/WebApp"));
+const Nmo = lazy(() => import("./pages/services/Nmo"));
+const Flowrish = lazy(() => import("./pages/projects/Flowrish"));
+const Chmuleva = lazy(() => import("./pages/projects/Chmuleva"));
+const Lanmei = lazy(() => import("./pages/projects/Lanmei"));
+const LadyFrost = lazy(() => import("./pages/projects/LadyFrost"));
+const PrNutrition = lazy(() => import("./pages/projects/PrNutrition"));
+const Status = lazy(() => import("./pages/projects/Status"));
+const SpinRide = lazy(() => import("./pages/projects/SpinRide"));
+const Reviews = lazy(() => import("./pages/Reviews"));
+const Playground = lazy(() => import("./pages/Playground"));
+const PlaygroundView = lazy(() => import("./pages/PlaygroundView"));
+const Admin = lazy(() => import("./pages/Admin"));
+const OrgPanel = lazy(() => import("./pages/OrgPanel"));
+const OrgLanding = lazy(() => import("./pages/OrgLanding"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+const RouteFallback = () => (
+  <div className="min-h-screen w-full bg-background" aria-hidden="true" />
+);
 
 const App = () => (
   <HelmetProvider>
@@ -52,36 +62,38 @@ const App = () => (
             <InventoryBar />
             <BrowserRouter>
               <ScrollToHash />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/portfolio" element={<Portfolio />} />
-                <Route path="/frdo" element={<Frdo />} />
-                <Route path="/licensing" element={<Licensing />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/policy" element={<Policy />} />
-                <Route path="/templates" element={<Templates />} />
-                <Route path="/templates/:id" element={<TemplateDetail />} />
-                <Route path="/templates/:id/preview" element={<TemplatePreview />} />
-                <Route path="/services/landing" element={<Landing />} />
-                <Route path="/services/corporate" element={<Corporate />} />
-                <Route path="/services/ecommerce" element={<Ecommerce />} />
-                <Route path="/services/webapp" element={<WebApp />} />
-                <Route path="/services/nmo" element={<Nmo />} />
-                <Route path="/projects/flowrish" element={<Flowrish />} />
-                <Route path="/projects/chmuleva" element={<Chmuleva />} />
-                <Route path="/projects/lanmei" element={<Lanmei />} />
-                <Route path="/projects/lady-frost" element={<LadyFrost />} />
-                <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
-                <Route path="/projects/status" element={<Status />} />
-                <Route path="/projects/spinride" element={<SpinRide />} />
-                <Route path="/reviews" element={<Reviews />} />
-                <Route path="/playground" element={<Playground />} />
-                <Route path="/p/:slug" element={<PlaygroundView />} />
-                <Route path="/admin" element={<Admin />} />
-                <Route path="/org" element={<OrgPanel />} />
-                <Route path="/shop/:slug" element={<OrgLanding />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/frdo" element={<Frdo />} />
+                  <Route path="/licensing" element={<Licensing />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/policy" element={<Policy />} />
+                  <Route path="/templates" element={<Templates />} />
+                  <Route path="/templates/:id" element={<TemplateDetail />} />
+                  <Route path="/templates/:id/preview" element={<TemplatePreview />} />
+                  <Route path="/services/landing" element={<Landing />} />
+                  <Route path="/services/corporate" element={<Corporate />} />
+                  <Route path="/services/ecommerce" element={<Ecommerce />} />
+                  <Route path="/services/webapp" element={<WebApp />} />
+                  <Route path="/services/nmo" element={<Nmo />} />
+                  <Route path="/projects/flowrish" element={<Flowrish />} />
+                  <Route path="/projects/chmuleva" element={<Chmuleva />} />
+                  <Route path="/projects/lanmei" element={<Lanmei />} />
+                  <Route path="/projects/lady-frost" element={<LadyFrost />} />
+                  <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
+                  <Route path="/projects/status" element={<Status />} />
+                  <Route path="/projects/spinride" element={<SpinRide />} />
+                  <Route path="/reviews" element={<Reviews />} />
+                  <Route path="/playground" element={<Playground />} />
+                  <Route path="/p/:slug" element={<PlaygroundView />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/org" element={<OrgPanel />} />
+                  <Route path="/shop/:slug" element={<OrgLanding />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </InventoryProvider>
         </AchievementsProvider>
