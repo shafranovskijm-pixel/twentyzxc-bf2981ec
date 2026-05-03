@@ -6,17 +6,22 @@ import CasesSection from "@/components/CasesSection";
 import ContactSection from "@/components/ContactSection";
 import Footer from "@/components/Footer";
 import { InteractiveParticles, GeometricShapes, TropicalGlows, SectionDivider } from "@/components/decorations";
-import { useSiteSettings } from "@/hooks/use-site-settings";
+
+const DEFAULT_SEO_TITLE =
+  "24ZXC — Под ключ. Под пальмами. Сайты, реклама, приложения";
+const DEFAULT_SEO_DESCRIPTION =
+  "Доверьте сайт, рекламу в Яндекс Директ и веб-приложения нам — а сами отдыхайте. Полный цикл премиум-разработки от идеи до запуска.";
 
 const Index = () => {
-  const { settings } = useSiteSettings();
-
+  // SEO comes from static defaults so the home page never waits on a backend
+  // call. The dynamic site_settings table is still used in the admin panel,
+  // but blocking the first paint on a network round-trip was causing
+  // "infinite loading" symptoms in Yandex Browser without VPN.
   return (
     <>
       <Helmet>
-        <title>{settings.seo_title || "24ZXC — Под ключ. Под пальмами. Сайты, реклама, приложения"}</title>
-        <meta name="description" content={settings.seo_description || "Доверьте сайт, рекламу в Яндекс Директ и веб-приложения нам — а сами отдыхайте. Полный цикл премиум-разработки от идеи до запуска."} />
-        {settings.seo_keywords && <meta name="keywords" content={settings.seo_keywords} />}
+        <title>{DEFAULT_SEO_TITLE}</title>
+        <meta name="description" content={DEFAULT_SEO_DESCRIPTION} />
         <link rel="canonical" href="https://24zxc.ru/" />
       </Helmet>
       <div className="tropical-vibe min-h-screen bg-background relative">
