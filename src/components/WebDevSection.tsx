@@ -9,7 +9,7 @@ import cardBgEcommerce from "@/assets/card-bg-ecommerce.jpg";
 import cardBgWebapp from "@/assets/card-bg-webapp.jpg";
 import { useInventory } from "@/contexts/InventoryContext";
 import { useAchievements } from "@/contexts/AchievementsContext";
-import { ServiceKey3D } from "@/components/game/ServiceKey3D";
+import { ServiceKey3DLazy as ServiceKey3D } from "@/components/game/ServiceKey3DLazy";
 
 // Tiny palm accent
 const PalmAccent = ({ className = "" }: { className?: string }) => (
