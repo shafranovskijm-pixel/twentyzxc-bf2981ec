@@ -774,15 +774,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       const timeout = setTimeout(() => reject(new Error('Iframe load timeout')), 10000);
       iframe.onload = () => { clearTimeout(timeout); resolve(); };
     });
-    await new Promise(r => setTimeout(r, 200));
+    await new Promise(r => setTimeout(r, 500));
     
     const body = iframe.contentDocument!.body;
     iframe.style.height = body.scrollHeight + 'px';
     
     const canvas = await Promise.race([
       html2canvas(body, {
-        scale: 1.2,
+        scale: 2,
         useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
         width: 794,
         height: body.scrollHeight,
         windowWidth: 794,
@@ -794,7 +796,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     ]);
     document.body.removeChild(iframe);
     
-    const imgData = canvas.toDataURL('image/jpeg', 0.65);
+    const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
