@@ -1,47 +1,80 @@
-## План: «Отправить договор и счёт повторно»
+## Проблемы
 
-### Что добавится
-В меню действий (⋮) каждой строки таблицы договоров (и в мобильной карточке) появится новый пункт **«Отправить повторно (Email)»** с иконкой `Send`. Клик открывает быстрый диалог:
+На скриншоте видно: подпись и печать **уползли вниз** под линию подписи и обрезаются. Плюс пользователь жалуется, что при «Отправить повторно» договор/счёт каждый раз генерируется заново из HTML, хотя уже лежит готовый PDF в Storage.
 
-- Email клиента (предзаполнен из `clients.email` по `client_name`).
-- Чекбокс «Приложить счёт» (включён, если счёт найден).
-- Кнопка «Отправить» — рассылает то же письмо, что и при первой отправке (с теми же ссылками на PDF), без пересоздания документа.
+---
 
-### Источник данных (без новых таблиц)
-В `generated_documents` уже хранятся ранее сгенерированные документы по `contract_id`:
-- `doc_type='contract'` — основной договор;
-- `doc_type='invoice'` — счёт (создаётся автоматически при отправке договора).
+## Причина 1 — «кривая печать»
 
-Также при первой отправке PDF загружается в Storage `contracts/...` и регистрируется в `contract_files`. Эти файлы и используем повторно.
+В `src/lib/document-templates.ts` блок подписи использует абсолютное позиционирование:
 
-### Алгоритм «Отправить повторно»
-1. Найти последний `generated_documents` с `contract_id = c.id` и `doc_type='contract'` (по `created_at desc`).
-   - Если не найден — toast «Сначала сгенерируйте договор в Конструкторе» + предложение перейти.
-2. По тому же `contract_id` найти последний `doc_type='invoice'` (опционально).
-3. Получить файлы PDF:
-   - Сначала пробуем `contract_files` по `contract_id` (последние записи `*.pdf`) — это уже готовые PDF в Storage.
-   - Если PDF в Storage отсутствует (старая запись без файла) — генерируем PDF из `html_content` на лету через `html2canvas + jsPDF` (та же логика, что в `DocumentsTab.generatePdfBase64`) и **загружаем** в `contracts/{contract_id}/resend-{ts}.pdf`, затем регистрируем в `contract_files`.
-4. Создаём `signedUrl` на 7 дней для договора и (если есть) счёта.
-5. Вызываем edge-функцию `send-document-email` с тем же шаблоном письма, что и в `DocumentsTab` (заголовок `Договор №… от …`, две кнопки «Скачать Договор/Счёт»).
-6. Toast «Отправлено повторно на {email}». Email сохраняется в `clients.email`, если был изменён.
+```text
+.signature-img { position: absolute; height: 50px; bottom: 0;   left: 80px; }
+.stamp-img     { position: absolute; height: 110px; bottom: -40px; left: 10px; opacity: 0.85; }
+```
 
-### Файлы изменений
-- `src/components/admin/ContractsTab.tsx`
-  - Импорт иконки `Send`, состояния `resendOpen`, `resendContract`, `resendEmail`, `resendIncludeInvoice`, `resendSending`.
-  - Функция `openResend(c)` — подгружает email клиента + проверяет наличие документов.
-  - Функция `doResend()` — реализует алгоритм выше.
-  - Новый `<DropdownMenuItem>` «Отправить повторно (Email)» в desktop и mobile меню.
-  - Новый `<Dialog>` с полем email + чекбоксом + прогресс-индикатором.
-- Новый общий хелпер **`src/lib/resend-contract.ts`** — извлечение последнего договора/счёта, получение PDF (из Storage или генерация из HTML), отправка письма. Чтобы не дублировать ~150 строк из `DocumentsTab`.
+`bottom: -40px` у штампа выносит его **за** линию подписи. На экране в браузере смотрится нормально, а `html2canvas` режет canvas построчно по `body.scrollHeight` — нижняя часть штампа попадает на стык страниц или вообще обрезается. Дополнительно `scale: 1.2` + `image/jpeg` качество `0.65` дают мутный край.
 
-### БД / RLS
-Изменений схемы и политик **не требуется** — таблицы `generated_documents`, `contract_files`, bucket `contracts` уже доступны админу.
+### Что починить
+1. Перевести подпись/печать на позиционирование **внутри** `.signature-block` без отрицательных значений:
+   - `.signature-line` — добавить `min-height: 70px` и `padding-top: 60px`, чтобы под линией оставалось место.
+   - `.signature-img` — `bottom: 4px`, `left: 70px`, `height: 45px`.
+   - `.stamp-img` — `bottom: 0`, `left: 0`, `height: 95px`, `opacity: 0.9`. Никаких отрицательных `bottom`.
+   - Добавить `.signature-block { padding-bottom: 30px; }` чтобы штамп не вылезал из контейнера.
+2. В `generatePdfBase64` (DocumentsTab) и `generatePdfBlob` (`src/lib/resend-contract.ts`):
+   - Поднять `scale` с `1.2` → `2`.
+   - Сменить экспорт с `image/jpeg, 0.65` → `image/png` (без потерь).
+   - Добавить `useCORS: true, allowTaint: true, backgroundColor: '#ffffff'`.
+   - Увеличить `await new Promise(r => setTimeout(r, 200))` → `500ms`, чтобы шрифты и base64-изображения успели отрисоваться.
+3. Применить те же правки в `frdo-contract-template.ts` и `nmo-contract-template.ts` (там такой же блок подписи).
 
-### Edge-функции
-Используется существующая `send-document-email` без изменений.
+---
 
-### Мелочи UX
-- Если у клиента в `clients.email` пусто — поле пустое, валидируем при отправке (regex email).
-- Если контракт не имеет ни одного `generated_documents` — пункт меню всё равно показываем, но при клике toast «Сначала создайте документ в Конструкторе» + кнопка «Перейти».
-- Прогресс через `toast.loading` → `toast.success`.
-- Срок действия ссылок — 7 дней (как при первой отправке).
+## Причина 2 — повторная генерация PDF при «Отправить повторно»
+
+Сейчас `src/lib/resend-contract.ts` всегда:
+1. Идёт в `generated_documents`, берёт `html_content`.
+2. Генерирует PDF через html2canvas + jsPDF.
+3. Загружает новый файл `resend-{ts}-...pdf` в Storage.
+
+Хотя в `contract_files` уже лежит готовый PDF, созданный при первой отправке (`saveFileToFolder` в `DocumentsTab`).
+
+### Что починить
+Переписать алгоритм `resendContractEmail`:
+
+1. **Сначала ищем готовый PDF в `contract_files`** по `contract_id`:
+   ```text
+   select * from contract_files
+   where contract_id = $1 and file_name ilike 'Договор%' and file_name ilike '%.pdf'
+   order by created_at desc limit 1
+   ```
+   То же для счёта (`file_name ilike 'Счёт%' or 'Счет%'`).
+2. Если файл найден → проверяем, что blob существует в bucket `contracts` через `supabase.storage.from('contracts').createSignedUrl(file_path, 7d)`. Если ссылка получена — **используем её сразу**, без перегенерации.
+3. Если в `contract_files` пусто или файл удалён из Storage (signed URL вернул 404 при HEAD-проверке) → fallback на текущую логику (генерация из `generated_documents.html_content`), но загружаем под детерминированным именем `{contract_id}/Dogovor_{number}_{date}.pdf` с `upsert: true` (а не `resend-{ts}-...`), чтобы не плодить дубли.
+4. После успешной генерации в fallback — добавляем запись в `contract_files` (как делает `DocumentsTab`).
+
+Это даёт:
+- При повторной отправке клиент получает **тот же самый файл**, что и в первый раз (одинаковое качество, одинаковое содержимое).
+- Перестают плодиться `resend-1730000000-...pdf` в Storage.
+- Перегенерация только если PDF реально пропал.
+
+---
+
+## Файлы изменений
+
+- `src/lib/document-templates.ts` — CSS блока подписи (3 шаблона: контракт, счёт, акт).
+- `src/lib/frdo-contract-template.ts` — тот же CSS.
+- `src/lib/nmo-contract-template.ts` — тот же CSS.
+- `src/components/admin/DocumentsTab.tsx` — `generatePdfBase64`: scale 2, PNG, +300мс ожидание.
+- `src/lib/resend-contract.ts` — новая логика «сначала Storage, потом генерация»; вынести `generatePdfBlob` в общий хелпер с теми же параметрами качества.
+
+## БД / RLS
+Изменений схемы **не требуется**. Используем существующие `contract_files` и bucket `contracts`.
+
+## Edge-функции
+Без изменений (`send-document-email` уже работает с signed URL).
+
+## Что проверить после
+1. Сгенерировать новый договор → открыть PDF → подпись и печать на месте, не обрезаны.
+2. Отправить договор → нажать «Отправить повторно» → в Storage **не появилось** нового файла `resend-*.pdf`, ссылка ведёт на исходный PDF.
+3. Удалить файл вручную из Storage → «Отправить повторно» → fallback регенерирует PDF под детерминированным именем и регистрирует в `contract_files`.
