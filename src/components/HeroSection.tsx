@@ -55,7 +55,7 @@ const HeroSection = () => {
           {/* Tagline */}
           <div className="inline-flex items-center gap-3 mb-8 animate-fade-in">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/60" />
-            <span className="text-xs sm:text-sm tracking-[0.3em] uppercase text-primary font-light">Под ключ · Под пальмами</span>
+            <span className="text-xs sm:text-sm tracking-[0.3em] uppercase text-primary font-light">Под ключ · Премиум-разработка</span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/60" />
           </div>
 
