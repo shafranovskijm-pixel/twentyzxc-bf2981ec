@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { InteractiveParticles, GeometricShapes, TropicalGlows, SectionDivider } from "@/components/decorations";
 
 const DEFAULT_SEO_TITLE =
-  "24ZXC — Под ключ. Под пальмами. Сайты, реклама, приложения";
+  "24ZXC — Под ключ. Сайты, реклама, веб-приложения";
 const DEFAULT_SEO_DESCRIPTION =
   "Доверьте сайт, рекламу в Яндекс Директ и веб-приложения нам — а сами отдыхайте. Полный цикл премиум-разработки от идеи до запуска.";
 
