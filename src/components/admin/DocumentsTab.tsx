@@ -26,15 +26,17 @@ import {
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
+import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
 
-type DocType = "contract" | "invoice" | "act";
+type DocType = "contract" | "invoice" | "act" | "reconciliation";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
 
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
   invoice: "Счёт на оплату",
   act: "Акт выполненных работ",
+  reconciliation: "Акт сверки",
 };
 
 const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
@@ -133,7 +135,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       if (generatedError) throw generatedError;
       if (contractsError) throw contractsError;
 
-      for (const type of ["contract", "invoice", "act"] as DocType[]) {
+      for (const type of ["contract", "invoice", "act", "reconciliation"] as DocType[]) {
         let maxNum = 0;
 
         for (const row of (generatedDocs as any[]) || []) {
@@ -183,6 +185,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   // act-specific
   const [linkedContractId, setLinkedContractId] = useState("");
+
+  // reconciliation-specific
+  const [periodFrom, setPeriodFrom] = useState(() => {
+    const d = new Date();
+    d.setMonth(0, 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [periodTo, setPeriodTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reconRows, setReconRows] = useState<ReconciliationRow[]>([]);
+  const [openingBalance, setOpeningBalance] = useState(0);
+  const [reconLoading, setReconLoading] = useState(false);
 
   // discount (invoice-specific)
   const [discountAmount, setDiscountAmount] = useState(0);
@@ -236,6 +249,93 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       }]);
     }
   }, []);
+
+  // Reconciliation: load contracts+payments from CRM for selected client and period
+  const loadReconciliationFromCRM = useCallback(async () => {
+    if (!clientName.trim()) {
+      toast.error("Сначала выберите клиента");
+      return;
+    }
+    setReconLoading(true);
+    try {
+      const { data: clientContracts, error } = await supabase
+        .from("contracts")
+        .select("contract_number, contract_date, amount, payment_status, paid_until")
+        .eq("client_name", clientName)
+        .order("contract_date", { ascending: true });
+      if (error) throw error;
+
+      const { data: acts } = await supabase
+        .from("generated_documents")
+        .select("doc_number, doc_date, total_amount, doc_type")
+        .eq("client_name", clientName)
+        .eq("doc_type", "act")
+        .order("doc_date", { ascending: true });
+
+      const fromTs = new Date(periodFrom).getTime();
+      const toTs = new Date(periodTo).getTime();
+      const inPeriod = (dStr?: string | null) => {
+        if (!dStr) return false;
+        const t = new Date(dStr).getTime();
+        return !isNaN(t) && t >= fromTs && t <= toTs;
+      };
+
+      const rows: ReconciliationRow[] = [];
+
+      // Дебет — выставленные акты
+      for (const a of (acts || [])) {
+        if (inPeriod(a.doc_date)) {
+          rows.push({
+            date: a.doc_date,
+            doc: `Акт №${a.doc_number}`,
+            debit: Number(a.total_amount) || 0,
+            credit: 0,
+          });
+        }
+      }
+
+      // Кредит — отметки об оплате (payment_status = 'оплачено')
+      for (const c of (clientContracts || [])) {
+        if (c.payment_status === "оплачено" && inPeriod(c.contract_date)) {
+          rows.push({
+            date: c.contract_date as string,
+            doc: `Оплата по договору №${c.contract_number || ""}`,
+            debit: 0,
+            credit: Number(c.amount) || 0,
+          });
+        }
+      }
+
+      // Если актов вообще нет — выставим начисления по самим договорам
+      if (!rows.some(r => r.debit > 0)) {
+        for (const c of (clientContracts || [])) {
+          if (inPeriod(c.contract_date)) {
+            rows.push({
+              date: c.contract_date as string,
+              doc: `Договор №${c.contract_number || ""}`,
+              debit: Number(c.amount) || 0,
+              credit: 0,
+            });
+          }
+        }
+      }
+
+      rows.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      setReconRows(rows);
+      toast.success(`Загружено ${rows.length} операций`);
+    } catch (e: any) {
+      console.error("[Recon] load failed:", e);
+      toast.error(e.message || "Не удалось загрузить операции");
+    } finally {
+      setReconLoading(false);
+    }
+  }, [clientName, periodFrom, periodTo]);
+
+  const addReconRow = () => setReconRows(prev => [...prev, { date: new Date().toISOString().slice(0, 10), doc: "", debit: 0, credit: 0 }]);
+  const updateReconRow = (i: number, field: keyof ReconciliationRow, value: string | number) => {
+    setReconRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } as ReconciliationRow : r));
+  };
+  const removeReconRow = (i: number) => setReconRows(prev => prev.filter((_, idx) => idx !== i));
 
   // Pre-fill from planner task
   useEffect(() => {
@@ -448,7 +548,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     console.log("[DOC] generate called", { effectiveType, effectiveNumber, clientName, services });
     if (!effectiveNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
-    if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
+    if (effectiveType !== "reconciliation" && services.every(s => !s.name.trim())) {
+      return toast.error("Добавьте хотя бы одну услугу");
+    }
 
     const company: CompanyRequisites = {
       company_name: settings.company_name || "",
@@ -510,6 +612,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           break;
         case "invoice": html = generateInvoiceHtml(docData); break;
         case "act": html = generateActHtml(docData); break;
+        case "reconciliation":
+          html = generateReconciliationHtml({
+            number: effectiveNumber,
+            periodFrom,
+            periodTo,
+            company,
+            client,
+            rows: reconRows,
+            openingBalance,
+          });
+          break;
       }
     } catch (templateErr) {
       console.error("[DOC] Template generation error:", templateErr);
@@ -540,7 +653,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Save document to DB with upsert logic (called on send)
   const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
     let targetContractId = linkedContractId || null;
-    const filteredServices = services.filter(s => s.name.trim());
+    const filteredServices = docType === "reconciliation"
+      ? (reconRows as any[])
+      : services.filter(s => s.name.trim());
+    const reconTotal = reconRows.reduce((s, r) => s + (Number(r.debit) || 0) - (Number(r.credit) || 0), 0);
 
     // Step 1: Upsert main document (check by doc_type + doc_number)
     console.log("[DOC] Step 1: Upsert document...");
@@ -558,7 +674,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       client_name: clientName,
       client_inn: clientInn || null,
       contract_id: targetContractId,
-      total_amount: total,
+      total_amount: docType === "reconciliation" ? Math.abs(reconTotal) : total,
       services: JSON.stringify(filteredServices),
       html_content: html,
       metadata: JSON.stringify({
@@ -566,6 +682,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         discountAmount, discountDeadline,
         clientKpp: clientKpp, clientOgrn: clientOgrn, clientAddress: clientAddress,
         clientDirectorName, clientDirectorPost,
+        periodFrom: docType === "reconciliation" ? periodFrom : undefined,
+        periodTo: docType === "reconciliation" ? periodTo : undefined,
+        openingBalance: docType === "reconciliation" ? openingBalance : undefined,
       }),
     };
 
@@ -1145,7 +1264,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     try {
       const parsed = typeof doc.services === 'string' ? JSON.parse(doc.services) : doc.services;
-      if (Array.isArray(parsed) && parsed.length > 0) setServices(parsed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (doc.doc_type === "reconciliation") {
+          setReconRows(parsed as ReconciliationRow[]);
+        } else {
+          setServices(parsed);
+        }
+      }
     } catch { /* keep current */ }
 
     if (doc.metadata) {
@@ -1162,6 +1287,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         if (meta.clientAddress !== undefined) setClientAddress(meta.clientAddress);
         if (meta.clientDirectorName !== undefined) setClientDirectorName(meta.clientDirectorName);
         if (meta.clientDirectorPost !== undefined) setClientDirectorPost(meta.clientDirectorPost);
+        if (meta.periodFrom) setPeriodFrom(meta.periodFrom);
+        if (meta.periodTo) setPeriodTo(meta.periodTo);
+        if (meta.openingBalance !== undefined) setOpeningBalance(Number(meta.openingBalance) || 0);
       } catch { /* keep current */ }
     } else {
       fillClientFromName(doc.client_name);
@@ -1397,7 +1525,83 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         </Card>
       )}
 
+      {/* Reconciliation-specific */}
+      {docType === "reconciliation" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Период и операции</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={loadReconciliationFromCRM} disabled={reconLoading}>
+                  {reconLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                  Подтянуть из CRM
+                </Button>
+                <Button variant="outline" size="sm" onClick={addReconRow}><Plus className="w-4 h-4 mr-1" />Строка</Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label>Период с</Label>
+                <Input type="date" value={periodFrom} onChange={e => setPeriodFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Период по</Label>
+                <Input type="date" value={periodTo} onChange={e => setPeriodTo(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Сальдо начальное (+ в нашу пользу)</Label>
+                <Input type="number" value={openingBalance || ""} onChange={e => setOpeningBalance(parseFloat(e.target.value) || 0)} placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {reconRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">Нет операций. Нажмите «Подтянуть из CRM» или добавьте строку вручную.</p>
+              )}
+              {reconRows.map((r, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-[140px_1fr_120px_120px_auto] gap-2 items-end">
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Дата</Label>}
+                    <Input type="date" value={r.date} onChange={e => updateReconRow(i, "date", e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Документ</Label>}
+                    <Input value={r.doc} onChange={e => updateReconRow(i, "doc", e.target.value)} placeholder="Акт №… / Оплата по договору №…" />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Дебет (нач.)</Label>}
+                    <Input type="number" min={0} value={r.debit || ""} onChange={e => updateReconRow(i, "debit", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Кредит (опл.)</Label>}
+                    <Input type="number" min={0} value={r.credit || ""} onChange={e => updateReconRow(i, "credit", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeReconRow(i)}>
+                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            {reconRows.length > 0 && (() => {
+              const td = reconRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
+              const tc = reconRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+              const fin = openingBalance + td - tc;
+              return (
+                <div className="text-right text-sm space-y-1 pt-2 border-t">
+                  <div>Обороты: дебет <strong>{td.toLocaleString("ru-RU")}</strong> ₽ / кредит <strong>{tc.toLocaleString("ru-RU")}</strong> ₽</div>
+                  <div className="font-semibold text-base">
+                    Сальдо конечное: {fin === 0 ? "0 (закрыто)" : `${Math.abs(fin).toLocaleString("ru-RU")} ₽ ${fin > 0 ? "в нашу пользу" : "в пользу клиента"}`}
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Services table */}
+      {docType !== "reconciliation" && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -1459,6 +1663,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Generate */}
       <Button onClick={() => generate()} size="lg" className="w-full">
@@ -1635,6 +1840,7 @@ const DOC_TYPE_LABELS_HIST: Record<string, { label: string; color: string }> = {
   contract: { label: "Договор", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   invoice: { label: "Счёт", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  reconciliation: { label: "Акт сверки", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
 };
 
 const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
