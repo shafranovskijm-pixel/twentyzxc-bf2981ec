@@ -1264,7 +1264,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     try {
       const parsed = typeof doc.services === 'string' ? JSON.parse(doc.services) : doc.services;
-      if (Array.isArray(parsed) && parsed.length > 0) setServices(parsed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        if (doc.doc_type === "reconciliation") {
+          setReconRows(parsed as ReconciliationRow[]);
+        } else {
+          setServices(parsed);
+        }
+      }
     } catch { /* keep current */ }
 
     if (doc.metadata) {
@@ -1281,6 +1287,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         if (meta.clientAddress !== undefined) setClientAddress(meta.clientAddress);
         if (meta.clientDirectorName !== undefined) setClientDirectorName(meta.clientDirectorName);
         if (meta.clientDirectorPost !== undefined) setClientDirectorPost(meta.clientDirectorPost);
+        if (meta.periodFrom) setPeriodFrom(meta.periodFrom);
+        if (meta.periodTo) setPeriodTo(meta.periodTo);
+        if (meta.openingBalance !== undefined) setOpeningBalance(Number(meta.openingBalance) || 0);
       } catch { /* keep current */ }
     } else {
       fillClientFromName(doc.client_name);
