@@ -186,6 +186,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // act-specific
   const [linkedContractId, setLinkedContractId] = useState("");
 
+  // reconciliation-specific
+  const [periodFrom, setPeriodFrom] = useState(() => {
+    const d = new Date();
+    d.setMonth(0, 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [periodTo, setPeriodTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [reconRows, setReconRows] = useState<ReconciliationRow[]>([]);
+  const [openingBalance, setOpeningBalance] = useState(0);
+  const [reconLoading, setReconLoading] = useState(false);
+
   // discount (invoice-specific)
   const [discountAmount, setDiscountAmount] = useState(0);
   const [discountDeadline, setDiscountDeadline] = useState("");
