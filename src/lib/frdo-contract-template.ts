@@ -115,7 +115,16 @@ export function generateFrdoContractHtml(data: DocumentData): string {
       <span>${date}</span>
     </div>
     <div class="section">
-      <p class="indent"><strong>${c.company_short_name || c.company_name}</strong>, в дальнейшем именуемое УЦ, ИНН ${c.company_inn}, с одной стороны и <strong>${cl.name}</strong>, именуемое в дальнейшем Заказчик, в лице ${declinePost(cl.director_post || "Директор").toLowerCase()} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны, вместе именуемые стороны, заключили настоящий Договор о нижеследующем:</p>
+      <p class="indent"><strong>${c.company_short_name || c.company_name}</strong>, в дальнейшем именуемое УЦ, ИНН ${c.company_inn}, с одной стороны и ${(() => {
+        const n = (cl.name || "").trim().toLowerCase();
+        const ogrnDigits = (cl.ogrn || "").replace(/\D/g, "");
+        const isIP = n.startsWith("ип ") || n.startsWith("индивидуальный предприниматель") || ogrnDigits.length === 15;
+        if (isIP) {
+          const ogrn = cl.ogrn ? `ОГРНИП ${cl.ogrn}` : "ОГРНИП";
+          return `<strong>${cl.name}</strong>, именуемый в дальнейшем Заказчик, ИНН ${cl.inn}, действующий на основании ${ogrn}`;
+        }
+        return `<strong>${cl.name}</strong>, именуемое в дальнейшем Заказчик, в лице ${declinePost(cl.director_post || "Директор").toLowerCase()} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава`;
+      })()}, с другой стороны, вместе именуемые стороны, заключили настоящий Договор о нижеследующем:</p>
     </div>
 
     <div class="section">
@@ -231,8 +240,16 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         <p><strong>Заказчик:</strong></p>
         <p>${cl.name}</p>
         <p>${cl.address}</p>
-        <p>ИНН${cl.inn ? "/" : ""}${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}${cl.ogrn ? ` ОГРН ${cl.ogrn}` : ""}</p>
-        <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>
+        ${(() => {
+          const ogrnDigits = (cl.ogrn || "").replace(/\D/g, "");
+          const isIP = (cl.name || "").trim().toLowerCase().startsWith("ип ") || ogrnDigits.length === 15;
+          if (isIP) {
+            return `<p>ИНН ${cl.inn}${cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : ""}</p>
+        <div class="signature-line">ИП __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>`;
+          }
+          return `<p>ИНН${cl.inn ? "/" : ""}${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}${cl.ogrn ? ` ОГРН ${cl.ogrn}` : ""}</p>
+        <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>`;
+        })()}
         <p style="margin-top:5px;">М.П.</p>
       </div>
     </div>

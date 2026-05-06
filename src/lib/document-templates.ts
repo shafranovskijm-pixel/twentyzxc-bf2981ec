@@ -141,6 +141,23 @@ function getActingPhrase(directorName: string): string {
   return isFeminineName(directorName) ? "действующей" : "действующего";
 }
 
+export function isIndividualEntrepreneur(cl: { name?: string; ogrn?: string }): boolean {
+  const n = (cl.name || "").trim().toLowerCase();
+  if (n.startsWith("ип ") || n.startsWith("индивидуальный предприниматель")) return true;
+  const ogrnDigits = (cl.ogrn || "").replace(/\D/g, "");
+  return ogrnDigits.length === 15;
+}
+
+export function clientIntroPhrase(cl: ClientRequisites, role = "Заказчик", quoted = true): string {
+  const r = quoted ? `«${role}»` : role;
+  if (isIndividualEntrepreneur(cl)) {
+    const ogrn = cl.ogrn ? `ОГРНИП ${cl.ogrn}` : "ОГРНИП";
+    return `<strong>${cl.name}</strong>, именуемый в дальнейшем ${r}, действующий на основании ${ogrn}`;
+  }
+  const post = declinePost(cl.director_post || "Директор").toLowerCase();
+  return `<strong>${cl.name}</strong>, именуемое в дальнейшем ${r}, в лице ${post} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава`;
+}
+
 const baseStyles = `
   <style>
     @page { size: A4; margin: 10mm; }
@@ -220,7 +237,13 @@ export function generateContractHtml(data: DocumentData): string {
     </div>
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, ИНН ${c.company_inn}, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,</p>
+      <p>${(() => {
+        if (isIndividualEntrepreneur(cl)) {
+          const ogrn = cl.ogrn ? `ОГРНИП ${cl.ogrn}` : "ОГРНИП";
+          return `<strong>${cl.name}</strong>, ИНН ${cl.inn}, именуемый в дальнейшем «Заказчик», действующий на основании ${ogrn}, с другой стороны,`;
+        }
+        return `<strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,`;
+      })()}</p>
       <p>заключили настоящий Договор о нижеследующем:</p>
     </div>
     <div class="section">
@@ -288,9 +311,9 @@ export function generateContractHtml(data: DocumentData): string {
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
           <p>${cl.name}</p>
-          <p>ИНН ${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}</p>
+          <p>ИНН ${cl.inn}${isIndividualEntrepreneur(cl) ? (cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : "") : (cl.kpp ? ` КПП ${cl.kpp}` : "") + (cl.ogrn ? ` ОГРН ${cl.ogrn}` : "")}</p>
           <p>${cl.address}</p>
-          <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>
+          <div class="signature-line">${isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор")} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
         </div>
       </div>
     </div>
@@ -362,7 +385,7 @@ export function generateActHtml(data: DocumentData): string {
     ${data.contractNumber ? `<p class="section">К Договору №${data.contractNumber}${data.contractDate ? ` от ${data.contractDate}` : ""}</p>` : ""}
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p><strong>${cl.name}</strong>, именуемое в дальнейшем «Заказчик», в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, с другой стороны,</p>
+      <p>${clientIntroPhrase(cl, "Заказчик", true)}, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
     ${servicesTableHtml(services)}
@@ -388,9 +411,9 @@ export function generateActHtml(data: DocumentData): string {
       <div class="signature-block">
         <p><strong>Заказчик:</strong></p>
         <p>${cl.name}</p>
-        <p>ИНН ${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}</p>
+        <p>ИНН ${cl.inn}${isIndividualEntrepreneur(cl) ? (cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : "") : (cl.kpp ? ` КПП ${cl.kpp}` : "") + (cl.ogrn ? ` ОГРН ${cl.ogrn}` : "")}</p>
         ${cl.address ? `<p>${cl.address}</p>` : ""}
-        <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>
+        <div class="signature-line">${isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор")} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
       </div>
     </div>
   </body></html>`;
