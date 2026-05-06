@@ -1525,7 +1525,83 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         </Card>
       )}
 
+      {/* Reconciliation-specific */}
+      {docType === "reconciliation" && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Период и операции</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={loadReconciliationFromCRM} disabled={reconLoading}>
+                  {reconLoading ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                  Подтянуть из CRM
+                </Button>
+                <Button variant="outline" size="sm" onClick={addReconRow}><Plus className="w-4 h-4 mr-1" />Строка</Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label>Период с</Label>
+                <Input type="date" value={periodFrom} onChange={e => setPeriodFrom(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Период по</Label>
+                <Input type="date" value={periodTo} onChange={e => setPeriodTo(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>Сальдо начальное (+ в нашу пользу)</Label>
+                <Input type="number" value={openingBalance || ""} onChange={e => setOpeningBalance(parseFloat(e.target.value) || 0)} placeholder="0" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              {reconRows.length === 0 && (
+                <p className="text-sm text-muted-foreground">Нет операций. Нажмите «Подтянуть из CRM» или добавьте строку вручную.</p>
+              )}
+              {reconRows.map((r, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-[140px_1fr_120px_120px_auto] gap-2 items-end">
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Дата</Label>}
+                    <Input type="date" value={r.date} onChange={e => updateReconRow(i, "date", e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Документ</Label>}
+                    <Input value={r.doc} onChange={e => updateReconRow(i, "doc", e.target.value)} placeholder="Акт №… / Оплата по договору №…" />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Дебет (нач.)</Label>}
+                    <Input type="number" min={0} value={r.debit || ""} onChange={e => updateReconRow(i, "debit", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <div className="space-y-1">
+                    {i === 0 && <Label className="hidden sm:block">Кредит (опл.)</Label>}
+                    <Input type="number" min={0} value={r.credit || ""} onChange={e => updateReconRow(i, "credit", parseFloat(e.target.value) || 0)} />
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => removeReconRow(i)}>
+                    <Trash2 className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            {reconRows.length > 0 && (() => {
+              const td = reconRows.reduce((s, r) => s + (Number(r.debit) || 0), 0);
+              const tc = reconRows.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+              const fin = openingBalance + td - tc;
+              return (
+                <div className="text-right text-sm space-y-1 pt-2 border-t">
+                  <div>Обороты: дебет <strong>{td.toLocaleString("ru-RU")}</strong> ₽ / кредит <strong>{tc.toLocaleString("ru-RU")}</strong> ₽</div>
+                  <div className="font-semibold text-base">
+                    Сальдо конечное: {fin === 0 ? "0 (закрыто)" : `${Math.abs(fin).toLocaleString("ru-RU")} ₽ ${fin > 0 ? "в нашу пользу" : "в пользу клиента"}`}
+                  </div>
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Services table */}
+      {docType !== "reconciliation" && (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
@@ -1587,6 +1663,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Generate */}
       <Button onClick={() => generate()} size="lg" className="w-full">
