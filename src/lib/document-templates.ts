@@ -33,7 +33,7 @@ export interface ServiceItem {
 }
 
 export interface DocumentData {
-  type: "contract" | "invoice" | "act";
+  type: "contract" | "invoice" | "act" | "reconciliation";
   number: string;
   date: string;
   company: CompanyRequisites;
