@@ -116,23 +116,23 @@ export function generateReconciliationHtml(data: ReconciliationData): string {
     <style>
       @page { size: A4 landscape; margin: 8mm; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { font-family: 'Times New Roman', Times, serif; font-size: 9pt; line-height: 1.3; color: #000; padding: 10mm; }
-      h1 { font-size: 12pt; text-align: center; margin: 0 0 4px; }
-      h2 { font-size: 10pt; text-align: center; margin: 0 0 4px; font-weight: normal; }
+      body { font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif; font-size: 10pt; line-height: 1.45; color: #000; padding: 10mm; text-decoration: none; }
+      h1 { font-size: 14pt; text-align: center; margin: 0 0 6px; }
+      h2 { font-size: 11pt; text-align: center; margin: 0 0 4px; font-weight: normal; }
       .center { text-align: center; }
-      .intro { margin: 10px 0 14px; font-size: 9.5pt; }
+      .intro { margin: 12px 0 14px; font-size: 10pt; }
       table { width: 100%; border-collapse: collapse; }
       table.recon { table-layout: fixed; }
-      table.recon th, table.recon td { border: 1px solid #000; padding: 3px 5px; font-size: 8.5pt; vertical-align: top; }
-      table.recon th { background: #f0f0f0; font-weight: bold; text-align: center; }
+      table.recon th, table.recon td { border: 0.5pt solid #555; padding: 6px 6px; font-size: 9pt; vertical-align: middle; line-height: 1.3; word-wrap: break-word; overflow: hidden; }
+      table.recon th { background: #f0f0f0; font-weight: 600; text-align: center; }
       .col-date { width: 7%; }
       .col-doc { width: 21%; }
       .col-money { width: 11%; text-align: right; }
-      .row-section { background: #f7f7f7; font-weight: bold; }
-      .row-section td { padding: 4px 5px; }
-      .totals td { font-weight: bold; background: #fafafa; }
-      .summary { margin-top: 14px; display: flex; gap: 24px; }
-      .summary > div { flex: 1; font-size: 9pt; }
+      .row-section { background: #f7f7f7; }
+      .row-section td { padding: 6px 6px; font-weight: 600; }
+      .totals td { font-weight: 600; background: #fafafa; padding: 7px 6px; }
+      .summary { margin-top: 16px; display: flex; gap: 24px; }
+      .summary > div { flex: 1; font-size: 10pt; line-height: 1.4; }
       .signatures { display: flex; gap: 24px; margin-top: 30px; page-break-inside: avoid; }
       .signature-block { flex: 1; position: relative; padding-bottom: 30px; min-height: 130px; }
       .signature-line { border-bottom: 1px solid #000; margin-top: 60px; padding-bottom: 2px; position: relative; min-height: 0; }
