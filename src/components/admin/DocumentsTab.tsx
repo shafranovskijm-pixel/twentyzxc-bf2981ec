@@ -653,7 +653,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Save document to DB with upsert logic (called on send)
   const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
     let targetContractId = linkedContractId || null;
-    const filteredServices = services.filter(s => s.name.trim());
+    const filteredServices = docType === "reconciliation"
+      ? (reconRows as any[])
+      : services.filter(s => s.name.trim());
+    const reconTotal = reconRows.reduce((s, r) => s + (Number(r.debit) || 0) - (Number(r.credit) || 0), 0);
 
     // Step 1: Upsert main document (check by doc_type + doc_number)
     console.log("[DOC] Step 1: Upsert document...");
@@ -671,7 +674,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       client_name: clientName,
       client_inn: clientInn || null,
       contract_id: targetContractId,
-      total_amount: total,
+      total_amount: docType === "reconciliation" ? Math.abs(reconTotal) : total,
       services: JSON.stringify(filteredServices),
       html_content: html,
       metadata: JSON.stringify({
@@ -679,6 +682,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         discountAmount, discountDeadline,
         clientKpp: clientKpp, clientOgrn: clientOgrn, clientAddress: clientAddress,
         clientDirectorName, clientDirectorPost,
+        periodFrom: docType === "reconciliation" ? periodFrom : undefined,
+        periodTo: docType === "reconciliation" ? periodTo : undefined,
+        openingBalance: docType === "reconciliation" ? openingBalance : undefined,
       }),
     };
 
