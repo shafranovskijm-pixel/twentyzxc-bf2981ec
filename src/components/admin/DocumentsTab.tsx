@@ -46,7 +46,7 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
-const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -96,7 +96,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     },
   });
 
-  const [docType, setDocType] = useState<DocType>("contract");
+  const [docType, setDocType] = useState<DocType>(forceDocType || "contract");
   const [pendingAutoSend, setPendingAutoSend] = useState(false);
   const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
   const [docNumber, setDocNumber] = useState("");
