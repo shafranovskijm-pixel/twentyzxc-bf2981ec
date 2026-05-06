@@ -259,12 +259,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     setReconLoading(true);
     try {
       // Normalize client name: drop legal form prefixes, quotes, punctuation, case
-      const normalize = (s: string) => (s || "")
-        .toLowerCase()
-        .replace(/[«»"'`„“”]/g, "")
-        .replace(/\b(ооо|оао|зао|пао|ао|ип|нко|ану|фгуп|муп|гуп|нп|анo|ано|чу|чоу)\b\.?/gi, "")
-        .replace(/[^\p{L}\p{N}]+/gu, " ")
-        .trim();
+      const normalize = (s: string) => {
+        let r = (s || "").toLowerCase().replace(/[«»"'`„“”]/g, " ");
+        // Remove org-form prefixes (Cyrillic \b doesn't work in JS regex, so use space/start boundaries)
+        r = r.replace(/(^|\s)(ооо|оао|зао|пао|ао|ип|нко|ану|фгуп|муп|гуп|нп|ано|чу|чоу)\.?(\s|$)/g, " ");
+        r = r.replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+        return r;
+      };
       const targetKey = normalize(clientName);
       const matches = (n?: string | null) => !!n && normalize(n) === targetKey;
 
