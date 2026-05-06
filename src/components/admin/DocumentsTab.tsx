@@ -26,15 +26,17 @@ import {
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
+import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
 
-type DocType = "contract" | "invoice" | "act";
+type DocType = "contract" | "invoice" | "act" | "reconciliation";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
 
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
   invoice: "Счёт на оплату",
   act: "Акт выполненных работ",
+  reconciliation: "Акт сверки",
 };
 
 const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
