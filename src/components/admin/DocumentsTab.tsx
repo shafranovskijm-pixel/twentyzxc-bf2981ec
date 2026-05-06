@@ -135,7 +135,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       if (generatedError) throw generatedError;
       if (contractsError) throw contractsError;
 
-      for (const type of ["contract", "invoice", "act"] as DocType[]) {
+      for (const type of ["contract", "invoice", "act", "reconciliation"] as DocType[]) {
         let maxNum = 0;
 
         for (const row of (generatedDocs as any[]) || []) {
