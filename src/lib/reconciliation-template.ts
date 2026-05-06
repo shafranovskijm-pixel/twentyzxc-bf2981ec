@@ -168,10 +168,10 @@ export function generateReconciliationHtml(data: ReconciliationData): string {
       <td class="col-doc">${(r.doc || "").replace(/</g, "&lt;")}</td>
       <td class="col-money">${fmtMoney(r.debit || 0)}</td>
       <td class="col-money">${fmtMoney(r.credit || 0)}</td>
-      <td class="col-date">${fmtDateShort(r.date)}</td>
-      <td class="col-doc">${(r.doc || "").replace(/</g, "&lt;")}</td>
-      <td class="col-money">${fmtMoney(r.credit || 0)}</td>
-      <td class="col-money">${fmtMoney(r.debit || 0)}</td>
+      <td class="col-date">&nbsp;</td>
+      <td class="col-doc">&nbsp;</td>
+      <td class="col-money">&nbsp;</td>
+      <td class="col-money">&nbsp;</td>
     </tr>
   `).join("");
 
@@ -203,7 +203,7 @@ export function generateReconciliationHtml(data: ReconciliationData): string {
       <tbody>
         <tr class="row-section">
           <td colspan="4">Сальдо начальное${opening ? ` (${opening > 0 ? "в пользу " + ourName : "в пользу " + cl.name}): ${fmtMoney(Math.abs(opening))}` : ""}</td>
-          <td colspan="4">Сальдо начальное${opening ? ` (${opening > 0 ? "в пользу " + ourName : "в пользу " + cl.name}): ${fmtMoney(Math.abs(opening))}` : ""}</td>
+          <td colspan="4">Сальдо начальное</td>
         </tr>
         ${rowsHtml || `<tr><td colspan="8" style="text-align:center;color:#888;padding:8px;">Нет операций за период</td></tr>`}
         <tr class="totals">
@@ -211,16 +211,16 @@ export function generateReconciliationHtml(data: ReconciliationData): string {
           <td class="col-money">${fmtMoney(totalDebit)}</td>
           <td class="col-money">${fmtMoney(totalCredit)}</td>
           <td colspan="2" style="text-align:right;">Обороты за период</td>
-          <td class="col-money">${fmtMoney(totalCredit)}</td>
-          <td class="col-money">${fmtMoney(totalDebit)}</td>
+          <td class="col-money">&nbsp;</td>
+          <td class="col-money">&nbsp;</td>
         </tr>
         <tr class="totals">
           <td colspan="2" style="text-align:right;">Сальдо конечное</td>
           <td class="col-money">${finalBalance > 0 ? fmtMoney(finalBalance) : ""}</td>
           <td class="col-money">${finalBalance < 0 ? fmtMoney(-finalBalance) : ""}</td>
           <td colspan="2" style="text-align:right;">Сальдо конечное</td>
-          <td class="col-money">${finalBalance < 0 ? fmtMoney(-finalBalance) : ""}</td>
-          <td class="col-money">${finalBalance > 0 ? fmtMoney(finalBalance) : ""}</td>
+          <td class="col-money">&nbsp;</td>
+          <td class="col-money">&nbsp;</td>
         </tr>
       </tbody>
     </table>
@@ -232,7 +232,7 @@ export function generateReconciliationHtml(data: ReconciliationData): string {
       </div>
       <div>
         <p><strong>По данным ${cl.name}</strong></p>
-        <p>${conclusion}</p>
+        <p>на ____________ задолженность в пользу ____________________ ______________ руб. ( _____________________________________ ).</p>
       </div>
     </div>
 
