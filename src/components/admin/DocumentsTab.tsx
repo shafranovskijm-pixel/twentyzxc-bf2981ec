@@ -1840,6 +1840,7 @@ const DOC_TYPE_LABELS_HIST: Record<string, { label: string; color: string }> = {
   contract: { label: "Договор", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   invoice: { label: "Счёт", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
   act: { label: "Акт", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  reconciliation: { label: "Акт сверки", color: "bg-purple-500/20 text-purple-400 border-purple-500/30" },
 };
 
 const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
