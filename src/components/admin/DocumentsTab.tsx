@@ -461,7 +461,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     console.log("[DOC] generate called", { effectiveType, effectiveNumber, clientName, services });
     if (!effectiveNumber.trim()) return toast.error("Укажите номер документа");
     if (!clientName.trim()) return toast.error("Укажите клиента");
-    if (services.every(s => !s.name.trim())) return toast.error("Добавьте хотя бы одну услугу");
+    if (effectiveType !== "reconciliation" && services.every(s => !s.name.trim())) {
+      return toast.error("Добавьте хотя бы одну услугу");
+    }
 
     const company: CompanyRequisites = {
       company_name: settings.company_name || "",
@@ -523,6 +525,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           break;
         case "invoice": html = generateInvoiceHtml(docData); break;
         case "act": html = generateActHtml(docData); break;
+        case "reconciliation":
+          html = generateReconciliationHtml({
+            number: effectiveNumber,
+            periodFrom,
+            periodTo,
+            company,
+            client,
+            rows: reconRows,
+            openingBalance,
+          });
+          break;
       }
     } catch (templateErr) {
       console.error("[DOC] Template generation error:", templateErr);
