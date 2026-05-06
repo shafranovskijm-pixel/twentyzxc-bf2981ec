@@ -260,7 +260,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     try {
       const { data: clientContracts, error } = await supabase
         .from("contracts")
-        .select("contract_number, contract_date, amount, payment_status, payment_date:contract_date, paid_until")
+        .select("contract_number, contract_date, amount, payment_status, paid_until")
         .eq("client_name", clientName)
         .order("contract_date", { ascending: true });
       if (error) throw error;
