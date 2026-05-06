@@ -250,6 +250,93 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     }
   }, []);
 
+  // Reconciliation: load contracts+payments from CRM for selected client and period
+  const loadReconciliationFromCRM = useCallback(async () => {
+    if (!clientName.trim()) {
+      toast.error("Сначала выберите клиента");
+      return;
+    }
+    setReconLoading(true);
+    try {
+      const { data: clientContracts, error } = await supabase
+        .from("contracts")
+        .select("contract_number, contract_date, amount, payment_status, payment_date:contract_date, paid_until")
+        .eq("client_name", clientName)
+        .order("contract_date", { ascending: true });
+      if (error) throw error;
+
+      const { data: acts } = await supabase
+        .from("generated_documents")
+        .select("doc_number, doc_date, total_amount, doc_type")
+        .eq("client_name", clientName)
+        .eq("doc_type", "act")
+        .order("doc_date", { ascending: true });
+
+      const fromTs = new Date(periodFrom).getTime();
+      const toTs = new Date(periodTo).getTime();
+      const inPeriod = (dStr?: string | null) => {
+        if (!dStr) return false;
+        const t = new Date(dStr).getTime();
+        return !isNaN(t) && t >= fromTs && t <= toTs;
+      };
+
+      const rows: ReconciliationRow[] = [];
+
+      // Дебет — выставленные акты
+      for (const a of (acts || [])) {
+        if (inPeriod(a.doc_date)) {
+          rows.push({
+            date: a.doc_date,
+            doc: `Акт №${a.doc_number}`,
+            debit: Number(a.total_amount) || 0,
+            credit: 0,
+          });
+        }
+      }
+
+      // Кредит — отметки об оплате (payment_status = 'оплачено')
+      for (const c of (clientContracts || [])) {
+        if (c.payment_status === "оплачено" && inPeriod(c.contract_date)) {
+          rows.push({
+            date: c.contract_date as string,
+            doc: `Оплата по договору №${c.contract_number || ""}`,
+            debit: 0,
+            credit: Number(c.amount) || 0,
+          });
+        }
+      }
+
+      // Если актов вообще нет — выставим начисления по самим договорам
+      if (!rows.some(r => r.debit > 0)) {
+        for (const c of (clientContracts || [])) {
+          if (inPeriod(c.contract_date)) {
+            rows.push({
+              date: c.contract_date as string,
+              doc: `Договор №${c.contract_number || ""}`,
+              debit: Number(c.amount) || 0,
+              credit: 0,
+            });
+          }
+        }
+      }
+
+      rows.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+      setReconRows(rows);
+      toast.success(`Загружено ${rows.length} операций`);
+    } catch (e: any) {
+      console.error("[Recon] load failed:", e);
+      toast.error(e.message || "Не удалось загрузить операции");
+    } finally {
+      setReconLoading(false);
+    }
+  }, [clientName, periodFrom, periodTo]);
+
+  const addReconRow = () => setReconRows(prev => [...prev, { date: new Date().toISOString().slice(0, 10), doc: "", debit: 0, credit: 0 }]);
+  const updateReconRow = (i: number, field: keyof ReconciliationRow, value: string | number) => {
+    setReconRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } as ReconciliationRow : r));
+  };
+  const removeReconRow = (i: number) => setReconRows(prev => prev.filter((_, idx) => idx !== i));
+
   // Pre-fill from planner task
   useEffect(() => {
     if (initialContractId && contracts.length > 0 && clients.length > 0) {
