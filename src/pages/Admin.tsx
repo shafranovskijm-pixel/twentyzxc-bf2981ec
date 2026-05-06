@@ -357,6 +357,7 @@ const Admin = () => {
     organizations: "Организации",
     planner: "Планер",
     documents: "Конструктор документов",
+    reconciliation: "Акты сверки",
     requisites: "Реквизиты компании",
     history: "История документов",
     nmo: "НМО Портал",
