@@ -374,6 +374,11 @@ export function generateActHtml(data: DocumentData): string {
       <div class="signature-block">
         <p><strong>Исполнитель:</strong></p>
         <p>${c.company_name}</p>
+        <p>ИНН ${c.company_inn}${c.company_kpp ? ` КПП ${c.company_kpp}` : ""}</p>
+        <p>${c.company_legal_address}</p>
+        <p>р/с ${c.company_bank_account}</p>
+        <p>${c.company_bank_name}</p>
+        <p>БИК ${c.company_bank_bik} к/с ${c.company_bank_corr}</p>
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
           <img class="signature-img" src="${window.location.origin}/images/signature.png" />
@@ -383,6 +388,8 @@ export function generateActHtml(data: DocumentData): string {
       <div class="signature-block">
         <p><strong>Заказчик:</strong></p>
         <p>${cl.name}</p>
+        <p>ИНН ${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}</p>
+        ${cl.address ? `<p>${cl.address}</p>` : ""}
         <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>
       </div>
     </div>
