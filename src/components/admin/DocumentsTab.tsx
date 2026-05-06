@@ -258,19 +258,33 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     }
     setReconLoading(true);
     try {
-      const { data: clientContracts, error } = await supabase
+      // Normalize client name: drop legal form prefixes, quotes, punctuation, case
+      const normalize = (s: string) => (s || "")
+        .toLowerCase()
+        .replace(/[«»"'`„“”]/g, "")
+        .replace(/\b(ооо|оао|зао|пао|ао|ип|нко|ану|фгуп|муп|гуп|нп|анo|ано|чу|чоу)\b\.?/gi, "")
+        .replace(/[^\p{L}\p{N}]+/gu, " ")
+        .trim();
+      const targetKey = normalize(clientName);
+      const matches = (n?: string | null) => !!n && normalize(n) === targetKey;
+
+      const { data: allContracts, error } = await supabase
         .from("contracts")
-        .select("contract_number, contract_date, amount, payment_status, paid_until")
-        .eq("client_name", clientName)
+        .select("contract_number, contract_date, amount, payment_status, paid_until, client_name")
         .order("contract_date", { ascending: true });
       if (error) throw error;
+      const clientContracts = (allContracts || []).filter(c => matches(c.client_name));
 
-      const { data: acts } = await supabase
+      const { data: allActs } = await supabase
         .from("generated_documents")
-        .select("doc_number, doc_date, total_amount, doc_type")
-        .eq("client_name", clientName)
+        .select("doc_number, doc_date, total_amount, doc_type, client_name")
         .eq("doc_type", "act")
         .order("doc_date", { ascending: true });
+      const acts = (allActs || []).filter(a => matches(a.client_name));
+
+      if (!acts.length && !clientContracts.length) {
+        toast.warning("По этому клиенту не найдено ни договоров, ни актов");
+      }
 
       const fromTs = new Date(periodFrom).getTime();
       const toTs = new Date(periodTo).getTime();
