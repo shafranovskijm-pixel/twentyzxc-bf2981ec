@@ -357,6 +357,7 @@ const Admin = () => {
     organizations: "Организации",
     planner: "Планер",
     documents: "Конструктор документов",
+    reconciliation: "Акты сверки",
     requisites: "Реквизиты компании",
     history: "История документов",
     nmo: "НМО Портал",
@@ -924,6 +925,7 @@ const Admin = () => {
                 setActiveSection("documents");
               }} />}
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); }} />}
+              {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
               {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>

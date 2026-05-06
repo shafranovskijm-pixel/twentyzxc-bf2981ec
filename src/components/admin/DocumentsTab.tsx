@@ -46,7 +46,7 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
-const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -96,7 +96,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     },
   });
 
-  const [docType, setDocType] = useState<DocType>("contract");
+  const [docType, setDocType] = useState<DocType>(forceDocType || "contract");
   const [pendingAutoSend, setPendingAutoSend] = useState(false);
   const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
   const [docNumber, setDocNumber] = useState("");
@@ -1331,17 +1331,19 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5" />Тип и номер документа</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="space-y-1">
-            <Label>Тип документа</Label>
-            <Select value={docType} onValueChange={v => { setDocType(v as DocType); setDocNumber(lastDocNumbers?.[v] || "001"); }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {(Object.keys(DOC_LABELS) as DocType[]).map(k => (
-                  <SelectItem key={k} value={k}>{DOC_LABELS[k]}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {!hideTypeSelector && (
+            <div className="space-y-1">
+              <Label>Тип документа</Label>
+              <Select value={docType} onValueChange={v => { setDocType(v as DocType); setDocNumber(lastDocNumbers?.[v] || "001"); }}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(DOC_LABELS) as DocType[]).map(k => (
+                    <SelectItem key={k} value={k}>{DOC_LABELS[k]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           {docType === "contract" && (
             <div className="space-y-1">
               <Label>Тип договора</Label>
