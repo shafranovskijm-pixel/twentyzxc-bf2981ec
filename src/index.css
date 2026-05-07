@@ -247,6 +247,32 @@
     animation: shimmer 6s ease-in-out infinite;
   }
 
+  /* Soft, non-flickering golden shine sweep across the hero text.
+     Uses a ::after overlay with mix-blend-mode so the underlying
+     gradient text never re-clips and never flickers. */
+  .shine-text {
+    position: relative;
+    display: inline-block;
+  }
+  .shine-text::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      110deg,
+      transparent 30%,
+      hsl(45 95% 80% / 0.85) 50%,
+      transparent 70%
+    );
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    pointer-events: none;
+    animation: shine-sweep 5s linear infinite;
+  }
+
   .animate-float {
     animation: float 8s ease-in-out infinite;
   }
@@ -293,6 +319,11 @@
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes shine-sweep {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -100% 0; }
 }
 
 @keyframes rotate-slow {
