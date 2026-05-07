@@ -21,7 +21,9 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
   const animFrameRef = useRef<number>(0);
 
   const initParticles = useCallback((width: number, height: number) => {
-    particlesRef.current = Array.from({ length: count }, () => {
+    const isMobile = width < 768;
+    const actualCount = isMobile ? Math.min(count, 30) : count;
+    particlesRef.current = Array.from({ length: actualCount }, () => {
       const x = Math.random() * width;
       const y = Math.random() * height;
       return {
