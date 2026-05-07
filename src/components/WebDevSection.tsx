@@ -210,6 +210,12 @@ const ServiceCard = ({
   const { addKey, isKeyCollected } = useInventory();
   const [isHovered, setIsHovered] = useState(false);
   const isCollected = keyId ? isKeyCollected(keyId) : false;
+  // On touch devices there is no hover, so always animate the 3D key.
+  const isTouch =
+    typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(hover: none)").matches;
+  const animateKey = isHovered || isTouch;
 
   const handleTakeKey = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -254,7 +260,7 @@ const ServiceCard = ({
           className="absolute bottom-4 right-4 w-16 h-20 z-20 cursor-pointer hover:scale-110 transition-transform"
         >
           <div className="absolute inset-0 bg-amber-500/25 rounded-full blur-xl" />
-          <ServiceKey3D variant={keyVariant} isHovered={isHovered} className="w-full h-full relative z-10" />
+          <ServiceKey3D variant={keyVariant} isHovered={animateKey} className="w-full h-full relative z-10" />
         </button>
       )}
 
