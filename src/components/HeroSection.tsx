@@ -35,14 +35,14 @@ const HeroSection = () => {
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden md:block absolute top-2 left-1/3 lg:left-[38%] w-32 h-32 lg:w-40 lg:h-40 opacity-30 -rotate-[55deg] palm-sway pointer-events-none select-none z-[5]"
+        className="absolute top-2 left-1/3 lg:left-[38%] w-20 h-20 md:w-32 md:h-32 lg:w-40 lg:h-40 opacity-20 md:opacity-30 -rotate-[55deg] palm-sway pointer-events-none select-none z-[5]"
       />
       <img
         src={palmLeaf}
         alt=""
         aria-hidden="true"
         loading="lazy"
-        className="hidden lg:block absolute bottom-8 -right-12 w-60 h-60 opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none"
+        className="absolute bottom-8 -right-12 w-32 h-32 md:w-48 md:h-48 lg:w-60 lg:h-60 opacity-20 md:opacity-30 rotate-[160deg] scale-x-[-1] palm-sway pointer-events-none select-none"
         style={{ animationDelay: "4.5s" }}
       />
 
@@ -70,8 +70,7 @@ const HeroSection = () => {
               24ZXC
             </span>
             <span className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
-              <span className="gradient-gold-text gold-glow-text">24ZXC</span>
-              <span className="absolute inset-0 gradient-gold-text shimmer">24ZXC</span>
+              <span className="gradient-gold-text gold-glow-text shine-text" data-text="24ZXC">24ZXC</span>
             </span>
           </h1>
 

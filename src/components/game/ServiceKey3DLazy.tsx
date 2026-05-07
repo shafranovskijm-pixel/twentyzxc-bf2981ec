@@ -33,7 +33,7 @@ export const ServiceKey3DLazy = ({ variant, isHovered, className = "" }: Props) 
           io.disconnect();
         }
       },
-      { rootMargin: "200px" }
+      { rootMargin: "400px" }
     );
     io.observe(el);
     return () => io.disconnect();

@@ -22,19 +22,16 @@ const KeyModel = ({ variant, isHovered }: ServiceKeyProps) => {
   const { metal, accent, gem } = colors[variant];
   
   // Animate rotation on hover
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (groupRef.current) {
-      const targetRotation = isHovered ? Math.sin(state.clock.elapsedTime * 3) * 0.3 : 0;
-      const targetY = isHovered ? Math.sin(state.clock.elapsedTime * 2) * 0.15 : 0;
-      
+      // Continuous gentle Y-axis spin so the key always looks alive,
+      // even on touch devices where there is no hover state.
+      groupRef.current.rotation.y += delta * (isHovered ? 1.2 : 0.6);
+
+      const targetZ = isHovered ? Math.sin(state.clock.elapsedTime * 3) * 0.3 : 0;
       groupRef.current.rotation.z = THREE.MathUtils.lerp(
         groupRef.current.rotation.z,
-        targetRotation,
-        0.1
-      );
-      groupRef.current.rotation.y = THREE.MathUtils.lerp(
-        groupRef.current.rotation.y,
-        targetY + (isHovered ? state.clock.elapsedTime * 0.5 : 0),
+        targetZ,
         0.1
       );
     }
