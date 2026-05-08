@@ -28,6 +28,7 @@ import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
+import SignPdfCard from "./SignPdfCard";
 
 type DocType = "contract" | "invoice" | "act" | "reconciliation";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
@@ -1320,6 +1321,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   return (
     <div className="space-y-6 pb-20">
+      {/* Sign uploaded PDF (e.g. reconciliation act) */}
+      <SignPdfCard />
+
       {/* Sample download buttons */}
       <Card>
         <CardHeader>
