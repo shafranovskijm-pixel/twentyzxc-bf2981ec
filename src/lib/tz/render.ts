@@ -16,8 +16,8 @@ const fmtMoney = (v?: number) => {
 };
 
 /** HTML for screen preview + html2canvas → PDF. A4-friendly width 794px. */
-export function renderTzHtml(payload: TzPayload, opts: { tzNumber?: string; tzDate?: string; title?: string }): string {
-  const { tzNumber, tzDate, title } = opts;
+export function renderTzHtml(payload: TzPayload, opts: { tzNumber?: string; tzDate?: string; title?: string; appendixNumber?: string; contractNumber?: string; contractDate?: string }): string {
+  const { tzNumber, tzDate, title, appendixNumber, contractNumber, contractDate } = opts;
 
   const sectionsHtml = payload.sections
     .filter(s => s.enabled !== false)
@@ -51,6 +51,9 @@ export function renderTzHtml(payload: TzPayload, opts: { tzNumber?: string; tzDa
         ${tzNumber && tzDate ? " · " : ""}
         ${tzDate ? `от ${escape(fmtDate(tzDate))}` : ""}
       </div>
+      ${appendixNumber || contractNumber ? `<div style="font-size:11px;color:#8a6d12;margin-top:6px;font-style:italic;">
+        Приложение${appendixNumber ? ` №&nbsp;${escape(appendixNumber)}` : ""}${contractNumber ? ` к&nbsp;Договору №&nbsp;${escape(contractNumber)}` : ""}${contractDate ? ` от ${escape(fmtDate(contractDate))}` : ""}
+      </div>` : ""}
     </div>
   `;
 
@@ -159,7 +162,7 @@ export async function exportTzPdf(html: string, fileName: string): Promise<void>
 }
 
 /** Generate DOCX (Word) via docx package. */
-export async function exportTzDocx(payload: TzPayload, opts: { tzNumber?: string; tzDate?: string; title?: string; fileName: string }): Promise<void> {
+export async function exportTzDocx(payload: TzPayload, opts: { tzNumber?: string; tzDate?: string; title?: string; fileName: string; appendixNumber?: string; contractNumber?: string; contractDate?: string }): Promise<void> {
   const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, Table, TableRow, TableCell, WidthType, BorderStyle } = await import("docx");
 
   const titleP = new Paragraph({
@@ -176,6 +179,14 @@ export async function exportTzDocx(payload: TzPayload, opts: { tzNumber?: string
       color: "555555",
     })],
   });
+  const appendixP = (opts.appendixNumber || opts.contractNumber) ? new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 240 },
+    children: [new TextRun({
+      text: `Приложение${opts.appendixNumber ? ` № ${opts.appendixNumber}` : ""}${opts.contractNumber ? ` к Договору № ${opts.contractNumber}` : ""}${opts.contractDate ? ` от ${new Date(opts.contractDate).toLocaleDateString("ru-RU")}` : ""}`,
+      italics: true, size: 20, color: "8A6D12",
+    })],
+  }) : null;
 
   // Requisites table
   const rows: [string, string | undefined][] = [
@@ -254,7 +265,7 @@ export async function exportTzDocx(payload: TzPayload, opts: { tzNumber?: string
     styles: { default: { document: { run: { font: "Calibri", size: 22 } } } },
     sections: [{
       properties: { page: { margin: { top: 1000, right: 1000, bottom: 1000, left: 1000 } } },
-      children: [titleP, subP, reqTable, new Paragraph({ children: [new TextRun(" ")] }), ...sectionParas, sigP, sigLabel],
+      children: [titleP, subP, ...(appendixP ? [appendixP] : []), reqTable, new Paragraph({ children: [new TextRun(" ")] }), ...sectionParas, sigP, sigLabel],
     }],
   });
 

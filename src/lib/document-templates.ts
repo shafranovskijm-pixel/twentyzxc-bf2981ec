@@ -48,6 +48,8 @@ export interface DocumentData {
   contractDate?: string;
   // invoice discount
   discountAmount?: number;
+  // appendices (TZ link)
+  appendixRef?: string;
   discountDeadline?: string;
 }
 
@@ -291,8 +293,12 @@ export function generateContractHtml(data: DocumentData): string {
       <p>6.6. Стороны осуществляют документооборот посредством установленным действующим законодательством Российской Федерации, в частности, через электронный документооборот с использованием усиленной квалифицированной электронной подписи и систем электронного документооборота.</p>
       <p>6.7. Вопросы, не урегулированные настоящим Договором, разрешаются в соответствии с действующим законодательством Российской Федерации.</p>
     </div>
+    ${data.appendixRef ? `<div class="section">
+      <h2>7. ПРИЛОЖЕНИЯ</h2>
+      <p>7.1. Неотъемлемой частью настоящего Договора является: ${data.appendixRef}.</p>
+    </div>` : ""}
     <div class="section">
-      <h2>7. РЕКВИЗИТЫ И ПОДПИСИ СТОРОН</h2>
+      <h2>${data.appendixRef ? "8" : "7"}. РЕКВИЗИТЫ И ПОДПИСИ СТОРОН</h2>
       <div class="signatures">
         <div class="signature-block">
           <p><strong>Исполнитель:</strong></p>
