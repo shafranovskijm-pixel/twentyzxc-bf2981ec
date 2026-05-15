@@ -768,8 +768,8 @@ const TzTab = () => {
               <Link2 className="h-5 w-5 text-primary" /> Соединить ТЗ с договором
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
-            <div>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
               <Label>Договор</Label>
               <Select value={linkContractId} onValueChange={setLinkContractId}>
                 <SelectTrigger><SelectValue placeholder="Выбрать договор" /></SelectTrigger>
@@ -782,7 +782,7 @@ const TzTab = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div className="space-y-2">
               <Label>Номер приложения</Label>
               <Input value={linkAppendixNum} onChange={e => setLinkAppendixNum(e.target.value)} placeholder={linkRow?.tz_number || "например 253/2026"} />
               <p className="text-xs text-muted-foreground mt-1">
@@ -790,14 +790,20 @@ const TzTab = () => {
               </p>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setLinkOpen(false)} disabled={linkBusy}>Отмена</Button>
-            <Button variant="outline" onClick={() => linkContract(false)} disabled={linkBusy} className="gap-1">
-              {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Только привязать
+          <DialogFooter className="flex-col-reverse sm:flex-col-reverse gap-2 sm:space-x-0">
+            <Button onClick={() => linkContract(true)} disabled={linkBusy} className="w-full gap-2">
+              {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />}
+              Привязать и собрать пакет PDF
             </Button>
-            <Button onClick={() => linkContract(true)} disabled={linkBusy} className="gap-1">
-              {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />} Привязать и собрать пакет PDF
-            </Button>
+            <div className="flex gap-2 w-full">
+              <Button variant="outline" onClick={() => setLinkOpen(false)} disabled={linkBusy} className="flex-1">
+                Отмена
+              </Button>
+              <Button variant="outline" onClick={() => linkContract(false)} disabled={linkBusy} className="flex-1 gap-2">
+                {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                Только привязать
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
