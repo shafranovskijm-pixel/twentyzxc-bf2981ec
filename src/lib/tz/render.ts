@@ -215,7 +215,7 @@ export async function exportTzDocx(payload: TzPayload, opts: { tzNumber?: string
     })),
   });
 
-  const sectionParas: Paragraph[] = [];
+  const sectionParas: any[] = [];
   for (const s of payload.sections.filter(s => s.enabled !== false)) {
     const checked = s.items.filter(i => i.checked);
     if (checked.length === 0 && !s.customNote) continue;
