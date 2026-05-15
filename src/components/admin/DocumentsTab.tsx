@@ -2230,6 +2230,46 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={tzPickerOpen} onOpenChange={setTzPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Выберите ТЗ для пакета</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-muted-foreground">
+              У клиента несколько ТЗ. Выберите, какое включить в пакет.
+            </p>
+            <Select value={tzPickerSelected} onValueChange={setTzPickerSelected}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите ТЗ" />
+              </SelectTrigger>
+              <SelectContent>
+                {tzPickerCandidates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {(t.tz_number || "—")} · {t.tz_date || ""} · {t.title || "Без названия"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {tzPickerContractId && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={tzPickerLink}
+                  onChange={(e) => setTzPickerLink(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>Привязать это ТЗ к договору, чтобы в следующий раз не спрашивать</span>
+              </label>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setTzPickerOpen(false)}>Отмена</Button>
+              <Button onClick={confirmTzPicker} disabled={!tzPickerSelected}>Собрать пакет</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
