@@ -90,11 +90,37 @@ const TzTab = () => {
   const { data: contracts = [] } = useQuery({
     queryKey: ["tz-contracts"],
     queryFn: async () => {
-      const { data } = await supabase.from("contracts" as any)
-        .select("id, client_name, contract_number, contract_date, amount")
-        .eq("is_archived", false)
-        .order("created_at", { ascending: false });
-      return (data || []) as any[];
+      // Merge real contracts with generated contract documents so any договор,
+      // даже если он только сгенерирован и не сохранён отдельной строкой,
+      // появлялся в списке выбора.
+      const [{ data: realRows }, { data: genRows }] = await Promise.all([
+        supabase.from("contracts" as any)
+          .select("id, client_name, contract_number, contract_date, amount")
+          .eq("is_archived", false)
+          .order("created_at", { ascending: false }),
+        supabase.from("generated_documents" as any)
+          .select("id, client_name, doc_number, doc_date, total_amount, contract_id")
+          .eq("doc_type", "contract")
+          .order("created_at", { ascending: false }),
+      ]);
+      const merged = new Map<string, any>();
+      for (const r of (realRows || []) as any[]) {
+        const key = (r.contract_number || r.id).toString();
+        merged.set(key, r);
+      }
+      for (const g of (genRows || []) as any[]) {
+        const key = (g.doc_number || g.id).toString();
+        if (!merged.has(key)) {
+          merged.set(key, {
+            id: g.contract_id || g.id, // prefer real contract id when known
+            client_name: g.client_name,
+            contract_number: g.doc_number,
+            contract_date: g.doc_date,
+            amount: g.total_amount,
+          });
+        }
+      }
+      return Array.from(merged.values());
     },
   });
 
