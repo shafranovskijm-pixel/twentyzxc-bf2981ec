@@ -614,6 +614,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       paymentTerms,
       contractNumber: linkedContract?.contract_number || "",
       contractDate: linkedContract?.contract_date ? formatDate(linkedContract.contract_date) : "",
+      appendixRef: (linkedContract as any)?.appendix_ref || undefined,
       discountAmount: discountAmount > 0 ? discountAmount : undefined,
       discountDeadline: discountDeadline ? formatDate(discountDeadline) : undefined,
     };
