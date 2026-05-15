@@ -430,7 +430,11 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       ]);
     } else if (contractSubType === "frdo") {
       setSubject("Оказание услуг по внесению сведений в ФИС ФРДО");
-      setDeadline("05.03." + new Date().getFullYear() + " по 05.03." + (new Date().getFullYear() + 1));
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, "0");
+      const mm = String(today.getMonth() + 1).padStart(2, "0");
+      const yyyy = today.getFullYear();
+      setDeadline(`${dd}.${mm}.${yyyy} по ${dd}.${mm}.${yyyy + 1}`);
       setPaymentTerms("авансом в размере 100%");
       setServices([
         { name: "Выгрузка данных в ФИС ФРДО (разовая)", qty: 1, price: 3500 },
