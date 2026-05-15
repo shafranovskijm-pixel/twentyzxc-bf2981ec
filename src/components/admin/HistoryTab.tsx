@@ -96,12 +96,13 @@ const HistoryTab = () => {
   const { data: rows = [], isLoading, error: historyError } = useQuery({
     queryKey: ["unified-documents"],
     queryFn: async (): Promise<UnifiedRow[]> => {
-      const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes] = await Promise.all([
+      const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes, tzRes] = await Promise.all([
         supabase.from("generated_documents" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("contract_files" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("nmo_documents" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("contracts" as any).select("id, client_name, contract_number"),
         supabase.from("nmo_registrations" as any).select("id, organization_name"),
+        supabase.from("tz_documents" as any).select("*").order("created_at", { ascending: false }),
       ]);
 
       const contractsById = new Map<string, any>((contractsRes.data || []).map((c: any) => [c.id, c]));
@@ -154,6 +155,18 @@ const HistoryTab = () => {
         });
       }
 
+      for (const t of (tzRes.data || []) as any[]) {
+        out.push({
+          id: `tz:${t.id}`,
+          source: "tz_documents",
+          kind: "tz",
+          doc_number: t.tz_number,
+          doc_date: t.tz_date || t.created_at,
+          client_name: t.client_name || "—",
+          html_content: t.html_content,
+        });
+      }
+
       out.sort((a, b) => new Date(b.doc_date).getTime() - new Date(a.doc_date).getTime());
       return out;
     },
@@ -202,6 +215,10 @@ const HistoryTab = () => {
         const id = row.id.slice(4);
         if (row.file_path) await supabase.storage.from("nmo-documents").remove([row.file_path]);
         const { error } = await supabase.from("nmo_documents" as any).delete().eq("id", id);
+        if (error) throw error;
+      } else if (row.source === "tz_documents") {
+        const id = row.id.slice(3);
+        const { error } = await supabase.from("tz_documents" as any).delete().eq("id", id);
         if (error) throw error;
       }
       queryClient.invalidateQueries({ queryKey: ["unified-documents"] });
