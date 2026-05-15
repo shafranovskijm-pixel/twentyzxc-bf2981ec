@@ -321,6 +321,23 @@ const SignPdfCard = () => {
               Кнопка «Сбросить» убирает подпись с текущей страницы.
             </p>
 
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+              <div className="space-y-1">
+                <Label className="text-xs">Привязать к договору (для сохранения в Историю)</Label>
+                <Select value={linkedContractId} onValueChange={setLinkedContractId}>
+                  <SelectTrigger><SelectValue placeholder="Не сохранять, только скачать" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Не сохранять — только скачать</SelectItem>
+                    {contracts.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        №{c.contract_number || "—"} · {c.client_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="rounded-lg border bg-muted/30 p-3 overflow-auto">
               <div
                 ref={stageRef}
