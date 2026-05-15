@@ -759,6 +759,48 @@ const TzTab = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Link-to-contract dialog */}
+      <Dialog open={linkOpen} onOpenChange={(o) => { if (!linkBusy) setLinkOpen(o); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-primary" /> Соединить ТЗ с договором
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Договор</Label>
+              <Select value={linkContractId} onValueChange={setLinkContractId}>
+                <SelectTrigger><SelectValue placeholder="Выбрать договор" /></SelectTrigger>
+                <SelectContent>
+                  {contracts.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.contract_number || "(без №)"} — {c.client_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Номер приложения</Label>
+              <Input value={linkAppendixNum} onChange={e => setLinkAppendixNum(e.target.value)} placeholder={linkRow?.tz_number || "например 253/2026"} />
+              <p className="text-xs text-muted-foreground mt-1">
+                В договоре появится блок «Приложения», в шапке ТЗ — пометка «Приложение №… к Договору №…».
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setLinkOpen(false)} disabled={linkBusy}>Отмена</Button>
+            <Button variant="outline" onClick={() => linkContract(false)} disabled={linkBusy} className="gap-1">
+              {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Только привязать
+            </Button>
+            <Button onClick={() => linkContract(true)} disabled={linkBusy} className="gap-1">
+              {linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />} Привязать и собрать пакет PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
