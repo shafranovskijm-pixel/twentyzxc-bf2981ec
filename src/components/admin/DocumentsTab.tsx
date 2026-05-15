@@ -999,47 +999,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   // Build a complete deal package (Договор + Счёт + Акт + ТЗ) and download as one PDF.
   const [packageBusy, setPackageBusy] = useState(false);
-  const downloadFullPackage = async () => {
-    if (!previewHtml) return;
-    if (docType !== "contract") {
-      toast.error("Пакет собирается только из договора");
-      return;
-    }
-    setPackageBusy(true);
+  const [tzPickerOpen, setTzPickerOpen] = useState(false);
+  const [tzPickerCandidates, setTzPickerCandidates] = useState<any[]>([]);
+  const [tzPickerSelected, setTzPickerSelected] = useState<string>("");
+  const [tzPickerLink, setTzPickerLink] = useState(true);
+  const [tzPickerContractId, setTzPickerContractId] = useState<string>("");
+
+  const buildPackageWithTz = async (tz: any, contractId: string) => {
     try {
-      // 1. Save current contract (creates contracts row if missing).
-      try { await saveDocumentToDB(previewHtml, previewInvoiceHtml || null); } catch (e) { console.error("[Package] save failed", e); }
-
-      // 2. Resolve real contract id (linkedContractId may have just been auto-created).
-      let contractId = linkedContractId;
-      if (!contractId) {
-        const { data: cRow } = await supabase
-          .from("contracts")
-          .select("id")
-          .eq("contract_number", docNumber)
-          .maybeSingle();
-        contractId = cRow?.id || "";
-      }
-
-      // 3. Find linked TZ — first by contract_id, then fallback by client INN.
-      let tz: any = null;
-      if (contractId) {
-        const { data } = await supabase.from("tz_documents" as any)
-          .select("*").eq("contract_id", contractId).maybeSingle();
-        tz = data;
-      }
-      if (!tz && clientInn) {
-        const { data } = await supabase.from("tz_documents" as any)
-          .select("*").eq("client_inn", clientInn)
-          .order("created_at", { ascending: false }).limit(1).maybeSingle();
-        tz = data;
-      }
-      if (!tz) {
-        toast.error("Не найдено привязанное ТЗ. Сначала привяжите ТЗ к договору во вкладке «ТЗ».");
-        return;
-      }
-
-      // 4. Build Act HTML on the fly from the same form data.
+      // Build Act HTML on the fly from the same form data.
       const company: CompanyRequisites = {
         company_name: settings.company_name || "",
         company_short_name: settings.company_short_name || "",
@@ -1073,7 +1041,6 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       };
       const actHtml = embedDocImages(generateActHtml(actDocData));
 
-      // 5. Render TZ HTML with appendix header.
       const tzHtml = renderTzHtml((tz.payload || {}) as any, {
         tzNumber: tz.tz_number,
         tzDate: tz.tz_date,
@@ -1083,7 +1050,6 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         contractDate: formatDate(docDate),
       });
 
-      // 6. Merge.
       const parts: { label: string; html: string }[] = [
         { label: "Договор", html: previewHtml },
       ];
@@ -1094,6 +1060,89 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       toast.info("Сборка пакета PDF…");
       await mergeHtmlsToPdf(parts, `Пакет_${safeFilename(docNumber)}.pdf`);
       toast.success("Пакет PDF скачан");
+    } catch (e: any) {
+      console.error("[Package] build failed:", e);
+      toast.error(`Не удалось собрать пакет: ${e?.message || e}`);
+    }
+  };
+
+  const confirmTzPicker = async () => {
+    const tz = tzPickerCandidates.find(t => t.id === tzPickerSelected);
+    if (!tz) { toast.error("Выберите ТЗ"); return; }
+    setTzPickerOpen(false);
+    setPackageBusy(true);
+    try {
+      if (tzPickerLink && tzPickerContractId) {
+        try {
+          await supabase.from("tz_documents" as any)
+            .update({ contract_id: tzPickerContractId } as any)
+            .eq("id", tz.id);
+        } catch (e) { console.error("[Package] link failed", e); }
+      }
+      await buildPackageWithTz(tz, tzPickerContractId);
+    } finally {
+      setPackageBusy(false);
+    }
+  };
+
+  const downloadFullPackage = async () => {
+    if (!previewHtml) return;
+    if (docType !== "contract") {
+      toast.error("Пакет собирается только из договора");
+      return;
+    }
+    setPackageBusy(true);
+    try {
+      // 1. Save current contract (creates contracts row if missing).
+      try { await saveDocumentToDB(previewHtml, previewInvoiceHtml || null); } catch (e) { console.error("[Package] save failed", e); }
+
+      // 2. Resolve real contract id (linkedContractId may have just been auto-created).
+      let contractId = linkedContractId;
+      if (!contractId) {
+        const { data: cRow } = await supabase
+          .from("contracts")
+          .select("id")
+          .eq("contract_number", docNumber)
+          .maybeSingle();
+        contractId = cRow?.id || "";
+      }
+
+      // 3. Resolve TZ.
+      // 3a. If contract has explicitly linked TZ — use it silently.
+      let tz: any = null;
+      if (contractId) {
+        const { data } = await supabase.from("tz_documents" as any)
+          .select("*").eq("contract_id", contractId).maybeSingle();
+        tz = data;
+      }
+      // 3b. Otherwise look at all client's TZ.
+      if (!tz) {
+        if (!clientInn) {
+          toast.error("Не указан ИНН клиента — не могу найти ТЗ.");
+          return;
+        }
+        const { data: list } = await supabase.from("tz_documents" as any)
+          .select("*").eq("client_inn", clientInn)
+          .order("created_at", { ascending: false });
+        const candidates = (list as any[]) || [];
+        if (candidates.length === 0) {
+          toast.error("У клиента нет ТЗ. Сначала создайте его во вкладке «ТЗ».");
+          return;
+        }
+        if (candidates.length === 1) {
+          tz = candidates[0];
+        } else {
+          // Open picker; pause here.
+          setTzPickerCandidates(candidates);
+          setTzPickerSelected(candidates[0].id);
+          setTzPickerLink(true);
+          setTzPickerContractId(contractId);
+          setTzPickerOpen(true);
+          return; // builder will run after user confirms
+        }
+      }
+
+      await buildPackageWithTz(tz, contractId);
     } catch (e: any) {
       console.error("[Package] failed:", e);
       toast.error(`Не удалось собрать пакет: ${e?.message || e}`);
