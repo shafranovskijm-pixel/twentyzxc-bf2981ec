@@ -1207,6 +1207,113 @@ export type Database = {
         }
         Relationships: []
       }
+      tz_doc_counters: {
+        Row: {
+          last_number: number
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          year: number
+        }
+        Update: {
+          last_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      tz_documents: {
+        Row: {
+          client_id: string | null
+          client_inn: string | null
+          client_name: string
+          contract_id: string | null
+          created_at: string
+          html_content: string | null
+          id: string
+          payload: Json
+          template_id: string | null
+          title: string
+          tz_date: string
+          tz_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id?: string | null
+          client_inn?: string | null
+          client_name: string
+          contract_id?: string | null
+          created_at?: string
+          html_content?: string | null
+          id?: string
+          payload?: Json
+          template_id?: string | null
+          title: string
+          tz_date?: string
+          tz_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string | null
+          client_inn?: string | null
+          client_name?: string
+          contract_id?: string | null
+          created_at?: string
+          html_content?: string | null
+          id?: string
+          payload?: Json
+          template_id?: string | null
+          title?: string
+          tz_date?: string
+          tz_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tz_documents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "tz_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tz_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_archived: boolean
+          is_default: boolean
+          name: string
+          sections: Json
+          template_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          name: string
+          sections?: Json
+          template_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_archived?: boolean
+          is_default?: boolean
+          name?: string
+          sections?: Json
+          template_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1322,6 +1429,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      next_tz_number: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user" | "organization"

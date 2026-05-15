@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { History, Eye, Download, Trash2, Loader2, X, Search, FileSignature, FileText, FileSpreadsheet, Receipt, FileCheck } from "lucide-react";
+import { History, Eye, Download, Trash2, Loader2, X, Search, FileSignature, FileText, FileSpreadsheet, Receipt, FileCheck, ClipboardList } from "lucide-react";
 import TablePagination from "./TablePagination";
 import { preloadDocumentImages } from "@/lib/document-images";
 
 type DocKind =
   | "contract" | "invoice" | "act" | "reconciliation"
-  | "signed" | "contract_file" | "nmo";
+  | "signed" | "contract_file" | "nmo" | "tz";
 
 const KIND_META: Record<DocKind, { label: string; color: string; Icon: any }> = {
   contract:      { label: "Договор",         color: "bg-blue-500/20 text-blue-300 border-blue-500/40",      Icon: FileText },
@@ -25,11 +25,12 @@ const KIND_META: Record<DocKind, { label: string; color: string; Icon: any }> = 
   signed:        { label: "Подписанный PDF", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40", Icon: FileSignature },
   contract_file: { label: "Файл договора",   color: "bg-slate-500/20 text-slate-300 border-slate-500/40",   Icon: FileText },
   nmo:           { label: "НМО",             color: "bg-teal-500/20 text-teal-300 border-teal-500/40",      Icon: FileText },
+  tz:            { label: "ТЗ",              color: "bg-indigo-500/20 text-indigo-300 border-indigo-500/40", Icon: ClipboardList },
 };
 
 type UnifiedRow = {
   id: string;
-  source: "generated_documents" | "contract_files" | "nmo_documents";
+  source: "generated_documents" | "contract_files" | "nmo_documents" | "tz_documents";
   kind: DocKind;
   doc_number: string | null;
   doc_date: string;          // ISO
@@ -95,12 +96,13 @@ const HistoryTab = () => {
   const { data: rows = [], isLoading, error: historyError } = useQuery({
     queryKey: ["unified-documents"],
     queryFn: async (): Promise<UnifiedRow[]> => {
-      const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes] = await Promise.all([
+      const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes, tzRes] = await Promise.all([
         supabase.from("generated_documents" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("contract_files" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("nmo_documents" as any).select("*").order("created_at", { ascending: false }),
         supabase.from("contracts" as any).select("id, client_name, contract_number"),
         supabase.from("nmo_registrations" as any).select("id, organization_name"),
+        supabase.from("tz_documents" as any).select("*").order("created_at", { ascending: false }),
       ]);
 
       const contractsById = new Map<string, any>((contractsRes.data || []).map((c: any) => [c.id, c]));
@@ -153,6 +155,18 @@ const HistoryTab = () => {
         });
       }
 
+      for (const t of (tzRes.data || []) as any[]) {
+        out.push({
+          id: `tz:${t.id}`,
+          source: "tz_documents",
+          kind: "tz",
+          doc_number: t.tz_number,
+          doc_date: t.tz_date || t.created_at,
+          client_name: t.client_name || "—",
+          html_content: t.html_content,
+        });
+      }
+
       out.sort((a, b) => new Date(b.doc_date).getTime() - new Date(a.doc_date).getTime());
       return out;
     },
@@ -201,6 +215,10 @@ const HistoryTab = () => {
         const id = row.id.slice(4);
         if (row.file_path) await supabase.storage.from("nmo-documents").remove([row.file_path]);
         const { error } = await supabase.from("nmo_documents" as any).delete().eq("id", id);
+        if (error) throw error;
+      } else if (row.source === "tz_documents") {
+        const id = row.id.slice(3);
+        const { error } = await supabase.from("tz_documents" as any).delete().eq("id", id);
         if (error) throw error;
       }
       queryClient.invalidateQueries({ queryKey: ["unified-documents"] });

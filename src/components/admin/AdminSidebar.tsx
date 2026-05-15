@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, CalendarDays, FileText, Users, Building2, FileOutput, GripVertical, MessageSquare, FileSpreadsheet } from "lucide-react";
+import { LogOut, CalendarDays, FileText, Users, Building2, FileOutput, GripVertical, MessageSquare, FileSpreadsheet, ClipboardList } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -32,6 +32,7 @@ const defaultMenuItems = [
   { id: "clients", label: "Клиенты", icon: Users },
   { id: "organizations", label: "Организации", icon: Building2 },
   { id: "documents", label: "Документы", icon: FileOutput },
+  { id: "tz", label: "ТЗ", icon: ClipboardList },
   { id: "reconciliation", label: "Акты сверки", icon: FileSpreadsheet },
   { id: "ai-chat", label: "AI Ассистент", icon: MessageSquare },
 ];

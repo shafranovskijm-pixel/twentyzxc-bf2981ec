@@ -22,6 +22,7 @@ import DocumentsTab from "@/components/admin/DocumentsTab";
 import RequisitesTab from "@/components/admin/RequisitesTab";
 
 import HistoryTab from "@/components/admin/HistoryTab";
+import TzTab from "@/components/admin/TzTab";
 import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
@@ -358,6 +359,7 @@ const Admin = () => {
     planner: "Планер",
     documents: "Конструктор документов",
     reconciliation: "Акты сверки",
+    tz: "Технические задания",
     requisites: "Реквизиты компании",
     history: "История документов",
     nmo: "НМО Портал",
@@ -926,6 +928,7 @@ const Admin = () => {
               }} />}
               {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); }} />}
               {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
+              {activeSection === "tz" && <TzTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}
                 </motion.div>
               </AnimatePresence>
