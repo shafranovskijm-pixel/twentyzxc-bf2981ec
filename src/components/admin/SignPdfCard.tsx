@@ -1,6 +1,10 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Upload, FileSignature, Loader2, Download, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -17,6 +21,7 @@ import {
 const TARGET_PREVIEW_WIDTH = 720;
 
 const SignPdfCard = () => {
+  const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -25,9 +30,25 @@ const SignPdfCard = () => {
   const [preview, setPreview] = useState<{ dataUrl: string; widthPx: number; heightPx: number; scale: number } | null>(null);
   const [placements, setPlacements] = useState<Record<number, Placement>>({});
   const [overlay, setOverlay] = useState<{ signature: string; stamp: string } | null>(null);
+  const [linkedContractId, setLinkedContractId] = useState<string>("none");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+
+  // Load contracts for the optional dropdown
+  const { data: contracts = [] } = useQuery({
+    queryKey: ["sign-pdf-contracts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, contract_number, client_name, contract_date")
+        .eq("is_archived", false)
+        .order("contract_date", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data as any[];
+    },
+  });
 
   // Load overlay images once
   useEffect(() => {
@@ -168,10 +189,36 @@ const SignPdfCard = () => {
     try {
       const bytes = await signPdfWithPlacements(loaded.buf, placements);
       const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
+      const fileName = file.name.replace(/\.pdf$/i, "") + "_подписан.pdf";
+
+      // Save to archive if a contract is selected
+      if (linkedContractId && linkedContractId !== "none") {
+        try {
+          const c = contracts.find((x: any) => x.id === linkedContractId);
+          const safeName = `${Date.now()}-podpisan-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+          const storagePath = `${linkedContractId}/${safeName}`;
+          const { error: upErr } = await supabase.storage.from("contracts").upload(storagePath, blob, { contentType: "application/pdf" });
+          if (upErr) throw upErr;
+          await supabase.from("contract_files").insert({
+            contract_id: linkedContractId,
+            file_name: fileName,
+            file_path: storagePath,
+            file_size: blob.size,
+            metadata: { signed: true, client_name: c?.client_name || null },
+          } as any);
+          queryClient.invalidateQueries({ queryKey: ["unified-documents"] });
+          queryClient.invalidateQueries({ queryKey: ["contract-files"] });
+          toast.success("Сохранён в карточку договора и в Историю");
+        } catch (saveErr) {
+          console.error("[SignPdf save-to-archive]", saveErr);
+          toast.error("PDF скачан, но не удалось сохранить в архив");
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = file.name.replace(/\.pdf$/i, "") + "_подписан.pdf";
+      a.download = fileName;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       toast.success("Подписанный PDF скачан");
@@ -273,6 +320,23 @@ const SignPdfCard = () => {
               Перетащите подпись и печать мышкой туда, куда нужно. Позиция сохраняется отдельно для каждой страницы.
               Кнопка «Сбросить» убирает подпись с текущей страницы.
             </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
+              <div className="space-y-1">
+                <Label className="text-xs">Привязать к договору (для сохранения в Историю)</Label>
+                <Select value={linkedContractId} onValueChange={setLinkedContractId}>
+                  <SelectTrigger><SelectValue placeholder="Не сохранять, только скачать" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Не сохранять — только скачать</SelectItem>
+                    {contracts.map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        №{c.contract_number || "—"} · {c.client_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
             <div className="rounded-lg border bg-muted/30 p-3 overflow-auto">
               <div
