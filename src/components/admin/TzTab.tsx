@@ -15,10 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { ClipboardList, Plus, FileDown, FileText, Eye, Trash2, MoreVertical, Loader2, ArrowLeft, ArrowRight, Save, Search, X } from "lucide-react";
+import { ClipboardList, Plus, FileDown, FileText, Eye, Trash2, MoreVertical, Loader2, ArrowLeft, ArrowRight, Save, Search, X, Link2, Package } from "lucide-react";
 import { toast } from "sonner";
 import type { TzPayload, TzSection } from "@/lib/tz/types";
 import { renderTzHtml, exportTzPdf, exportTzDocx } from "@/lib/tz/render";
+import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -33,6 +34,13 @@ const TzTab = () => {
   // List
   const [search, setSearch] = useState("");
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+
+  // Link-to-contract dialog
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkRow, setLinkRow] = useState<any>(null);
+  const [linkContractId, setLinkContractId] = useState<string>("");
+  const [linkAppendixNum, setLinkAppendixNum] = useState<string>("");
+  const [linkBusy, setLinkBusy] = useState(false);
 
   // Wizard
   const [wizardOpen, setWizardOpen] = useState(false);
@@ -303,11 +311,121 @@ const TzTab = () => {
     const safeTitle = (row.title || "TZ").replace(/[^\w\d-]+/g, "_").slice(0, 40);
     const safeNum = (row.tz_number || "").replace(/[\/\\]/g, "-");
     const baseName = `TZ_${safeNum}_${safeTitle}`;
+    const linkedContract = contracts.find((c: any) => c.id === row.contract_id);
+    const ctxOpts = {
+      tzNumber: row.tz_number,
+      tzDate: row.tz_date,
+      title: row.title,
+      appendixNumber: row.appendix_number || row.tz_number,
+      contractNumber: linkedContract?.contract_number,
+      contractDate: linkedContract?.contract_date,
+    };
     if (kind === "pdf") {
-      const html = row.html_content || renderTzHtml(row.payload, { tzNumber: row.tz_number, tzDate: row.tz_date, title: row.title });
+      const html = renderTzHtml(row.payload, ctxOpts);
       await exportTzPdf(html, `${baseName}.pdf`);
     } else {
-      await exportTzDocx(row.payload, { tzNumber: row.tz_number, tzDate: row.tz_date, title: row.title, fileName: `${baseName}.docx` });
+      await exportTzDocx(row.payload, { ...ctxOpts, fileName: `${baseName}.docx` });
+    }
+  };
+
+  // Open the «Соединить с договором» dialog for a row
+  const openLinkDialog = (row: any) => {
+    setLinkRow(row);
+    setLinkContractId(row.contract_id || "");
+    setLinkAppendixNum(row.appendix_number || row.tz_number || "");
+    setLinkOpen(true);
+  };
+
+  // Persist link: tz_documents.contract_id + appendix_number; contracts.appendix_ref
+  const linkContract = async (alsoBundle: boolean) => {
+    if (!linkRow) return;
+    if (!linkContractId) { toast.error("Выберите договор"); return; }
+    setLinkBusy(true);
+    try {
+      const contract = contracts.find((c: any) => c.id === linkContractId);
+      const tzNum = linkRow.tz_number || linkAppendixNum;
+      const tzDate = linkRow.tz_date;
+      const refText = `Техническое задание №${tzNum}${tzDate ? ` от ${new Date(tzDate).toLocaleDateString("ru-RU")}` : ""}${linkAppendixNum && linkAppendixNum !== tzNum ? ` (Приложение №${linkAppendixNum})` : ""}`;
+
+      const { error: tzErr } = await supabase.from("tz_documents" as any).update({
+        contract_id: linkContractId,
+        appendix_number: linkAppendixNum || tzNum,
+      }).eq("id", linkRow.id);
+      if (tzErr) throw tzErr;
+
+      const { error: cErr } = await supabase.from("contracts").update({
+        appendix_ref: refText,
+      } as any).eq("id", linkContractId);
+      if (cErr) throw cErr;
+
+      qc.invalidateQueries({ queryKey: ["tz_documents"] });
+      qc.invalidateQueries({ queryKey: ["tz-contracts"] });
+      qc.invalidateQueries({ queryKey: ["admin-contracts"] });
+      toast.success("ТЗ привязано к договору");
+
+      if (alsoBundle) {
+        await downloadPackage({ ...linkRow, contract_id: linkContractId, appendix_number: linkAppendixNum || tzNum }, contract);
+      }
+      setLinkOpen(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Не удалось привязать");
+    } finally {
+      setLinkBusy(false);
+    }
+  };
+
+  // Build & download the combined package PDF (Договор + Счёт + Акт + ТЗ)
+  const downloadPackage = async (row: any, contractFromArg?: any) => {
+    const contract = contractFromArg || contracts.find((c: any) => c.id === row.contract_id);
+    if (!contract) { toast.error("Сначала привяжите ТЗ к договору"); return; }
+    const t = toast.loading("Собираем пакет PDF…");
+    try {
+      // Pull latest of each doc type tied to this contract from generated_documents
+      const { data: docs, error } = await supabase
+        .from("generated_documents")
+        .select("doc_type, html_content, doc_number, doc_date, created_at")
+        .eq("contract_id", contract.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      const latestOf = (type: string) => (docs || []).find((d: any) => d.doc_type === type);
+      const order: { type: string; label: string }[] = [
+        { type: "contract", label: "Договор" },
+        { type: "invoice", label: "Счёт" },
+        { type: "act", label: "Акт" },
+      ];
+      const parts: { label: string; html: string }[] = [];
+      const skipped: string[] = [];
+      for (const o of order) {
+        const d = latestOf(o.type);
+        if (d?.html_content) parts.push({ label: o.label, html: d.html_content });
+        else skipped.push(o.label);
+      }
+
+      // ТЗ — всегда добавляем последним, с пометкой «Приложение № … к Договору №…»
+      const tzHtml = renderTzHtml(row.payload as TzPayload, {
+        tzNumber: row.tz_number,
+        tzDate: row.tz_date,
+        title: row.title,
+        appendixNumber: row.appendix_number || row.tz_number,
+        contractNumber: contract.contract_number,
+        contractDate: contract.contract_date,
+      });
+      parts.push({ label: "ТЗ", html: tzHtml });
+
+      const safeNum = (contract.contract_number || row.tz_number || "package").replace(/[\/\\]/g, "-");
+      await mergeHtmlsToPdf(parts, `Пакет_${safeNum}.pdf`);
+      toast.dismiss(t);
+      if (skipped.length) {
+        toast.warning(`Пакет собран. Не найдено: ${skipped.join(", ")} — сгенерируйте их во вкладке «Документы».`);
+      } else {
+        toast.success("Пакет PDF готов");
+      }
+    } catch (e: any) {
+      toast.dismiss(t);
+      console.error(e);
+      toast.error(e?.message || "Ошибка сборки пакета");
     }
   };
 
@@ -389,6 +507,12 @@ const TzTab = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => openEdit(row)}>
                               <FileText className="h-4 w-4 mr-2" /> Редактировать
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openLinkDialog(row)}>
+                              <Link2 className="h-4 w-4 mr-2" /> Соединить с договором…
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => downloadPackage(row)} disabled={!row.contract_id}>
+                              <Package className="h-4 w-4 mr-2" /> Скачать пакет PDF
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => downloadExisting(row, "pdf")}>
                               <FileDown className="h-4 w-4 mr-2" /> Скачать PDF
