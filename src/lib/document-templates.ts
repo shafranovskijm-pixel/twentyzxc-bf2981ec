@@ -48,6 +48,8 @@ export interface DocumentData {
   contractDate?: string;
   // invoice discount
   discountAmount?: number;
+  // appendices (TZ link)
+  appendixRef?: string;
   discountDeadline?: string;
 }
 
