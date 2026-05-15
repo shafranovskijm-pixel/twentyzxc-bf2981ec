@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send, Pencil, RefreshCw } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send, Pencil, RefreshCw, Package } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -31,7 +31,6 @@ import { preloadDocumentImages } from "@/lib/document-images";
 import SignPdfCard from "./SignPdfCard";
 import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
-import { Package } from "lucide-react";
 
 type DocType = "contract" | "invoice" | "act" | "reconciliation";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
