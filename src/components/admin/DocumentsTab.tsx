@@ -1756,11 +1756,18 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
                   variant="outline"
                   size="sm"
                   disabled={emailSending}
-                  onClick={() => {
+                  onClick={async () => {
                     if (!previewHtml) return;
                     const currentHtml = previewTab === "invoice" && previewInvoiceHtml ? previewInvoiceHtml : previewHtml;
                     const label = previewTab === "invoice" ? "Счёт" : DOC_LABELS[docType];
                     const fileName = `${label}_${safeFilename(docNumber)}_${docDate}.pdf`;
+                    // Save to client/contract/DB just like when sending
+                    try {
+                      await saveDocumentToDB(previewHtml, previewInvoiceHtml || null);
+                      toast.success("Документ сохранён в базе");
+                    } catch (e) {
+                      console.error("[Download] saveDocumentToDB failed:", e);
+                    }
                     downloadPdfFromHtml(currentHtml, fileName);
                   }}
                 >
