@@ -190,6 +190,7 @@ export type Database = {
         Row: {
           amount: number | null
           amount_extra: number | null
+          appendix_ref: string | null
           client_name: string
           contract_date: string | null
           contract_number: string | null
@@ -208,6 +209,7 @@ export type Database = {
         Insert: {
           amount?: number | null
           amount_extra?: number | null
+          appendix_ref?: string | null
           client_name: string
           contract_date?: string | null
           contract_number?: string | null
@@ -226,6 +228,7 @@ export type Database = {
         Update: {
           amount?: number | null
           amount_extra?: number | null
+          appendix_ref?: string | null
           client_name?: string
           contract_date?: string | null
           contract_number?: string | null
@@ -1224,6 +1227,7 @@ export type Database = {
       }
       tz_documents: {
         Row: {
+          appendix_number: string | null
           client_id: string | null
           client_inn: string | null
           client_name: string
@@ -1239,6 +1243,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          appendix_number?: string | null
           client_id?: string | null
           client_inn?: string | null
           client_name: string
@@ -1254,6 +1259,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          appendix_number?: string | null
           client_id?: string | null
           client_inn?: string | null
           client_name?: string
