@@ -1883,6 +1883,19 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
                   <Download className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Скачать PDF</span>
                 </Button>
+                {docType === "contract" && (
+                  <Button
+                    size="sm"
+                    disabled={packageBusy}
+                    onClick={downloadFullPackage}
+                    title="Договор + Счёт + Акт + ТЗ одним PDF"
+                  >
+                    {packageBusy
+                      ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" />
+                      : <Package className="w-4 h-4 sm:mr-2" />}
+                    <span className="hidden sm:inline">Договор + ТЗ + Счёт + Акт</span>
+                  </Button>
+                )}
               </div>
             </div>
           </DialogHeader>
