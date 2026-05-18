@@ -110,6 +110,21 @@ const ContractsTab = () => {
     setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false); setIsOneTime(false);
   };
 
+  // Email lookup by client name for search
+  const { data: clientEmails = [] } = useQuery({
+    queryKey: ["clients-email-index"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("name, email");
+      if (error) throw error;
+      return (data || []) as { name: string; email: string | null }[];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const emailByClient = new Map<string, string>();
+  clientEmails.forEach((c) => {
+    if (c.email) emailByClient.set(c.name.toLowerCase().trim(), c.email.toLowerCase());
+  });
+
   const lookupByValue = async (searchValue: string) => {
     if (!searchValue.trim()) return toast.error("Введите ИНН или название организации");
     setInnLoading(true);
@@ -359,10 +374,12 @@ const ContractsTab = () => {
     if (tab === "archive" && !isArchived) return false;
     if (!search.trim()) return true;
     const s = search.toLowerCase();
+    const email = emailByClient.get(c.client_name.toLowerCase().trim());
     return c.client_name.toLowerCase().includes(s) ||
       c.contract_number?.toLowerCase().includes(s) ||
       c.contract_type?.toLowerCase().includes(s) ||
-      c.responsible?.toLowerCase().includes(s);
+      c.responsible?.toLowerCase().includes(s) ||
+      email?.includes(s);
   });
 
   const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
@@ -624,7 +641,7 @@ const ContractsTab = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Input placeholder="Поиск договоров..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
+        <Input placeholder="Поиск по названию, номеру, email..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
         <Button onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
           <Plus className="w-4 h-4 mr-2" />Добавить
         </Button>
