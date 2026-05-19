@@ -778,6 +778,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       } else {
         console.log("[DOC] Step 2 OK, contract id:", newContract.id, "paid_until:", parsedServiceDeadline);
         targetContractId = newContract.id;
+        setLinkedContractId(newContract.id);
         queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
       }
