@@ -1546,3 +1546,268 @@ const TasksSection = ({ clientId }: { clientId: string }) => {
     </div>
   );
 };
+
+// ============================================================
+// Log call dialog (opens when clicking phone in quick facts)
+// ============================================================
+const LogCallDialog = ({ open, onClose, clientId, clientName, phone }: {
+  open: boolean; onClose: () => void; clientId: string; clientName: string; phone: string;
+}) => {
+  const queryClient = useQueryClient();
+  const [when, setWhen] = useState("");
+  const [comment, setComment] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      // datetime-local in local TZ: YYYY-MM-DDTHH:MM
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setWhen(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+      setComment("");
+    }
+  }, [open]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const dt = when ? new Date(when) : new Date();
+      const whenStr = dt.toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
+      const lines = [
+        `📞 ${phone || "—"}`,
+        `🕒 ${whenStr}`,
+      ];
+      if (comment.trim()) lines.push(comment.trim());
+      else lines.push("Звонок состоялся");
+      const { error } = await supabase.from("client_interactions").insert({
+        client_id: clientId,
+        interaction_type: "call",
+        content: lines.join("\n"),
+      });
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["client-interactions", clientId] });
+      toast.success("Звонок зафиксирован");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка сохранения");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Phone className="w-4 h-4" /> Зафиксировать звонок</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="text-sm text-muted-foreground">
+            <div><span className="opacity-70">Клиент:</span> <span className="text-foreground">{clientName}</span></div>
+            {phone && <div><span className="opacity-70">Номер:</span> <span className="text-foreground font-mono">{phone}</span></div>}
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Когда</Label>
+            <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">О чём договорились (не обязательно)</Label>
+            <Textarea
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Кратко: о чём говорили, что решили, следующий шаг…"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose} disabled={saving}>Отмена</Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Сохранить
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// ============================================================
+// Resend document dialog (PDF as attachment, no signed links)
+// ============================================================
+const ResendDocDialog = ({ doc, clientName, clientId, onClose }: {
+  doc: any; clientName: string; clientId?: string; onClose: () => void;
+}) => {
+  const queryClient = useQueryClient();
+  const docLabel = `${DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type} №${doc.doc_number} от ${new Date(doc.doc_date).toLocaleDateString("ru-RU")}`;
+  const [to, setTo] = useState("");
+  const [cc, setCc] = useState("");
+  const [subject, setSubject] = useState(docLabel);
+  const [alsoContract, setAlsoContract] = useState(false);
+  const [contractDoc, setContractDoc] = useState<any | null>(null);
+  const [sending, setSending] = useState(false);
+
+  // Prefill client email + look up related contract (if current doc is invoice/act)
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      try {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("email")
+          .eq("name", clientName)
+          .maybeSingle();
+        if (!cancel && client?.email) setTo(client.email);
+      } catch {}
+
+      if (doc.doc_type !== "contract") {
+        try {
+          let q = supabase
+            .from("generated_documents")
+            .select("id, doc_type, doc_number, doc_date, html_content")
+            .eq("doc_type", "contract")
+            .order("created_at", { ascending: false })
+            .limit(1);
+          if (doc.contract_id) q = q.eq("contract_id", doc.contract_id);
+          else q = q.eq("client_name", clientName);
+          const { data } = await q;
+          if (!cancel && data && data.length) setContractDoc(data[0]);
+        } catch {}
+      }
+    })();
+    return () => { cancel = true; };
+  }, [clientName, doc.contract_id, doc.doc_type]);
+
+  const send = async () => {
+    const toClean = to.trim();
+    if (!toClean) {
+      toast.error("Укажите email получателя");
+      return;
+    }
+    setSending(true);
+    try {
+      const attachments: { filename: string; base64: string; contentType: string }[] = [];
+
+      // Main doc
+      const mainBlob = await generatePdfBlob(doc.html_content);
+      const mainName = safePdfFilename(
+        `${DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type}_${doc.doc_number}_${doc.doc_date}.pdf`
+      );
+      attachments.push({
+        filename: mainName,
+        base64: await blobToBase64(mainBlob),
+        contentType: "application/pdf",
+      });
+
+      // Optional: also attach contract
+      if (alsoContract && contractDoc?.html_content) {
+        const cBlob = await generatePdfBlob(contractDoc.html_content);
+        const cName = safePdfFilename(
+          `Договор_${contractDoc.doc_number}_${contractDoc.doc_date}.pdf`
+        );
+        attachments.push({
+          filename: cName,
+          base64: await blobToBase64(cBlob),
+          contentType: "application/pdf",
+        });
+      }
+
+      const items = attachments
+        .map((a, i) => {
+          const label = i === 0
+            ? docLabel
+            : `Договор №${contractDoc.doc_number} от ${new Date(contractDoc.doc_date).toLocaleDateString("ru-RU")}`;
+          return `<li style="margin:4px 0;">${label}</li>`;
+        })
+        .join("");
+
+      const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color:#111;">
+          <p>Добрый день!</p>
+          <p>Высылаем документ${attachments.length > 1 ? "ы" : ""} во вложении:</p>
+          <ul style="padding-left:20px;">${items}</ul>
+          <p style="color:#6b7280;font-size:13px;margin-top:24px;">С уважением, Синтагма.</p>
+        </div>
+      `;
+
+      const recipients = [toClean, ...(cc.trim() ? [cc.trim()] : [])].filter(Boolean);
+      const { data, error } = await supabase.functions.invoke("send-document-email", {
+        body: { to: recipients.join(","), subject: subject.trim() || docLabel, html, attachments },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ошибка отправки");
+
+      // Log to client_interactions
+      if (clientId) {
+        await supabase.from("client_interactions").insert({
+          client_id: clientId,
+          interaction_type: "email",
+          content: `✉️ Отправлено на ${recipients.join(", ")}\n${attachments.map(a => "• " + a.filename).join("\n")}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ["client-interactions", clientId] });
+      }
+
+      // Update client email if changed
+      try {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("id,email")
+          .eq("name", clientName)
+          .maybeSingle();
+        if (client && client.email !== toClean) {
+          await supabase.from("clients").update({ email: toClean }).eq("id", client.id);
+        }
+      } catch {}
+
+      toast.success("Письмо отправлено с вложением");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message || "Не удалось отправить");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o && !sending) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Send className="w-4 h-4" /> Отправить заново</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="text-xs text-muted-foreground">
+            Документ: <span className="text-foreground">{docLabel}</span>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Кому *</Label>
+            <Input type="email" value={to} onChange={(e) => setTo(e.target.value)} placeholder="info@company.ru" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Копия</Label>
+            <Input type="email" value={cc} onChange={(e) => setCc(e.target.value)} placeholder="(необязательно)" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Тема</Label>
+            <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+          </div>
+          {contractDoc && (
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox checked={alsoContract} onCheckedChange={(v) => setAlsoContract(v === true)} />
+              <span>Также вложить Договор №{contractDoc.doc_number}</span>
+            </label>
+          )}
+          <div className="text-[11px] text-muted-foreground">
+            Файлы прикрепляются ко письму как PDF — без коротких ссылок.
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="outline" onClick={onClose} disabled={sending}>Отмена</Button>
+            <Button onClick={send} disabled={sending}>
+              {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+              Отправить
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
