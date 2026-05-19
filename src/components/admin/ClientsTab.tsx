@@ -541,6 +541,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                 paymentDate={paymentDate}
                 serviceDeadline={serviceDeadline}
                 contactPerson={contactPerson}
+                clientId={editingId}
+                clientName={name}
               />
             )}
 
@@ -1274,7 +1276,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
             <span className="flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Документы <span className="text-muted-foreground">({documents.length})</span></span>
           </AccordionTrigger>
           <AccordionContent>
-            <DocumentsSection clientName={p.clientName} />
+            <DocumentsSection clientName={p.clientName} clientId={p.editingId} />
           </AccordionContent>
         </AccordionItem>
       )}
