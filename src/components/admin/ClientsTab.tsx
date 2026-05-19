@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ async function fetchDadata(params: { inn?: string; query?: string }) {
   }
 }
 
-const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
+const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -729,6 +729,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 
 interface ClientsTabProps {
   onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void;
+  initialClientName?: string;
+  onConsumed?: () => void;
 }
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
