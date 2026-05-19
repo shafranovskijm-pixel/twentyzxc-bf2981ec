@@ -1111,7 +1111,7 @@ const useClientInteractions = (clientId: string) =>
 // ============================================================
 // Quick facts header strip
 // ============================================================
-const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson }: {
+const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson, clientId, clientName }: {
   phone: string; email: string; telegram: string; inn: string;
   paymentDate: string; serviceDeadline: string; contactPerson: string;
   clientId?: string; clientName?: string;
@@ -1144,7 +1144,7 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
       {phone && (
         <span className="inline-flex items-center gap-1">
           <button
-            onClick={() => arguments_clientId ? setCallOpen(true) : copy(phone, "Телефон")}
+            onClick={() => (clientId ? setCallOpen(true) : copy(phone, "Телефон"))}
             className="inline-flex items-center gap-1 hover:text-primary transition-colors"
             title="Зафиксировать звонок"
           >
@@ -1178,6 +1178,15 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
         <span className="inline-flex items-center gap-1">💳 {new Date(paymentDate).toLocaleDateString("ru-RU")}</span>
       )}
       {deadlineNode}
+      {clientId && (
+        <LogCallDialog
+          open={callOpen}
+          onClose={() => setCallOpen(false)}
+          clientId={clientId}
+          clientName={clientName || ""}
+          phone={phone}
+        />
+      )}
     </div>
   );
 };
