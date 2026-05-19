@@ -61,6 +61,13 @@ const Admin = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [activeSection, setActiveSection] = useState("contracts");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sectionNonce, setSectionNonce] = useState(0);
+  const handleSectionChange = (s: string) => {
+    // Bump nonce to force remount even when clicking the already-active section,
+    // so any open inline forms / modals reset (e.g. "Back to list").
+    setSectionNonce((n) => n + 1);
+    setActiveSection(s);
+  };
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
@@ -521,7 +528,7 @@ const Admin = () => {
 
         {/* Desktop sidebar (hidden on mobile) */}
         <div className="hidden md:block">
-          <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
+          <AdminSidebar activeSection={activeSection} onSectionChange={handleSectionChange} onSignOut={signOut} themeClass={activeTheme?.sidebarClass} />
         </div>
 
         {/* Mobile sidebar inside Sheet */}
@@ -529,7 +536,7 @@ const Admin = () => {
           <SheetContent side="left" className="p-0 w-16 border-r-0 [&>button]:hidden">
             <AdminSidebar
               activeSection={activeSection}
-              onSectionChange={(s) => { setActiveSection(s); setMobileSidebarOpen(false); }}
+              onSectionChange={(s) => { handleSectionChange(s); setMobileSidebarOpen(false); }}
               onSignOut={() => { signOut(); setMobileSidebarOpen(false); }}
               themeClass={activeTheme?.sidebarClass}
               inSheet
@@ -648,7 +655,7 @@ const Admin = () => {
           <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={activeSection}
+                  key={`${activeSection}-${sectionNonce}`}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
