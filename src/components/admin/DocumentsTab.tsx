@@ -2075,19 +2075,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       </Collapsible>
 
       <Collapsible>
-        <Card>
-          <CollapsibleTrigger asChild>
-            <button type="button" className="w-full flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors [&[data-state=open]>svg:last-child]:rotate-180">
-              <span className="flex items-center gap-2 text-sm font-medium"><FileSignature className="w-4 h-4" />Подписать готовый PDF</span>
-              <ChevronDown className="w-4 h-4 transition-transform" />
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="px-6 pb-4">
-              <SignPdfCard />
-            </div>
-          </CollapsibleContent>
-        </Card>
+        <CollapsibleTrigger asChild>
+          <button type="button" className="w-full flex items-center justify-between rounded-lg border bg-card px-6 py-3 hover:bg-muted/30 transition-colors [&[data-state=open]>svg:last-child]:rotate-180">
+            <span className="flex items-center gap-2 text-sm font-medium"><FileSignature className="w-4 h-4" />Подписать готовый PDF</span>
+            <ChevronDown className="w-4 h-4 transition-transform" />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-2">
+          <SignPdfCard />
+        </CollapsibleContent>
       </Collapsible>
 
       {/* Recent Documents History */}
