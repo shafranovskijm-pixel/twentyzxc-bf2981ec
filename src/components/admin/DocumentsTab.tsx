@@ -453,7 +453,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       setSubject("Разработка веб-сайта");
       setDeadline("30 рабочих дней");
       setPaymentTerms("100% предоплата");
-      setServices([{ name: "", qty: 1, price: 0 }]);
+      setServices([
+        {
+          name: "Разработка веб-сайта в соответствии с требованиям Приказа Рособрнадзора от 04.08.2023 № 1493 (с изменениями)",
+          qty: 1,
+          price: 0,
+        },
+      ]);
     } else {
       setSubject("");
       setDeadline("");
