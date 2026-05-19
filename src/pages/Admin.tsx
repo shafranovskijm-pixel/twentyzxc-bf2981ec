@@ -921,12 +921,19 @@ const Admin = () => {
                 </div>
               )}
 
-              {activeSection === "clients" && <ClientsTab onNavigate={(section, params) => {
-                setDocInitialClientName(params?.clientName || "");
-                setDocInitialDocType(params?.docType || "");
-                setActiveSection(section);
+              {activeSection === "clients" && <ClientsTab
+                initialClientName={clientsInitialName}
+                onConsumed={() => setClientsInitialName("")}
+                onNavigate={(section, params) => {
+                  setDocInitialClientName(params?.clientName || "");
+                  setDocInitialDocType(params?.docType || "");
+                  setActiveSection(section);
+                }}
+              />}
+              {activeSection === "contracts" && <ContractsTab onOpenClient={(name) => {
+                setClientsInitialName(name);
+                handleSectionChange("clients");
               }} />}
-              {activeSection === "contracts" && <ContractsTab />}
               {activeSection === "organizations" && <OrganizationsTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
                 setDocInitialContractId(task.contract_id || "");
