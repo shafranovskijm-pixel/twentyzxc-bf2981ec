@@ -1040,3 +1040,444 @@ const InteractionLog = ({ clientId }: { clientId: string }) => {
 };
 
 export default ClientsTab;
+
+// ============================================================
+// Shared data hooks (React Query dedupes between count + list)
+// ============================================================
+const useClientContracts = (clientName: string) =>
+  useQuery({
+    queryKey: ["client-history-contracts", clientName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contracts")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path")
+        .eq("client_name", clientName)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientName,
+  });
+
+const useClientDocuments = (clientName: string) =>
+  useQuery({
+    queryKey: ["client-history-docs", clientName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("generated_documents")
+        .select("id, doc_type, doc_number, doc_date, total_amount, html_content")
+        .eq("client_name", clientName)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientName,
+  });
+
+const useClientTasks = (clientId: string) =>
+  useQuery({
+    queryKey: ["client-history-tasks", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("id, title, status, task_date")
+        .eq("client_id", clientId)
+        .order("task_date", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientId,
+  });
+
+const useClientInteractions = (clientId: string) =>
+  useQuery({
+    queryKey: ["client-interactions", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_interactions")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientId,
+  });
+
+// ============================================================
+// Quick facts header strip
+// ============================================================
+const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson }: {
+  phone: string; email: string; telegram: string; inn: string;
+  paymentDate: string; serviceDeadline: string; contactPerson: string;
+}) => {
+  const copy = (v: string, label: string) => {
+    if (!v) return;
+    navigator.clipboard.writeText(v).then(() => toast.success(`${label} скопирован`));
+  };
+  const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || contactPerson;
+  if (!hasAny) return null;
+
+  let deadlineNode: React.ReactNode = null;
+  if (serviceDeadline) {
+    const dl = new Date(serviceDeadline);
+    const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    const cls = diff < 0 || diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
+    deadlineNode = (
+      <span className={`inline-flex items-center gap-1 ${cls}`} title={`Срок услуг до ${dl.toLocaleDateString("ru-RU")}`}>
+        ⏳ до {dl.toLocaleDateString("ru-RU")}
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground rounded-md border border-border/40 bg-muted/20 px-3 py-2">
+      {contactPerson && (
+        <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />{contactPerson}</span>
+      )}
+      {phone && (
+        <button onClick={() => copy(phone, "Телефон")} className="inline-flex items-center gap-1 hover:text-primary transition-colors">
+          <Phone className="w-3 h-3" />{phone}<Copy className="w-2.5 h-2.5 opacity-50" />
+        </button>
+      )}
+      {email && (
+        <button onClick={() => copy(email, "Email")} className="inline-flex items-center gap-1 hover:text-primary transition-colors">
+          <Mail className="w-3 h-3" />{email}<Copy className="w-2.5 h-2.5 opacity-50" />
+        </button>
+      )}
+      {telegram && (
+        <a href={`https://t.me/${telegram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary transition-colors">
+          <Send className="w-3 h-3" />{telegram}
+        </a>
+      )}
+      {inn && (
+        <button onClick={() => copy(inn, "ИНН")} className="inline-flex items-center gap-1 font-mono hover:text-primary transition-colors">
+          ИНН: {inn}<Copy className="w-2.5 h-2.5 opacity-50" />
+        </button>
+      )}
+      {paymentDate && (
+        <span className="inline-flex items-center gap-1">💳 {new Date(paymentDate).toLocaleDateString("ru-RU")}</span>
+      )}
+      {deadlineNode}
+    </div>
+  );
+};
+
+// ============================================================
+// Main accordion structure inside the client card
+// ============================================================
+const SECTIONS_KEY = "client-card-sections";
+const DEFAULT_OPEN = ["contracts", "activity"];
+
+interface ClientCardSectionsProps {
+  editingId: string | null;
+  clientName: string;
+  interactionsEnabled: boolean;
+  contactPerson: string; setContactPerson: (v: string) => void;
+  phone: string; setPhone: (v: string) => void;
+  email: string; setEmail: (v: string) => void;
+  telegram: string; setTelegram: (v: string) => void;
+  notes: string; setNotes: (v: string) => void;
+  serviceType: string; setServiceType: (v: string) => void;
+  frdoLogin: string; setFrdoLogin: (v: string) => void;
+  frdoPassword: string; setFrdoPassword: (v: string) => void;
+  frdoPasswordPo: string; setFrdoPasswordPo: (v: string) => void;
+  paymentDate: string; setPaymentDate: (v: string) => void;
+  serviceDeadline: string; setServiceDeadline: (v: string) => void;
+  inn: string; setInn: (v: string) => void;
+  kpp: string; setKpp: (v: string) => void;
+  ogrn: string; setOgrn: (v: string) => void;
+  legalAddress: string; setLegalAddress: (v: string) => void;
+  directorName: string; setDirectorName: (v: string) => void;
+  directorPost: string; setDirectorPost: (v: string) => void;
+  syncing: boolean;
+  fillFromContract: () => void;
+  syncRequisites: (byInn?: boolean) => void;
+}
+
+const ClientCardSections = (p: ClientCardSectionsProps) => {
+  const [open, setOpen] = useState<string[]>(() => {
+    if (typeof window === "undefined") return DEFAULT_OPEN;
+    try {
+      const raw = localStorage.getItem(SECTIONS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return DEFAULT_OPEN;
+  });
+  useEffect(() => {
+    try { localStorage.setItem(SECTIONS_KEY, JSON.stringify(open)); } catch {}
+  }, [open]);
+
+  const { data: contracts = [] } = useClientContracts(p.clientName);
+  const { data: documents = [] } = useClientDocuments(p.clientName);
+  const { data: tasks = [] } = useClientTasks(p.editingId || "");
+  const { data: interactions = [] } = useClientInteractions(p.editingId || "");
+
+  return (
+    <Accordion type="multiple" value={open} onValueChange={setOpen} className="w-full">
+      {/* Contracts */}
+      {p.editingId && (
+        <AccordionItem value="contracts">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Договоры <span className="text-muted-foreground">({contracts.length})</span></span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <ContractsSection clientName={p.clientName} />
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Activity */}
+      {p.interactionsEnabled && p.editingId && (
+        <AccordionItem value="activity">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><History className="w-4 h-4" /> Активность по клиенту <span className="text-muted-foreground">({interactions.length})</span></span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <InteractionLog clientId={p.editingId} />
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Documents */}
+      {p.editingId && documents.length > 0 && (
+        <AccordionItem value="documents">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Документы <span className="text-muted-foreground">({documents.length})</span></span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <DocumentsSection clientName={p.clientName} />
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Tasks */}
+      {p.editingId && tasks.length > 0 && (
+        <AccordionItem value="tasks">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><CheckSquare className="w-4 h-4" /> Задачи <span className="text-muted-foreground">({tasks.length})</span></span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <TasksSection clientId={p.editingId} />
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Logins & access */}
+      <AccordionItem value="logins">
+        <AccordionTrigger className="text-sm">
+          <span className="flex items-center gap-2"><KeyRound className="w-4 h-4" /> Логины и доступы</span>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-4 pt-1">
+            <div className="space-y-2">
+              <Label>Услуга</Label>
+              <Select value={p.serviceType} onValueChange={p.setServiceType}>
+                <SelectTrigger><SelectValue placeholder="Выберите услугу" /></SelectTrigger>
+                <SelectContent>
+                  {SERVICE_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={p.frdoLogin} onChange={(e) => p.setFrdoLogin(e.target.value)} placeholder="login" /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Пароль ДПО</Label><Input value={p.frdoPassword} onChange={(e) => p.setFrdoPassword(e.target.value)} placeholder="пароль ДПО" /></div>
+              <div className="space-y-2"><Label>Пароль ПО</Label><Input value={p.frdoPasswordPo} onChange={(e) => p.setFrdoPasswordPo(e.target.value)} placeholder="пароль ПО" /></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Дата оплаты</Label>
+                <Input type="date" value={p.paymentDate} onChange={(e) => p.setPaymentDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Срок оказания услуг (до)</Label>
+                <Input type="date" value={p.serviceDeadline} onChange={(e) => p.setServiceDeadline(e.target.value)} />
+                {p.serviceDeadline && (() => {
+                  const diff = Math.round((new Date(p.serviceDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                  if (diff < 0) return <p className="text-xs text-destructive">Срок истёк {Math.abs(diff)} дн. назад</p>;
+                  if (diff <= 30) return <p className="text-xs text-destructive">Осталось {diff} дн.</p>;
+                  if (diff <= 90) return <p className="text-xs text-amber-400">Осталось {diff} дн.</p>;
+                  return <p className="text-xs text-muted-foreground">Осталось {diff} дн.</p>;
+                })()}
+              </div>
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
+      {/* Requisites */}
+      <AccordionItem value="requisites">
+        <AccordionTrigger className="text-sm">
+          <span className="flex items-center gap-2"><Building2 className="w-4 h-4" /> Реквизиты</span>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-4 pt-1">
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={p.fillFromContract} disabled={p.syncing}>
+                <FileText className="w-4 h-4 mr-2" /> Из договора
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => p.syncRequisites()} disabled={p.syncing}>
+                {p.syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                Синхронизировать
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={p.inn} onChange={(e) => p.setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => p.syncRequisites(true)} disabled={p.syncing} className="shrink-0" title="Обновить по ИНН">{p.syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
+              <div className="space-y-2"><Label>КПП</Label><Input value={p.kpp} onChange={(e) => p.setKpp(e.target.value)} placeholder="123456789" /></div>
+              <div className="space-y-2"><Label>ОГРН</Label><Input value={p.ogrn} onChange={(e) => p.setOgrn(e.target.value)} placeholder="1234567890123" /></div>
+            </div>
+            <div className="space-y-2"><Label>Юридический адрес</Label><Input value={p.legalAddress} onChange={(e) => p.setLegalAddress(e.target.value)} placeholder="г. Москва, ул. ..." /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>ФИО руководителя</Label><Input value={p.directorName} onChange={(e) => p.setDirectorName(e.target.value)} placeholder="Иванов Иван Иванович" /></div>
+              <div className="space-y-2"><Label>Должность руководителя</Label><Input value={p.directorPost} onChange={(e) => p.setDirectorPost(e.target.value)} placeholder="Директор" /></div>
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+
+      {/* Contacts & description */}
+      <AccordionItem value="contacts">
+        <AccordionTrigger className="text-sm">
+          <span className="flex items-center gap-2"><User className="w-4 h-4" /> Контакты и описание</span>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-4 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Контактное лицо</Label><Input value={p.contactPerson} onChange={(e) => p.setContactPerson(e.target.value)} placeholder="Иванов И.И." /></div>
+              <div className="space-y-2"><Label>Телефон</Label><Input value={p.phone} onChange={(e) => p.setPhone(e.target.value)} placeholder="+7 999 123-45-67" /></div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label>Email</Label><Input value={p.email} onChange={(e) => p.setEmail(e.target.value)} placeholder="info@company.ru" /></div>
+              <div className="space-y-2"><Label>Telegram</Label><Input value={p.telegram} onChange={(e) => p.setTelegram(e.target.value)} placeholder="@username" /></div>
+            </div>
+            <div className="space-y-2">
+              <Label>Заметки</Label>
+              <Textarea value={p.notes} onChange={(e) => p.setNotes(e.target.value)} placeholder="Доп. информация..." rows={3} />
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+};
+
+// ============================================================
+// Section renderers (data reused via React Query cache)
+// ============================================================
+const ContractsSection = ({ clientName }: { clientName: string }) => {
+  const queryClient = useQueryClient();
+  const { data: contracts = [], isLoading } = useClientContracts(clientName);
+  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
+  const statusColor = (s: string | null) => {
+    if (s === "оплачено") return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+    if (s === "частично") return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+    return "bg-red-500/20 text-red-400 border-red-500/30";
+  };
+  if (isLoading) return <p className="text-xs text-muted-foreground">Загрузка...</p>;
+  if (!contracts.length) return <p className="text-xs text-muted-foreground">Нет договоров</p>;
+  return (
+    <div className="space-y-1">
+      {contracts.map((c: any) => (
+        <div key={c.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+          <span className="font-mono text-xs">№{c.contract_number || "—"}</span>
+          <span className="text-muted-foreground text-xs">{fmt(c.contract_date)}</span>
+          {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
+          {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
+          <button
+            onClick={async () => {
+              const newStatus = c.payment_status === "оплачено" ? "не оплачено" : "оплачено";
+              await supabase.from("contracts").update({ payment_status: newStatus } as any).eq("id", c.id);
+              queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
+              queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+              toast.success(`Статус: ${newStatus}`);
+            }}
+            className={`text-xs ml-auto px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${statusColor(c.payment_status)}`}
+          >
+            {c.payment_status || "не оплачено"}
+          </button>
+          {c.file_path && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0"
+              onClick={async () => {
+                const { data } = await supabase.storage.from("contracts").createSignedUrl(c.file_path!, 300);
+                if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+                else toast.error("Не удалось открыть файл");
+              }}
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </Button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const DocumentsSection = ({ clientName }: { clientName: string }) => {
+  const { data: documents = [] } = useClientDocuments(clientName);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
+  return (
+    <>
+      <div className="space-y-1">
+        {documents.map((d: any) => (
+          <div key={d.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+            <Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[d.doc_type] || d.doc_type}</Badge>
+            <span className="font-mono text-xs">№{d.doc_number}</span>
+            <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
+            {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+            {d.html_content && (
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPreviewHtml(d.html_content)}>
+                <Eye className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+      <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
+        <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
+          <DialogHeader className="px-4 py-3 border-b shrink-0">
+            <DialogTitle className="flex items-center justify-between">
+              <span>Просмотр документа</span>
+              <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(null)}><X className="w-4 h-4" /></Button>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30 p-2">
+            <iframe srcDoc={previewHtml || ""} className="w-full h-full min-h-[600px] bg-white rounded border" style={{ border: "none" }} />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const TasksSection = ({ clientId }: { clientId: string }) => {
+  const { data: tasks = [] } = useClientTasks(clientId);
+  const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
+  const taskStatusLabel = (s: string) => {
+    if (s === "done") return { label: "Готово", cls: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" };
+    if (s === "in_progress") return { label: "В работе", cls: "bg-blue-500/20 text-blue-400 border-blue-500/30" };
+    return { label: "К выполнению", cls: "bg-muted text-muted-foreground" };
+  };
+  return (
+    <div className="space-y-1">
+      {tasks.map((t: any) => {
+        const st = taskStatusLabel(t.status);
+        return (
+          <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
+            <span className="truncate flex-1">{t.title}</span>
+            <span className="text-muted-foreground text-xs">{fmt(t.task_date)}</span>
+            <Badge variant="outline" className={`text-xs ${st.cls}`}>{st.label}</Badge>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
