@@ -2049,6 +2049,47 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         </DialogContent>
       </Dialog>
 
+      {/* Collapsed helpers */}
+      <Collapsible>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <button type="button" className="w-full flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors [&[data-state=open]>svg:last-child]:rotate-180">
+              <span className="flex items-center gap-2 text-sm font-medium"><Download className="w-4 h-4" />Скачать образец</span>
+              <ChevronDown className="w-4 h-4 transition-transform" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-6 pb-4 flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("contract")}>
+                <FileText className="w-4 h-4 mr-1" />Образец договора
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("invoice")}>
+                <FileText className="w-4 h-4 mr-1" />Образец счёта
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("act")}>
+                <FileText className="w-4 h-4 mr-1" />Образец акта
+              </Button>
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      <Collapsible>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <button type="button" className="w-full flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors [&[data-state=open]>svg:last-child]:rotate-180">
+              <span className="flex items-center gap-2 text-sm font-medium"><FileSignature className="w-4 h-4" />Подписать готовый PDF</span>
+              <ChevronDown className="w-4 h-4 transition-transform" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-6 pb-4">
+              <SignPdfCard />
+            </div>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Recent Documents History */}
       <RecentDocuments onEdit={loadDocumentForEdit} />
     </div>
