@@ -256,6 +256,25 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setShowForm(true);
   };
 
+  useEffect(() => {
+    if (!initialClientName || isLoading) return;
+    const target = initialClientName.toLowerCase().trim();
+    const found = (clients as Client[]).find((c) => c.name.toLowerCase().trim() === target);
+    if (found) {
+      startEdit(found);
+    } else {
+      resetForm();
+      setName(initialClientName);
+      setShowForm(true);
+      toast.info("Карточка не найдена — заполните и сохраните");
+    }
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 50);
+    onConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialClientName, isLoading]);
+
   const fillFromContract = async () => {
     const clientName = name.trim();
     if (!clientName) { toast.error("Укажите название клиента"); return; }
