@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send, Pencil, RefreshCw, Package } from "lucide-react";
+import { FileText, Plus, Trash2, Loader2, Printer, Search, History, Eye, Download, X, Mail, Send, Pencil, RefreshCw, Package, ChevronDown, FileSignature } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -1482,29 +1483,6 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   return (
     <div className="space-y-6 pb-20">
-      {/* Sign uploaded PDF (e.g. reconciliation act) */}
-      <SignPdfCard />
-
-      {/* Sample download buttons */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Download className="w-5 h-5" />Скачать образец</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("contract")}>
-              <FileText className="w-4 h-4 mr-1" />Образец договора
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("invoice")}>
-              <FileText className="w-4 h-4 mr-1" />Образец счёта
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => downloadSampleDocument("act")}>
-              <FileText className="w-4 h-4 mr-1" />Образец акта
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Document type & number */}
       <Card>
         <CardHeader>
