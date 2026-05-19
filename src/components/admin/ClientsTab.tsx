@@ -1114,11 +1114,13 @@ const useClientInteractions = (clientId: string) =>
 const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson }: {
   phone: string; email: string; telegram: string; inn: string;
   paymentDate: string; serviceDeadline: string; contactPerson: string;
+  clientId?: string; clientName?: string;
 }) => {
   const copy = (v: string, label: string) => {
     if (!v) return;
     navigator.clipboard.writeText(v).then(() => toast.success(`${label} скопирован`));
   };
+  const [callOpen, setCallOpen] = useState(false);
   const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || contactPerson;
   if (!hasAny) return null;
 
@@ -1140,9 +1142,22 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
         <span className="inline-flex items-center gap-1"><User className="w-3 h-3" />{contactPerson}</span>
       )}
       {phone && (
-        <button onClick={() => copy(phone, "Телефон")} className="inline-flex items-center gap-1 hover:text-primary transition-colors">
-          <Phone className="w-3 h-3" />{phone}<Copy className="w-2.5 h-2.5 opacity-50" />
-        </button>
+        <span className="inline-flex items-center gap-1">
+          <button
+            onClick={() => arguments_clientId ? setCallOpen(true) : copy(phone, "Телефон")}
+            className="inline-flex items-center gap-1 hover:text-primary transition-colors"
+            title="Зафиксировать звонок"
+          >
+            <Phone className="w-3 h-3" />{phone}
+          </button>
+          <button
+            onClick={() => copy(phone, "Телефон")}
+            className="opacity-50 hover:opacity-100 hover:text-primary transition"
+            title="Скопировать номер"
+          >
+            <Copy className="w-2.5 h-2.5" />
+          </button>
+        </span>
       )}
       {email && (
         <button onClick={() => copy(email, "Email")} className="inline-flex items-center gap-1 hover:text-primary transition-colors">
