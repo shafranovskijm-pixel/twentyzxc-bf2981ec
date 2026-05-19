@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { generatePdfBlob } from "./document-pdf";
 
 export interface ResendOptions {
   contractId: string;
@@ -107,54 +108,6 @@ async function trySignedUrl(filePath: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-/** Generate PDF from HTML using html2canvas + jsPDF (matches DocumentsTab quality). */
-async function generatePdfBlob(htmlContent: string): Promise<Blob> {
-  const html2canvas = (await import("html2canvas")).default;
-  const { jsPDF } = await import("jspdf");
-
-  const iframe = document.createElement("iframe");
-  iframe.style.position = "absolute";
-  iframe.style.left = "-9999px";
-  iframe.style.width = "794px";
-  iframe.style.border = "none";
-  document.body.appendChild(iframe);
-
-  iframe.srcdoc = htmlContent;
-  await new Promise<void>((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error("iframe timeout")), 10000);
-    iframe.onload = () => { clearTimeout(t); resolve(); };
-  });
-  await new Promise(r => setTimeout(r, 500));
-
-  const body = iframe.contentDocument!.body;
-  iframe.style.height = body.scrollHeight + "px";
-
-  const canvas = await html2canvas(body, {
-    scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff",
-    width: 794, height: body.scrollHeight,
-    windowWidth: 794, windowHeight: body.scrollHeight, logging: false, imageTimeout: 5000,
-  });
-  document.body.removeChild(iframe);
-
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pdfWidth = pdf.internal.pageSize.getWidth();
-  const pdfHeight = pdf.internal.pageSize.getHeight();
-  const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-  const margin = 10;
-  const usable = pdfHeight - margin * 2;
-  let heightLeft = imgHeight;
-  let page = 0;
-  while (heightLeft > 0) {
-    if (page > 0) pdf.addPage();
-    const yOffset = margin - page * usable;
-    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
-    heightLeft -= usable;
-    page++;
-  }
-  return pdf.output("blob");
 }
 
 /**

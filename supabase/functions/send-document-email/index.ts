@@ -59,7 +59,7 @@ serve(async (req) => {
   let conn: Deno.TlsConn | null = null;
 
   try {
-    const { to, subject, html, pdfBase64, pdfFilename } = await req.json();
+    const { to, subject, html, pdfBase64, pdfFilename, attachments } = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -119,15 +119,18 @@ serve(async (req) => {
     const boundary = `----=_Part_${Date.now()}`;
     
     let message: string;
-    
-    if (pdfBase64 && pdfFilename) {
+
+    // Normalize: accept either legacy {pdfBase64,pdfFilename} or new {attachments:[]}
+    const attList: { filename: string; base64: string; contentType?: string }[] = Array.isArray(attachments)
+      ? attachments.filter((a: any) => a && a.base64 && a.filename)
+      : (pdfBase64 && pdfFilename ? [{ filename: pdfFilename, base64: pdfBase64, contentType: "application/pdf" }] : []);
+
+    if (attList.length > 0) {
       // Multipart message with PDF attachment
       const htmlB64 = base64Encode(enc.encode(html || `<p>Документ ${pdfFilename} во вложении.</p>`));
       const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
-      const pdfChunked = pdfBase64.match(/.{1,76}/g)?.join("\r\n") || pdfBase64;
-      const encodedFilename = mimeEncode(pdfFilename);
-      
-      message = [
+
+      const parts: string[] = [
         `From: ${encodedFrom}`,
         `To: ${recipients.map(r => `<${extractEmail(r)}>`).join(', ')}`,
         `Subject: ${encodedSubject}`,
@@ -140,14 +143,22 @@ serve(async (req) => {
         `Content-Transfer-Encoding: base64`,
         ``,
         htmlChunked,
-        `--${boundary}`,
-        `Content-Type: application/pdf; name="${encodedFilename}"`,
-        `Content-Transfer-Encoding: base64`,
-        `Content-Disposition: attachment; filename="${encodedFilename}"`,
-        ``,
-        pdfChunked,
-        `--${boundary}--`,
-      ].join("\r\n");
+      ];
+      for (const a of attList) {
+        const chunked = a.base64.match(/.{1,76}/g)?.join("\r\n") || a.base64;
+        const encName = mimeEncode(a.filename);
+        const ct = a.contentType || "application/pdf";
+        parts.push(
+          `--${boundary}`,
+          `Content-Type: ${ct}; name="${encName}"`,
+          `Content-Transfer-Encoding: base64`,
+          `Content-Disposition: attachment; filename="${encName}"`,
+          ``,
+          chunked,
+        );
+      }
+      parts.push(`--${boundary}--`);
+      message = parts.join("\r\n");
     } else {
       // Simple HTML message
       const htmlB64 = base64Encode(enc.encode(html));
