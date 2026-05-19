@@ -524,95 +524,56 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Название организации *</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
-              </div>
-              <div className="space-y-2">
-                <Label>Услуга</Label>
-                <Select value={serviceType} onValueChange={setServiceType}>
-                  <SelectTrigger><SelectValue placeholder="Выберите услугу" /></SelectTrigger>
-                  <SelectContent>
-                    {SERVICE_OPTIONS.map(o => (
-                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Контактное лицо</Label><Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} placeholder="Иванов И.И." /></div>
-              <div className="space-y-2"><Label>Телефон</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 999 123-45-67" /></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Email</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="info@company.ru" /></div>
-              <div className="space-y-2"><Label>Telegram</Label><Input value={telegram} onChange={(e) => setTelegram(e.target.value)} placeholder="@username" /></div>
-            </div>
-            <div className="space-y-2"><Label>Логин ФИС ФРДО</Label><Input value={frdoLogin} onChange={(e) => setFrdoLogin(e.target.value)} placeholder="login" /></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Пароль ДПО</Label><Input value={frdoPassword} onChange={(e) => setFrdoPassword(e.target.value)} placeholder="пароль ДПО" /></div>
-              <div className="space-y-2"><Label>Пароль ПО</Label><Input value={frdoPasswordPo} onChange={(e) => setFrdoPasswordPo(e.target.value)} placeholder="пароль ПО" /></div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Дата оплаты</Label>
-                <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Срок оказания услуг (до)</Label>
-                <Input type="date" value={serviceDeadline} onChange={(e) => setServiceDeadline(e.target.value)} />
-                {serviceDeadline && (() => {
-                  const diff = Math.round((new Date(serviceDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-                  if (diff < 0) return <p className="text-xs text-destructive">Срок истёк {Math.abs(diff)} дн. назад</p>;
-                  if (diff <= 30) return <p className="text-xs text-destructive">Осталось {diff} дн.</p>;
-                  if (diff <= 90) return <p className="text-xs text-amber-400">Осталось {diff} дн.</p>;
-                  return <p className="text-xs text-muted-foreground">Осталось {diff} дн.</p>;
-                })()}
-              </div>
-            </div>
-
-            {/* Requisites section */}
-            <div className="border-t pt-4 mt-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Реквизиты</h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={fillFromContract} disabled={syncing}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Из договора
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => syncRequisites()} disabled={syncing}>
-                    {syncing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                    Синхронизировать
-                  </Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={inn} onChange={(e) => setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => syncRequisites(true)} disabled={syncing} className="shrink-0" title="Обновить по ИНН">{syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
-                <div className="space-y-2"><Label>КПП</Label><Input value={kpp} onChange={(e) => setKpp(e.target.value)} placeholder="123456789" /></div>
-                <div className="space-y-2"><Label>ОГРН</Label><Input value={ogrn} onChange={(e) => setOgrn(e.target.value)} placeholder="1234567890123" /></div>
-              </div>
-              <div className="space-y-2 mt-4">
-                <Label>Юридический адрес</Label>
-                <Input value={legalAddress} onChange={(e) => setLegalAddress(e.target.value)} placeholder="г. Москва, ул. ..." />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2"><Label>ФИО руководителя</Label><Input value={directorName} onChange={(e) => setDirectorName(e.target.value)} placeholder="Иванов Иван Иванович" /></div>
-                <div className="space-y-2"><Label>Должность руководителя</Label><Input value={directorPost} onChange={(e) => setDirectorPost(e.target.value)} placeholder="Директор" /></div>
-              </div>
-            </div>
-
+            {/* Always-visible: organization name */}
             <div className="space-y-2">
-              <Label>Заметки</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Доп. информация..." rows={2} />
+              <Label>Название организации *</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
             </div>
 
-            {/* Client History Section - only when editing */}
-            {editingId && <ClientHistory clientName={name} clientId={editingId} />}
+            {/* Quick facts strip (read-only) */}
+            {editingId && (
+              <ClientQuickFacts
+                phone={phone}
+                email={email}
+                telegram={telegram}
+                inn={inn}
+                paymentDate={paymentDate}
+                serviceDeadline={serviceDeadline}
+                contactPerson={contactPerson}
+              />
+            )}
+
+            {/* Sections: contracts + activity (open by default), then docs/tasks/edit groups */}
+            <ClientCardSections
+              editingId={editingId}
+              clientName={name}
+              interactionsEnabled={!!editingId}
+              // form state
+              contactPerson={contactPerson} setContactPerson={setContactPerson}
+              phone={phone} setPhone={setPhone}
+              email={email} setEmail={setEmail}
+              telegram={telegram} setTelegram={setTelegram}
+              notes={notes} setNotes={setNotes}
+              serviceType={serviceType} setServiceType={setServiceType}
+              frdoLogin={frdoLogin} setFrdoLogin={setFrdoLogin}
+              frdoPassword={frdoPassword} setFrdoPassword={setFrdoPassword}
+              frdoPasswordPo={frdoPasswordPo} setFrdoPasswordPo={setFrdoPasswordPo}
+              paymentDate={paymentDate} setPaymentDate={setPaymentDate}
+              serviceDeadline={serviceDeadline} setServiceDeadline={setServiceDeadline}
+              inn={inn} setInn={setInn}
+              kpp={kpp} setKpp={setKpp}
+              ogrn={ogrn} setOgrn={setOgrn}
+              legalAddress={legalAddress} setLegalAddress={setLegalAddress}
+              directorName={directorName} setDirectorName={setDirectorName}
+              directorPost={directorPost} setDirectorPost={setDirectorPost}
+              syncing={syncing}
+              fillFromContract={fillFromContract}
+              syncRequisites={syncRequisites}
+            />
 
             <Button onClick={saveClient} disabled={saving} className="w-full">
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingId ? "Обновить" : "Добавить"}
+              {editingId ? "Сохранить изменения" : "Добавить"}
             </Button>
           </CardContent>
         </Card>
