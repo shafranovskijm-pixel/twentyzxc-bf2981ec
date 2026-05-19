@@ -1250,108 +1250,31 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         }
       }
 
-      setEmailProgress({ step: 'PDF готов, сохранение в файлы...', percent: 35 });
+      setEmailProgress({ step: 'Прикрепление файлов...', percent: 50 });
 
-      // 2. Upload main PDF
-      const b64ToBlob = (b64: string) => {
-        const byteChars = atob(b64);
-        const byteArray = new Uint8Array(byteChars.length);
-        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
-        return new Blob([byteArray], { type: 'application/pdf' });
-      };
-
-      const pdfBlob = b64ToBlob(pdfBase64);
-      const storagePath = linkedContractId
-        ? `${linkedContractId}/${pdfStorageName}`
-        : `documents/${pdfStorageName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('contracts')
-        .upload(storagePath, pdfBlob, { upsert: true });
-      if (uploadError) throw new Error(`Ошибка загрузки файла: ${uploadError.message}`);
-
-      // 2b. Upload invoice PDF if exists
-      let invoiceStoragePath: string | null = null;
-      const invoiceFilename = `Счёт_${safeNum}_${docDate}.pdf`;
-      const invoiceStorageName = `Schet_${safeNum}_${docDate}.pdf`;
-      if (invoicePdfBase64) {
-        const invoiceBlob = b64ToBlob(invoicePdfBase64);
-        invoiceStoragePath = linkedContractId
-          ? `${linkedContractId}/${invoiceStorageName}`
-          : `documents/${invoiceStorageName}`;
-
-        const { error: invoiceUploadError } = await supabase.storage
-          .from('contracts')
-          .upload(invoiceStoragePath, invoiceBlob, { upsert: true });
-        if (invoiceUploadError) {
-          console.error('[Email] Invoice upload failed:', invoiceUploadError);
-          toast.error('Не удалось загрузить счёт, отправляем только договор');
-          invoiceStoragePath = null;
-        }
-      }
-
-      setEmailProgress({ step: 'Файлы сохранены, получение ссылок...', percent: 50 });
-
-      // 3. Record in contract_files if linked to a contract
-      if (linkedContractId) {
-        await supabase.from('contract_files').insert({
-          contract_id: linkedContractId,
-          file_name: pdfFilename,
-          file_path: storagePath,
-          file_size: pdfBlob.size,
-        });
-        if (invoiceStoragePath && invoicePdfBase64) {
-          const invoiceBlob = b64ToBlob(invoicePdfBase64);
-          await supabase.from('contract_files').insert({
-            contract_id: linkedContractId,
-            file_name: invoiceFilename,
-            file_path: invoiceStoragePath,
-            file_size: invoiceBlob.size,
-          });
-        }
-        queryClient.invalidateQueries({ queryKey: ['contract-files'] });
-      }
-
-      // 4. Get signed URLs (7 days)
-      const { data: signedData, error: signedError } = await supabase.storage
-        .from('contracts')
-        .createSignedUrl(storagePath, 60 * 60 * 24 * 7);
-      if (signedError || !signedData?.signedUrl) throw new Error('Не удалось создать ссылку на файл');
-
-      let invoiceSignedUrl: string | null = null;
-      if (invoiceStoragePath) {
-        const { data: invoiceSignedData } = await supabase.storage
-          .from('contracts')
-          .createSignedUrl(invoiceStoragePath, 60 * 60 * 24 * 7);
-        invoiceSignedUrl = invoiceSignedData?.signedUrl || null;
-      }
-
-      setEmailProgress({ step: 'Отправка письма...', percent: 70 });
-
-      // 5. Send email with download links
+      // Send email with PDF(s) attached directly (no Storage links — клиенты часто без VPN)
       const docLabel = `${DOC_LABELS[docType]} №${docNumber} от ${formatDate(docDate)}`;
-      const invoiceLink = invoiceSignedUrl
-        ? `<a href="${invoiceSignedUrl}" 
-               style="display: inline-block; padding: 12px 24px; background: #16a34a; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
-              📎 Скачать Счёт (PDF)
-            </a>`
-        : '';
+      const invoiceFilename = `Счёт_${safeNum}_${docDate}.pdf`;
+      const hasInvoice = !!invoicePdfBase64;
+
+      const attachments: { filename: string; base64: string; contentType: string }[] = [
+        { filename: pdfFilename, base64: pdfBase64, contentType: 'application/pdf' },
+      ];
+      if (invoicePdfBase64) {
+        attachments.push({ filename: invoiceFilename, base64: invoicePdfBase64, contentType: 'application/pdf' });
+      }
+
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <p>Добрый день!</p>
-          <p>Направляем Вам документ${invoiceSignedUrl ? 'ы' : ''}: <strong>${docLabel}</strong>.</p>
-          <p style="margin: 24px 0;">
-            <a href="${signedData.signedUrl}" 
-               style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">
-              📎 Скачать ${DOC_LABELS[docType]} (PDF)
-            </a>
-          </p>
-          ${invoiceLink ? `<p style="margin: 24px 0;">${invoiceLink}</p>` : ''}
-          <p style="color: #6b7280; font-size: 13px;">Ссылки действительны 7 дней.</p>
+          <p>Направляем Вам документ${hasInvoice ? 'ы' : ''} <strong>${docLabel}</strong>${hasInvoice ? ' (договор и счёт)' : ''} во вложении.</p>
+          <p style="color: #6b7280; font-size: 13px;">Если файл${hasInvoice ? 'ы' : ''} не открыва${hasInvoice ? 'ются' : 'ется'}, ответьте на это письмо — пришлём повторно.</p>
           <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
           <p style="color: #9ca3af; font-size: 12px;">Синтагма — автоматизированная система документооборота</p>
         </div>
       `;
+
+      setEmailProgress({ step: 'Отправка письма...', percent: 70 });
 
       const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
       const { data, error } = await supabase.functions.invoke('send-document-email', {
@@ -1359,6 +1282,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           to: recipients.join(','),
           subject: docLabel,
           html: emailHtml,
+          attachments,
         },
       });
       if (error) throw error;
@@ -1373,7 +1297,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       }
 
       setEmailProgress({ step: 'Готово!', percent: 100 });
-      toast.success(`Документ${invoiceSignedUrl ? 'ы' : ''} отправлен${invoiceSignedUrl ? 'ы' : ''} на ${emailTo} (PDF сохранён в файлы)`);
+      toast.success(`Документ${hasInvoice ? 'ы' : ''} отправлен${hasInvoice ? 'ы' : ''} на ${emailTo} вложением`);
       setTimeout(() => {
         setEmailDialogOpen(false);
         setEmailTo("");
