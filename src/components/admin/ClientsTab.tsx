@@ -1447,10 +1447,32 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
   );
 };
 
-const DocumentsSection = ({ clientName }: { clientName: string }) => {
+const DocumentsSection = ({ clientName, clientId }: { clientName: string; clientId?: string }) => {
   const { data: documents = [] } = useClientDocuments(clientName);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [resendDoc, setResendDoc] = useState<any | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
+
+  const handleDownload = async (d: any) => {
+    if (!d.html_content) {
+      toast.error("Нет содержимого документа");
+      return;
+    }
+    setDownloadingId(d.id);
+    try {
+      const blob = await generatePdfBlob(d.html_content);
+      const label = DOC_TYPE_LABELS[d.doc_type] || d.doc_type;
+      const name = safePdfFilename(`${label}_${d.doc_number}_${d.doc_date}.pdf`);
+      downloadBlob(blob, name);
+      toast.success("PDF скачан");
+    } catch (e: any) {
+      toast.error(`Ошибка: ${e?.message || "не удалось создать PDF"}`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   return (
     <>
       <div className="space-y-1">
@@ -1461,9 +1483,17 @@ const DocumentsSection = ({ clientName }: { clientName: string }) => {
             <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
             {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
             {d.html_content && (
-              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPreviewHtml(d.html_content)}>
-                <Eye className="w-3.5 h-3.5" />
-              </Button>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreviewHtml(d.html_content)} title="Просмотр">
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(d)} disabled={downloadingId === d.id} title="Скачать PDF">
+                  {downloadingId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setResendDoc(d)} title="Отправить заново по email">
+                  <Send className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             )}
           </div>
         ))}
@@ -1481,6 +1511,14 @@ const DocumentsSection = ({ clientName }: { clientName: string }) => {
           </div>
         </DialogContent>
       </Dialog>
+      {resendDoc && (
+        <ResendDocDialog
+          doc={resendDoc}
+          clientName={clientName}
+          clientId={clientId}
+          onClose={() => setResendDoc(null)}
+        />
+      )}
     </>
   );
 };
