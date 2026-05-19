@@ -38,7 +38,11 @@ interface Contract {
   created_at: string;
 }
 
-const ContractsTab = () => {
+interface ContractsTabProps {
+  onOpenClient?: (name: string) => void;
+}
+
+const ContractsTab = ({ onOpenClient }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -455,7 +459,7 @@ const ContractsTab = () => {
               {items.map((c) => (
                 <div key={c.id} className="p-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <button onClick={() => startEdit(c)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
+                    <button onClick={() => onOpenClient?.(c.client_name)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
                       {c.client_name}
                     </button>
                     <Badge
@@ -465,7 +469,12 @@ const ContractsTab = () => {
                     >{c.payment_status || "—"}</Badge>
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    {c.contract_number && <span className="font-mono">№{c.contract_number}</span>}
+                    {c.contract_number && (
+                      <button
+                        onClick={() => startEdit(c)}
+                        className="font-mono hover:text-primary hover:underline underline-offset-2 transition-colors cursor-pointer"
+                      >№{c.contract_number}</button>
+                    )}
                     {c.contract_date && <span>{new Date(c.contract_date).toLocaleDateString("ru-RU")}</span>}
                     <span className="font-medium text-foreground">{formatAmount(c.amount)}</span>
                     {c.contract_type && <span>{c.contract_type}</span>}
@@ -538,12 +547,18 @@ const ContractsTab = () => {
                 <TableBody>
                   {items.map((c) => (
                     <TableRow key={c.id}>
-                      <TableCell className="font-medium">
-                        <button onClick={() => startEdit(c)} className="hover:underline hover:text-primary text-left transition-colors cursor-pointer">
+                       <TableCell className="font-medium">
+                        <button onClick={() => onOpenClient?.(c.client_name)} className="hover:underline hover:text-primary text-left transition-colors cursor-pointer">
                           {c.client_name}
                         </button>
                       </TableCell>
-                      <TableCell>{c.contract_number || "—"}</TableCell>
+                      <TableCell>
+                        {c.contract_number ? (
+                          <button onClick={() => startEdit(c)} className="font-mono hover:underline hover:text-primary transition-colors cursor-pointer">
+                            {c.contract_number}
+                          </button>
+                        ) : "—"}
+                      </TableCell>
                       <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
                       <TableCell>
                         <Badge

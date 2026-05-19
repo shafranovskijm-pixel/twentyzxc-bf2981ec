@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,7 +67,7 @@ async function fetchDadata(params: { inn?: string; query?: string }) {
   }
 }
 
-const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
+const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -255,6 +255,25 @@ const ClientsTab = ({ onNavigate }: ClientsTabProps = {}) => {
     setDirectorPost(c.director_post || "");
     setShowForm(true);
   };
+
+  useEffect(() => {
+    if (!initialClientName || isLoading) return;
+    const target = initialClientName.toLowerCase().trim();
+    const found = (clients as Client[]).find((c) => c.name.toLowerCase().trim() === target);
+    if (found) {
+      startEdit(found);
+    } else {
+      resetForm();
+      setName(initialClientName);
+      setShowForm(true);
+      toast.info("Карточка не найдена — заполните и сохраните");
+    }
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 50);
+    onConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialClientName, isLoading]);
 
   const fillFromContract = async () => {
     const clientName = name.trim();
@@ -729,6 +748,8 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 
 interface ClientsTabProps {
   onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void;
+  initialClientName?: string;
+  onConsumed?: () => void;
 }
 
 const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId: string }) => {
