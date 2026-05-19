@@ -437,11 +437,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       const dd = String(today.getDate()).padStart(2, "0");
       const mm = String(today.getMonth() + 1).padStart(2, "0");
       const yyyy = today.getFullYear();
-      setDeadline(`${dd}.${mm}.${yyyy} по ${dd}.${mm}.${yyyy + 1}`);
+      const dateFrom = `${dd}.${mm}.${yyyy}`;
+      const dateTo = `${dd}.${mm}.${yyyy + 1}`;
+      setDeadline(`${dateFrom} по ${dateTo}`);
       setPaymentTerms("авансом в размере 100%");
       setServices([
         { name: "Выгрузка данных в ФИС ФРДО (разовая)", qty: 1, price: 3500 },
-        { name: "Ежегодное сопровождение ФИС ФРДО", qty: 1, price: 24000 },
+        {
+          name: `Услуги по выгрузке данных заказчика о выданных документах об образовании и (или) о квалификации на портал Федеральной информационной системы «Федеральный реестр сведений о документах об образовании и (или) о квалификации, документах об обучении» (ФИС ФРДО) и информационно-консультационная поддержка Заказчика по работе в ФИС ФРДО за период с ${dateFrom} по ${dateTo}`,
+          qty: 1,
+          price: 24000,
+        },
       ]);
     } else if (contractSubType === "site") {
       setSubject("Разработка веб-сайта");
