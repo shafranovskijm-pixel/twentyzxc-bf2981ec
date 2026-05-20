@@ -680,7 +680,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     // Show preview immediately (both tabs)
     setPreviewHtml(embedDocImages(html));
-    setPreviewInvoiceHtml(embedDocImages(invoiceHtml));
+    setPreviewInvoiceHtml(invoiceHtml ? embedDocImages(invoiceHtml) : null);
     setPreviewTab("contract");
 
     toast.success("Документ сформирован. Для сохранения отправьте на email или в Telegram.");
