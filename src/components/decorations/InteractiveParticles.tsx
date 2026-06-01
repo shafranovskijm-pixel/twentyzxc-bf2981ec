@@ -47,15 +47,74 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Logical (CSS) dimensions we render against. Decoupled from the buffer
+    // pixel dimensions, which we scale by DPR for crisp particles on retina
+    // mobiles.
+    let logicalW = window.innerWidth;
+    let logicalH = window.innerHeight;
+    let lastBufferW = 0;
+    let lastBufferH = 0;
+
+    const applyCanvasSize = (w: number, h: number) => {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const bufW = Math.round(w * dpr);
+      const bufH = Math.round(h * dpr);
+      if (bufW === lastBufferW && bufH === lastBufferH) return;
+      canvas.width = bufW;
+      canvas.height = bufH;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lastBufferW = bufW;
+      lastBufferH = bufH;
+    };
+
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const newW = window.innerWidth;
+      const newH = window.innerHeight;
+      const dW = Math.abs(newW - logicalW);
+      const dH = Math.abs(newH - logicalH);
+
+      // Mobile browsers fire `resize` whenever the URL bar shows/hides —
+      // width stays the same, height jumps ~80–120px. Skip rebuilding the
+      // buffer in that case so particles don't flicker on every scroll.
+      if (dW === 0 && dH > 0 && dH < 160 && particlesRef.current.length > 0) {
+        logicalH = newH;
+        applyCanvasSize(logicalW, logicalH);
+        return;
+      }
+
+      // Real resize: scale existing particles proportionally so they don't
+      // jump or all reset to random positions.
+      if (particlesRef.current.length > 0 && logicalW > 0 && logicalH > 0) {
+        const sx = newW / logicalW;
+        const sy = newH / logicalH;
+        for (const p of particlesRef.current) {
+          p.x *= sx;
+          p.y *= sy;
+          p.baseX *= sx;
+          p.baseY *= sy;
+        }
+      }
+
+      logicalW = newW;
+      logicalH = newH;
+      applyCanvasSize(logicalW, logicalH);
       if (particlesRef.current.length === 0) {
-        initParticles(canvas.width, canvas.height);
+        initParticles(logicalW, logicalH);
       }
     };
+
     resize();
-    window.addEventListener("resize", resize);
+
+    // Prefer visualViewport when available: it does NOT fire for URL-bar
+    // toggle on iOS/Android, which is exactly what we want.
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener("resize", resize);
+    } else {
+      window.addEventListener("resize", resize);
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
@@ -65,7 +124,7 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
     let time = 0;
     const animate = () => {
       time += 1;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, logicalW, logicalH);
       const mouse = mouseRef.current;
       const interactionRadius = 150;
 
@@ -75,10 +134,10 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
         p.y += p.vy;
 
         // Wrap around
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+        if (p.x < 0) p.x = logicalW;
+        if (p.x > logicalW) p.x = 0;
+        if (p.y < 0) p.y = logicalH;
+        if (p.y > logicalH) p.y = 0;
 
         // Mouse interaction — repel gently
         const dx = p.x - mouse.x;
@@ -147,7 +206,8 @@ export function InteractiveParticles({ count = 50 }: { count?: number }) {
 
     return () => {
       cancelAnimationFrame(animFrameRef.current);
-      window.removeEventListener("resize", resize);
+      if (vv) vv.removeEventListener("resize", resize);
+      else window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [initParticles]);
