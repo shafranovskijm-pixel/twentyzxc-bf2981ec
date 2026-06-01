@@ -103,6 +103,11 @@ const EcommercePage = () => {
         <title>Интернет-магазины — Разработка e-commerce | 24ZXC</title>
         <meta name="description" content="Создание интернет-магазинов с каталогом, корзиной и оплатой. Полная интеграция с CRM и службами доставки." />
         <link rel="canonical" href="https://24zxc.ru/services/ecommerce" />
+        <meta property="og:title" content="Интернет-магазины — Разработка e-commerce | 24ZXC" />
+        <meta property="og:description" content="Создание интернет-магазинов с каталогом, корзиной и оплатой. Полная интеграция с CRM и службами доставки." />
+        <meta property="og:url" content="https://24zxc.ru/services/ecommerce" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({"@context":"https://schema.org","@type":"Service","name":"Разработка интернет-магазинов","provider":{"@type":"Organization","name":"24ZXC","url":"https://24zxc.ru/"},"areaServed":"RU","description":"E-commerce платформы с каталогом, корзиной, оплатой и интеграциями.","offers":{"@type":"Offer","priceCurrency":"RUB","price":"100000"}})}</script>
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}

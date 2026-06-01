@@ -101,6 +101,11 @@ const CorporatePage = () => {
         <title>Корпоративные сайты — Разработка под ключ | 24ZXC</title>
         <meta name="description" content="Разработка корпоративных сайтов для бизнеса. Современный дизайн, CMS, интеграции и техническая поддержка." />
         <link rel="canonical" href="https://24zxc.ru/services/corporate" />
+        <meta property="og:title" content="Корпоративные сайты — Разработка под ключ | 24ZXC" />
+        <meta property="og:description" content="Разработка корпоративных сайтов для бизнеса. Современный дизайн, CMS, интеграции и техническая поддержка." />
+        <meta property="og:url" content="https://24zxc.ru/services/corporate" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({"@context":"https://schema.org","@type":"Service","name":"Разработка корпоративных сайтов","provider":{"@type":"Organization","name":"24ZXC","url":"https://24zxc.ru/"},"areaServed":"RU","description":"Многостраничные корпоративные сайты с CMS и интеграциями.","offers":{"@type":"Offer","priceCurrency":"RUB","price":"50000"}})}</script>
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}

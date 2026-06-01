@@ -84,6 +84,11 @@ const WebAppPage = () => {
         <title>Веб-приложения — Разработка SPA и PWA | 24ZXC</title>
         <meta name="description" content="Разработка веб-приложений: SPA, PWA, дашборды и CRM-системы. Современные технологии и высокая производительность." />
         <link rel="canonical" href="https://24zxc.ru/services/webapp" />
+        <meta property="og:title" content="Веб-приложения — Разработка SPA и PWA | 24ZXC" />
+        <meta property="og:description" content="Разработка веб-приложений: SPA, PWA, дашборды и CRM-системы. Современные технологии и высокая производительность." />
+        <meta property="og:url" content="https://24zxc.ru/services/webapp" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({"@context":"https://schema.org","@type":"Service","name":"Разработка веб-приложений","provider":{"@type":"Organization","name":"24ZXC","url":"https://24zxc.ru/"},"areaServed":"RU","description":"SPA, PWA, дашборды и CRM-системы под ключ."})}</script>
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}

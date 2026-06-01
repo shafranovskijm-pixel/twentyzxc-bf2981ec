@@ -149,6 +149,12 @@ const NmoPage = () => {
       <Helmet>
         <title>Регистрация на Портале НМО — подготовка документов | 24ZXC</title>
         <meta name="description" content="Регистрация образовательной организации на Портале НМО (edu.rosminzdrav.ru). Подготовка документов, подача заявки, сопровождение. 35 000 ₽ под ключ." />
+        <link rel="canonical" href="https://24zxc.ru/services/nmo" />
+        <meta property="og:title" content="Регистрация на Портале НМО — подготовка документов | 24ZXC" />
+        <meta property="og:description" content="Регистрация образовательной организации на Портале НМО. Подготовка документов, подача заявки, сопровождение. 35 000 ₽ под ключ." />
+        <meta property="og:url" content="https://24zxc.ru/services/nmo" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({"@context":"https://schema.org","@type":"Service","name":"Регистрация на Портале НМО","provider":{"@type":"Organization","name":"24ZXC","url":"https://24zxc.ru/"},"areaServed":"RU","description":"Подготовка документов и сопровождение регистрации образовательной организации на Портале НМО.","offers":{"@type":"Offer","priceCurrency":"RUB","price":"35000"}})}</script>
       </Helmet>
       <Header />
       <main className="min-h-screen bg-background pt-24">

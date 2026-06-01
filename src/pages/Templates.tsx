@@ -101,6 +101,10 @@ const Templates = () => {
         <title>Веб-разработка — Готовые решения и шаблоны | 24ZXC</title>
         <meta name="description" content="Веб-разработка под ключ: лендинги, корпоративные сайты, интернет-магазины и веб-приложения. Готовые премиум-шаблоны от 24ZXC." />
         <link rel="canonical" href="https://24zxc.ru/templates" />
+        <meta property="og:title" content="Веб-разработка — Готовые решения и шаблоны | 24ZXC" />
+        <meta property="og:description" content="Веб-разработка под ключ: лендинги, корпоративные сайты, интернет-магазины и веб-приложения. Премиум-шаблоны от 24ZXC." />
+        <meta property="og:url" content="https://24zxc.ru/templates" />
+        <meta property="og:type" content="website" />
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background decorations */}
