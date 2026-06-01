@@ -24,9 +24,13 @@ const KeyModel = ({ variant, isHovered }: ServiceKeyProps) => {
   // Animate rotation on hover
   useFrame((state, delta) => {
     if (groupRef.current) {
+      // Clamp delta so a frame-stutter on mobile doesn't make the key jump
+      // a quarter turn at once — keeps the spin visually smooth even when
+      // the browser drops frames.
+      const d = Math.min(delta, 0.05);
       // Continuous gentle Y-axis spin so the key always looks alive,
       // even on touch devices where there is no hover state.
-      groupRef.current.rotation.y += delta * (isHovered ? 1.2 : 0.6);
+      groupRef.current.rotation.y += d * (isHovered ? 1.2 : 0.9);
 
       const targetZ = isHovered ? Math.sin(state.clock.elapsedTime * 3) * 0.3 : 0;
       groupRef.current.rotation.z = THREE.MathUtils.lerp(
@@ -175,6 +179,9 @@ export const ServiceKey3D = ({ variant, isHovered, className = '' }: ServiceKey3
       <Canvas
         camera={{ position: [0, 0, 4], fov: 35 }}
         style={{ background: 'transparent' }}
+        dpr={[1, 1.75]}
+        frameloop="always"
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       >
         <ambientLight intensity={0.6} />
         <directionalLight position={[5, 5, 5]} intensity={1.2} />
