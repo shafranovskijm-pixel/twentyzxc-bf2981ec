@@ -611,7 +611,8 @@ export function TreasureChest3D({ onOpen, isOpen, onLockedClick }: { onOpen: () 
           camera={{ position: [0, 1.5, 4], fov: 45 }}
           shadows
           dpr={[1, 2]}
-          gl={{ antialias: true }}
+          gl={{ antialias: true, powerPreference: 'high-performance' }}
+          frameloop="always"
         >
           <Suspense fallback={null}>
             <ambientLight intensity={isHovered ? 0.6 : 0.4} />
