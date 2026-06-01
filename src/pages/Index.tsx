@@ -23,6 +23,33 @@ const Index = () => {
         <title>{DEFAULT_SEO_TITLE}</title>
         <meta name="description" content={DEFAULT_SEO_DESCRIPTION} />
         <link rel="canonical" href="https://24zxc.ru/" />
+        <meta property="og:title" content={DEFAULT_SEO_TITLE} />
+        <meta property="og:description" content={DEFAULT_SEO_DESCRIPTION} />
+        <meta property="og:url" content="https://24zxc.ru/" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "24ZXC",
+          url: "https://24zxc.ru/",
+          logo: "https://24zxc.ru/favicon.png",
+          description: DEFAULT_SEO_DESCRIPTION,
+          sameAs: ["https://t.me/Aliencorso"],
+          contactPoint: [{
+            "@type": "ContactPoint",
+            telephone: "+7-914-721-34-24",
+            email: "24@24zxc.ru",
+            contactType: "customer service",
+            areaServed: "RU",
+            availableLanguage: ["Russian"],
+          }],
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "24ZXC",
+          url: "https://24zxc.ru/",
+        })}</script>
       </Helmet>
       <div className="tropical-vibe min-h-screen bg-background relative">
         {/* Background decorations */}

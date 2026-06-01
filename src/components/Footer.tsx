@@ -79,7 +79,7 @@ const Footer = () => {
                   {/* Telegram */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                      <button aria-label="Telegram" className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
                         <Send className="w-4 h-4" />
                       </button>
                     </PopoverTrigger>
@@ -114,7 +114,7 @@ const Footer = () => {
                   {/* Email */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                      <button aria-label="Email" className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
                         <Mail className="w-4 h-4" />
                       </button>
                     </PopoverTrigger>
@@ -149,7 +149,7 @@ const Footer = () => {
                   {/* Phone */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
+                      <button aria-label="Телефон" className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/50 transition-all">
                         <Phone className="w-4 h-4" />
                       </button>
                     </PopoverTrigger>

@@ -66,10 +66,11 @@ const HeroSection = () => {
             onClick={() => navigate('/admin')}
             title="Админ-панель"
           >
+            <span className="sr-only">24ZXC — Сайты, реклама и веб-приложения под ключ</span>
             <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-8xl lg:text-9xl font-display font-bold text-primary/30 blur-2xl" aria-hidden="true">
               24ZXC
             </span>
-            <span className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
+            <span aria-hidden="true" className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
               <span className="gradient-gold-text gold-glow-text shine-text" data-text="24ZXC">24ZXC</span>
             </span>
           </h1>
