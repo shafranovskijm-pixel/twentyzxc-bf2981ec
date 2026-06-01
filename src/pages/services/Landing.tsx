@@ -100,6 +100,11 @@ const LandingPage = () => {
         <title>Разработка лендингов — Продающие страницы | 24ZXC</title>
         <meta name="description" content="Создание лендинг-страниц с высокой конверсией. Адаптивный дизайн, SEO-оптимизация и быстрая загрузка." />
         <link rel="canonical" href="https://24zxc.ru/services/landing" />
+        <meta property="og:title" content="Разработка лендингов — Продающие страницы | 24ZXC" />
+        <meta property="og:description" content="Создание лендинг-страниц с высокой конверсией. Адаптивный дизайн, SEO-оптимизация и быстрая загрузка." />
+        <meta property="og:url" content="https://24zxc.ru/services/landing" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({"@context":"https://schema.org","@type":"Service","name":"Разработка лендингов","provider":{"@type":"Organization","name":"24ZXC","url":"https://24zxc.ru/"},"areaServed":"RU","description":"Продающие лендинги с высокой конверсией под ключ.","offers":{"@type":"Offer","priceCurrency":"RUB","price":"15000"}})}</script>
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}

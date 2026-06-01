@@ -56,6 +56,10 @@ const About = () => {
         <title>О компании 24ZXC — Веб-студия полного цикла</title>
         <meta name="description" content="Команда 24ZXC: веб-разработка, реклама и цифровые решения. Узнайте о нашем подходе, принципах работы и опыте." />
         <link rel="canonical" href="https://24zxc.ru/about" />
+        <meta property="og:title" content="О компании 24ZXC — Веб-студия полного цикла" />
+        <meta property="og:description" content="Команда 24ZXC: веб-разработка, реклама и цифровые решения. Узнайте о нашем подходе и опыте." />
+        <meta property="og:url" content="https://24zxc.ru/about" />
+        <meta property="og:type" content="website" />
       </Helmet>
       <div className="min-h-screen bg-background">
       <Header />

@@ -165,6 +165,10 @@ const Portfolio = () => {
         <title>Портфолио — Наши проекты | 24ZXC</title>
         <meta name="description" content="Портфолио веб-студии 24ZXC: сайты, интернет-магазины, веб-приложения и рекламные кампании. Смотрите наши лучшие работы." />
         <link rel="canonical" href="https://24zxc.ru/portfolio" />
+        <meta property="og:title" content="Портфолио — Наши проекты | 24ZXC" />
+        <meta property="og:description" content="Портфолио веб-студии 24ZXC: сайты, интернет-магазины, веб-приложения и рекламные кампании." />
+        <meta property="og:url" content="https://24zxc.ru/portfolio" />
+        <meta property="og:type" content="website" />
       </Helmet>
       <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Decorations */}
