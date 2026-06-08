@@ -129,7 +129,7 @@ const Flowrish = () => {
                     Интернет-магазин
                   </Badge>
                   <Button variant="ghost" size="sm" asChild className="bg-background/80">
-                    <a href="https://flowrish.ru/" target="_blank" rel="noopener noreferrer">
+                    <a href="https://shafranovskijm-pixel-celebrate-shop-craft-352f.twc1.net/" target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Открыть сайт
                     </a>
@@ -244,7 +244,7 @@ const Flowrish = () => {
                   <a href="/#contact">Обсудить проект</a>
                 </Button>
                 <Button variant="outline" size="lg" asChild>
-                  <a href="https://flowrish.ru/" target="_blank" rel="noopener noreferrer">
+                  <a href="https://shafranovskijm-pixel-celebrate-shop-craft-352f.twc1.net/" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Посмотреть сайт
                   </a>
