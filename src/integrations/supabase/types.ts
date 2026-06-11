@@ -1135,17 +1135,24 @@ export type Database = {
       }
       sales_leads: {
         Row: {
+          address: string | null
+          category: string | null
+          city: string | null
           contact_person: string | null
           created_at: string
+          dedup_hash: string | null
           email: string | null
           id: string
           inn: string | null
           last_email_sent_at: string | null
           license_cache: Json | null
+          license_date: string | null
+          license_number: string | null
           name: string
           next_step: string | null
           notes: string | null
           phone: string | null
+          region: string | null
           source: string | null
           status: string
           updated_at: string
@@ -1153,17 +1160,24 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
           contact_person?: string | null
           created_at?: string
+          dedup_hash?: string | null
           email?: string | null
           id?: string
           inn?: string | null
           last_email_sent_at?: string | null
           license_cache?: Json | null
+          license_date?: string | null
+          license_number?: string | null
           name: string
           next_step?: string | null
           notes?: string | null
           phone?: string | null
+          region?: string | null
           source?: string | null
           status?: string
           updated_at?: string
@@ -1171,17 +1185,24 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          address?: string | null
+          category?: string | null
+          city?: string | null
           contact_person?: string | null
           created_at?: string
+          dedup_hash?: string | null
           email?: string | null
           id?: string
           inn?: string | null
           last_email_sent_at?: string | null
           license_cache?: Json | null
+          license_date?: string | null
+          license_number?: string | null
           name?: string
           next_step?: string | null
           notes?: string | null
           phone?: string | null
+          region?: string | null
           source?: string | null
           status?: string
           updated_at?: string
