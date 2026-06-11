@@ -71,7 +71,8 @@ const HeroSection = () => {
               24ZXC
             </span>
             <span aria-hidden="true" className="block text-6xl md:text-8xl lg:text-9xl font-display font-bold tracking-tight relative">
-              <span className="gradient-gold-text gold-glow-text shine-text" data-text="24ZXC">24ZXC</span>
+              <span className="gradient-gold-text gold-glow-text animate-glow-pulse">24ZXC</span>
+              <span className="absolute inset-0 gradient-gold-text shimmer shine-text" data-text="24ZXC">24ZXC</span>
             </span>
           </h1>
 
