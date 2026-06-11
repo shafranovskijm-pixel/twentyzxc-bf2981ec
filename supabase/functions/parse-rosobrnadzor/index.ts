@@ -1,16 +1,20 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DADATA_KEY = Deno.env.get("DADATA_API_KEY");
-const DADATA_SECRET = Deno.env.get("DADATA_SECRET_KEY");
 
 interface ParseResult {
   inn: string;
   found: boolean;
   org_name?: string | null;
   address?: string | null;
+  kpp?: string | null;
+  ogrn?: string | null;
+  management_name?: string | null;
+  management_post?: string | null;
   license_number?: string | null;
   license_date?: string | null;
   license_status?: string | null;
@@ -20,71 +24,54 @@ interface ParseResult {
   raw?: unknown;
 }
 
-async function fetchDadata(inn: string) {
-  if (!DADATA_KEY) return null;
+async function fetchDadataViaInternal(inn: string) {
   try {
-    const r = await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party", {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/dadata-lookup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Token ${DADATA_KEY}`,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
       },
-      body: JSON.stringify({ query: inn, count: 1 }),
+      body: JSON.stringify({ inn }),
+      signal: AbortSignal.timeout(12000),
     });
     if (!r.ok) return null;
     const j = await r.json();
-    return j?.suggestions?.[0] ?? null;
-  } catch {
-    return null;
-  }
+    return j?.found ? j : null;
+  } catch (e) { console.error("dadata-lookup call", e); return null; }
 }
 
-// Rosobrnadzor public search (open data of accreditation/license registry)
-// The portal isga.obrnadzor.gov.ru exposes JSON via /api/v1/search
-async function fetchRosobr(inn: string) {
-  const tryUrls = [
-    `https://isga.obrnadzor.gov.ru/api/v1/search?inn=${encodeURIComponent(inn)}`,
-    `https://islod.obrnadzor.gov.ru/api/v1/search?inn=${encodeURIComponent(inn)}`,
-  ];
-  for (const url of tryUrls) {
-    try {
-      const r = await fetch(url, {
-        headers: {
-          Accept: "application/json",
-          "User-Agent": "Mozilla/5.0 (compatible; 24zxc-crm/1.0)",
-        },
-      });
-      if (!r.ok) continue;
-      const text = await r.text();
-      try {
-        const j = JSON.parse(text);
-        return { url, data: j };
-      } catch {
-        // not JSON — return raw HTML so caller can still cache the registry URL
-        return { url, data: { raw_html_len: text.length } };
-      }
-    } catch {
-      continue;
-    }
-  }
-  return null;
+async function getCachedLicense(inn: string) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rosobrnadzor_licenses?inn=eq.${inn}&select=*`, {
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const arr = await r.json();
+    return Array.isArray(arr) ? arr[0] ?? null : null;
+  } catch (e) { console.error("cache read", e); return null; }
 }
 
-function pickLicense(rosobr: any) {
-  if (!rosobr) return {};
-  const item = Array.isArray(rosobr?.items) ? rosobr.items[0]
-    : Array.isArray(rosobr?.data) ? rosobr.data[0]
-    : Array.isArray(rosobr?.result) ? rosobr.result[0]
-    : null;
-  if (!item) return {};
-  return {
-    license_number: item.RegNumber ?? item.regNumber ?? item.number ?? null,
-    license_date: item.RegDate ?? item.regDate ?? item.date ?? null,
-    license_status: item.StatusName ?? item.statusName ?? item.status ?? null,
-    org_name: item.FullName ?? item.fullName ?? item.name ?? null,
-    address: item.Address ?? item.address ?? null,
-  };
+async function upsertLicense(payload: Record<string, unknown>) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rosobrnadzor_licenses?on_conflict=inn`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) { console.error("cache write", e); }
 }
 
 Deno.serve(async (req) => {
@@ -93,6 +80,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const inn = String(body?.inn ?? "").trim();
+    console.log("[parse] start", inn);
     if (!/^\d{10}$|^\d{12}$/.test(inn)) {
       return new Response(JSON.stringify({ error: "Bad INN" }), {
         status: 400,
@@ -100,46 +88,44 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-    const [dadata, rosobr] = await Promise.all([fetchDadata(inn), fetchRosobr(inn)]);
-
-    const lic = pickLicense(rosobr?.data);
-    const dd = dadata?.data ?? null;
+    console.log("[parse] calling dadata + cache");
+    const [dd, lic] = await Promise.all([fetchDadataViaInternal(inn), getCachedLicense(inn)]);
+    console.log("[parse] got both", { dadata: !!dd, cache: !!lic });
 
     const result: ParseResult = {
       inn,
-      found: !!(dd || lic.license_number),
-      org_name: lic.org_name || dd?.name?.short_with_opf || dd?.name?.full_with_opf || null,
-      address: lic.address || dd?.address?.unrestricted_value || null,
-      license_number: lic.license_number ?? null,
-      license_date: lic.license_date ?? null,
-      license_status: lic.license_status ?? null,
-      registry_url: rosobr?.url ?? `https://isga.obrnadzor.gov.ru/?inn=${inn}`,
-      email: dd?.emails?.[0]?.value ?? null,
-      phone: dd?.phones?.[0]?.value ?? null,
-      raw: { dadata: dd, rosobr: rosobr?.data ?? null },
+      found: !!(dd || lic?.license_number),
+      org_name: dd?.name_short || dd?.name || lic?.org_name || null,
+      address: dd?.address || lic?.address || null,
+      kpp: dd?.kpp ?? null,
+      ogrn: dd?.ogrn ?? null,
+      management_name: dd?.management_name ?? null,
+      management_post: dd?.management_post ?? null,
+      license_number: lic?.license_number ?? null,
+      license_date: lic?.license_date ?? null,
+      license_status: lic?.license_status ?? null,
+      registry_url: lic?.registry_url ?? `https://islod.obrnadzor.gov.ru/rlic/?query=${inn}`,
+      email: null,
+      phone: null,
+      raw: { dadata: dd, rosobrnadzor: lic ?? null },
     };
 
-    // cache
-    await supabase.from("rosobrnadzor_licenses").upsert({
-      inn,
-      org_name: result.org_name,
-      license_number: result.license_number,
-      license_date: result.license_date && /^\d{4}-\d{2}-\d{2}/.test(String(result.license_date))
-        ? String(result.license_date).slice(0, 10)
-        : null,
-      license_status: result.license_status,
-      address: result.address,
-      registry_url: result.registry_url,
-      raw_json: result.raw as any,
-      fetched_at: new Date().toISOString(),
-    });
+    if (dd) {
+      await upsertLicense({
+        inn,
+        org_name: result.org_name,
+        address: result.address,
+        registry_url: result.registry_url,
+        raw_json: { dadata: dd },
+        fetched_at: new Date().toISOString(),
+      });
+    }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("parse-rosobrnadzor error", e);
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

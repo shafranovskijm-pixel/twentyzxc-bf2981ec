@@ -15,7 +15,8 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink } from "lucide-react";
+import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Lead = {
   id: string;
@@ -70,6 +71,11 @@ export default function SalesTab() {
   const [body, setBody] = useState(() => localStorage.getItem(LS_BODY) || DEFAULT_BODY);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncAll, setSyncAll] = useState(false);
+  const [nameQuery, setNameQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [sugOpen, setSugOpen] = useState(false);
+  const [sugLoading, setSugLoading] = useState(false);
+  const [innLookup, setInnLookup] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -83,6 +89,65 @@ export default function SalesTab() {
   }
 
   useEffect(() => { load(); }, []);
+
+  // DaData suggestions while typing org name in dialog
+  useEffect(() => {
+    if (!editing || editing.id) { setSuggestions([]); return; }
+    const q = nameQuery.trim();
+    if (q.length < 2) { setSuggestions([]); return; }
+    let cancel = false;
+    setSugLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const { data } = await supabase.functions.invoke("dadata-suggest", { body: { query: q } });
+        if (!cancel) {
+          setSuggestions(data?.suggestions ?? []);
+          setSugOpen(true);
+        }
+      } catch {} finally { if (!cancel) setSugLoading(false); }
+    }, 280);
+    return () => { cancel = true; clearTimeout(t); };
+  }, [nameQuery, editing]);
+
+  function applySuggestion(s: any) {
+    if (!editing) return;
+    setEditing({
+      ...editing,
+      name: s.name || s.value,
+      inn: s.inn || editing.inn,
+      email: editing.email || s.email,
+      phone: editing.phone || s.phone,
+      contact_person: editing.contact_person || s.management || "",
+      source: editing.source || "DaData",
+      license_cache: { ...(editing.license_cache || {}), address: s.address, ogrn: s.ogrn, kpp: s.kpp },
+    });
+    setNameQuery(s.name || s.value);
+    setSugOpen(false);
+  }
+
+  async function lookupByInn() {
+    if (!editing) return;
+    const inn = (editing.inn || "").trim();
+    if (!/^\d{10}$|^\d{12}$/.test(inn)) return toast.error("ИНН должен быть 10 или 12 цифр");
+    setInnLookup(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn } });
+      if (error) throw error;
+      if (!data?.found) { toast.info("Ничего не найдено по ИНН"); return; }
+      const _name = data.name_short || data.name;
+      setEditing({
+        ...editing,
+        name: editing.name?.trim() || _name || "",
+        contact_person: editing.contact_person || data.management_name || "",
+        source: editing.source || "Реестр / ИНН",
+        license_cache: { ...data, org_name: _name, found: true },
+      });
+      setNameQuery(_name || "");
+      toast.success(`Найдено: ${_name}`);
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка поиска");
+    } finally { setInnLookup(false); }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -143,14 +208,15 @@ export default function SalesTab() {
     if (!lead.inn) return toast.error("Нет ИНН");
     setSyncing(lead.id);
     try {
-      const { data, error } = await supabase.functions.invoke("parse-rosobrnadzor", { body: { inn: lead.inn } });
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn: lead.inn } });
       if (error) throw error;
-      const patch: any = { license_cache: data };
-      if (!lead.name && data.org_name) patch.name = data.org_name;
-      if (!lead.email && data.email) patch.email = data.email;
-      if (!lead.phone && data.phone) patch.phone = data.phone;
+      if (!data?.found) { toast.info("В реестре не найдено"); return; }
+      const _name = data.name_short || data.name;
+      const patch: any = { license_cache: { ...data, org_name: _name, found: true } };
+      if (!lead.name) patch.name = _name;
+      if (!lead.contact_person && data.management_name) patch.contact_person = data.management_name;
       await supabase.from("sales_leads").update(patch).eq("id", lead.id);
-      toast.success(data.found ? "Данные обновлены" : "В реестре не найдено");
+      toast.success("Реквизиты обновлены");
       load();
     } catch (e: any) {
       toast.error(e?.message || "Ошибка парсера");
@@ -166,9 +232,10 @@ export default function SalesTab() {
     let ok = 0;
     for (const l of targets) {
       try {
-        const { data } = await supabase.functions.invoke("parse-rosobrnadzor", { body: { inn: l.inn } });
-        if (data) {
-          await supabase.from("sales_leads").update({ license_cache: data }).eq("id", l.id);
+        const { data } = await supabase.functions.invoke("dadata-lookup", { body: { inn: l.inn } });
+        if (data?.found) {
+          const _name = data.name_short || data.name;
+          await supabase.from("sales_leads").update({ license_cache: { ...data, org_name: _name, found: true } }).eq("id", l.id);
           ok++;
         }
       } catch {}
@@ -235,7 +302,7 @@ export default function SalesTab() {
           Синхр. все реквизиты
         </Button>
         <Button variant="outline" onClick={() => setTplOpen(true)}><FileEdit className="h-4 w-4 mr-2" />Шаблон письма</Button>
-        <Button onClick={() => setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null })}>
+        <Button onClick={() => { setNameQuery(""); setSuggestions([]); setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null }); }}>
           <Plus className="h-4 w-4 mr-2" />Добавить
         </Button>
       </div>
@@ -309,13 +376,49 @@ export default function SalesTab() {
       </div>
 
       {/* Lead edit dialog */}
-      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setNameQuery(""); setSuggestions([]); } }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{editing?.id ? "Редактировать лид" : "Новый лид"}</DialogTitle></DialogHeader>
           {editing && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="md:col-span-2"><Label>Организация *</Label><Input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} /></div>
-              <div><Label>ИНН</Label><Input value={editing.inn ?? ""} onChange={e => setEditing({ ...editing, inn: e.target.value })} /></div>
+              <div className="md:col-span-2">
+                <Label>Организация *  <span className="text-xs text-muted-foreground font-normal">(введите 2+ символа — подскажет DaData)</span></Label>
+                <Popover open={sugOpen && suggestions.length > 0} onOpenChange={setSugOpen}>
+                  <PopoverTrigger asChild>
+                    <Input
+                      value={editing.id ? editing.name : nameQuery}
+                      onChange={e => {
+                        if (editing.id) setEditing({ ...editing, name: e.target.value });
+                        else { setNameQuery(e.target.value); setEditing({ ...editing, name: e.target.value }); }
+                      }}
+                      onFocus={() => suggestions.length > 0 && setSugOpen(true)}
+                      placeholder="Название или ИНН организации"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="p-0 w-[min(640px,90vw)]" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                    <div className="max-h-72 overflow-y-auto">
+                      {sugLoading && <div className="p-3 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 inline animate-spin mr-1" />Поиск…</div>}
+                      {suggestions.map((s, i) => (
+                        <button key={i} type="button" onClick={() => applySuggestion(s)} className="w-full text-left px-3 py-2 hover:bg-muted/50 border-b border-border/30 last:border-0">
+                          <div className="text-sm font-medium truncate">{s.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            ИНН {s.inn || "—"} {s.address ? `· ${s.address}` : ""}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label>ИНН</Label>
+                <div className="flex gap-2">
+                  <Input value={editing.inn ?? ""} onChange={e => setEditing({ ...editing, inn: e.target.value.replace(/\D/g, "") })} placeholder="10 или 12 цифр" />
+                  <Button type="button" variant="outline" size="icon" onClick={lookupByInn} disabled={innLookup} title="Подтянуть по ИНН">
+                    {innLookup ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
               <div><Label>Сайт</Label><Input value={editing.website ?? ""} onChange={e => setEditing({ ...editing, website: e.target.value })} /></div>
               <div><Label>Email</Label><Input value={editing.email ?? ""} onChange={e => setEditing({ ...editing, email: e.target.value })} /></div>
               <div><Label>Телефон</Label><Input value={editing.phone ?? ""} onChange={e => setEditing({ ...editing, phone: e.target.value })} /></div>
@@ -330,6 +433,15 @@ export default function SalesTab() {
               </div>
               <div className="md:col-span-2"><Label>Следующий шаг</Label><Input value={editing.next_step ?? ""} onChange={e => setEditing({ ...editing, next_step: e.target.value })} /></div>
               <div className="md:col-span-2"><Label>Заметки</Label><Textarea rows={3} value={editing.notes ?? ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} /></div>
+              {(editing.license_cache?.license_number || editing.license_cache?.address) && (
+                <div className="md:col-span-2 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs space-y-1">
+                  {editing.license_cache?.license_number && (
+                    <div>📜 Лицензия № <b>{editing.license_cache.license_number}</b>{editing.license_cache.license_date ? ` от ${editing.license_cache.license_date}` : ""} {editing.license_cache.license_status ? `· ${editing.license_cache.license_status}` : ""}</div>
+                  )}
+                  {editing.license_cache?.address && <div className="text-muted-foreground">📍 {editing.license_cache.address}</div>}
+                  {editing.license_cache?.management_name && <div className="text-muted-foreground">👤 {editing.license_cache.management_post || "Руководитель"}: {editing.license_cache.management_name}</div>}
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
