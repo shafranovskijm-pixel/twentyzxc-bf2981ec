@@ -25,7 +25,7 @@ export type ImportedLead = {
 };
 
 // Словарь синонимов для автоматического mapping колонок
-const FIELD_SYNONYMS: Record<keyof ImportedLead | "ogrn" | "fax", string[]> = {
+const FIELD_SYNONYMS: Record<string, string[]> = {
   name: ["name", "название", "наименование", "организация", "company", "компания", "title", "название организации"],
   inn: ["inn", "инн"],
   ogrn: ["ogrn", "огрн"],
