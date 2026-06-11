@@ -553,6 +553,9 @@ export default function SalesTab() {
           Обогатить (ИНН)
         </Button>
         <Button variant="outline" onClick={() => setTplOpen(true)}><FileEdit className="h-4 w-4 mr-2" />Шаблон письма</Button>
+        <Button variant="outline" onClick={deleteSchools} className="text-rose-300 hover:text-rose-200">
+          <Trash2 className="h-4 w-4 mr-2" />Убрать школы/детсады
+        </Button>
         <Button onClick={() => { setNameQuery(""); setSuggestions([]); setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null }); }}>
           <Plus className="h-4 w-4 mr-2" />Добавить
         </Button>
