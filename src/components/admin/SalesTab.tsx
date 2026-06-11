@@ -779,6 +779,49 @@ export default function SalesTab() {
         onImported={load}
       />
 
+      {/* Find leads via Firecrawl */}
+      <Dialog open={findOpen} onOpenChange={(o) => !findLoading && setFindOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Найти образовательные организации</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Через Firecrawl ищем учебные центры по региону и типу, забираем главную и страницу контактов,
+              вытаскиваем email и телефон. Дубликаты по email/сайту/имени пропускаются.
+            </p>
+            <div><Label>Регион / город</Label><Input value={findRegion} onChange={e => setFindRegion(e.target.value)} placeholder="Москва" /></div>
+            <div><Label>Тип организации</Label>
+              <Select value={findType} onValueChange={setFindType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="учебный центр ДПО">Учебный центр ДПО</SelectItem>
+                  <SelectItem value="центр повышения квалификации">Повышение квалификации</SelectItem>
+                  <SelectItem value="центр профессиональной переподготовки">Профпереподготовка</SelectItem>
+                  <SelectItem value="автошкола">Автошкола</SelectItem>
+                  <SelectItem value="языковая школа">Языковая школа</SelectItem>
+                  <SelectItem value="детский развивающий центр">Детский центр</SelectItem>
+                  <SelectItem value="онлайн-школа">Онлайн-школа</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Доп. ключевые слова</Label><Input value={findExtra} onChange={e => setFindExtra(e.target.value)} placeholder="например: охрана труда, медицина" /></div>
+            <div><Label>Сколько результатов</Label>
+              <Select value={String(findLimit)} onValueChange={v => setFindLimit(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{[5, 10, 15, 20, 25].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">⏱ Поиск с парсингом контактов ~{Math.ceil(findLimit * 2)} сек.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFindOpen(false)} disabled={findLoading}>Отмена</Button>
+            <Button onClick={findLeadsWeb} disabled={findLoading}>
+              {findLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Globe className="h-4 w-4 mr-2" />}
+              Найти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Compose email dialog */}
       <Dialog open={!!composeLead} onOpenChange={(o) => !o && !sending && setComposeLead(null)}>
         <DialogContent className="max-w-2xl">
