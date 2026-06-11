@@ -180,21 +180,27 @@ export default function SalesTab() {
   }
 
   async function importFromContracts() {
-    const { data: contracts } = await supabase.from("contracts").select("client_name, client_inn").limit(500);
-    if (!contracts?.length) return toast.info("Договоры не найдены");
+    const { data: clients } = await supabase.from("clients").select("name, inn, email, phone, contact_person").limit(1000);
+    if (!clients?.length) return toast.info("Клиенты не найдены");
     const userRes = await supabase.auth.getUser();
     const user_id = userRes.data.user?.id!;
     const existingInns = new Set(leads.map(l => l.inn).filter(Boolean) as string[]);
     const existingNames = new Set(leads.map(l => l.name));
-    const map = new Map<string, { name: string; inn: string | null }>();
-    for (const c of contracts as any[]) {
-      const key = (c.client_inn || c.client_name || "").toString();
+    const map = new Map<string, any>();
+    for (const c of clients as any[]) {
+      const key = (c.inn || c.name || "").toString();
       if (!key) continue;
-      if (c.client_inn && existingInns.has(c.client_inn)) continue;
-      if (!c.client_inn && existingNames.has(c.client_name)) continue;
-      if (!map.has(key)) map.set(key, { name: c.client_name || "Без названия", inn: c.client_inn || null });
+      if (c.inn && existingInns.has(c.inn)) continue;
+      if (!c.inn && existingNames.has(c.name)) continue;
+      if (!map.has(key)) map.set(key, {
+        name: c.name || "Без названия",
+        inn: c.inn || null,
+        email: c.email || null,
+        phone: c.phone || null,
+        contact_person: c.contact_person || null,
+      });
     }
-    if (!map.size) return toast.info("Все клиенты из договоров уже в лидах");
+    if (!map.size) return toast.info("Все клиенты уже в лидах");
     const rows = Array.from(map.values()).map(v => ({ ...v, source: "Договоры", status: "new", user_id }));
     const { error } = await supabase.from("sales_leads").insert(rows as any);
     if (error) return toast.error(error.message);
