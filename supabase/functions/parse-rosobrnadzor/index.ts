@@ -9,7 +9,7 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-const UA = "Mozilla/5.0 (compatible; 24zxc-crm/2.0)";
+const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 const REGISTRY_BASE = "https://islod.obrnadzor.gov.ru";
 
 type LicenseRow = {
@@ -67,18 +67,7 @@ function parseRows(html: string): LicenseRow[] {
   return rows;
 }
 
-async function getCookie(): Promise<string> {
-  const r = await fetch(`${REGISTRY_BASE}/rlic`, {
-    headers: { "User-Agent": UA, Accept: "text/html" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(10000),
-  });
-  const c = r.headers.get("set-cookie") || "";
-  return c.split(/,(?=[A-Za-z0-9_\-]+=)/).map(x => x.split(";")[0]).join("; ");
-}
-
 async function searchRegistry(params: Record<string, string>): Promise<LicenseRow[]> {
-  const cookie = await getCookie();
   const body = new URLSearchParams(params).toString();
   const r = await fetch(`${REGISTRY_BASE}/search`, {
     method: "POST",
@@ -87,7 +76,6 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
       "Content-Type": "application/x-www-form-urlencoded",
       "X-Requested-With": "XMLHttpRequest",
       Referer: `${REGISTRY_BASE}/rlic`,
-      Cookie: cookie,
       Accept: "*/*",
     },
     body,
@@ -95,7 +83,10 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
   });
   if (!r.ok) throw new Error(`registry ${r.status}`);
   const html = await r.text();
-  return parseRows(html);
+  const rows = parseRows(html);
+  console.log(`[search] params=${JSON.stringify(params)} status=${r.status} bytes=${html.length} rows=${rows.length}`);
+  if (!rows.length && html.length < 3000) console.log(`[search] body=${html.slice(0, 800)}`);
+  return rows;
 }
 
 async function fetchDetail(viewId: string): Promise<Record<string, string>> {
@@ -162,7 +153,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const rows = await searchRegistry({ eoName: query, page: "1" });
+      const rows = await searchRegistry({ eoName: query, p: "1" });
       // Выбираем «лучшую»: активную (Действующая) с самой свежей датой приказа
       const active = rows.filter(r => /действующ/i.test(r.status));
       const sorted = (active.length ? active : rows).sort((a, b) =>
@@ -219,9 +210,11 @@ Deno.serve(async (req) => {
       const since = body?.since ? String(body.since) : null; // 'YYYY-MM-DD'
       const all: LicenseRow[] = [];
       for (let p = 1; p <= pages; p++) {
-        const rows = await searchRegistry({ region, status: "1", page: String(p) });
-        if (!rows.length) break;
-        all.push(...rows);
+        try {
+          const rows = await searchRegistry({ region, status: "6", p: String(p) });
+          if (!rows.length) break;
+          all.push(...rows);
+        } catch (e) { console.error("search page", p, e); break; }
         if (all.length >= limit * 2) break;
         await new Promise(r => setTimeout(r, 250));
       }
@@ -259,8 +252,17 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("parse-rosobrnadzor error", e);
-    return new Response(JSON.stringify({ error: String((e as any)?.message ?? e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = String((e as any)?.message ?? e);
+    const blocked = /timed out|timeout/i.test(msg);
+    return new Response(JSON.stringify({
+      error: msg,
+      blocked,
+      hint: blocked
+        ? "Сайт islod.obrnadzor.gov.ru не отвечает на запросы с серверов Supabase (вероятно, geo-блокировка по IP). Нужен прокси в РФ."
+        : undefined,
+    }), {
+      status: blocked ? 502 : 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
