@@ -474,6 +474,9 @@ export default function SalesTab() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-muted-foreground">
               <tr>
+                <th className="p-3 w-[36px]">
+                  <Checkbox checked={allFilteredSelected} onCheckedChange={toggleSelectAll} />
+                </th>
                 <th className="text-left font-medium p-3">Организация</th>
                 <th className="text-left font-medium p-3">ИНН</th>
                 <th className="text-left font-medium p-3">Сайт</th>
@@ -488,15 +491,18 @@ export default function SalesTab() {
             </thead>
             <tbody>
               {loading && (
-                <tr><td colSpan={10} className="p-8 text-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin inline mr-2" />Загрузка…</td></tr>
+                <tr><td colSpan={11} className="p-8 text-center text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin inline mr-2" />Загрузка…</td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={10} className="p-10 text-center text-muted-foreground">Лидов пока нет. Нажмите «Добавить» или «Импорт из договоров».</td></tr>
+                <tr><td colSpan={11} className="p-10 text-center text-muted-foreground">Лидов пока нет. Нажмите «Импорт XLSX/CSV» или «Добавить».</td></tr>
               )}
               {!loading && filtered.map(l => {
                 const lic = l.license_cache as any;
                 return (
                   <tr key={l.id} className="border-t border-border/40 hover:bg-muted/20">
+                    <td className="p-3">
+                      <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggleSelect(l.id)} />
+                    </td>
                     <td className="p-3 font-medium max-w-[260px] truncate" title={l.name}>{l.name}</td>
                     <td className="p-3 tabular-nums">{l.inn || "—"}</td>
                     <td className="p-3 max-w-[160px] truncate">
@@ -521,7 +527,8 @@ export default function SalesTab() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-52">
-                          <DropdownMenuItem onClick={() => sendEmail(l)}><Mail className="h-4 w-4 mr-2" />Отправить письмо</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openCompose(l)} disabled={!l.email}><Mail className="h-4 w-4 mr-2" />Подготовить письмо</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => sendEmail(l)} disabled={!l.email}><Mail className="h-4 w-4 mr-2" />Отправить сразу</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => syncLead(l)}><RefreshCw className="h-4 w-4 mr-2" />Подтянуть по ИНН</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setEditing(l)}><Pencil className="h-4 w-4 mr-2" />Редактировать</DropdownMenuItem>
