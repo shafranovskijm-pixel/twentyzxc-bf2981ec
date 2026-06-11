@@ -530,6 +530,13 @@ export default function SalesTab() {
         <Button variant="outline" onClick={() => setRegistryOpen(true)}>
           <Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора
         </Button>
+        <Button variant="outline" onClick={() => setFindOpen(true)}>
+          <Globe className="h-4 w-4 mr-2" />Найти лиды (web)
+        </Button>
+        <Button variant="outline" onClick={enrichSelectedSites} disabled={enrichBulk || selected.size === 0}>
+          {enrichBulk ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+          Обогатить по сайту{selected.size > 0 ? ` (${selected.size})` : ""}
+        </Button>
         <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
           {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Обогатить (ИНН)
