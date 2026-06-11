@@ -494,8 +494,10 @@ export default function SalesTab() {
   }
 
   async function enrichSelectedSites() {
-    const targets = leads.filter(l => selected.has(l.id) && l.website && (!l.email || !l.phone));
-    if (!targets.length) return toast.info("Выберите лиды с сайтом, у которых нет email/телефона");
+    const base = selected.size > 0 ? leads.filter(l => selected.has(l.id)) : leads;
+    const targets = base.filter(l => l.website && (!l.email || !l.phone));
+    if (!targets.length) return toast.info("Нет лидов с сайтом без email/телефона");
+    if (selected.size === 0 && !confirm(`Спарсить email/телефон с ${targets.length} сайтов? Это может занять время.`)) return;
     setEnrichBulk(true);
     let ok = 0;
     for (const l of targets) {
@@ -525,6 +527,12 @@ export default function SalesTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по названию, ИНН, email…" className="pl-9" />
         </div>
+        <Button
+          variant={statusFilter === "has_email" ? "default" : "outline"}
+          onClick={() => setStatusFilter(statusFilter === "has_email" ? "all" : "has_email")}
+        >
+          <Mail className="h-4 w-4 mr-2" />Только с email
+        </Button>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[200px]"><SelectValue placeholder="Фильтр" /></SelectTrigger>
           <SelectContent>
@@ -544,9 +552,9 @@ export default function SalesTab() {
         <Button variant="outline" onClick={() => setFindOpen(true)}>
           <Globe className="h-4 w-4 mr-2" />Найти лиды (web)
         </Button>
-        <Button variant="outline" onClick={enrichSelectedSites} disabled={enrichBulk || selected.size === 0}>
+        <Button variant="outline" onClick={enrichSelectedSites} disabled={enrichBulk}>
           {enrichBulk ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-          Обогатить по сайту{selected.size > 0 ? ` (${selected.size})` : ""}
+          Спарсить email с сайтов{selected.size > 0 ? ` (${selected.size})` : " (все)"}
         </Button>
         <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
           {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
