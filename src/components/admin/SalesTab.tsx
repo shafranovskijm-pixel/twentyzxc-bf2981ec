@@ -443,6 +443,70 @@ export default function SalesTab() {
     setTplOpen(false);
   }
 
+  async function findLeadsWeb() {
+    setFindLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("find-education-leads", {
+        body: { region: findRegion, orgType: findType, extra: findExtra, limit: findLimit, enrich: true },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ошибка поиска");
+      const found: any[] = data.leads ?? [];
+      if (!found.length) { toast.info("Ничего не найдено"); return; }
+      const userRes = await supabase.auth.getUser();
+      const user_id = userRes.data.user?.id;
+      if (!user_id) { toast.error("Нет авторизации"); return; }
+      const rows = found
+        .map(r => ({
+          user_id,
+          name: r.name,
+          website: r.website,
+          email: r.email,
+          phone: r.phone,
+          city: r.city,
+          region: r.region,
+          source: r.source,
+          category: r.category,
+          status: "new",
+        }))
+        .map(r => ({ ...r, dedup_hash: makeDedupHash(r as any) }))
+        .filter(r => !existingHashes.has(r.dedup_hash!));
+      if (!rows.length) { toast.info("Все эти организации уже есть в лидах"); setFindOpen(false); return; }
+      const { error: insErr } = await supabase.from("sales_leads").insert(rows as any);
+      if (insErr) throw insErr;
+      toast.success(`Добавлено ${rows.length} лидов из поиска`);
+      setFindOpen(false);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка");
+    } finally { setFindLoading(false); }
+  }
+
+  async function enrichSelectedSites() {
+    const targets = leads.filter(l => selected.has(l.id) && l.website && (!l.email || !l.phone));
+    if (!targets.length) return toast.info("Выберите лиды с сайтом, у которых нет email/телефона");
+    setEnrichBulk(true);
+    let ok = 0;
+    for (const l of targets) {
+      try {
+        const { data } = await supabase.functions.invoke("enrich-lead", { body: { website: l.website } });
+        if (data?.success && (data.email || data.phone)) {
+          const patch: any = {};
+          if (!l.email && data.email) patch.email = data.email;
+          if (!l.phone && data.phone) patch.phone = data.phone;
+          if (Object.keys(patch).length) {
+            await supabase.from("sales_leads").update(patch).eq("id", l.id);
+            ok++;
+          }
+        }
+      } catch {}
+      await new Promise(r => setTimeout(r, 300));
+    }
+    setEnrichBulk(false);
+    toast.success(`Обогащено ${ok} из ${targets.length}`);
+    load();
+  }
+
   return (
     <div className="space-y-4 pb-24">
       <div className="flex flex-wrap items-center gap-2">
