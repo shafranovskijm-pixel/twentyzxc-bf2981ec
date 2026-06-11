@@ -416,7 +416,8 @@ export default function SalesTab() {
           },
         }));
       if (!rows.length) { toast.info("Все эти организации уже есть в лидах"); setRegistryOpen(false); return; }
-      const { error: insErr } = await supabase.from("sales_leads").insert(rows as any);
+      const rowsWithHash = rows.map(r => ({ ...r, dedup_hash: makeDedupHash(r as any) }));
+      const { error: insErr } = await supabase.from("sales_leads").insert(rowsWithHash as any);
       if (insErr) throw insErr;
       toast.success(`Добавлено ${rows.length} новых лидов из реестра`);
       setRegistryOpen(false);
@@ -443,19 +444,24 @@ export default function SalesTab() {
           <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Поиск по названию, ИНН, email…" className="pl-9" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Статус" /></SelectTrigger>
+          <SelectTrigger className="w-[200px]"><SelectValue placeholder="Фильтр" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Все статусы</SelectItem>
-            {STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            {FILTER_PRESETS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button variant="outline" onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Импорт из договоров</Button>
+        <Button variant="outline" onClick={() => setImportOpen(true)}>
+          <FileSpreadsheet className="h-4 w-4 mr-2" />Импорт XLSX/CSV
+        </Button>
+        <Button variant="outline" onClick={exportColdy}>
+          <Download className="h-4 w-4 mr-2" />Экспорт для Coldy{selected.size > 0 ? ` (${selected.size})` : ""}
+        </Button>
+        <Button variant="outline" onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Из договоров</Button>
         <Button variant="outline" onClick={() => setRegistryOpen(true)}>
           <Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора
         </Button>
         <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
           {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Синхр. все реквизиты
+          Обогатить (ИНН)
         </Button>
         <Button variant="outline" onClick={() => setTplOpen(true)}><FileEdit className="h-4 w-4 mr-2" />Шаблон письма</Button>
         <Button onClick={() => { setNameQuery(""); setSuggestions([]); setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null }); }}>
