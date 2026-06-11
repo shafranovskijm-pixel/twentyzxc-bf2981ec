@@ -494,8 +494,10 @@ export default function SalesTab() {
   }
 
   async function enrichSelectedSites() {
-    const targets = leads.filter(l => selected.has(l.id) && l.website && (!l.email || !l.phone));
-    if (!targets.length) return toast.info("Выберите лиды с сайтом, у которых нет email/телефона");
+    const base = selected.size > 0 ? leads.filter(l => selected.has(l.id)) : leads;
+    const targets = base.filter(l => l.website && (!l.email || !l.phone));
+    if (!targets.length) return toast.info("Нет лидов с сайтом без email/телефона");
+    if (selected.size === 0 && !confirm(`Спарсить email/телефон с ${targets.length} сайтов? Это может занять время.`)) return;
     setEnrichBulk(true);
     let ok = 0;
     for (const l of targets) {
