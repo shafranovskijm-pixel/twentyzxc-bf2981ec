@@ -693,6 +693,34 @@ export default function SalesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImportLeadsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        existingHashes={existingHashes}
+        onImported={load}
+      />
+
+      {/* Compose email dialog */}
+      <Dialog open={!!composeLead} onOpenChange={(o) => !o && !sending && setComposeLead(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Письмо для {composeLead?.name}</DialogTitle></DialogHeader>
+          {composeLead && (
+            <div className="space-y-3">
+              <div className="text-xs text-muted-foreground">Кому: <b>{composeLead.email}</b></div>
+              <div><Label>Тема</Label><Input value={composeSubject} onChange={e => setComposeSubject(e.target.value)} /></div>
+              <div><Label>Текст письма</Label><Textarea rows={14} value={composeBody} onChange={e => setComposeBody(e.target.value)} /></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setComposeLead(null)} disabled={sending}>Отмена</Button>
+            <Button onClick={sendComposed} disabled={sending || !composeLead?.email}>
+              {sending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Mail className="h-4 w-4 mr-2" />}
+              Отправить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
