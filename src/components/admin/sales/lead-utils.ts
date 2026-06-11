@@ -93,7 +93,7 @@ const normEmail = (e?: string | null) => (e ? e.trim().toLowerCase() : "");
 const normName = (n?: string | null) =>
   (n || "").toLowerCase().replace(/["«»'`]/g, "").replace(/\s+/g, " ").trim();
 
-export function makeDedupHash(l: Partial<ImportedLead>): string {
+export function makeDedupHash(l: { inn?: string | null; email?: string | null; phone?: string | null; name?: string | null; city?: string | null }): string {
   if (l.inn && /^\d{10,12}$/.test(l.inn)) return `inn:${l.inn}`;
   const e = normEmail(l.email);
   if (e && /@/.test(e)) return `email:${e}`;
