@@ -5,8 +5,6 @@ const corsHeaders = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const DADATA_KEY = Deno.env.get("DADATA_API_KEY");
-const DADATA_SECRET = Deno.env.get("DADATA_SECRET_KEY");
 
 interface ParseResult {
   inn: string;
@@ -26,30 +24,22 @@ interface ParseResult {
   raw?: unknown;
 }
 
-async function fetchDadataById(inn: string) {
-  if (!DADATA_KEY) return null;
-  console.log("[dadata] fetching", inn);
+async function fetchDadataViaInternal(inn: string) {
   try {
-    const ctrl = AbortSignal.timeout(10000);
-    const r = await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party", {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/dadata-lookup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Token ${DADATA_KEY}`,
-        ...(DADATA_SECRET ? { "X-Secret": DADATA_SECRET } : {}),
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        apikey: SERVICE_ROLE,
       },
-      body: JSON.stringify({ query: inn, count: 1 }),
-      signal: ctrl,
+      body: JSON.stringify({ inn }),
+      signal: AbortSignal.timeout(12000),
     });
-    console.log("[dadata] status", r.status);
     if (!r.ok) return null;
     const j = await r.json();
-    return j?.suggestions?.[0] ?? null;
-  } catch (e) {
-    console.error("dadata error", e);
-    return null;
-  }
+    return j?.found ? j : null;
+  } catch (e) { console.error("dadata-lookup call", e); return null; }
 }
 
 async function getCachedLicense(inn: string) {
@@ -99,26 +89,24 @@ Deno.serve(async (req) => {
     }
 
     console.log("[parse] calling dadata + cache");
-    const [dadataSug, lic] = await Promise.all([fetchDadataById(inn), getCachedLicense(inn)]);
-    console.log("[parse] got both", { dadata: !!dadataSug, cache: !!lic });
-
-    const dd = dadataSug?.data ?? null;
+    const [dd, lic] = await Promise.all([fetchDadataViaInternal(inn), getCachedLicense(inn)]);
+    console.log("[parse] got both", { dadata: !!dd, cache: !!lic });
 
     const result: ParseResult = {
       inn,
       found: !!(dd || lic?.license_number),
-      org_name: dd?.name?.short_with_opf || dd?.name?.full_with_opf || lic?.org_name || null,
-      address: dd?.address?.unrestricted_value || lic?.address || null,
+      org_name: dd?.name_short || dd?.name || lic?.org_name || null,
+      address: dd?.address || lic?.address || null,
       kpp: dd?.kpp ?? null,
       ogrn: dd?.ogrn ?? null,
-      management_name: dd?.management?.name ?? null,
-      management_post: dd?.management?.post ?? null,
+      management_name: dd?.management_name ?? null,
+      management_post: dd?.management_post ?? null,
       license_number: lic?.license_number ?? null,
       license_date: lic?.license_date ?? null,
       license_status: lic?.license_status ?? null,
       registry_url: lic?.registry_url ?? `https://islod.obrnadzor.gov.ru/rlic/?query=${inn}`,
-      email: dd?.emails?.[0]?.value ?? null,
-      phone: dd?.phones?.[0]?.value ?? null,
+      email: null,
+      phone: null,
       raw: { dadata: dd, rosobrnadzor: lic ?? null },
     };
 
