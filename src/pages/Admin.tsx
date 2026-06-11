@@ -25,6 +25,7 @@ import HistoryTab from "@/components/admin/HistoryTab";
 import TzTab from "@/components/admin/TzTab";
 import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
+import SalesTab from "@/components/admin/SalesTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight, Menu } from "lucide-react";
@@ -59,7 +60,7 @@ const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
-  const [activeSection, setActiveSection] = useState("contracts");
+  const [activeSection, setActiveSection] = useState("sales");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sectionNonce, setSectionNonce] = useState(0);
   const handleSectionChange = (s: string) => {
@@ -358,6 +359,7 @@ const Admin = () => {
   }
 
   const sectionTitles: Record<string, string> = {
+    sales: "Продажи",
     seo: "SEO-настройки",
     contacts: "Контакты",
     promotions: "Акции",
