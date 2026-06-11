@@ -79,7 +79,7 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
       Accept: "*/*",
     },
     body,
-    signal: AbortSignal.timeout(45000),
+    signal: AbortSignal.timeout(20000),
   });
   if (!r.ok) throw new Error(`registry ${r.status}`);
   const html = await r.text();
@@ -252,8 +252,17 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     console.error("parse-rosobrnadzor error", e);
-    return new Response(JSON.stringify({ error: String((e as any)?.message ?? e) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    const msg = String((e as any)?.message ?? e);
+    const blocked = /timed out|timeout/i.test(msg);
+    return new Response(JSON.stringify({
+      error: msg,
+      blocked,
+      hint: blocked
+        ? "Сайт islod.obrnadzor.gov.ru не отвечает на запросы с серверов Supabase (вероятно, geo-блокировка по IP). Нужен прокси в РФ."
+        : undefined,
+    }), {
+      status: blocked ? 502 : 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
