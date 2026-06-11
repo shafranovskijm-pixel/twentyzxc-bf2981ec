@@ -554,7 +554,7 @@ export default function SalesTab() {
                     <SelectItem value="23">23 — Краснодарский край</SelectItem>
                     <SelectItem value="16">16 — Татарстан</SelectItem>
                     <SelectItem value="74">74 — Челябинская обл.</SelectItem>
-                    <SelectItem value="">Все регионы</SelectItem>
+                    <SelectItem value="all">Все регионы</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
