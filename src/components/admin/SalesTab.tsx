@@ -15,7 +15,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database, Upload, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database, Upload, FileSpreadsheet, Globe, Wand2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportLeadsDialog from "./sales/ImportLeadsDialog";
@@ -113,6 +113,13 @@ export default function SalesTab() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [findRegion, setFindRegion] = useState("Москва");
+  const [findType, setFindType] = useState("учебный центр ДПО");
+  const [findExtra, setFindExtra] = useState("");
+  const [findLimit, setFindLimit] = useState(10);
+  const [findLoading, setFindLoading] = useState(false);
+  const [enrichBulk, setEnrichBulk] = useState(false);
 
   async function load() {
     setLoading(true);
