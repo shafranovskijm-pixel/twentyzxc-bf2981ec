@@ -1,5 +1,7 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -50,6 +52,38 @@ async function fetchDadataById(inn: string) {
   }
 }
 
+async function getCachedLicense(inn: string) {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rosobrnadzor_licenses?inn=eq.${inn}&select=*`, {
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return null;
+    const arr = await r.json();
+    return Array.isArray(arr) ? arr[0] ?? null : null;
+  } catch (e) { console.error("cache read", e); return null; }
+}
+
+async function upsertLicense(payload: Record<string, unknown>) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rosobrnadzor_licenses?on_conflict=inn`, {
+      method: "POST",
+      headers: {
+        apikey: SERVICE_ROLE,
+        Authorization: `Bearer ${SERVICE_ROLE}`,
+        "Content-Type": "application/json",
+        Prefer: "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) { console.error("cache write", e); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -64,16 +98,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
-
     console.log("[parse] calling dadata + cache");
-    const dadataPromise = fetchDadataById(inn);
-    const cachePromise = supabase.from("rosobrnadzor_licenses").select("*").eq("inn", inn).maybeSingle();
-    const [dadataSug, cached] = await Promise.all([dadataPromise, cachePromise]);
-    console.log("[parse] got both", { dadata: !!dadataSug, cache: !!cached?.data });
+    const [dadataSug, lic] = await Promise.all([fetchDadataById(inn), getCachedLicense(inn)]);
+    console.log("[parse] got both", { dadata: !!dadataSug, cache: !!lic });
 
     const dd = dadataSug?.data ?? null;
-    const lic = cached.data ?? null;
 
     const result: ParseResult = {
       inn,
@@ -93,16 +122,15 @@ Deno.serve(async (req) => {
       raw: { dadata: dd, rosobrnadzor: lic ?? null },
     };
 
-    // Кэшируем минимум — название/адрес из DaData, чтобы при следующем запросе быстро вернуть
     if (dd) {
-      await supabase.from("rosobrnadzor_licenses").upsert({
+      await upsertLicense({
         inn,
         org_name: result.org_name,
         address: result.address,
         registry_url: result.registry_url,
         raw_json: { dadata: dd },
         fetched_at: new Date().toISOString(),
-      }, { onConflict: "inn", ignoreDuplicates: false });
+      });
     }
 
     return new Response(JSON.stringify(result), {
