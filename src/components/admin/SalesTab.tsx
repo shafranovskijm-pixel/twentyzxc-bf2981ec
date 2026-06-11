@@ -131,7 +131,7 @@ export default function SalesTab() {
     if (!/^\d{10}$|^\d{12}$/.test(inn)) return toast.error("ИНН должен быть 10 или 12 цифр");
     setInnLookup(true);
     try {
-      const { data, error } = await supabase.functions.invoke("parse-rosobrnadzor", { body: { inn } });
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn } });
       if (error) throw error;
       if (!data?.found) { toast.info("Ничего не найдено по ИНН"); return; }
       setEditing({
@@ -209,7 +209,7 @@ export default function SalesTab() {
     if (!lead.inn) return toast.error("Нет ИНН");
     setSyncing(lead.id);
     try {
-      const { data, error } = await supabase.functions.invoke("parse-rosobrnadzor", { body: { inn: lead.inn } });
+      const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn: lead.inn } });
       if (error) throw error;
       const patch: any = { license_cache: data };
       if (!lead.name && data.org_name) patch.name = data.org_name;
@@ -232,7 +232,7 @@ export default function SalesTab() {
     let ok = 0;
     for (const l of targets) {
       try {
-        const { data } = await supabase.functions.invoke("parse-rosobrnadzor", { body: { inn: l.inn } });
+        const { data } = await supabase.functions.invoke("dadata-lookup", { body: { inn: l.inn } });
         if (data) {
           await supabase.from("sales_leads").update({ license_cache: data }).eq("id", l.id);
           ok++;
