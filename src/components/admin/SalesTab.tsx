@@ -134,17 +134,16 @@ export default function SalesTab() {
       const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn } });
       if (error) throw error;
       if (!data?.found) { toast.info("Ничего не найдено по ИНН"); return; }
+      const _name = data.name_short || data.name;
       setEditing({
         ...editing,
-        name: editing.name?.trim() || data.org_name || "",
-        email: editing.email || data.email || "",
-        phone: editing.phone || data.phone || "",
+        name: editing.name?.trim() || _name || "",
         contact_person: editing.contact_person || data.management_name || "",
         source: editing.source || "Реестр / ИНН",
-        license_cache: data,
+        license_cache: { ...data, org_name: _name, found: true },
       });
-      setNameQuery(data.org_name || "");
-      toast.success(data.license_number ? `Найдено + лицензия ${data.license_number}` : "Реквизиты подтянуты");
+      setNameQuery(_name || "");
+      toast.success(`Найдено: ${_name}`);
     } catch (e: any) {
       toast.error(e?.message || "Ошибка поиска");
     } finally { setInnLookup(false); }
@@ -211,12 +210,13 @@ export default function SalesTab() {
     try {
       const { data, error } = await supabase.functions.invoke("dadata-lookup", { body: { inn: lead.inn } });
       if (error) throw error;
-      const patch: any = { license_cache: data };
-      if (!lead.name && data.org_name) patch.name = data.org_name;
-      if (!lead.email && data.email) patch.email = data.email;
-      if (!lead.phone && data.phone) patch.phone = data.phone;
+      if (!data?.found) { toast.info("В реестре не найдено"); return; }
+      const _name = data.name_short || data.name;
+      const patch: any = { license_cache: { ...data, org_name: _name, found: true } };
+      if (!lead.name) patch.name = _name;
+      if (!lead.contact_person && data.management_name) patch.contact_person = data.management_name;
       await supabase.from("sales_leads").update(patch).eq("id", lead.id);
-      toast.success(data.found ? "Данные обновлены" : "В реестре не найдено");
+      toast.success("Реквизиты обновлены");
       load();
     } catch (e: any) {
       toast.error(e?.message || "Ошибка парсера");
@@ -233,8 +233,9 @@ export default function SalesTab() {
     for (const l of targets) {
       try {
         const { data } = await supabase.functions.invoke("dadata-lookup", { body: { inn: l.inn } });
-        if (data) {
-          await supabase.from("sales_leads").update({ license_cache: data }).eq("id", l.id);
+        if (data?.found) {
+          const _name = data.name_short || data.name;
+          await supabase.from("sales_leads").update({ license_cache: { ...data, org_name: _name, found: true } }).eq("id", l.id);
           ok++;
         }
       } catch {}
