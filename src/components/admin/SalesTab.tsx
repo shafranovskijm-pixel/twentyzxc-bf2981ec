@@ -15,8 +15,11 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database } from "lucide-react";
+import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database, Upload, FileSpreadsheet } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import ImportLeadsDialog from "./sales/ImportLeadsDialog";
+import { makeDedupHash, toColdyCSV, downloadFile } from "./sales/lead-utils";
 
 type Lead = {
   id: string;
@@ -32,6 +35,11 @@ type Lead = {
   notes: string | null;
   license_cache: any;
   last_email_sent_at: string | null;
+  city?: string | null;
+  region?: string | null;
+  address?: string | null;
+  category?: string | null;
+  dedup_hash?: string | null;
 };
 
 const STATUSES: { value: string; label: string; tone: string }[] = [
@@ -40,17 +48,36 @@ const STATUSES: { value: string; label: string; tone: string }[] = [
   { value: "replied",   label: "Ответ получен",    tone: "bg-amber-500/15 text-amber-200 border-amber-500/30" },
   { value: "demo",      label: "Демо назначено",   tone: "bg-violet-500/15 text-violet-200 border-violet-500/30" },
   { value: "contract",  label: "Договор",          tone: "bg-emerald-500/15 text-emerald-200 border-emerald-500/30" },
+  { value: "later",     label: "Позже",            tone: "bg-cyan-500/15 text-cyan-200 border-cyan-500/30" },
+  { value: "client",    label: "Клиент",           tone: "bg-emerald-500/25 text-emerald-100 border-emerald-500/50" },
   { value: "rejected",  label: "Отказ",            tone: "bg-rose-500/15 text-rose-200 border-rose-500/30" },
+];
+
+// Пресеты фильтров (включая псевдо-статусы по наличию полей)
+const FILTER_PRESETS: { value: string; label: string }[] = [
+  { value: "all", label: "Все статусы" },
+  { value: "new", label: "Новые" },
+  { value: "has_email", label: "Есть email" },
+  { value: "has_phone", label: "Есть телефон" },
+  { value: "no_contact", label: "Нет контактов" },
+  { value: "emailed", label: "Письмо отправлено" },
+  { value: "replied", label: "Ответили" },
+  { value: "demo", label: "Назначить демо" },
+  { value: "rejected", label: "Не интересно" },
+  { value: "later", label: "Позже" },
+  { value: "client", label: "Клиент" },
 ];
 
 const DEFAULT_SUBJECT = "Дистанционное обучение для вашего учебного центра — 15 минут демо";
 const DEFAULT_BODY = `Добрый день.
 
-Увидел вашу организацию среди образовательных организаций. Меня зовут Максим Шафрановский, я развиваю СИНТАГМУ — платформу для учебных центров: СДО, готовые курсы, ИИ-генерация курсов, документы и контроль прохождения обучения.
+Меня зовут Максим Шафрановский. Я развиваю платформу СИНТАГМА для учебных центров: СДО, готовые курсы, ИИ-генерация курсов, документы организации и контроль прохождения обучения.
 
-Сейчас помогаем учебным центрам запускать дистанционное обучение за 7 дней: добавление учеников, назначение курсов, контроль обучения и документы в одной системе.
+Помогаем учебным центрам быстро запускать дистанционное обучение: добавить ученика, назначить курс, контролировать прохождение и вести документы в одной системе.
 
-Могу бесплатно показать за 15 минут, как это работает. Вам актуально посмотреть?`;
+Могу бесплатно показать за 15 минут, как это работает и как можно адаптировать платформу под вашу организацию.
+
+Вам актуально посмотреть демо?`;
 
 const LS_SUBJECT = "sales_email_subject";
 const LS_BODY = "sales_email_body";
@@ -80,6 +107,12 @@ export default function SalesTab() {
   const [registryRegion, setRegistryRegion] = useState("77");
   const [registryLimit, setRegistryLimit] = useState(10);
   const [registryLoading, setRegistryLoading] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [composeLead, setComposeLead] = useState<Lead | null>(null);
+  const [composeSubject, setComposeSubject] = useState("");
+  const [composeBody, setComposeBody] = useState("");
+  const [sending, setSending] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -156,12 +189,77 @@ export default function SalesTab() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return leads.filter(l => {
-      if (statusFilter !== "all" && l.status !== statusFilter) return false;
+      if (statusFilter !== "all") {
+        if (statusFilter === "has_email") { if (!l.email) return false; }
+        else if (statusFilter === "has_phone") { if (!l.phone) return false; }
+        else if (statusFilter === "no_contact") { if (l.email || l.phone) return false; }
+        else if (l.status !== statusFilter) return false;
+      }
       if (!q) return true;
       return [l.name, l.inn, l.email, l.website, l.contact_person]
         .filter(Boolean).some(v => String(v).toLowerCase().includes(q));
     });
   }, [leads, search, statusFilter]);
+
+  const existingHashes = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of leads) {
+      const h = l.dedup_hash || makeDedupHash(l);
+      if (h) s.add(h);
+    }
+    return s;
+  }, [leads]);
+
+  function toggleSelect(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  const allFilteredSelected = filtered.length > 0 && filtered.every(l => selected.has(l.id));
+  function toggleSelectAll() {
+    if (allFilteredSelected) setSelected(new Set());
+    else setSelected(new Set(filtered.map(l => l.id)));
+  }
+
+  function openCompose(l: Lead) {
+    setComposeLead(l);
+    setComposeSubject(subject.replace(/\{org\}/g, l.name));
+    setComposeBody(body.replace(/\{org\}/g, l.name).replace(/\{contact\}/g, l.contact_person ?? ""));
+  }
+
+  async function sendComposed() {
+    if (!composeLead?.email) return toast.error("Нет email");
+    setSending(true);
+    try {
+      const html = `<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:20px;white-space:pre-wrap;color:#1a1a1a;font-size:15px;line-height:1.55;">${composeBody.replace(/</g, "&lt;").replace(/\n/g, "<br/>")}</div>`;
+      const { data, error } = await supabase.functions.invoke("send-document-email", {
+        body: { to: composeLead.email, subject: composeSubject, html },
+      });
+      if (error) throw error;
+      if (data && !data.success) throw new Error(data.error || "Не удалось отправить");
+      await supabase.from("sales_leads")
+        .update({ status: "emailed", last_email_sent_at: new Date().toISOString() })
+        .eq("id", composeLead.id);
+      toast.success(`Письмо отправлено на ${composeLead.email}`);
+      setComposeLead(null);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка отправки");
+    } finally { setSending(false); }
+  }
+
+  function exportColdy() {
+    const target = selected.size > 0
+      ? leads.filter(l => selected.has(l.id))
+      : filtered;
+    const withEmail = target.filter(l => l.email);
+    if (!withEmail.length) return toast.error("Нет лидов с email для экспорта");
+    const csv = toColdyCSV(withEmail);
+    downloadFile(`coldy-leads-${new Date().toISOString().slice(0,10)}.csv`, csv);
+    toast.success(`Экспортировано ${withEmail.length} лидов`);
+  }
 
   async function saveLead(payload: Partial<Lead>, id?: string) {
     const userRes = await supabase.auth.getUser();
@@ -273,7 +371,8 @@ export default function SalesTab() {
     }
     if (!map.size) return toast.info("Все клиенты уже в лидах");
     const rows = Array.from(map.values()).map(v => ({ ...v, source: "Договоры", status: "new", user_id }));
-    const { error } = await supabase.from("sales_leads").insert(rows as any);
+    const rowsWithHash = rows.map(r => ({ ...r, dedup_hash: makeDedupHash(r as any) }));
+    const { error } = await supabase.from("sales_leads").insert(rowsWithHash as any);
     if (error) return toast.error(error.message);
     toast.success(`Добавлено ${rows.length}`);
     load();
