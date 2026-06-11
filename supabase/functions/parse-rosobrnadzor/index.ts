@@ -114,6 +114,20 @@ async function fetchDetail(viewId: string): Promise<Record<string, string>> {
     const val = stripTags(m[2]);
     if (val && !fields[key]) fields[key] = val;
   }
+  // Резервный извлекатель: вытащим ИНН/ОГРН/email/телефон из всего HTML
+  const plain = stripTags(html);
+  if (!fields["инн"]) {
+    const m1 = plain.match(/ИНН[^\d]{0,10}(\d{10}|\d{12})/i);
+    if (m1) fields["инн"] = m1[1];
+  }
+  if (!fields["огрн"]) {
+    const m2 = plain.match(/ОГРН[^\d]{0,10}(\d{13}|\d{15})/i);
+    if (m2) fields["огрн"] = m2[1];
+  }
+  const em = plain.match(/[\w.+-]+@[\w-]+\.[\w.-]+/);
+  if (em) fields["email"] = em[0];
+  const ph = plain.match(/(?:\+7|8)[\s\-()]*\d{3}[\s\-()]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}/);
+  if (ph) fields["phone"] = ph[0].replace(/\s+/g, " ");
   return fields;
 }
 
@@ -200,19 +214,42 @@ Deno.serve(async (req) => {
     if (mode === "recent") {
       const region = String(body?.region ?? "77"); // Москва по умолчанию
       const pages = Math.min(Math.max(1, Number(body?.pages ?? 3)), 10);
+      const limit = Math.min(Math.max(1, Number(body?.limit ?? 10)), 50);
+      const withDetails = body?.withDetails !== false;
       const since = body?.since ? String(body.since) : null; // 'YYYY-MM-DD'
       const all: LicenseRow[] = [];
       for (let p = 1; p <= pages; p++) {
         const rows = await searchRegistry({ region, status: "1", page: String(p) });
         if (!rows.length) break;
         all.push(...rows);
+        if (all.length >= limit * 2) break;
         await new Promise(r => setTimeout(r, 250));
       }
       const filtered = since
         ? all.filter(r => r.order_date && r.order_date >= since)
         : all;
       filtered.sort((a, b) => (b.order_date ?? "").localeCompare(a.order_date ?? ""));
-      return new Response(JSON.stringify({ region, total: all.length, results: filtered.slice(0, 200) }), {
+      const top = filtered.slice(0, limit);
+      const enriched: any[] = [];
+      for (const row of top) {
+        let detail: Record<string, string> = {};
+        if (withDetails && row.view_id) {
+          try { detail = await fetchDetail(row.view_id); } catch {}
+          await new Promise(r => setTimeout(r, 200));
+        }
+        enriched.push({
+          ...row,
+          registry_url: `${REGISTRY_BASE}/view/${row.view_id}`,
+          inn: detail["инн"] ?? null,
+          ogrn: detail["огрн"] ?? null,
+          address: detail["место_нахождения_организации"] ?? detail["место_нахождения"] ?? null,
+          email: detail["email"] ?? null,
+          phone: detail["phone"] ?? null,
+          director: detail["руководитель"] ?? null,
+          detail,
+        });
+      }
+      return new Response(JSON.stringify({ region, total: all.length, results: enriched }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
