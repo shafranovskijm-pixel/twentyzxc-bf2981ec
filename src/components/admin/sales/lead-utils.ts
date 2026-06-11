@@ -76,6 +76,26 @@ const EDU_BLACKLIST = [
   "парикмахер", "салон красот", "пицц", "суши", "бар ",
 ];
 
+// Жёсткий blacklist — общеобразовательные школы, детсады, бюджетные учреждения.
+// Это НЕ наша ЦА (ДПО/учебные центры). Эти строки исключают полностью.
+const NON_TARGET_PATTERNS = [
+  "общеобразовательн",
+  "сош",
+  " школа №", "школа№", "школа n", "school №",
+  "средняя школа", "основная школа", "начальная школа",
+  "гимназия", "лицей",
+  "детский сад", "доу ", "мбдоу", "мадоу", "гбдоу",
+  "мбоу", "мкоу", "гбоу", "моу ",
+  "интернат", "кадетск",
+];
+
+/** Возвращает true, если организация — обычная школа/детсад/бюджетное учреждение (НЕ ЦА). */
+export function isNonTargetEducation(name?: string | null): boolean {
+  const t = (name || "").toLowerCase();
+  if (!t) return false;
+  return NON_TARGET_PATTERNS.some(p => t.includes(p));
+}
+
 /** Определяет, образовательная ли это организация (грубая эвристика) */
 export function detectEducation(row: { name?: string; category?: string; subcategory?: string; website?: string }): boolean {
   const text = [row.name, row.category, row.subcategory, row.website].filter(Boolean).join(" ").toLowerCase();
@@ -122,7 +142,8 @@ export function rowToLead(row: RawRow, mapping: Record<string, string>, defaults
 
   const cat = pick("category") || "";
   const subcat = (row as any)["subcategory"] || "";
-  const isEdu = detectEducation({ name, category: cat, subcategory: subcat, website: website || undefined });
+  const nonTarget = isNonTargetEducation(name);
+  const isEdu = !nonTarget && detectEducation({ name, category: cat, subcategory: subcat, website: website || undefined });
 
   let licenseDate: string | null = null;
   const ld = pick("license_date");

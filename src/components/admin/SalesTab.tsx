@@ -19,7 +19,7 @@ import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportLeadsDialog from "./sales/ImportLeadsDialog";
-import { makeDedupHash, toColdyCSV, downloadFile } from "./sales/lead-utils";
+import { makeDedupHash, toColdyCSV, downloadFile, isNonTargetEducation } from "./sales/lead-utils";
 
 type Lead = {
   id: string;
@@ -292,6 +292,17 @@ export default function SalesTab() {
     load();
   }
 
+  async function deleteSchools() {
+    const targets = leads.filter(l => isNonTargetEducation(l.name));
+    if (!targets.length) return toast.info("Школ/детсадов в базе нет");
+    if (!confirm(`Удалить ${targets.length} записей (общеобразовательные школы, гимназии, лицеи, детсады)?`)) return;
+    const ids = targets.map(t => t.id);
+    const { error } = await supabase.from("sales_leads").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Удалено ${targets.length}`);
+    load();
+  }
+
   async function sendEmail(lead: Lead) {
     if (!lead.email) return toast.error("У лида нет email");
     const personalSubject = subject.replace(/\{org\}/g, lead.name);
@@ -542,6 +553,9 @@ export default function SalesTab() {
           Обогатить (ИНН)
         </Button>
         <Button variant="outline" onClick={() => setTplOpen(true)}><FileEdit className="h-4 w-4 mr-2" />Шаблон письма</Button>
+        <Button variant="outline" onClick={deleteSchools} className="text-rose-300 hover:text-rose-200">
+          <Trash2 className="h-4 w-4 mr-2" />Убрать школы/детсады
+        </Button>
         <Button onClick={() => { setNameQuery(""); setSuggestions([]); setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null }); }}>
           <Plus className="h-4 w-4 mr-2" />Добавить
         </Button>
