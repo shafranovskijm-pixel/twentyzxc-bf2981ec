@@ -16,11 +16,15 @@ function pickPhone(t: string) { const m = t.match(PHONE_RE); return m ? m[0].tri
 
 async function scrape(url: string, apiKey: string): Promise<string> {
   try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 20000);
     const r = await fetch(`${FIRECRAWL}/scrape`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url, formats: ['markdown'], onlyMainContent: false, waitFor: 800 }),
+      body: JSON.stringify({ url, formats: ['markdown'], onlyMainContent: false, waitFor: 0, timeout: 15000 }),
+      signal: ctrl.signal,
     });
+    clearTimeout(timer);
     if (!r.ok) return '';
     const j = await r.json();
     return j?.data?.markdown ?? j?.markdown ?? '';
