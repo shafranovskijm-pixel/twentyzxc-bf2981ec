@@ -15,7 +15,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database, Upload, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database, Upload, FileSpreadsheet, Globe, Wand2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportLeadsDialog from "./sales/ImportLeadsDialog";
@@ -113,6 +113,13 @@ export default function SalesTab() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
+  const [findRegion, setFindRegion] = useState("Москва");
+  const [findType, setFindType] = useState("учебный центр ДПО");
+  const [findExtra, setFindExtra] = useState("");
+  const [findLimit, setFindLimit] = useState(10);
+  const [findLoading, setFindLoading] = useState(false);
+  const [enrichBulk, setEnrichBulk] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -436,6 +443,70 @@ export default function SalesTab() {
     setTplOpen(false);
   }
 
+  async function findLeadsWeb() {
+    setFindLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("find-education-leads", {
+        body: { region: findRegion, orgType: findType, extra: findExtra, limit: findLimit, enrich: true },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || "Ошибка поиска");
+      const found: any[] = data.leads ?? [];
+      if (!found.length) { toast.info("Ничего не найдено"); return; }
+      const userRes = await supabase.auth.getUser();
+      const user_id = userRes.data.user?.id;
+      if (!user_id) { toast.error("Нет авторизации"); return; }
+      const rows = found
+        .map(r => ({
+          user_id,
+          name: r.name,
+          website: r.website,
+          email: r.email,
+          phone: r.phone,
+          city: r.city,
+          region: r.region,
+          source: r.source,
+          category: r.category,
+          status: "new",
+        }))
+        .map(r => ({ ...r, dedup_hash: makeDedupHash(r as any) }))
+        .filter(r => !existingHashes.has(r.dedup_hash!));
+      if (!rows.length) { toast.info("Все эти организации уже есть в лидах"); setFindOpen(false); return; }
+      const { error: insErr } = await supabase.from("sales_leads").insert(rows as any);
+      if (insErr) throw insErr;
+      toast.success(`Добавлено ${rows.length} лидов из поиска`);
+      setFindOpen(false);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка");
+    } finally { setFindLoading(false); }
+  }
+
+  async function enrichSelectedSites() {
+    const targets = leads.filter(l => selected.has(l.id) && l.website && (!l.email || !l.phone));
+    if (!targets.length) return toast.info("Выберите лиды с сайтом, у которых нет email/телефона");
+    setEnrichBulk(true);
+    let ok = 0;
+    for (const l of targets) {
+      try {
+        const { data } = await supabase.functions.invoke("enrich-lead", { body: { website: l.website } });
+        if (data?.success && (data.email || data.phone)) {
+          const patch: any = {};
+          if (!l.email && data.email) patch.email = data.email;
+          if (!l.phone && data.phone) patch.phone = data.phone;
+          if (Object.keys(patch).length) {
+            await supabase.from("sales_leads").update(patch).eq("id", l.id);
+            ok++;
+          }
+        }
+      } catch {}
+      await new Promise(r => setTimeout(r, 300));
+    }
+    setEnrichBulk(false);
+    toast.success(`Обогащено ${ok} из ${targets.length}`);
+    load();
+  }
+
   return (
     <div className="space-y-4 pb-24">
       <div className="flex flex-wrap items-center gap-2">
@@ -458,6 +529,13 @@ export default function SalesTab() {
         <Button variant="outline" onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Из договоров</Button>
         <Button variant="outline" onClick={() => setRegistryOpen(true)}>
           <Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора
+        </Button>
+        <Button variant="outline" onClick={() => setFindOpen(true)}>
+          <Globe className="h-4 w-4 mr-2" />Найти лиды (web)
+        </Button>
+        <Button variant="outline" onClick={enrichSelectedSites} disabled={enrichBulk || selected.size === 0}>
+          {enrichBulk ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+          Обогатить по сайту{selected.size > 0 ? ` (${selected.size})` : ""}
         </Button>
         <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
           {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
@@ -700,6 +778,49 @@ export default function SalesTab() {
         existingHashes={existingHashes}
         onImported={load}
       />
+
+      {/* Find leads via Firecrawl */}
+      <Dialog open={findOpen} onOpenChange={(o) => !findLoading && setFindOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Найти образовательные организации</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Через Firecrawl ищем учебные центры по региону и типу, забираем главную и страницу контактов,
+              вытаскиваем email и телефон. Дубликаты по email/сайту/имени пропускаются.
+            </p>
+            <div><Label>Регион / город</Label><Input value={findRegion} onChange={e => setFindRegion(e.target.value)} placeholder="Москва" /></div>
+            <div><Label>Тип организации</Label>
+              <Select value={findType} onValueChange={setFindType}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="учебный центр ДПО">Учебный центр ДПО</SelectItem>
+                  <SelectItem value="центр повышения квалификации">Повышение квалификации</SelectItem>
+                  <SelectItem value="центр профессиональной переподготовки">Профпереподготовка</SelectItem>
+                  <SelectItem value="автошкола">Автошкола</SelectItem>
+                  <SelectItem value="языковая школа">Языковая школа</SelectItem>
+                  <SelectItem value="детский развивающий центр">Детский центр</SelectItem>
+                  <SelectItem value="онлайн-школа">Онлайн-школа</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div><Label>Доп. ключевые слова</Label><Input value={findExtra} onChange={e => setFindExtra(e.target.value)} placeholder="например: охрана труда, медицина" /></div>
+            <div><Label>Сколько результатов</Label>
+              <Select value={String(findLimit)} onValueChange={v => setFindLimit(Number(v))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{[5, 10, 15, 20, 25].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">⏱ Поиск с парсингом контактов ~{Math.ceil(findLimit * 2)} сек.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setFindOpen(false)} disabled={findLoading}>Отмена</Button>
+            <Button onClick={findLeadsWeb} disabled={findLoading}>
+              {findLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Globe className="h-4 w-4 mr-2" />}
+              Найти
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Compose email dialog */}
       <Dialog open={!!composeLead} onOpenChange={(o) => !o && !sending && setComposeLead(null)}>
