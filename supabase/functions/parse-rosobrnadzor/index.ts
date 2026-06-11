@@ -79,7 +79,7 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
       Accept: "*/*",
     },
     body,
-    signal: AbortSignal.timeout(15000),
+    signal: AbortSignal.timeout(45000),
   });
   if (!r.ok) throw new Error(`registry ${r.status}`);
   const html = await r.text();
