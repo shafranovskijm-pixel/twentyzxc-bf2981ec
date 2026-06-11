@@ -83,7 +83,10 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
   });
   if (!r.ok) throw new Error(`registry ${r.status}`);
   const html = await r.text();
-  return parseRows(html);
+  const rows = parseRows(html);
+  console.log(`[search] params=${JSON.stringify(params)} status=${r.status} bytes=${html.length} rows=${rows.length}`);
+  if (!rows.length && html.length < 3000) console.log(`[search] body=${html.slice(0, 800)}`);
+  return rows;
 }
 
 async function fetchDetail(viewId: string): Promise<Record<string, string>> {
