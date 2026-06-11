@@ -292,6 +292,17 @@ export default function SalesTab() {
     load();
   }
 
+  async function deleteSchools() {
+    const targets = leads.filter(l => isNonTargetEducation(l.name));
+    if (!targets.length) return toast.info("Школ/детсадов в базе нет");
+    if (!confirm(`Удалить ${targets.length} записей (общеобразовательные школы, гимназии, лицеи, детсады)?`)) return;
+    const ids = targets.map(t => t.id);
+    const { error } = await supabase.from("sales_leads").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`Удалено ${targets.length}`);
+    load();
+  }
+
   async function sendEmail(lead: Lead) {
     if (!lead.email) return toast.error("У лида нет email");
     const personalSubject = subject.replace(/\{org\}/g, lead.name);
