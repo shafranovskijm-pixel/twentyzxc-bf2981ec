@@ -283,7 +283,7 @@ export default function SalesTab() {
     setRegistryLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("parse-rosobrnadzor", {
-        body: { mode: "recent", region: registryRegion, limit: registryLimit, withDetails: true, pages: 2 },
+        body: { mode: "recent", region: registryRegion === "all" ? "" : registryRegion, limit: registryLimit, withDetails: true, pages: 2 },
       });
       if (error) throw error;
       const results: any[] = data?.results ?? [];
