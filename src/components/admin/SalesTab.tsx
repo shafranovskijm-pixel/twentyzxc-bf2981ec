@@ -19,7 +19,7 @@ import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportLeadsDialog from "./sales/ImportLeadsDialog";
-import { makeDedupHash, toColdyCSV, downloadFile } from "./sales/lead-utils";
+import { makeDedupHash, toColdyCSV, downloadFile, isNonTargetEducation } from "./sales/lead-utils";
 
 type Lead = {
   id: string;
