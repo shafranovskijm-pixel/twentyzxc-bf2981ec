@@ -4,6 +4,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DADATA_KEY = Deno.env.get("DADATA_API_KEY");
+const DADATA_SECRET = Deno.env.get("DADATA_SECRET_KEY");
 
 interface ParseResult {
   inn: string;
@@ -25,18 +26,21 @@ interface ParseResult {
 
 async function fetchDadataById(inn: string) {
   if (!DADATA_KEY) return null;
+  console.log("[dadata] fetching", inn);
   try {
-    const ctrl = AbortSignal.timeout(8000);
+    const ctrl = AbortSignal.timeout(10000);
     const r = await fetch("https://suggestions.dadata.ru/suggestions/api/4_1/rs/findById/party", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
         Authorization: `Token ${DADATA_KEY}`,
+        ...(DADATA_SECRET ? { "X-Secret": DADATA_SECRET } : {}),
       },
       body: JSON.stringify({ query: inn, count: 1 }),
       signal: ctrl,
     });
+    console.log("[dadata] status", r.status);
     if (!r.ok) return null;
     const j = await r.json();
     return j?.suggestions?.[0] ?? null;
@@ -52,6 +56,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const inn = String(body?.inn ?? "").trim();
+    console.log("[parse] start", inn);
     if (!/^\d{10}$|^\d{12}$/.test(inn)) {
       return new Response(JSON.stringify({ error: "Bad INN" }), {
         status: 400,
@@ -61,11 +66,11 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Parallel: DaData (контакты/реквизиты) + локальный кэш реестра Рособрнадзора
-    const [dadataSug, cached] = await Promise.all([
-      fetchDadataById(inn),
-      supabase.from("rosobrnadzor_licenses").select("*").eq("inn", inn).maybeSingle(),
-    ]);
+    console.log("[parse] calling dadata + cache");
+    const dadataPromise = fetchDadataById(inn);
+    const cachePromise = supabase.from("rosobrnadzor_licenses").select("*").eq("inn", inn).maybeSingle();
+    const [dadataSug, cached] = await Promise.all([dadataPromise, cachePromise]);
+    console.log("[parse] got both", { dadata: !!dadataSug, cache: !!cached?.data });
 
     const dd = dadataSug?.data ?? null;
     const lic = cached.data ?? null;
