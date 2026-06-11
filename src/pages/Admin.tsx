@@ -933,6 +933,7 @@ const Admin = () => {
                   setActiveSection(section);
                 }}
               />}
+              {activeSection === "sales" && <SalesTab />}
               {activeSection === "contracts" && <ContractsTab onOpenClient={(name) => {
                 setClientsInitialName(name);
                 handleSectionChange("clients");
