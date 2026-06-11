@@ -1097,6 +1097,99 @@ export type Database = {
         }
         Relationships: []
       }
+      rosobrnadzor_licenses: {
+        Row: {
+          address: string | null
+          fetched_at: string
+          inn: string
+          license_date: string | null
+          license_number: string | null
+          license_status: string | null
+          org_name: string | null
+          raw_json: Json | null
+          registry_url: string | null
+        }
+        Insert: {
+          address?: string | null
+          fetched_at?: string
+          inn: string
+          license_date?: string | null
+          license_number?: string | null
+          license_status?: string | null
+          org_name?: string | null
+          raw_json?: Json | null
+          registry_url?: string | null
+        }
+        Update: {
+          address?: string | null
+          fetched_at?: string
+          inn?: string
+          license_date?: string | null
+          license_number?: string | null
+          license_status?: string | null
+          org_name?: string | null
+          raw_json?: Json | null
+          registry_url?: string | null
+        }
+        Relationships: []
+      }
+      sales_leads: {
+        Row: {
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          inn: string | null
+          last_email_sent_at: string | null
+          license_cache: Json | null
+          name: string
+          next_step: string | null
+          notes: string | null
+          phone: string | null
+          source: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          inn?: string | null
+          last_email_sent_at?: string | null
+          license_cache?: Json | null
+          name: string
+          next_step?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          inn?: string | null
+          last_email_sent_at?: string | null
+          license_cache?: Json | null
+          name?: string
+          next_step?: string | null
+          notes?: string | null
+          phone?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       sales_notes: {
         Row: {
           client_id: string | null
