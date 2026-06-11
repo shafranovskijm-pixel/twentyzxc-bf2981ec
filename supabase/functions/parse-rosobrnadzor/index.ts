@@ -67,18 +67,7 @@ function parseRows(html: string): LicenseRow[] {
   return rows;
 }
 
-async function getCookie(): Promise<string> {
-  const r = await fetch(`${REGISTRY_BASE}/rlic`, {
-    headers: { "User-Agent": UA, Accept: "text/html" },
-    redirect: "follow",
-    signal: AbortSignal.timeout(10000),
-  });
-  const c = r.headers.get("set-cookie") || "";
-  return c.split(/,(?=[A-Za-z0-9_\-]+=)/).map(x => x.split(";")[0]).join("; ");
-}
-
 async function searchRegistry(params: Record<string, string>): Promise<LicenseRow[]> {
-  const cookie = await getCookie();
   const body = new URLSearchParams(params).toString();
   const r = await fetch(`${REGISTRY_BASE}/search`, {
     method: "POST",
@@ -87,11 +76,10 @@ async function searchRegistry(params: Record<string, string>): Promise<LicenseRo
       "Content-Type": "application/x-www-form-urlencoded",
       "X-Requested-With": "XMLHttpRequest",
       Referer: `${REGISTRY_BASE}/rlic`,
-      Cookie: cookie,
       Accept: "*/*",
     },
     body,
-    signal: AbortSignal.timeout(20000),
+    signal: AbortSignal.timeout(15000),
   });
   if (!r.ok) throw new Error(`registry ${r.status}`);
   const html = await r.text();
@@ -162,7 +150,7 @@ Deno.serve(async (req) => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const rows = await searchRegistry({ eoName: query, page: "1" });
+      const rows = await searchRegistry({ eoName: query, p: "1" });
       // Выбираем «лучшую»: активную (Действующая) с самой свежей датой приказа
       const active = rows.filter(r => /действующ/i.test(r.status));
       const sorted = (active.length ? active : rows).sort((a, b) =>
@@ -219,9 +207,11 @@ Deno.serve(async (req) => {
       const since = body?.since ? String(body.since) : null; // 'YYYY-MM-DD'
       const all: LicenseRow[] = [];
       for (let p = 1; p <= pages; p++) {
-        const rows = await searchRegistry({ region, status: "1", page: String(p) });
-        if (!rows.length) break;
-        all.push(...rows);
+        try {
+          const rows = await searchRegistry({ region, status: "6", p: String(p) });
+          if (!rows.length) break;
+          all.push(...rows);
+        } catch (e) { console.error("search page", p, e); break; }
         if (all.length >= limit * 2) break;
         await new Promise(r => setTimeout(r, 250));
       }
