@@ -15,7 +15,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { Plus, Search, MoreVertical, Mail, RefreshCw, Pencil, Trash2, Download, FileEdit, Loader2, ExternalLink, Sparkles, Database } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 type Lead = {
@@ -76,6 +76,10 @@ export default function SalesTab() {
   const [sugOpen, setSugOpen] = useState(false);
   const [sugLoading, setSugLoading] = useState(false);
   const [innLookup, setInnLookup] = useState(false);
+  const [registryOpen, setRegistryOpen] = useState(false);
+  const [registryRegion, setRegistryRegion] = useState("77");
+  const [registryLimit, setRegistryLimit] = useState(10);
+  const [registryLoading, setRegistryLoading] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -275,6 +279,56 @@ export default function SalesTab() {
     load();
   }
 
+  async function importFromRegistry() {
+    setRegistryLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("parse-rosobrnadzor", {
+        body: { mode: "recent", region: registryRegion, limit: registryLimit, withDetails: true, pages: 2 },
+      });
+      if (error) throw error;
+      const results: any[] = data?.results ?? [];
+      if (!results.length) { toast.info("Реестр не вернул записей"); return; }
+      const userRes = await supabase.auth.getUser();
+      const user_id = userRes.data.user?.id;
+      if (!user_id) { toast.error("Нет авторизации"); return; }
+      const existingInns = new Set(leads.map(l => l.inn).filter(Boolean) as string[]);
+      const existingNames = new Set(leads.map(l => l.name));
+      const rows = results
+        .filter(r => (r.inn ? !existingInns.has(r.inn) : !existingNames.has(r.org_name)))
+        .map(r => ({
+          user_id,
+          name: r.org_name || "Без названия",
+          inn: r.inn || null,
+          email: r.email || null,
+          phone: r.phone || null,
+          contact_person: r.director || null,
+          source: `Реестр Рособрнадзора (рег. ${registryRegion})`,
+          status: "new",
+          notes: r.address ? `Адрес: ${r.address}` : null,
+          license_cache: {
+            found: true,
+            org_name: r.org_name,
+            license_number: r.reg_number,
+            license_date: r.order_date,
+            license_status: r.status,
+            address: r.address,
+            ogrn: r.ogrn,
+            registry_url: r.registry_url,
+          },
+        }));
+      if (!rows.length) { toast.info("Все эти организации уже есть в лидах"); setRegistryOpen(false); return; }
+      const { error: insErr } = await supabase.from("sales_leads").insert(rows as any);
+      if (insErr) throw insErr;
+      toast.success(`Добавлено ${rows.length} новых лидов из реестра`);
+      setRegistryOpen(false);
+      load();
+    } catch (e: any) {
+      toast.error(e?.message || "Ошибка загрузки из реестра");
+    } finally {
+      setRegistryLoading(false);
+    }
+  }
+
   function saveTemplate() {
     localStorage.setItem(LS_SUBJECT, subject);
     localStorage.setItem(LS_BODY, body);
@@ -297,6 +351,9 @@ export default function SalesTab() {
           </SelectContent>
         </Select>
         <Button variant="outline" onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Импорт из договоров</Button>
+        <Button variant="outline" onClick={() => setRegistryOpen(true)}>
+          <Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора
+        </Button>
         <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
           {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Синхр. все реквизиты
@@ -468,6 +525,59 @@ export default function SalesTab() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setSubject(DEFAULT_SUBJECT); setBody(DEFAULT_BODY); }}>Сбросить</Button>
             <Button onClick={saveTemplate}>Сохранить</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Registry import dialog */}
+      <Dialog open={registryOpen} onOpenChange={(o) => !registryLoading && setRegistryOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Свежие лицензии из реестра</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Загружу последние выданные лицензии на образовательную деятельность из реестра
+              <b> islod.obrnadzor.gov.ru</b> и сразу добавлю их в лиды с парсингом ИНН, адреса и контактов из карточки.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Регион</Label>
+                <Select value={registryRegion} onValueChange={setRegistryRegion}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="77">77 — Москва</SelectItem>
+                    <SelectItem value="78">78 — Санкт-Петербург</SelectItem>
+                    <SelectItem value="50">50 — Московская обл.</SelectItem>
+                    <SelectItem value="47">47 — Ленинградская обл.</SelectItem>
+                    <SelectItem value="66">66 — Свердловская обл.</SelectItem>
+                    <SelectItem value="23">23 — Краснодарский край</SelectItem>
+                    <SelectItem value="16">16 — Татарстан</SelectItem>
+                    <SelectItem value="74">74 — Челябинская обл.</SelectItem>
+                    <SelectItem value="">Все регионы</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Сколько загрузить</Label>
+                <Select value={String(registryLimit)} onValueChange={(v) => setRegistryLimit(Number(v))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[5, 10, 20, 30, 50].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              ⏱ Парсинг ~{Math.ceil(registryLimit * 0.5)} сек. (по 200мс на карточку). Дубликаты по ИНН/названию пропускаются.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRegistryOpen(false)} disabled={registryLoading}>Отмена</Button>
+            <Button onClick={importFromRegistry} disabled={registryLoading}>
+              {registryLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Database className="h-4 w-4 mr-2" />}
+              Загрузить {registryLimit}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
