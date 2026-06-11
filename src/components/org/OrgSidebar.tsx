@@ -4,10 +4,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { LogOut, CalendarDays, FileText, Users, FolderArchive, MessageSquare, User } from "lucide-react";
+import { LogOut, CalendarDays, FileText, Users, FolderArchive, MessageSquare, User, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
+  { id: "sales", label: "Продажи", icon: TrendingUp },
   { id: "contracts", label: "Договоры", icon: FileText },
   { id: "planner", label: "Планер", icon: CalendarDays },
   { id: "clients", label: "Клиенты", icon: Users },

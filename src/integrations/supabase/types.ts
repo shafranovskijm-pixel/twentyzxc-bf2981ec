@@ -721,6 +721,62 @@ export type Database = {
           },
         ]
       }
+      org_leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          last_email_sent_at: string | null
+          name: string
+          next_step: string | null
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          source: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_email_sent_at?: string | null
+          name: string
+          next_step?: string | null
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          last_email_sent_at?: string | null
+          name?: string
+          next_step?: string | null
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_tasks: {
         Row: {
           created_at: string
