@@ -14,6 +14,7 @@ import OrgClientsTab from "@/components/org/OrgClientsTab";
 import OrgPlannerTab from "@/components/org/OrgPlannerTab";
 import OrgFilesTab from "@/components/org/OrgFilesTab";
 import OrgLandingEditor from "@/components/org/OrgLandingEditor";
+import OrgSalesTab from "@/components/org/OrgSalesTab";
 import InlineAIChat from "@/components/admin/InlineAIChat";
 import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +26,7 @@ const OrgPanel = () => {
   const [searchParams] = useSearchParams();
   const overrideOrgId = searchParams.get("id");
   const [showLogin, setShowLogin] = useState(false);
-  const [activeSection, setActiveSection] = useState("contracts");
+  const [activeSection, setActiveSection] = useState("sales");
   const [isDark, setIsDark] = useState(() => localStorage.getItem("org-theme") !== "light");
   const queryClient = useQueryClient();
 
@@ -76,6 +77,7 @@ const OrgPanel = () => {
   }
 
   const sectionTitles: Record<string, string> = {
+    sales: "Продажи",
     contracts: "Договоры",
     planner: "Планер",
     clients: "Клиенты",
@@ -126,6 +128,7 @@ const OrgPanel = () => {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
+                {activeSection === "sales" && orgId && <OrgSalesTab organizationId={orgId} />}
                 {activeSection === "contracts" && orgId && <OrgContractsTab organizationId={orgId} />}
                 {activeSection === "planner" && orgId && <OrgPlannerTab organizationId={orgId} />}
                 {activeSection === "clients" && orgId && <OrgClientsTab organizationId={orgId} />}
