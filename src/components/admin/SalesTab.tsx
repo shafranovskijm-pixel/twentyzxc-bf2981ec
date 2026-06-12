@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import ImportLeadsDialog from "./sales/ImportLeadsDialog";
 import { makeDedupHash, toColdyCSV, downloadFile, isNonTargetEducation } from "./sales/lead-utils";
+import CampaignDialog from "./sales/CampaignDialog";
 
 type Lead = {
   id: string;
@@ -120,6 +121,7 @@ export default function SalesTab() {
   const [findLimit, setFindLimit] = useState(10);
   const [findLoading, setFindLoading] = useState(false);
   const [enrichBulk, setEnrichBulk] = useState(false);
+  const [campaignOpen, setCampaignOpen] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -539,34 +541,40 @@ export default function SalesTab() {
             {FILTER_PRESETS.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button variant="outline" onClick={() => setImportOpen(true)}>
-          <FileSpreadsheet className="h-4 w-4 mr-2" />Импорт XLSX/CSV
-        </Button>
-        <Button variant="outline" onClick={exportColdy}>
-          <Download className="h-4 w-4 mr-2" />Экспорт для Coldy{selected.size > 0 ? ` (${selected.size})` : ""}
-        </Button>
-        <Button variant="outline" onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Из договоров</Button>
-        <Button variant="outline" onClick={() => setRegistryOpen(true)}>
-          <Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора
-        </Button>
-        <Button variant="outline" onClick={() => setFindOpen(true)}>
-          <Globe className="h-4 w-4 mr-2" />Найти лиды (web)
-        </Button>
-        <Button variant="outline" onClick={enrichSelectedSites} disabled={enrichBulk}>
-          {enrichBulk ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
-          Спарсить email с сайтов{selected.size > 0 ? ` (${selected.size})` : " (все)"}
-        </Button>
-        <Button variant="outline" onClick={syncAllReq} disabled={syncAll}>
-          {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Обогатить (ИНН)
+        <Button onClick={() => setCampaignOpen(true)} className="bg-amber-500 hover:bg-amber-500/90 text-black font-semibold">
+          <Mail className="h-4 w-4 mr-2" />Рассылка
         </Button>
         <Button variant="outline" onClick={() => setTplOpen(true)}><FileEdit className="h-4 w-4 mr-2" />Шаблон письма</Button>
-        <Button variant="outline" onClick={deleteSchools} className="text-rose-300 hover:text-rose-200">
-          <Trash2 className="h-4 w-4 mr-2" />Убрать школы/детсады
-        </Button>
         <Button onClick={() => { setNameQuery(""); setSuggestions([]); setEditing({ id: "", name: "", inn: "", website: "", email: "", phone: "", contact_person: "", source: "", status: "new", next_step: "", notes: "", license_cache: null, last_email_sent_at: null }); }}>
           <Plus className="h-4 w-4 mr-2" />Добавить
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline"><MoreVertical className="h-4 w-4 mr-2" />Ещё</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem onClick={() => setImportOpen(true)}><FileSpreadsheet className="h-4 w-4 mr-2" />Импорт XLSX/CSV</DropdownMenuItem>
+            <DropdownMenuItem onClick={importFromContracts}><Download className="h-4 w-4 mr-2" />Из договоров</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setRegistryOpen(true)}><Database className="h-4 w-4 mr-2" />Из реестра Рособрнадзора</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setFindOpen(true)}><Globe className="h-4 w-4 mr-2" />Найти лиды (web)</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={enrichSelectedSites} disabled={enrichBulk}>
+              {enrichBulk ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wand2 className="h-4 w-4 mr-2" />}
+              Спарсить email с сайтов{selected.size > 0 ? ` (${selected.size})` : " (все)"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={syncAllReq} disabled={syncAll}>
+              {syncAll ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+              Обогатить (ИНН)
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={exportColdy}>
+              <Download className="h-4 w-4 mr-2" />Экспорт для Coldy{selected.size > 0 ? ` (${selected.size})` : ""}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={deleteSchools} className="text-rose-300 focus:text-rose-200">
+              <Trash2 className="h-4 w-4 mr-2" />Убрать школы/детсады
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="rounded-lg border border-border/60 overflow-hidden">
