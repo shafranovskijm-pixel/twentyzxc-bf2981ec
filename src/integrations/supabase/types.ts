@@ -246,6 +246,62 @@ export type Database = {
         }
         Relationships: []
       }
+      email_campaign_queue: {
+        Row: {
+          attempts: number
+          body_html: string
+          created_at: string
+          created_by: string
+          email: string
+          error: string | null
+          id: string
+          lead_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          body_html: string
+          created_at?: string
+          created_by: string
+          email: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          body_html?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          error?: string | null
+          id?: string
+          lead_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_campaign_queue_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sales_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_documents: {
         Row: {
           client_inn: string | null
