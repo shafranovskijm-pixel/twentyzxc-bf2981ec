@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Loader2, Mail, Play, X, RefreshCw, AlertCircle, CheckCircle2, Clock, Eye, Pencil, Copy, FileDown, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Mail, Play, X, RefreshCw, AlertCircle, CheckCircle2, Clock, Eye, Pencil, Copy, FileDown, FileText, ChevronDown, ChevronUp, Stethoscope } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -49,6 +49,8 @@ export default function CampaignDialog({
   const [tplOpen, setTplOpen] = useState(true);
   const [previewLead, setPreviewLead] = useState<LeadLite | null>(null);
   const [reportRange, setReportRange] = useState<"today" | "7d" | "30d">("today");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<any>(null);
 
   async function load() {
     setLoading(true);
@@ -59,6 +61,29 @@ export default function CampaignDialog({
       .limit(500);
     setItems((data as any) ?? []);
     setLoading(false);
+  }
+
+  async function runSmtpTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("smtp-diagnose", {
+        body: { to: "24@24zxc.ru" },
+      });
+      if (error) {
+        setTestResult({ success: false, error: error.message, steps: [] });
+        toast.error("Тест провалился — см. детали ниже");
+      } else {
+        setTestResult(data);
+        if (data?.success) toast.success("Тест пройден — письмо отправлено на 24@24zxc.ru");
+        else toast.error("Тест провалился — см. детали ниже");
+      }
+    } catch (e: any) {
+      setTestResult({ success: false, error: String(e?.message || e), steps: [] });
+      toast.error("Ошибка вызова функции");
+    } finally {
+      setTesting(false);
+    }
   }
 
   useEffect(() => {
