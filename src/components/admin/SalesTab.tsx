@@ -879,6 +879,8 @@ export default function SalesTab() {
         subject={subject}
         body={body}
         selectedLeadIds={Array.from(selected)}
+        leads={leads.map(l => ({ id: l.id, name: l.name, email: l.email, contact_person: l.contact_person, status: l.status }))}
+        onEditTemplate={() => setTplOpen(true)}
       />
     </div>
   );
