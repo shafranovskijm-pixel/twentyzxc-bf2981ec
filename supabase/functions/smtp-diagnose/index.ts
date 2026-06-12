@@ -54,17 +54,17 @@ serve(async (req) => {
   };
 
   let conn: Deno.TlsConn | null = null;
+  let outboundIp = "unknown";
+  let attemptTimeMsk = "";
   try {
     const { to } = await req.json().catch(() => ({ to: "" }));
     if (!to) return new Response(JSON.stringify({ error: "to required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    // Get outbound IP (the one timeweb sees)
-    let outboundIp = "unknown";
     try {
       const ipResp = await fetch("https://api.ipify.org?format=json");
       outboundIp = (await ipResp.json()).ip || "unknown";
     } catch {}
-    const attemptTimeMsk = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" });
+    attemptTimeMsk = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" });
 
     const host = Deno.env.get("SMTP_HOST")!;
     const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
