@@ -56,8 +56,13 @@ serve(async (req) => {
   let conn: Deno.TlsConn | null = null;
   let outboundIp = "unknown";
   let attemptTimeMsk = "";
+  let host = "";
+  let port = 465;
+  let fromEmail = "";
+  let toAddr = "";
   try {
     const { to } = await req.json().catch(() => ({ to: "" }));
+    toAddr = to;
     if (!to) return new Response(JSON.stringify({ error: "to required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     try {
@@ -66,12 +71,12 @@ serve(async (req) => {
     } catch {}
     attemptTimeMsk = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" });
 
-    const host = Deno.env.get("SMTP_HOST")!;
-    const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
+    host = Deno.env.get("SMTP_HOST")!;
+    port = parseInt(Deno.env.get("SMTP_PORT") || "465");
     const user = Deno.env.get("SMTP_USER")!;
     const pass = Deno.env.get("SMTP_PASS")!;
     const fromRaw = Deno.env.get("SMTP_FROM") || user;
-    const fromEmail = (fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw).trim();
+    fromEmail = (fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw).trim();
 
     conn = await track("connect_tls", () => Deno.connectTls({ hostname: host, port }), 10_000);
     const greeting = await track("greeting", () => readResp(conn!, 10_000), 10_000);
@@ -115,19 +120,86 @@ serve(async (req) => {
       greeting,
       ehlo_first_line: ehlo.split("\r\n")[0],
       steps,
+      support_message: buildSupportMessage({ ok: true, host, port, fromEmail, to, outboundIp, attemptTimeMsk, steps }),
     }, null, 2), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
+    const errMsg = String((e as Error).message || e);
     return new Response(JSON.stringify({
       success: false,
-      error: String((e as Error).message || e),
+      error: errMsg,
       outbound_ip: outboundIp,
       attempt_time_msk: attemptTimeMsk,
       steps,
       hint: steps.length > 0
         ? `Зависло на шаге "${steps[steps.length - 1].name}" (${steps[steps.length - 1].ms}ms). Проверь у timeweb лимиты/блокировку SMTP.`
         : "Не удалось установить соединение с SMTP.",
+      support_message: buildSupportMessage({ ok: false, host, port, fromEmail, to: toAddr, outboundIp, attemptTimeMsk, steps, errMsg }),
     }, null, 2), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } finally {
     try { conn?.close(); } catch {}
   }
 });
+
+function buildSupportMessage(p: {
+  ok: boolean;
+  host: string;
+  port: number;
+  fromEmail: string;
+  to: string;
+  outboundIp: string;
+  attemptTimeMsk: string;
+  steps: Step[];
+  errMsg?: string;
+}): string {
+  const failed = p.steps.find((s) => !s.ok);
+  const stepsList = p.steps
+    .map((s) => `  ${s.ok ? "✓" : "✗"} ${s.name} — ${s.ms}ms${s.detail ? ` (${s.detail})` : ""}`)
+    .join("\n");
+
+  if (p.ok) {
+    return [
+      `Здравствуйте!`,
+      ``,
+      `Тестовая отправка через SMTP прошла успешно.`,
+      ``,
+      `Параметры подключения:`,
+      `• SMTP-сервер: ${p.host}:${p.port} (implicit TLS)`,
+      `• Отправитель: ${p.fromEmail}`,
+      `• Получатель: ${p.to}`,
+      `• IP нашего сервера: ${p.outboundIp}`,
+      `• Время попытки (МСК): ${p.attemptTimeMsk}`,
+      ``,
+      `Шаги SMTP-сессии:`,
+      stepsList,
+    ].join("\n");
+  }
+
+  return [
+    `Здравствуйте!`,
+    ``,
+    `Прошу проверить логи по неудачной попытке отправки письма через SMTP — соединение зависает на стороне вашего сервера.`,
+    ``,
+    `Данные для диагностики:`,
+    `• IP нашего сервера (исходящий): ${p.outboundIp}`,
+    `• Время попытки (МСК): ${p.attemptTimeMsk}`,
+    `• SMTP-сервер: ${p.host}:${p.port} (implicit TLS / SSL)`,
+    `• Логин/отправитель: ${p.fromEmail}`,
+    `• Получатель: ${p.to || "—"}`,
+    ``,
+    `Шаги SMTP-сессии:`,
+    stepsList,
+    ``,
+    `Проблема: ${failed ? `сессия обрывается на шаге "${failed.name}" через ${failed.ms}ms` : "соединение не устанавливается"}.`,
+    `Ошибка: ${p.errMsg || failed?.detail || "—"}`,
+    ``,
+    `TCP+TLS-соединение и приветствие 220 проходят успешно, но дальше сервер не отвечает в течение таймаута. Похоже на срабатывание антиспам-фильтра/greylisting или лимит на стороне SMTP.`,
+    ``,
+    `Прошу:`,
+    `1. Проверить логи SMTP по указанному IP и времени.`,
+    `2. Сообщить причину обрыва сессии.`,
+    `3. При необходимости — добавить наш IP в белый список или снять ограничения для внешних серверов.`,
+    `4. Подтвердить актуальные лимиты (писем/час, соединений/минуту) для аккаунта ${p.fromEmail}.`,
+    ``,
+    `Спасибо!`,
+  ].join("\n");
+}
