@@ -91,12 +91,27 @@ serve(async (req) => {
 
     // Filter already-queued
     const { data: existing } = await admin.from("email_campaign_queue")
-      .select("lead_id,scheduled_at,status")
+      .select("lead_id,email,scheduled_at,status")
       .eq("created_by", user.id)
       .in("status", ["queued", "sending", "sent"]);
-    const alreadyEmailed = new Set((existing ?? []).map(r => r.lead_id));
-    const candidates = leads.filter(l => l.email && !alreadyEmailed.has(l.id));
-    if (!candidates.length) return new Response(JSON.stringify({ error: "Все эти лиды уже в очереди или получили письмо" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const alreadyLeadIds = new Set((existing ?? []).map(r => r.lead_id));
+    const alreadyEmails = new Set((existing ?? []).map(r => (r.email || "").toLowerCase()));
+
+    // Hard dedup: by lead_id, by normalized email, and within the current batch
+    const seenEmails = new Set<string>();
+    const candidates: typeof leads = [];
+    let skippedDup = 0;
+    for (const l of leads) {
+      const em = (l.email || "").toLowerCase().trim();
+      if (!em) continue;
+      if (alreadyLeadIds.has(l.id) || alreadyEmails.has(em) || seenEmails.has(em)) {
+        skippedDup++;
+        continue;
+      }
+      seenEmails.add(em);
+      candidates.push(l);
+    }
+    if (!candidates.length) return new Response(JSON.stringify({ error: "Все эти лиды уже в очереди или получили письмо", skipped_duplicates: skippedDup }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     // Count current usage per day from existing queue (queued + sent today and future)
     const perDayUsage = new Map<string, number>();
@@ -123,12 +138,25 @@ serve(async (req) => {
       };
     });
 
-    const { error: insErr } = await admin.from("email_campaign_queue").insert(rows);
-    if (insErr) throw insErr;
+    // Insert one-by-one so that a unique-index race (duplicate email) skips that row
+    // instead of aborting the whole batch.
+    let queued = 0;
+    let raceSkipped = 0;
+    for (const row of rows) {
+      const { error: insErr } = await admin.from("email_campaign_queue").insert(row);
+      if (insErr) {
+        // 23505 = unique_violation (duplicate email already in queue/sent)
+        if ((insErr as any).code === "23505") { raceSkipped++; continue; }
+        throw insErr;
+      }
+      queued++;
+    }
+    if (!queued) return new Response(JSON.stringify({ error: "Все адреса уже в очереди", skipped_duplicates: skippedDup + raceSkipped }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     return new Response(JSON.stringify({
       success: true,
-      queued: rows.length,
+      queued,
+      skipped_duplicates: skippedDup + raceSkipped,
       first_at: rows[0].scheduled_at,
       last_at: rows[rows.length - 1].scheduled_at,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
