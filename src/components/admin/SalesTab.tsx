@@ -872,6 +872,14 @@ export default function SalesTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <CampaignDialog
+        open={campaignOpen}
+        onOpenChange={setCampaignOpen}
+        subject={subject}
+        body={body}
+        selectedLeadIds={Array.from(selected)}
+      />
     </div>
   );
 }
