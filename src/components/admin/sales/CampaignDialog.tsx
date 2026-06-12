@@ -411,6 +411,33 @@ export default function CampaignDialog({
                 Сервер: {testResult.smtp.host}:{testResult.smtp.port} · от {testResult.smtp.user}
               </div>
             )}
+            {(testResult.outbound_ip || testResult.attempt_time_msk) && (
+              <div className="mt-1 text-muted-foreground">
+                IP: <span className="font-mono">{testResult.outbound_ip ?? "—"}</span>
+                {testResult.attempt_time_msk ? <> · Время (МСК): <span className="font-mono">{testResult.attempt_time_msk}</span></> : null}
+              </div>
+            )}
+            {testResult.support_message && (
+              <div className="mt-3 border-t border-border/40 pt-2">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-medium text-foreground">Готовое письмо в техподдержку timeweb</div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => {
+                      navigator.clipboard.writeText(testResult.support_message);
+                      toast.success("Письмо скопировано в буфер");
+                    }}
+                  >
+                    <Copy className="h-3 w-3 mr-1" /> Скопировать
+                  </Button>
+                </div>
+                <pre className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed bg-background/60 rounded p-2 max-h-64 overflow-y-auto">
+                  {testResult.support_message}
+                </pre>
+              </div>
+            )}
           </div>
         )}
 
