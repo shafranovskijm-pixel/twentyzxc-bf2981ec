@@ -114,7 +114,7 @@ serve(async (req) => {
       hint: steps.length > 0
         ? `Зависло на шаге "${steps[steps.length - 1].name}" (${steps[steps.length - 1].ms}ms). Проверь у timeweb лимиты/блокировку SMTP.`
         : "Не удалось установить соединение с SMTP.",
-    }, null, 2), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }, null, 2), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } finally {
     try { conn?.close(); } catch {}
   }
