@@ -58,6 +58,14 @@ serve(async (req) => {
     const { to } = await req.json().catch(() => ({ to: "" }));
     if (!to) return new Response(JSON.stringify({ error: "to required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Get outbound IP (the one timeweb sees)
+    let outboundIp = "unknown";
+    try {
+      const ipResp = await fetch("https://api.ipify.org?format=json");
+      outboundIp = (await ipResp.json()).ip || "unknown";
+    } catch {}
+    const attemptTimeMsk = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" });
+
     const host = Deno.env.get("SMTP_HOST")!;
     const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
     const user = Deno.env.get("SMTP_USER")!;
@@ -101,6 +109,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       to,
+      outbound_ip: outboundIp,
+      attempt_time_msk: attemptTimeMsk,
       smtp: { host, port, user: fromEmail },
       greeting,
       ehlo_first_line: ehlo.split("\r\n")[0],
@@ -110,6 +120,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: false,
       error: String((e as Error).message || e),
+      outbound_ip: outboundIp,
+      attempt_time_msk: attemptTimeMsk,
       steps,
       hint: steps.length > 0
         ? `Зависло на шаге "${steps[steps.length - 1].name}" (${steps[steps.length - 1].ms}ms). Проверь у timeweb лимиты/блокировку SMTP.`
