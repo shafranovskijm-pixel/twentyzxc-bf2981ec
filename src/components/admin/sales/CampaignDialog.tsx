@@ -377,7 +377,42 @@ export default function CampaignDialog({
             <Play className="h-4 w-4 mr-2" />
             Добавить выбранных{selectedLeadIds.length > 0 ? ` (${selectedLeadIds.length})` : ""}
           </Button>
+          <Button variant="outline" onClick={runSmtpTest} disabled={testing} className="ml-auto">
+            {testing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Stethoscope className="h-4 w-4 mr-2" />}
+            Тест SMTP → 24@24zxc.ru
+          </Button>
         </div>
+
+        {testResult && (
+          <div className={`mt-2 rounded-lg border p-3 text-xs ${testResult.success ? "border-emerald-500/30 bg-emerald-500/5" : "border-rose-500/30 bg-rose-500/5"}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-medium text-sm flex items-center gap-2">
+                {testResult.success ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <AlertCircle className="h-4 w-4 text-rose-400" />}
+                {testResult.success ? "SMTP работает — письмо принято сервером" : "SMTP-ошибка"}
+              </div>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setTestResult(null)}><X className="h-3 w-3" /></Button>
+            </div>
+            {testResult.error && <div className="text-rose-300 mb-2 break-words">{testResult.error}</div>}
+            {testResult.hint && <div className="text-amber-300 mb-2">{testResult.hint}</div>}
+            {Array.isArray(testResult.steps) && testResult.steps.length > 0 && (
+              <div className="space-y-1">
+                {testResult.steps.map((s: any, i: number) => (
+                  <div key={i} className="flex items-center gap-2 font-mono">
+                    {s.ok ? <CheckCircle2 className="h-3 w-3 text-emerald-400 shrink-0" /> : <AlertCircle className="h-3 w-3 text-rose-400 shrink-0" />}
+                    <span className="w-32 shrink-0">{s.name}</span>
+                    <span className="w-16 text-muted-foreground tabular-nums">{s.ms} ms</span>
+                    {s.detail && <span className="text-rose-300 truncate">{s.detail}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+            {testResult.smtp && (
+              <div className="mt-2 text-muted-foreground">
+                Сервер: {testResult.smtp.host}:{testResult.smtp.port} · от {testResult.smtp.user}
+              </div>
+            )}
+          </div>
+        )}
 
         <Tabs defaultValue="today" className="flex-1 flex flex-col min-h-0 mt-2">
           <TabsList>
