@@ -26,6 +26,7 @@ import TzTab from "@/components/admin/TzTab";
 import NmoTab from "@/components/admin/NmoTab";
 import FrdoTab from "@/components/admin/FrdoTab";
 import SalesTab from "@/components/admin/SalesTab";
+import ProposalsTab from "@/components/admin/ProposalsTab";
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
 import InlineAIChat from "@/components/admin/InlineAIChat";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight, Menu } from "lucide-react";
@@ -360,6 +361,7 @@ const Admin = () => {
 
   const sectionTitles: Record<string, string> = {
     sales: "Продажи",
+    proposals: "Коммерческие предложения",
     seo: "SEO-настройки",
     contacts: "Контакты",
     promotions: "Акции",
