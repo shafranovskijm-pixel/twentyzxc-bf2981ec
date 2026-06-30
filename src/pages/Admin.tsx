@@ -936,6 +936,7 @@ const Admin = () => {
                 }}
               />}
               {activeSection === "sales" && <SalesTab />}
+              {activeSection === "proposals" && <ProposalsTab />}
               {activeSection === "contracts" && <ContractsTab onOpenClient={(name) => {
                 setClientsInitialName(name);
                 handleSectionChange("clients");
