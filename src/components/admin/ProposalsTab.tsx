@@ -223,6 +223,9 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           price: Number(it.price), qty: Number(it.qty), sort_order: it.sort_order, included: it.included,
         })));
       } else {
+        // default valid until = today + 30 days (YYYY-MM-DD)
+        const d = new Date(Date.now() + 30 * 86400000);
+        setValidUntil(d.toISOString().slice(0, 10));
         // pre-fill with default services
         setItems(cat.filter(c => c.is_default).map((c, i) => ({
           service_key: c.key, title: c.title, description: c.description, price: Number(c.default_price),
