@@ -1120,6 +1120,161 @@ export type Database = {
         }
         Relationships: []
       }
+      proposal_counters: {
+        Row: {
+          last_number: number
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          year: number
+        }
+        Update: {
+          last_number?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      proposal_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          included: boolean
+          price: number
+          proposal_id: string
+          qty: number
+          service_key: string | null
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          included?: boolean
+          price?: number
+          proposal_id: string
+          qty?: number
+          service_key?: string | null
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          included?: boolean
+          price?: number
+          proposal_id?: string
+          qty?: number
+          service_key?: string | null
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      proposal_services_catalog: {
+        Row: {
+          category: string | null
+          created_at: string
+          default_price: number
+          description: string | null
+          id: string
+          is_default: boolean
+          key: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          default_price?: number
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          key: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          default_price?: number
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          key?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      proposals: {
+        Row: {
+          client_email: string | null
+          client_name: string | null
+          client_org: string | null
+          client_phone: string | null
+          created_at: string
+          created_by: string | null
+          discount_percent: number
+          footer_text: string | null
+          id: string
+          intro_text: string | null
+          number: string | null
+          status: string
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_email?: string | null
+          client_name?: string | null
+          client_org?: string | null
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number
+          footer_text?: string | null
+          id?: string
+          intro_text?: string | null
+          number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string | null
+          client_org?: string | null
+          client_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          discount_percent?: number
+          footer_text?: string | null
+          id?: string
+          intro_text?: string | null
+          number?: string | null
+          status?: string
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           content: string
@@ -1661,6 +1816,7 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      next_proposal_number: { Args: never; Returns: string }
       next_tz_number: { Args: never; Returns: string }
     }
     Enums: {
