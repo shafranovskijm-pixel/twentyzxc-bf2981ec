@@ -60,7 +60,7 @@ export function renderProposalHtml(data: ProposalRenderData): string {
     .join("");
 
   const contactName = data.contactName || "Шафрановский Максим";
-  const contactPhone = data.contactPhone || "+7 (924) 270-72-72";
+  const contactPhone = data.contactPhone || "+7 (914) 721-34-24";
   const contactEmail = data.contactEmail || "24@24zxc.ru";
   const contactSite = data.contactSite || "24zxc.ru";
 
@@ -175,6 +175,7 @@ export function renderProposalHtml(data: ProposalRenderData): string {
       <div class="name">${escapeHtml(contactName)}</div>
       <div>Директор</div>
       <div>24ZXC · Web & Licensing Studio</div>
+      <div style="margin-top:6px;font-size:11px;color:#8a8a93">НДС не облагается (НПД)</div>
     </div>
     <div class="contacts">
       <div><a href="tel:${escapeHtml(contactPhone)}">${escapeHtml(contactPhone)}</a></div>
