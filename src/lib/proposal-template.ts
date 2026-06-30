@@ -59,7 +59,7 @@ export function renderProposalHtml(data: ProposalRenderData): string {
       </tr>`)
     .join("");
 
-  const contactName = data.contactName || "Антон";
+  const contactName = data.contactName || "Шафрановский Максим";
   const contactPhone = data.contactPhone || "+7 (924) 270-72-72";
   const contactEmail = data.contactEmail || "24@24zxc.ru";
   const contactSite = data.contactSite || "24zxc.ru";
@@ -69,12 +69,13 @@ export function renderProposalHtml(data: ProposalRenderData): string {
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:#ffffff;color:#15171e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-  .page{width:794px;min-height:1123px;padding:56px 64px 72px;background:#fff;position:relative;overflow:hidden}
+  .page{width:794px;padding:56px 64px 56px;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}
+  main{flex:1}
   .corner{position:absolute;width:80px;height:80px;border-color:#d4be37;border-style:solid;border-width:0}
   .corner.tl{top:24px;left:24px;border-top-width:2px;border-left-width:2px}
   .corner.tr{top:24px;right:24px;border-top-width:2px;border-right-width:2px}
-  .corner.bl{bottom:24px;left:24px;border-bottom-width:2px;border-left-width:2px}
-  .corner.br{bottom:24px;right:24px;border-bottom-width:2px;border-right-width:2px}
+  .corner.bl{bottom:16px;left:24px;border-bottom-width:2px;border-left-width:2px;width:64px;height:64px}
+  .corner.br{bottom:16px;right:24px;border-bottom-width:2px;border-right-width:2px;width:64px;height:64px}
   .watermark{position:absolute;bottom:120px;right:60px;font-size:220px;font-weight:900;color:#d4be37;opacity:.05;letter-spacing:-12px;line-height:1;pointer-events:none}
   header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:1px solid #e7e3d3}
   .brand{display:flex;flex-direction:column;gap:4px}
@@ -111,19 +112,19 @@ export function renderProposalHtml(data: ProposalRenderData): string {
   .totals .row.grand{background:linear-gradient(90deg,#d4be37,#f5e9a8);color:#15171e;padding:14px 18px;border-radius:6px;margin-top:8px;font-size:16px;font-weight:700;letter-spacing:.3px}
   .totals .row.grand .v{font-size:20px}
   .validity{margin-top:24px;font-size:12px;color:#8a8a93;font-style:italic}
-  footer{margin-top:48px;padding-top:24px;border-top:1px solid #e7e3d3;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;color:#5a5a63;line-height:1.7}
+  footer{margin-top:32px;padding-top:24px;border-top:1px solid #e7e3d3;display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;color:#5a5a63;line-height:1.7}
   footer .sign .name{color:#15171e;font-weight:600;font-size:13px;margin-bottom:2px}
   footer .contacts{text-align:right}
   footer .contacts a{color:#15171e;text-decoration:none}
   footer .contacts .gold{color:#d4be37;font-weight:600}
-  .footer-note{margin-top:14px;font-size:11px;color:#a0a0a8;text-align:center;font-style:italic}
+  .footer-note{margin-top:10px;font-size:11px;color:#a0a0a8;text-align:center;font-style:italic}
 </style></head>
 <body>
 <div class="page">
   <span class="corner tl"></span><span class="corner tr"></span>
   <span class="corner bl"></span><span class="corner br"></span>
   <div class="watermark">24</div>
-
+<main>
   <header>
     <div class="brand">
       <div class="logo">24<span>ZXC</span></div>
@@ -168,11 +169,11 @@ export function renderProposalHtml(data: ProposalRenderData): string {
   </div></div>
 
   ${data.validUntil ? `<div class="validity">* Предложение действительно до ${escapeHtml(data.validUntil)}</div>` : ""}
-
+</main>
   <footer>
     <div class="sign">
       <div class="name">${escapeHtml(contactName)}</div>
-      <div>Менеджер по работе с клиентами</div>
+      <div>Директор</div>
       <div>24ZXC · Web & Licensing Studio</div>
     </div>
     <div class="contacts">
