@@ -54,8 +54,9 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     .filter((r) => r.bottom > r.top && r.bottom - r.top < bodyHeight * 0.8)
     .sort((a, b) => a.top - b.top);
 
+  const renderScale = bodyHeight > 14000 ? 1.25 : bodyHeight > 10000 ? 1.5 : 2;
   const canvas = await html2canvas(body, {
-    scale: 2,
+    scale: renderScale,
     useCORS: true,
     allowTaint: true,
     backgroundColor: "#ffffff",
