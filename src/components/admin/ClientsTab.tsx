@@ -502,7 +502,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               <div className="flex items-center gap-2">
                 {editingId && onNavigate && (
                   <>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "contract" }); }} title="Сделать договор">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("contracts", { clientName: name }); }} title="Создать договор">
                       <FileText className="w-4 h-4 mr-1" /> Договор
                     </Button>
                     <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "invoice" }); }} title="Сделать счёт">
