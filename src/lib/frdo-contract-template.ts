@@ -423,7 +423,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
       </div>
       <div class="section">
         <h3>2. Лицо УЦ, ответственное за организацию обработки персональных данных:</h3>
-        <p class="indent">${c.company_director_post} ${c.company_director_name}.</p>
+        <p class="indent">${c.company_short_name || c.company_name || "ИП Шафрановский Максим Михайлович"}.</p>
       </div>
       <div class="section">
         <h3>3. УЦ при выполнении поручения обязан:</h3>

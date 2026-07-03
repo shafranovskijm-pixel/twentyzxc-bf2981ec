@@ -162,30 +162,117 @@ export function clientIntroPhrase(cl: ClientRequisites, role = "Заказчик
 
 const baseStyles = `
   <style>
-    @page { size: A4; margin: 10mm; }
+    @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.4; color: #000; padding: 20mm; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 11pt; line-height: 1.55; color: #15171e;
+      padding: 24mm 18mm 18mm; background: #fff; position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+    .brand-strip {
+      position: absolute; top: 0; left: 0; right: 0; height: 14mm;
+      background: #15171e; color: #f5f5f0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18mm;
+    }
+    .brand-strip .logo { font-weight: 900; letter-spacing: 2px; font-size: 16pt; }
+    .brand-strip .logo span { color: #d4be37; }
+    .brand-strip .tag { font-size: 8pt; letter-spacing: 3px; text-transform: uppercase; color: #d4be37; }
     table { width: 100%; border-collapse: collapse; }
-    .services-table th, .services-table td { border: 1px solid #000; padding: 4px 8px; text-align: left; font-size: 11pt; }
-    .services-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
-    .services-table td.num { text-align: center; }
-    .services-table td.money { text-align: right; }
-    h1 { font-size: 14pt; text-align: center; margin: 20px 0; }
-    h2 { font-size: 12pt; text-align: center; margin: 15px 0; }
-    .header-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .section { margin: 15px 0; }
-    .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
-    .signature-block { width: 45%; position: relative; padding-bottom: 40px; }
-    .signature-line { border-bottom: 1px solid #000; margin-top: 70px; padding-bottom: 2px; position: relative; min-height: 0; }
+    .services-table { margin-top: 6px; font-size: 10.5pt; }
+    .services-table thead th {
+      background: #15171e; color: #f5f5f0; font-weight: 500;
+      font-size: 9pt; letter-spacing: 1.2px; text-transform: uppercase;
+      padding: 10px 8px; text-align: left; border: none;
+    }
+    .services-table thead th.num, .services-table thead th.qty,
+    .services-table thead th.price, .services-table thead th.sum { text-align: right; }
+    .services-table tbody td {
+      padding: 9px 8px; border-bottom: 1px solid #ede9d8; vertical-align: top;
+    }
+    .services-table td.num { text-align: center; color: #a0a0a8; font-weight: 600; }
+    .services-table td.money { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    .services-table tfoot td {
+      padding: 8px; border: none; font-size: 10.5pt;
+    }
+    .services-table tfoot tr.grand td {
+      background: linear-gradient(90deg,#d4be37,#f5e9a8);
+      color: #15171e; font-weight: 700; font-size: 12pt;
+      border-radius: 4px;
+    }
+    h1 {
+      font-size: 22pt; font-weight: 300; letter-spacing: -.3px;
+      text-align: center; margin: 8px 0 4px; color: #15171e;
+    }
+    h1::after {
+      content: ""; display: block; width: 60px; height: 3px;
+      background: #d4be37; margin: 10px auto 0; border-radius: 2px;
+    }
+    h2 {
+      font-size: 10pt; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 2px; color: #15171e;
+      margin: 18px 0 8px; padding-bottom: 4px;
+      border-bottom: 1px solid #d4be37;
+    }
+    .header-row {
+      display: flex; justify-content: space-between;
+      margin: 14px 0 18px; font-size: 10.5pt; color: #5a5a63;
+    }
+    .section { margin: 12px 0; }
+    .signatures { display: flex; justify-content: space-between; margin-top: 28px; gap: 24px; }
+    .signature-block {
+      width: 48%; position: relative; padding: 14px 16px 40px;
+      background: #faf8ef; border-left: 3px solid #d4be37; border-radius: 4px;
+      font-size: 10pt; line-height: 1.5;
+    }
+    .signature-block p { margin: 2px 0; }
+    .signature-block p strong { color: #15171e; }
+    .signature-line {
+      border-bottom: 1px solid #15171e; margin-top: 60px;
+      padding-bottom: 2px; position: relative; min-height: 0; font-size: 10pt;
+    }
     .signature-img { position: absolute; height: 48px; bottom: 2px; left: 80px; }
     .stamp-img { position: absolute; height: 100px; opacity: 0.9; bottom: -10px; left: 0; }
-    .bank-header { border: 2px solid #000; margin-bottom: 20px; }
-    .bank-header td { padding: 4px 8px; border: 1px solid #000; font-size: 10pt; }
-    p { margin: 5px 0; }
+    .bank-header {
+      margin-bottom: 18px; border: none;
+      border-top: 2px solid #15171e; border-bottom: 2px solid #d4be37;
+      font-size: 10pt;
+    }
+    .bank-header td {
+      padding: 8px 10px; border: 1px solid #ede9d8; font-size: 10pt;
+      background: #faf8ef;
+    }
+    .bank-header td strong { color: #15171e; }
+    p { margin: 4px 0; }
+    .kicker {
+      font-size: 9pt; letter-spacing: 3px; color: #d4be37;
+      text-transform: uppercase; text-align: center; margin-top: 6px; font-weight: 600;
+    }
+    .totals-box {
+      margin-top: 14px; display: flex; justify-content: flex-end;
+    }
+    .totals-box .inner { min-width: 60%; font-size: 11pt; }
+    .totals-box .row {
+      display: flex; justify-content: space-between;
+      padding: 6px 12px; color: #5a5a63;
+    }
+    .totals-box .row.grand {
+      background: linear-gradient(90deg,#d4be37,#f5e9a8);
+      color: #15171e; padding: 12px 16px; border-radius: 6px;
+      margin-top: 6px; font-size: 13pt; font-weight: 700;
+    }
     @media print {
-      body { padding: 10mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
+`;
+
+const brandStrip = `
+  <div class="brand-strip">
+    <div class="logo">24<span>ZXC</span></div>
+    <div class="tag">Web & Licensing Studio</div>
+  </div>
 `;
 
 function servicesTableHtml(services: ServiceItem[]): string {
@@ -194,12 +281,12 @@ function servicesTableHtml(services: ServiceItem[]): string {
     <table class="services-table">
       <thead>
         <tr>
-          <th style="width:5%">№</th>
+          <th class="num" style="width:5%">№</th>
           <th>Наименование</th>
-          <th style="width:8%">Кол-во</th>
-          <th style="width:12%">Ед.</th>
-          <th style="width:15%">Цена, руб.</th>
-          <th style="width:15%">Сумма, руб.</th>
+          <th class="qty" style="width:8%">Кол-во</th>
+          <th class="qty" style="width:10%">Ед.</th>
+          <th class="price" style="width:15%">Цена, ₽</th>
+          <th class="sum" style="width:17%">Сумма, ₽</th>
         </tr>
       </thead>
       <tbody>
@@ -207,8 +294,8 @@ function servicesTableHtml(services: ServiceItem[]): string {
           <tr>
             <td class="num">${i + 1}</td>
             <td>${s.name}</td>
-            <td class="num">${s.qty}</td>
-            <td class="num">шт.</td>
+            <td class="money">${s.qty}</td>
+            <td class="money">шт.</td>
             <td class="money">${formatMoney(s.price)}</td>
             <td class="money">${formatMoney(s.qty * s.price)}</td>
           </tr>
@@ -216,12 +303,16 @@ function servicesTableHtml(services: ServiceItem[]): string {
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="5" style="text-align:right;font-weight:bold;border:none;">Итого:</td>
-          <td class="money" style="font-weight:bold;">${formatMoney(total)}</td>
+          <td colspan="5" style="text-align:right;color:#5a5a63;">Подытог</td>
+          <td class="money">${formatMoney(total)} ₽</td>
         </tr>
         <tr>
-          <td colspan="5" style="text-align:right;border:none;">НДС не облагается (НПД)</td>
-          <td class="money" style="border-left:1px solid #000;">—</td>
+          <td colspan="5" style="text-align:right;color:#8a8a93;font-size:9.5pt;font-style:italic;">НДС не облагается (НПД)</td>
+          <td class="money" style="color:#8a8a93;">—</td>
+        </tr>
+        <tr class="grand">
+          <td colspan="5" style="text-align:right;">ИТОГО</td>
+          <td class="money">${formatMoney(total)} ₽</td>
         </tr>
       </tfoot>
     </table>
@@ -232,7 +323,9 @@ export function generateContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Договор №${num}</title>${baseStyles}</head><body>
-    <h1>ДОГОВОР №${num}</h1>
+    ${brandStrip}
+    <div class="kicker">Contract</div>
+    <h1>Договор №${num}</h1>
     <div class="header-row">
       <span>г. Владивосток</span>
       <span>${date}</span>
@@ -330,6 +423,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}</head><body>
+    ${brandStrip}
     <table class="bank-header">
       <tr>
         <td rowspan="2" style="width:55%;">
@@ -353,22 +447,24 @@ export function generateInvoiceHtml(data: DocumentData): string {
       </tr>
     </table>
 
-    <h1>СЧЁТ НА ОПЛАТУ №${num} от ${date}</h1>
+    <div class="kicker">Invoice</div>
+    <h1>Счёт на оплату №${num}</h1>
+    <div class="header-row"><span>от ${date}</span><span>г. Владивосток</span></div>
     <div class="section">
       <p><strong>Поставщик:</strong> ${c.company_name}, ИНН ${c.company_inn}${c.company_kpp ? `, КПП ${c.company_kpp}` : ""}, ${c.company_legal_address}, тел.: ${c.company_phone}</p>
       <p><strong>Покупатель:</strong> ${cl.name}, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, ${cl.address}</p>
     </div>
     ${servicesTableHtml(services)}
-    <div class="section" style="margin-top:20px;">
-      <p><strong>Итого к оплате: ${formatMoney(total)} руб.</strong></p>
-      <p style="font-size:10pt;color:#555;margin-top:5px;">НДС не облагается (НПД).</p>
-      ${data.discountAmount ? `
-        <p style="margin-top:12px;"><strong>Итого к оплате: ${formatMoney(total - data.discountAmount)} руб.</strong></p>
-        <p style="font-size:10pt;color:#555;margin-top:3px;">${data.discountDeadline ? `При оплате до ${data.discountDeadline} (скидка ${formatMoney(data.discountAmount)} руб.)` : `Скидка ${formatMoney(data.discountAmount)} руб.`}</p>
-      ` : ''}
-    </div>
+    ${data.discountAmount ? `
+      <div class="totals-box"><div class="inner">
+        <div class="row grand"><span>К оплате со скидкой</span><span>${formatMoney(total - data.discountAmount)} ₽</span></div>
+        <div class="row" style="justify-content:flex-end;font-size:10pt;color:#a07b00;">${data.discountDeadline ? `При оплате до ${data.discountDeadline} (скидка ${formatMoney(data.discountAmount)} ₽)` : `Скидка ${formatMoney(data.discountAmount)} ₽`}</div>
+      </div></div>
+    ` : ''}
     <div class="signatures">
       <div class="signature-block" data-no-break="true">
+        <p><strong>Получатель платежа</strong></p>
+        <p>${c.company_short_name || c.company_name}</p>
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
           <img class="signature-img" src="${window.location.origin}/images/signature.png" />
@@ -383,7 +479,10 @@ export function generateActHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}</head><body>
-    <h1>АКТ №${num}<br/>выполненных работ (оказанных услуг)</h1>
+    ${brandStrip}
+    <div class="kicker">Act of Services</div>
+    <h1>Акт №${num}</h1>
+    <p style="text-align:center;color:#5a5a63;font-size:10.5pt;margin-top:-4px;">выполненных работ (оказанных услуг)</p>
     <div class="header-row">
       <span>г. Владивосток</span>
       <span>${date}</span>
