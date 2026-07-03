@@ -704,6 +704,12 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
           )}
         </CardContent>
       </Card>
+      <QuickDocumentDialog
+        open={quickDoc.open}
+        onOpenChange={(v) => setQuickDoc((q) => ({ ...q, open: v }))}
+        clientName={quickDoc.clientName}
+        docType={quickDoc.docType}
+      />
     </div>
   );
 };
