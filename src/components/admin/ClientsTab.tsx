@@ -1405,6 +1405,41 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
     if (s === "частично") return "bg-amber-500/20 text-amber-400 border-amber-500/30";
     return "bg-red-500/20 text-red-400 border-red-500/30";
   };
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const handleDownload = async (c: any) => {
+    setDownloadingId(c.id);
+    try {
+      // 1) Прямая загрузка из Storage, если файл прикреплён
+      if (c.file_path) {
+        const { data, error } = await supabase.storage.from("contracts").download(c.file_path);
+        if (error) throw error;
+        downloadBlob(data, safePdfFilename(`Договор_${c.contract_number || c.id}_${c.contract_date || ""}.pdf`));
+        toast.success("PDF скачан");
+        return;
+      }
+      // 2) Fallback: сгенерированный документ типа "contract"
+      const { data: docs } = await supabase
+        .from("generated_documents")
+        .select("html_content, doc_number, doc_date")
+        .eq("contract_id", c.id)
+        .eq("doc_type", "contract")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const html = docs?.[0]?.html_content;
+      if (!html) {
+        toast.error("Договор ещё не сгенерирован");
+        return;
+      }
+      const blob = await generatePdfBlob(html);
+      const name = safePdfFilename(`Договор_${c.contract_number || docs![0].doc_number}_${c.contract_date || docs![0].doc_date}.pdf`);
+      downloadBlob(blob, name);
+      toast.success("PDF скачан");
+    } catch (e: any) {
+      toast.error(`Ошибка: ${e?.message || "не удалось скачать"}`);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
   if (isLoading) return <p className="text-xs text-muted-foreground">Загрузка...</p>;
   if (!contracts.length) return <p className="text-xs text-muted-foreground">Нет договоров</p>;
   return (
@@ -1441,6 +1476,16 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
               <Eye className="w-3.5 h-3.5" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            onClick={() => handleDownload(c)}
+            disabled={downloadingId === c.id}
+            title="Скачать PDF"
+          >
+            {downloadingId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          </Button>
         </div>
       ))}
     </div>
