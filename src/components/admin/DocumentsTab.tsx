@@ -104,6 +104,11 @@ const formatRuDateLong = (value: string) => {
   });
 };
 
+const datePartsToSerial = (value?: string | null) => {
+  const parsed = parseDateParts(value);
+  return parsed ? parsed.year * 10000 + parsed.month * 100 + parsed.day : null;
+};
+
 const addYearsToRuDate = (value: string, years: number) => {
   const parsed = parseDateParts(value);
   if (!parsed) return null;
@@ -392,12 +397,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         toast.warning("По этому клиенту не найдено ни договоров, ни актов");
       }
 
-      const fromTs = new Date(periodFrom).getTime();
-      const toTs = new Date(periodTo).getTime();
+      const fromTs = datePartsToSerial(periodFrom);
+      const toTs = datePartsToSerial(periodTo);
       const inPeriod = (dStr?: string | null) => {
-        if (!dStr) return false;
-        const t = new Date(dStr).getTime();
-        return !isNaN(t) && t >= fromTs && t <= toTs;
+        if (!dStr || fromTs === null || toTs === null) return false;
+        const t = datePartsToSerial(dStr);
+        return t !== null && t >= fromTs && t <= toTs;
       };
 
       const rows: ReconciliationRow[] = [];
@@ -2235,7 +2240,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                     </div>
                   </div>
                   <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</span>
+                    <span>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</span>
                     <span>{doc.client_name}</span>
                   </div>
                 </div>
@@ -2262,7 +2267,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                     <TableRow key={doc.id}>
                       <TableCell><Badge variant="outline" className={typeInfo.color}>{typeInfo.label}</Badge></TableCell>
                       <TableCell className="font-mono">№{doc.doc_number}</TableCell>
-                      <TableCell>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</TableCell>
+                      <TableCell>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</TableCell>
                       <TableCell>{doc.client_name}</TableCell>
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
                       <TableCell>
