@@ -1663,7 +1663,7 @@ const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clien
                     try {
                       const { error } = await supabase.from("generated_documents").delete().eq("id", d.id);
                       if (error) throw error;
-                      queryClient.invalidateQueries({ queryKey: ["client-history-documents", clientName] });
+                      queryClient.invalidateQueries({ queryKey: ["client-history-docs", clientName] });
                       queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
                       toast.success("Документ удалён");
                     } catch (err: any) {
