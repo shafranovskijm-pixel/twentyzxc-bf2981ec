@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -40,9 +40,12 @@ interface Contract {
 
 interface ContractsTabProps {
   onOpenClient?: (name: string) => void;
+  initialClientName?: string;
+  autoOpenNew?: boolean;
+  onConsumed?: () => void;
 }
 
-const ContractsTab = ({ onOpenClient }: ContractsTabProps = {}) => {
+const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
