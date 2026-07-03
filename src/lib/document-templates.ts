@@ -281,12 +281,12 @@ function servicesTableHtml(services: ServiceItem[]): string {
     <table class="services-table">
       <thead>
         <tr>
-          <th style="width:5%">№</th>
+          <th class="num" style="width:5%">№</th>
           <th>Наименование</th>
-          <th style="width:8%">Кол-во</th>
-          <th style="width:12%">Ед.</th>
-          <th style="width:15%">Цена, руб.</th>
-          <th style="width:15%">Сумма, руб.</th>
+          <th class="qty" style="width:8%">Кол-во</th>
+          <th class="qty" style="width:10%">Ед.</th>
+          <th class="price" style="width:15%">Цена, ₽</th>
+          <th class="sum" style="width:17%">Сумма, ₽</th>
         </tr>
       </thead>
       <tbody>
@@ -294,8 +294,8 @@ function servicesTableHtml(services: ServiceItem[]): string {
           <tr>
             <td class="num">${i + 1}</td>
             <td>${s.name}</td>
-            <td class="num">${s.qty}</td>
-            <td class="num">шт.</td>
+            <td class="money">${s.qty}</td>
+            <td class="money">шт.</td>
             <td class="money">${formatMoney(s.price)}</td>
             <td class="money">${formatMoney(s.qty * s.price)}</td>
           </tr>
@@ -303,12 +303,16 @@ function servicesTableHtml(services: ServiceItem[]): string {
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="5" style="text-align:right;font-weight:bold;border:none;">Итого:</td>
-          <td class="money" style="font-weight:bold;">${formatMoney(total)}</td>
+          <td colspan="5" style="text-align:right;color:#5a5a63;">Подытог</td>
+          <td class="money">${formatMoney(total)} ₽</td>
         </tr>
         <tr>
-          <td colspan="5" style="text-align:right;border:none;">НДС не облагается (НПД)</td>
-          <td class="money" style="border-left:1px solid #000;">—</td>
+          <td colspan="5" style="text-align:right;color:#8a8a93;font-size:9.5pt;font-style:italic;">НДС не облагается (НПД)</td>
+          <td class="money" style="color:#8a8a93;">—</td>
+        </tr>
+        <tr class="grand">
+          <td colspan="5" style="text-align:right;">ИТОГО</td>
+          <td class="money">${formatMoney(total)} ₽</td>
         </tr>
       </tfoot>
     </table>
