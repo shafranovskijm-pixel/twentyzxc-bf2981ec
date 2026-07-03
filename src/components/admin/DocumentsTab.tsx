@@ -534,6 +534,18 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     if (p.deadline) setDeadline(p.deadline);
     if (p.subject) setSubject(p.subject);
     if (p.paymentTerms) setPaymentTerms(p.paymentTerms);
+    // Sync FRDO service description date range with the applied deadline
+    if (p.deadline && contractSubType === "frdo") {
+      const m = p.deadline.match(/(\d{2}\.\d{2}\.\d{4}).*?(\d{2}\.\d{2}\.\d{4})/);
+      if (m) {
+        const [, dateFrom, dateTo] = m;
+        setServices(prev => prev.map(s =>
+          s.name.includes("ФИС ФРДО") && s.name.includes("за период")
+            ? { ...s, name: s.name.replace(/за период с \d{2}\.\d{2}\.\d{4} по \d{2}\.\d{2}\.\d{4}/, `за период с ${dateFrom} по ${dateTo}`) }
+            : s
+        ));
+      }
+    }
     prevContractPrefillRef.current = null;
   }, [contractSubType]);
 
