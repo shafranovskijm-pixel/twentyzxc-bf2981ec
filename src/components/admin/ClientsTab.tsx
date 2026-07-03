@@ -856,6 +856,27 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                     <Eye className="w-3.5 h-3.5" />
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Удалить договор №${c.contract_number || ""}?`)) return;
+                    if (c.file_path) {
+                      await supabase.storage.from("contracts").remove([c.file_path]);
+                    }
+                    const { error } = await supabase.from("contracts").delete().eq("id", c.id);
+                    if (error) { toast.error("Не удалось удалить"); return; }
+                    queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
+                    queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+                    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+                    toast.success("Договор удалён");
+                  }}
+                  title="Удалить договор"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </div>
             ))}
           </div>
@@ -879,6 +900,23 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                     <Eye className="w-3.5 h-3.5" />
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0 text-destructive hover:text-destructive"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Удалить документ №${d.doc_number}?`)) return;
+                    const { error } = await supabase.from("generated_documents").delete().eq("id", d.id);
+                    if (error) { toast.error("Не удалось удалить"); return; }
+                    queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
+                    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+                    toast.success("Документ удалён");
+                  }}
+                  title="Удалить документ"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
               </div>
             ))}
           </div>
