@@ -405,6 +405,33 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       // most recent generated contract document for this client.
       if (initialDocType === "contract") {
         (async () => {
+          // 1) Try to build deadline from the latest actual contract row
+          //    (matches what the user sees in the client card).
+          const { data: lastContracts } = await supabase
+            .from("contracts")
+            .select("contract_date, paid_until, contract_type")
+            .eq("client_name", initialClientName)
+            .order("contract_date", { ascending: false })
+            .limit(1);
+          const lc = lastContracts?.[0];
+          const fmtRu = (iso?: string | null) => {
+            if (!iso) return null;
+            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (!m) return null;
+            return `${m[3]}.${m[2]}.${m[1]}`;
+          };
+          let contractDeadline: string | undefined;
+          if (lc?.contract_date) {
+            const from = fmtRu(lc.contract_date);
+            let to = fmtRu(lc.paid_until);
+            if (!to && from) {
+              const [d, m, y] = from.split(".");
+              to = `${d}.${m}.${Number(y) + 1}`;
+            }
+            if (from && to) contractDeadline = `${from} по ${to}`;
+          }
+
+          // 2) Also read metadata for subtype/subject/paymentTerms fallback.
           const { data } = await supabase
             .from("generated_documents")
             .select("metadata")
@@ -413,10 +440,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             .order("created_at", { ascending: false })
             .limit(1);
           const meta = data?.[0]?.metadata;
-          if (!meta) return;
-          const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
-          const prevDeadline = parsed?.deadline as string | undefined;
-          const prevSubType = parsed?.contractSubType as ContractSubType | undefined;
+          const parsed = meta ? (typeof meta === "string" ? JSON.parse(meta) : meta) : null;
+          const prevDeadline = contractDeadline || (parsed?.deadline as string | undefined);
+          const prevSubType = (parsed?.contractSubType as ContractSubType | undefined)
+            || (lc?.contract_type?.toLowerCase() === "фрдо" ? "frdo" as ContractSubType : undefined);
           if (!prevDeadline && !prevSubType) return;
           prevContractPrefillRef.current = { deadline: prevDeadline };
           if (prevSubType && prevSubType !== contractSubType) {
