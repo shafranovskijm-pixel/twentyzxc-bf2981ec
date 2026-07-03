@@ -21,11 +21,16 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   await new Promise((r) => setTimeout(r, 500));
 
   const body = iframe.contentDocument!.body;
-  iframe.style.height = body.scrollHeight + "px";
+  const bodyHeight = body.scrollHeight;
+  iframe.style.height = bodyHeight + "px";
 
   // Collect vertical ranges (in body px, top→bottom) that must NOT be split across pages.
+  // Besides explicit markers, protect legal paragraphs, table rows and signature blocks so
+  // a rendered PDF page never slices through text, rows, signature or stamp imagery.
   const noBreakEls = Array.from(
-    iframe.contentDocument!.querySelectorAll<HTMLElement>("[data-no-break='true']")
+    iframe.contentDocument!.querySelectorAll<HTMLElement>(
+      "[data-no-break='true'], .signatures, .signature-block, .signature-line, .bank-header, .services-table tr, h1, h2, h3, p, li"
+    )
   );
   const bodyRect = body.getBoundingClientRect();
   const noBreakRanges: Array<{ top: number; bottom: number }> = noBreakEls
@@ -44,9 +49,9 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
         if (cBottom > bottom) bottom = cBottom;
       });
       // Small safety padding so borders/shadows aren't clipped.
-      return { top, bottom: bottom + 8 };
+      return { top: Math.max(0, top - 4), bottom: bottom + 10 };
     })
-    .filter((r) => r.bottom > r.top)
+    .filter((r) => r.bottom > r.top && r.bottom - r.top < bodyHeight * 0.8)
     .sort((a, b) => a.top - b.top);
 
   const canvas = await html2canvas(body, {
@@ -55,9 +60,9 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     allowTaint: true,
     backgroundColor: "#ffffff",
     width: 794,
-    height: body.scrollHeight,
+    height: bodyHeight,
     windowWidth: 794,
-    windowHeight: body.scrollHeight,
+    windowHeight: bodyHeight,
     logging: false,
     imageTimeout: 5000,
   });
@@ -72,7 +77,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   const usable = pdfHeight - margin * 2;
   // Convert canvas-space ranges → pdf-mm (imgHeight is in mm, corresponds to canvas.height px)
   const pxToMm = imgHeight / canvas.height;
-  const scale = canvas.height / body.scrollHeight; // px canvas per body px
+  const scale = canvas.height / bodyHeight; // px canvas per body px
   const noBreakMm = noBreakRanges.map((r) => ({
     top: r.top * scale * pxToMm,
     bottom: r.bottom * scale * pxToMm,
@@ -90,7 +95,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     for (const r of noBreakMm) {
       if (r.top > consumed + 5 && r.top < pageEnd && r.bottom > pageEnd) {
         const shortened = r.top - consumed;
-        if (shortened > 20) {
+        if (shortened > 8) {
           pageHeight = shortened;
         }
         break;
