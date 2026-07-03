@@ -896,7 +896,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           };
 
           if (existingInvoice) {
-            await supabase.from("generated_documents").update(invoicePayload).eq("id", existingInvoice.id);
+            // Не перезаписываем уже выставленный счёт при повторном сохранении договора,
+            // чтобы правки суммы/услуг в договоре не «уплывали» в счёт задним числом.
+            toast.info(`Счёт №${docNumber} не обновлён автоматически. Перегенерируйте вручную во вкладке «Счёт», если нужно.`);
           } else {
             await supabase.from("generated_documents").insert(invoicePayload);
           }
