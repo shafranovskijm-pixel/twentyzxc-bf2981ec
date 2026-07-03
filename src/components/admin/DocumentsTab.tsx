@@ -51,6 +51,103 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
+type DateParts = { day: number; month: number; year: number };
+
+const parseDateParts = (value?: string | null): DateParts | null => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
+  const dmy = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+
+  let day: number;
+  let month: number;
+  let year: number;
+
+  if (iso) {
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else if (dmy) {
+    day = Number(dmy[1]);
+    month = Number(dmy[2]);
+    year = Number(dmy[3]);
+    if (year < 100) year += 2000;
+  } else {
+    return null;
+  }
+
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) return null;
+
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+    return null;
+  }
+
+  return { day, month, year };
+};
+
+const formatRuDateNumeric = (value?: string | null) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  return `${String(parsed.day).padStart(2, "0")}.${String(parsed.month).padStart(2, "0")}.${parsed.year}`;
+};
+
+const formatRuDateLong = (value: string) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return "";
+  return new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day)).toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
+const addYearsToRuDate = (value: string, years: number) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  return formatRuDateNumeric(`${parsed.year + years}-${String(parsed.month).padStart(2, "0")}-${String(parsed.day).padStart(2, "0")}`);
+};
+
+const addDaysToIsoDate = (value: string, days: number) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  const date = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+};
+
+const extractRuPeriod = (deadline?: string | null) => {
+  if (!deadline) return null;
+  const matches = deadline.match(/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/g) || [];
+  if (matches.length < 2) return null;
+  const from = formatRuDateNumeric(matches[0]);
+  const to = formatRuDateNumeric(matches[1]);
+  return from && to ? { from, to } : null;
+};
+
+const syncFrdoServicesWithDeadline = (items: ServiceItem[], deadline?: string | null): ServiceItem[] => {
+  const period = extractRuPeriod(deadline);
+  if (!period) return items;
+
+  let changed = false;
+  const synced = items.map((service) => {
+    const shouldSync = /ФИС\s*ФРДО/i.test(service.name) && (/за\s+период/i.test(service.name) || /информационно-консультацион/i.test(service.name));
+    if (!shouldSync) return service;
+
+    const nextName = /за\s+период\s+с\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+по\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/i.test(service.name)
+      ? service.name.replace(/за\s+период\s+с\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+по\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/i, `за период с ${period.from} по ${period.to}`)
+      : `${service.name.replace(/\s+$/g, "")} за период с ${period.from} по ${period.to}`;
+
+    if (nextName === service.name) return service;
+    changed = true;
+    return { ...service, name: nextName };
+  });
+
+  return changed ? synced : items;
+};
+
 const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
@@ -109,8 +206,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   // Year derived from docDate — used for auto-numbering and reset every Jan 1
   const docYear = useMemo(() => {
-    const y = new Date(docDate).getFullYear();
-    return isNaN(y) ? new Date().getFullYear() : y;
+    const parsed = parseDateParts(docDate);
+    return parsed?.year || new Date().getFullYear();
   }, [docDate]);
 
   // Replace "/" with "-" so doc_number can be safely used in filenames / storage paths
