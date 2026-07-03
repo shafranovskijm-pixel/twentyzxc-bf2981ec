@@ -111,6 +111,19 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
     return `${maxNum + 1}-${year}`;
   };
 
+  // Auto-open "Новый договор" with prefilled client (triggered from ClientsTab)
+  useEffect(() => {
+    if (!autoOpenNew) return;
+    if (isLoading) return; // wait for contracts list to compute next number
+    resetForm();
+    if (initialClientName) setClientName(initialClientName);
+    setContractNumber(getNextContractNumber());
+    setContractDate(new Date().toISOString().split("T")[0]);
+    setShowForm(true);
+    onConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenNew, isLoading]);
+
   const resetForm = () => {
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
