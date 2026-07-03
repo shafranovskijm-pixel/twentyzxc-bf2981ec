@@ -2030,30 +2030,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
   const downloadPdfFromHtml = async (htmlContent: string, filename: string) => {
     try {
       toast.info("Генерация PDF...");
-      const { default: jsPDF } = await import("jspdf");
-      const { default: html2canvas } = await import("html2canvas");
-      const container = document.createElement("div");
-      container.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;background:white;";
-      container.innerHTML = htmlContent;
-      document.body.appendChild(container);
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff" });
-      document.body.removeChild(container);
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF("p", "mm", "a4");
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      const base64 = pdf.output("datauristring").split(",")[1];
+      const base64 = await renderDocumentPdfBase64(htmlContent);
       const byteChars = atob(base64);
       const byteArray = new Uint8Array(byteChars.length);
       for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
