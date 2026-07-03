@@ -862,9 +862,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Save document to DB with upsert logic (called on send)
   const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
     let targetContractId = linkedContractId || null;
+    const servicesForSave = contractSubType === "frdo"
+      ? syncFrdoServicesWithDeadline(services, deadline)
+      : services;
     const filteredServices = docType === "reconciliation"
       ? (reconRows as any[])
-      : services.filter(s => s.name.trim());
+      : servicesForSave.filter(s => s.name.trim());
     const reconTotal = reconRows.reduce((s, r) => s + (Number(r.debit) || 0) - (Number(r.credit) || 0), 0);
 
     // Step 1: Upsert main document (check by doc_type + doc_number)
@@ -930,9 +933,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           const daysMatch = deadline.match(/(\d+)\s*(рабоч|календар|дн)/i);
           if (daysMatch && docDate) {
             const days = parseInt(daysMatch[1]);
-            const start = new Date(docDate);
-            start.setDate(start.getDate() + days);
-            parsedServiceDeadline = start.toISOString().split("T")[0];
+            parsedServiceDeadline = addDaysToIsoDate(docDate, days);
           }
         }
       }
@@ -1856,7 +1857,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
               {discountAmount > 0 && (
                 <div className="text-right text-sm text-muted-foreground">
                   Сумма со скидкой: <span className="font-semibold text-foreground">{(total - discountAmount).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
-                  {discountDeadline && <span> (при оплате до {new Date(discountDeadline).toLocaleDateString("ru-RU")})</span>}
+                  {discountDeadline && <span> (при оплате до {formatDate(discountDeadline)})</span>}
                 </div>
               )}
             </div>
