@@ -323,7 +323,9 @@ export function generateContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Договор №${num}</title>${baseStyles}</head><body>
-    <h1>ДОГОВОР №${num}</h1>
+    ${brandStrip}
+    <div class="kicker">Contract</div>
+    <h1>Договор №${num}</h1>
     <div class="header-row">
       <span>г. Владивосток</span>
       <span>${date}</span>
@@ -421,6 +423,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}</head><body>
+    ${brandStrip}
     <table class="bank-header">
       <tr>
         <td rowspan="2" style="width:55%;">
@@ -444,22 +447,24 @@ export function generateInvoiceHtml(data: DocumentData): string {
       </tr>
     </table>
 
-    <h1>СЧЁТ НА ОПЛАТУ №${num} от ${date}</h1>
+    <div class="kicker">Invoice</div>
+    <h1>Счёт на оплату №${num}</h1>
+    <div class="header-row"><span>от ${date}</span><span>г. Владивосток</span></div>
     <div class="section">
       <p><strong>Поставщик:</strong> ${c.company_name}, ИНН ${c.company_inn}${c.company_kpp ? `, КПП ${c.company_kpp}` : ""}, ${c.company_legal_address}, тел.: ${c.company_phone}</p>
       <p><strong>Покупатель:</strong> ${cl.name}, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, ${cl.address}</p>
     </div>
     ${servicesTableHtml(services)}
-    <div class="section" style="margin-top:20px;">
-      <p><strong>Итого к оплате: ${formatMoney(total)} руб.</strong></p>
-      <p style="font-size:10pt;color:#555;margin-top:5px;">НДС не облагается (НПД).</p>
-      ${data.discountAmount ? `
-        <p style="margin-top:12px;"><strong>Итого к оплате: ${formatMoney(total - data.discountAmount)} руб.</strong></p>
-        <p style="font-size:10pt;color:#555;margin-top:3px;">${data.discountDeadline ? `При оплате до ${data.discountDeadline} (скидка ${formatMoney(data.discountAmount)} руб.)` : `Скидка ${formatMoney(data.discountAmount)} руб.`}</p>
-      ` : ''}
-    </div>
+    ${data.discountAmount ? `
+      <div class="totals-box"><div class="inner">
+        <div class="row grand"><span>К оплате со скидкой</span><span>${formatMoney(total - data.discountAmount)} ₽</span></div>
+        <div class="row" style="justify-content:flex-end;font-size:10pt;color:#a07b00;">${data.discountDeadline ? `При оплате до ${data.discountDeadline} (скидка ${formatMoney(data.discountAmount)} ₽)` : `Скидка ${formatMoney(data.discountAmount)} ₽`}</div>
+      </div></div>
+    ` : ''}
     <div class="signatures">
       <div class="signature-block" data-no-break="true">
+        <p><strong>Получатель платежа</strong></p>
+        <p>${c.company_short_name || c.company_name}</p>
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
           <img class="signature-img" src="${window.location.origin}/images/signature.png" />
@@ -474,7 +479,10 @@ export function generateActHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}</head><body>
-    <h1>АКТ №${num}<br/>выполненных работ (оказанных услуг)</h1>
+    ${brandStrip}
+    <div class="kicker">Act of Services</div>
+    <h1>Акт №${num}</h1>
+    <p style="text-align:center;color:#5a5a63;font-size:10.5pt;margin-top:-4px;">выполненных работ (оказанных услуг)</p>
     <div class="header-row">
       <span>г. Владивосток</span>
       <span>${date}</span>
