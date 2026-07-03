@@ -511,19 +511,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             .order("contract_date", { ascending: false })
             .limit(1);
           const lc = lastContracts?.[0];
-          const fmtRu = (iso?: string | null) => {
-            if (!iso) return null;
-            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (!m) return null;
-            return `${m[3]}.${m[2]}.${m[1]}`;
-          };
           let contractDeadline: string | undefined;
           if (lc?.contract_date) {
-            const from = fmtRu(lc.contract_date);
-            let to = fmtRu(lc.paid_until);
+            const from = formatRuDateNumeric(lc.contract_date);
+            let to = formatRuDateNumeric(lc.paid_until);
             if (!to && from) {
-              const [d, m, y] = from.split(".");
-              to = `${d}.${m}.${Number(y) + 1}`;
+              to = addYearsToRuDate(from, 1);
             }
             if (from && to) contractDeadline = `${from} по ${to}`;
           }
@@ -633,18 +626,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     if (p.paymentTerms) setPaymentTerms(p.paymentTerms);
     // Sync FRDO service description date range with the applied deadline
     if (p.deadline && contractSubType === "frdo") {
-      const m = p.deadline.match(/(\d{2}\.\d{2}\.\d{4}).*?(\d{2}\.\d{2}\.\d{4})/);
-      if (m) {
-        const [, dateFrom, dateTo] = m;
-        setServices(prev => prev.map(s =>
-          s.name.includes("ФИС ФРДО") && s.name.includes("за период")
-            ? { ...s, name: s.name.replace(/за период с \d{2}\.\d{2}\.\d{4} по \d{2}\.\d{2}\.\d{4}/, `за период с ${dateFrom} по ${dateTo}`) }
-            : s
-        ));
-      }
+      setServices(prev => syncFrdoServicesWithDeadline(prev, p.deadline));
     }
     prevContractPrefillRef.current = null;
   }, [contractSubType]);
+
+  useEffect(() => {
+    if (docType !== "contract" || contractSubType !== "frdo") return;
+    setServices(prev => syncFrdoServicesWithDeadline(prev, deadline));
+  }, [deadline, docType, contractSubType]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
@@ -741,9 +731,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   const total = services.reduce((s, i) => s + i.qty * i.price, 0);
 
   const formatDate = (iso: string) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+    return formatRuDateLong(iso);
   };
 
   const generate = async (typeOverride?: DocType) => {
@@ -795,13 +783,20 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     const linkedContract = contracts.find(c => c.id === linkedContractId);
 
+    const effectiveServices = contractSubType === "frdo"
+      ? syncFrdoServicesWithDeadline(services, deadline)
+      : services;
+    if (effectiveServices !== services) {
+      setServices(effectiveServices);
+    }
+
     const docData: DocumentData = {
       type: effectiveType,
       number: effectiveNumber,
       date: formatDate(docDate),
       company,
       client,
-      services: services.filter(s => s.name.trim()),
+      services: effectiveServices.filter(s => s.name.trim()),
       subject,
       deadline,
       paymentTerms,
