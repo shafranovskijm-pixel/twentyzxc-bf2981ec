@@ -68,7 +68,6 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   });
   document.body.removeChild(iframe);
 
-  const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -101,8 +100,32 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
         break;
       }
     }
-    const yOffset = margin - consumed;
-    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
+
+    // Render only the chosen slice for this page. This is important: adding the
+    // whole long canvas with a Y offset cannot respect a shortened pageHeight,
+    // so it still visually cuts through signatures/rows. A real cropped slice
+    // leaves the protected range for the next page.
+    const srcY = Math.floor((consumed / imgHeight) * canvas.height);
+    const sliceCanvasHeight = Math.max(1, Math.ceil((pageHeight / imgHeight) * canvas.height));
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = sliceCanvasHeight;
+    const ctx = sliceCanvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+    ctx.drawImage(
+      canvas,
+      0,
+      srcY,
+      canvas.width,
+      sliceCanvasHeight,
+      0,
+      0,
+      canvas.width,
+      sliceCanvasHeight,
+    );
+    const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+    pdf.addImage(sliceData, "JPEG", 0, margin, pdfWidth, pageHeight, undefined, "FAST");
     consumed += pageHeight;
     page++;
     if (page > 50) break; // safety
