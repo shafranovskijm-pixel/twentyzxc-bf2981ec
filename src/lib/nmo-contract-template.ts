@@ -71,32 +71,135 @@ function declinePost(post: string): string {
 
 const baseStyles = `
   <style>
-    @page { size: A4; margin: 10mm; }
+    @page { size: A4; margin: 0; }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.4; color: #000; padding: 20mm; }
+    body {
+      width: 794px;
+      min-height: 1123px;
+      margin: 0 auto;
+      padding: 44px 50px;
+      font-family: Inter, Arial, sans-serif;
+      font-size: 12.5px;
+      line-height: 1.58;
+      color: #1f2430;
+      background:
+        radial-gradient(circle at top left, rgba(212,190,55,.14), transparent 260px),
+        linear-gradient(135deg, #fbfaf4 0%, #ffffff 42%, #f8f9fb 100%);
+      position: relative;
+    }
+    body::before {
+      content: '24ZXC';
+      position: fixed;
+      top: 34px;
+      right: 50px;
+      z-index: 0;
+      width: 82px;
+      height: 82px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #15171e 0%, #2b3142 100%);
+      color: #d4be37;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: -1px;
+      box-shadow: 0 14px 30px rgba(21,23,30,.18);
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 9px;
+      height: 100%;
+      background: linear-gradient(180deg, #15171e, #d4be37, #15171e);
+      opacity: .95;
+    }
+    body > * { position: relative; z-index: 1; }
     table { width: 100%; border-collapse: collapse; }
-    .services-table th, .services-table td { border: 1px solid #000; padding: 4px 8px; text-align: left; font-size: 11pt; }
-    .services-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+    .services-table { margin-top: 14px; border-collapse: separate; border-spacing: 0; overflow: hidden; border-radius: 14px; border: 1px solid #e5e1c7; background: #fff; }
+    .services-table th, .services-table td { border: none; border-bottom: 1px solid #ece8d2; padding: 9px 10px; text-align: left; font-size: 11px; vertical-align: top; }
+    .services-table th { background: #15171e; color: #f8e670; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: center; }
+    .services-table tr:last-child td { border-bottom: none; }
+    .services-table tbody tr:nth-child(even) td { background: #fbfaf4; }
     .services-table td.num { text-align: center; }
-    .services-table td.money { text-align: right; }
-    h1 { font-size: 14pt; text-align: center; margin: 20px 0; }
-    h2 { font-size: 12pt; text-align: center; margin: 15px 0; }
-    h3 { font-size: 12pt; margin: 10px 0; }
-    .header-row { display: flex; justify-content: space-between; margin-bottom: 20px; }
-    .section { margin: 15px 0; }
-    .signatures { display: flex; justify-content: space-between; margin-top: 40px; }
-    .signature-block { width: 45%; position: relative; padding-bottom: 40px; }
-    .signature-line { border-bottom: 1px solid #000; margin-top: 70px; padding-bottom: 2px; position: relative; }
-    .signature-img { position: absolute; height: 48px; bottom: 2px; left: 80px; }
-    .stamp-img { position: absolute; height: 100px; opacity: 0.9; bottom: -10px; left: 0; }
+    .services-table td.money { text-align: right; white-space: nowrap; }
+    h1 {
+      margin: 0 110px 22px 0;
+      padding: 20px 22px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #15171e 0%, #252b3a 100%);
+      color: #fff;
+      font-size: 22px;
+      line-height: 1.12;
+      text-align: left;
+      letter-spacing: -.03em;
+      box-shadow: 0 16px 42px rgba(21,23,30,.12);
+    }
+    h1::after { content: ''; display: block; width: 72px; height: 4px; margin-top: 12px; border-radius: 999px; background: #d4be37; }
+    h2 {
+      margin: 20px 0 10px;
+      padding: 9px 12px;
+      border-left: 4px solid #d4be37;
+      border-radius: 0 12px 12px 0;
+      background: rgba(212,190,55,.12);
+      color: #15171e;
+      font-size: 13.5px;
+      font-weight: 900;
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+    h3 { margin: 12px 0 7px; color: #15171e; font-size: 12.5px; font-weight: 850; }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: -8px 110px 18px 0;
+      padding: 10px 14px;
+      border: 1px solid #e9e2b3;
+      border-radius: 14px;
+      background: rgba(255,255,255,.78);
+      color: #4a5162;
+      font-weight: 800;
+    }
+    .section {
+      margin: 12px 0;
+      padding: 14px 16px;
+      border: 1px solid #eee9cf;
+      border-radius: 16px;
+      background: rgba(255,255,255,.82);
+      box-shadow: 0 8px 22px rgba(21,23,30,.04);
+      break-inside: avoid;
+    }
+    .section:has(h2) { break-inside: auto; }
     p { margin: 5px 0; }
-    .indent { text-indent: 30px; }
-    .page-break { page-break-before: always; margin-top: 30px; }
-    ul { margin-left: 20px; }
+    .indent { text-indent: 22px; }
+    ul { margin: 6px 0 6px 22px; }
     ul li { margin: 3px 0; }
+    .page-break { page-break-before: always; break-before: page; padding-top: 24px; margin-top: 0; }
+    .signatures { display: flex; gap: 22px; justify-content: space-between; margin-top: 22px; break-inside: avoid; page-break-inside: avoid; }
+    .signature-block {
+      width: 50%;
+      min-height: 142px;
+      position: relative;
+      padding: 16px 16px 42px;
+      border: 1px solid #e7dfaa;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fff, #fffdf2);
+      overflow: visible;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .signature-line { border-bottom: 1px solid #15171e; margin-top: 58px; padding-bottom: 4px; position: relative; min-height: 26px; font-weight: 700; }
+    .signature-img { position: absolute; height: 48px; bottom: 4px; left: 74px; z-index: 3; }
+    .stamp-img { position: absolute; height: 94px; opacity: 0.9; bottom: 8px; left: 16px; z-index: 2; }
+    strong { color: #15171e; }
     @media print {
-      body { padding: 10mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { padding: 44px 50px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .page-break { page-break-before: always; }
+      .section, .signatures, .signature-block, tr { break-inside: avoid; page-break-inside: avoid; }
     }
   </style>
 `;
