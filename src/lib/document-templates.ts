@@ -300,7 +300,7 @@ export function generateContractHtml(data: DocumentData): string {
     <div class="section">
       <h2>${data.appendixRef ? "8" : "7"}. РЕКВИЗИТЫ И ПОДПИСИ СТОРОН</h2>
       <div class="signatures">
-        <div class="signature-block">
+        <div class="signature-block" data-no-break="true">
           <p><strong>Исполнитель:</strong></p>
           <p>${c.company_name}</p>
           <p>ИНН ${c.company_inn}${c.company_kpp ? ` КПП ${c.company_kpp}` : ""}</p>
@@ -368,7 +368,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
       ` : ''}
     </div>
     <div class="signatures">
-      <div class="signature-block">
+      <div class="signature-block" data-no-break="true">
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
           <img class="signature-img" src="${window.location.origin}/images/signature.png" />
@@ -400,7 +400,7 @@ export function generateActHtml(data: DocumentData): string {
       <p style="margin-top:10px;">Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
     </div>
     <div class="signatures">
-      <div class="signature-block">
+      <div class="signature-block" data-no-break="true">
         <p><strong>Исполнитель:</strong></p>
         <p>${c.company_name}</p>
         <p>ИНН ${c.company_inn}${c.company_kpp ? ` КПП ${c.company_kpp}` : ""}</p>
