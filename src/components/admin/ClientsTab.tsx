@@ -1642,40 +1642,42 @@ const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clien
               <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
               {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
             </div>
-            {d.html_content && (
-              <div className="flex items-center gap-0.5 shrink-0">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setPreviewHtml(d.html_content); }} title="Просмотр">
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleDownload(d); }} disabled={downloadingId === d.id} title="Скачать PDF">
-                  {downloadingId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setResendDoc(d); }} title="Отправить заново по email">
-                  <Send className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    if (!confirm(`Удалить документ №${d.doc_number}?`)) return;
-                    try {
-                      const { error } = await supabase.from("generated_documents").delete().eq("id", d.id);
-                      if (error) throw error;
-                      queryClient.invalidateQueries({ queryKey: ["client-history-docs", clientName] });
-                      queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
-                      toast.success("Документ удалён");
-                    } catch (err: any) {
-                      toast.error(`Ошибка: ${err?.message || "не удалось удалить"}`);
-                    }
-                  }}
-                  title="Удалить документ"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            )}
+            <div className="flex items-center gap-0.5 shrink-0">
+              {d.html_content && (
+                <>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setPreviewHtml(d.html_content); }} title="Просмотр">
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleDownload(d); }} disabled={downloadingId === d.id} title="Скачать PDF">
+                    {downloadingId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setResendDoc(d); }} title="Отправить заново по email">
+                    <Send className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (!confirm(`Удалить документ №${d.doc_number}?`)) return;
+                  try {
+                    const { error } = await supabase.from("generated_documents").delete().eq("id", d.id);
+                    if (error) throw error;
+                    queryClient.invalidateQueries({ queryKey: ["client-history-docs", clientName] });
+                    queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
+                    toast.success("Документ удалён");
+                  } catch (err: any) {
+                    toast.error(`Ошибка: ${err?.message || "не удалось удалить"}`);
+                  }
+                }}
+                title="Удалить документ"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         );})}
       </div>
