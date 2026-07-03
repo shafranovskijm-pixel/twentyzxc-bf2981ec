@@ -422,8 +422,29 @@ export function generateContractHtml(data: DocumentData): string {
 export function generateInvoiceHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}</head><body>
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}
+  <style>
+    body.invoice-mode { padding: 20mm 14mm 12mm; font-size: 10pt; line-height: 1.4; }
+    body.invoice-mode .brand-strip { height: 12mm; padding: 0 14mm; }
+    body.invoice-mode h1 { font-size: 18pt; margin: 4px 0 2px; }
+    body.invoice-mode h1::after { margin: 6px auto 0; }
+    body.invoice-mode .header-row { margin: 8px 0 10px; }
+    body.invoice-mode .section { margin: 8px 0; }
+    body.invoice-mode .bank-header { margin-bottom: 10px; }
+    body.invoice-mode .bank-header td { padding: 5px 8px; font-size: 9.5pt; }
+    body.invoice-mode .services-table { font-size: 9.5pt; margin-top: 4px; }
+    body.invoice-mode .services-table thead th { padding: 6px 6px; font-size: 8.5pt; }
+    body.invoice-mode .services-table tbody td { padding: 5px 6px; }
+    body.invoice-mode .services-table tfoot td { padding: 5px 6px; font-size: 9.5pt; }
+    body.invoice-mode .services-table tfoot tr.grand td { font-size: 11pt; }
+    body.invoice-mode .signatures { margin-top: 18px; }
+    body.invoice-mode .signature-block { width: 60%; padding: 10px 14px 50px; font-size: 9.5pt; }
+    body.invoice-mode .signature-line { margin-top: 44px; }
+    body.invoice-mode .stamp-img { height: 90px; bottom: -6px; }
+  </style>
+  </head><body class="invoice-mode">
     ${brandStrip}
+    <div data-no-break="true">
     <table class="bank-header">
       <tr>
         <td rowspan="2" style="width:55%;">
@@ -471,6 +492,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
         </div>
         <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
       </div>
+    </div>
     </div>
   </body></html>`;
 }
