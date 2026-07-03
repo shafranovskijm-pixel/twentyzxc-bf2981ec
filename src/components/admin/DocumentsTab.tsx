@@ -29,6 +29,7 @@ import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
+import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
 import SignPdfCard from "./SignPdfCard";
 import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
@@ -958,79 +959,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   };
 
   const generatePdfBase64 = async (htmlContent: string): Promise<string> => {
-    const html2canvas = (await import('html2canvas')).default;
-    const { jsPDF } = await import('jspdf');
-    
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'absolute';
-    iframe.style.left = '-9999px';
-    iframe.style.width = '794px';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
-    
-    iframe.srcdoc = htmlContent;
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Iframe load timeout')), 10000);
-      iframe.onload = () => { clearTimeout(timeout); resolve(); };
-    });
-    await new Promise(r => setTimeout(r, 500));
-    
-    const body = iframe.contentDocument!.body;
-    iframe.style.height = body.scrollHeight + 'px';
-    
-    const canvas = await Promise.race([
-      html2canvas(body, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        width: 794,
-        height: body.scrollHeight,
-        windowWidth: 794,
-        windowHeight: body.scrollHeight,
-        logging: false,
-        imageTimeout: 5000,
-      }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('html2canvas timeout')), 15000)),
-    ]);
-    document.body.removeChild(iframe);
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-    
-    const margin = 10; // mm margins top/bottom
-    const usableHeight = pdfHeight - margin * 2;
-    let heightLeft = imgHeight;
-    let srcY = 0;
-    let page = 0;
-
-    while (heightLeft > 0) {
-      if (page > 0) pdf.addPage();
-      const sliceHeight = Math.min(usableHeight, heightLeft);
-      const sliceCanvasHeight = (sliceHeight / imgHeight) * canvas.height;
-      
-      // Create a slice canvas for this page
-      const sliceCanvas = document.createElement('canvas');
-      sliceCanvas.width = canvas.width;
-      sliceCanvas.height = sliceCanvasHeight;
-      const ctx = sliceCanvas.getContext('2d')!;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-      ctx.drawImage(canvas, 0, srcY, canvas.width, sliceCanvasHeight, 0, 0, canvas.width, sliceCanvasHeight);
-      
-      const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.65);
-      pdf.addImage(sliceData, 'JPEG', 0, margin, pdfWidth, sliceHeight);
-      
-      srcY += sliceCanvasHeight;
-      heightLeft -= sliceHeight;
-      page++;
-    }
-    
-    const pdfOutput = pdf.output('datauristring');
-    return pdfOutput.split(',')[1];
+    return renderDocumentPdfBase64(htmlContent);
   };
 
   const downloadPdfFromHtml = async (htmlContent: string, filename: string) => {
@@ -2101,30 +2030,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
   const downloadPdfFromHtml = async (htmlContent: string, filename: string) => {
     try {
       toast.info("Генерация PDF...");
-      const { default: jsPDF } = await import("jspdf");
-      const { default: html2canvas } = await import("html2canvas");
-      const container = document.createElement("div");
-      container.style.cssText = "position:fixed;left:-9999px;top:0;width:794px;background:white;";
-      container.innerHTML = htmlContent;
-      document.body.appendChild(container);
-      const canvas = await html2canvas(container, { scale: 2, useCORS: true, allowTaint: true, backgroundColor: "#ffffff" });
-      document.body.removeChild(container);
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF("p", "mm", "a4");
-      let heightLeft = imgHeight;
-      let position = 0;
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position -= pageHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      const base64 = pdf.output("datauristring").split(",")[1];
+      const base64 = await renderDocumentPdfBase64(htmlContent);
       const byteChars = atob(base64);
       const byteArray = new Uint8Array(byteChars.length);
       for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);

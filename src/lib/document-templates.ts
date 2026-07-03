@@ -220,7 +220,7 @@ function servicesTableHtml(services: ServiceItem[]): string {
           <td class="money" style="font-weight:bold;">${formatMoney(total)}</td>
         </tr>
         <tr>
-          <td colspan="5" style="text-align:right;border:none;">Без НДС</td>
+          <td colspan="5" style="text-align:right;border:none;">НДС не облагается (НПД)</td>
           <td class="money" style="border-left:1px solid #000;">—</td>
         </tr>
       </tfoot>
@@ -361,7 +361,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
     ${servicesTableHtml(services)}
     <div class="section" style="margin-top:20px;">
       <p><strong>Итого к оплате: ${formatMoney(total)} руб.</strong></p>
-      <p style="font-size:10pt;color:#555;margin-top:5px;">Без НДС.</p>
+      <p style="font-size:10pt;color:#555;margin-top:5px;">НДС не облагается (НПД).</p>
       ${data.discountAmount ? `
         <p style="margin-top:12px;"><strong>Итого к оплате: ${formatMoney(total - data.discountAmount)} руб.</strong></p>
         <p style="font-size:10pt;color:#555;margin-top:3px;">${data.discountDeadline ? `При оплате до ${data.discountDeadline} (скидка ${formatMoney(data.discountAmount)} руб.)` : `Скидка ${formatMoney(data.discountAmount)} руб.`}</p>

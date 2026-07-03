@@ -21,11 +21,16 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   await new Promise((r) => setTimeout(r, 500));
 
   const body = iframe.contentDocument!.body;
-  iframe.style.height = body.scrollHeight + "px";
+  const bodyHeight = body.scrollHeight;
+  iframe.style.height = bodyHeight + "px";
 
   // Collect vertical ranges (in body px, top→bottom) that must NOT be split across pages.
+  // Besides explicit markers, protect legal paragraphs, table rows and signature blocks so
+  // a rendered PDF page never slices through text, rows, signature or stamp imagery.
   const noBreakEls = Array.from(
-    iframe.contentDocument!.querySelectorAll<HTMLElement>("[data-no-break='true']")
+    iframe.contentDocument!.querySelectorAll<HTMLElement>(
+      "[data-no-break='true'], .signatures, .signature-block, .signature-line, .bank-header, .services-table tr, h1, h2, h3, p, li"
+    )
   );
   const bodyRect = body.getBoundingClientRect();
   const noBreakRanges: Array<{ top: number; bottom: number }> = noBreakEls
@@ -44,35 +49,35 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
         if (cBottom > bottom) bottom = cBottom;
       });
       // Small safety padding so borders/shadows aren't clipped.
-      return { top, bottom: bottom + 8 };
+      return { top: Math.max(0, top - 4), bottom: bottom + 10 };
     })
-    .filter((r) => r.bottom > r.top)
+    .filter((r) => r.bottom > r.top && r.bottom - r.top < bodyHeight * 0.8)
     .sort((a, b) => a.top - b.top);
 
+  const renderScale = bodyHeight > 14000 ? 1.25 : bodyHeight > 10000 ? 1.5 : 2;
   const canvas = await html2canvas(body, {
-    scale: 2,
+    scale: renderScale,
     useCORS: true,
     allowTaint: true,
     backgroundColor: "#ffffff",
     width: 794,
-    height: body.scrollHeight,
+    height: bodyHeight,
     windowWidth: 794,
-    windowHeight: body.scrollHeight,
+    windowHeight: bodyHeight,
     logging: false,
     imageTimeout: 5000,
   });
   document.body.removeChild(iframe);
 
-  const imgData = canvas.toDataURL("image/png");
   const pdf = new jsPDF("p", "mm", "a4");
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-  const margin = 10;
+  const margin = 0;
   const usable = pdfHeight - margin * 2;
   // Convert canvas-space ranges → pdf-mm (imgHeight is in mm, corresponds to canvas.height px)
   const pxToMm = imgHeight / canvas.height;
-  const scale = canvas.height / body.scrollHeight; // px canvas per body px
+  const scale = canvas.height / bodyHeight; // px canvas per body px
   const noBreakMm = noBreakRanges.map((r) => ({
     top: r.top * scale * pxToMm,
     bottom: r.bottom * scale * pxToMm,
@@ -90,19 +95,56 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     for (const r of noBreakMm) {
       if (r.top > consumed + 5 && r.top < pageEnd && r.bottom > pageEnd) {
         const shortened = r.top - consumed;
-        if (shortened > 20) {
+        if (shortened > 8) {
           pageHeight = shortened;
         }
         break;
       }
     }
-    const yOffset = margin - consumed;
-    pdf.addImage(imgData, "PNG", 0, yOffset, pdfWidth, imgHeight, undefined, "FAST");
+
+    // Render only the chosen slice for this page. This is important: adding the
+    // whole long canvas with a Y offset cannot respect a shortened pageHeight,
+    // so it still visually cuts through signatures/rows. A real cropped slice
+    // leaves the protected range for the next page.
+    const srcY = Math.floor((consumed / imgHeight) * canvas.height);
+    const sliceCanvasHeight = Math.max(1, Math.ceil((pageHeight / imgHeight) * canvas.height));
+    const sliceCanvas = document.createElement("canvas");
+    sliceCanvas.width = canvas.width;
+    sliceCanvas.height = sliceCanvasHeight;
+    const ctx = sliceCanvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+    ctx.drawImage(
+      canvas,
+      0,
+      srcY,
+      canvas.width,
+      sliceCanvasHeight,
+      0,
+      0,
+      canvas.width,
+      sliceCanvasHeight,
+    );
+    const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+    pdf.addImage(sliceData, "JPEG", 0, margin, pdfWidth, pageHeight, undefined, "FAST");
     consumed += pageHeight;
     page++;
     if (page > 50) break; // safety
   }
   return pdf.output("blob");
+}
+
+export async function generatePdfBase64(htmlContent: string): Promise<string> {
+  const blob = await generatePdfBlob(htmlContent);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Не удалось прочитать PDF"));
+    reader.readAsDataURL(blob);
+  });
 }
 
 /** Convert a Blob to base64 (without data: prefix). */
