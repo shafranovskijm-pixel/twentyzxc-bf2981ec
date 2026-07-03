@@ -504,13 +504,13 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               <div className="flex items-center gap-2">
                 {editingId && onNavigate && (
                   <>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("contracts", { clientName: name }); }} title="Создать договор">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "contract", clientName: name }); }} title="Договор с предпросмотром">
                       <FileText className="w-4 h-4 mr-1" /> Договор
                     </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "invoice" }); }} title="Сделать счёт">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "invoice", clientName: name }); }} title="Счёт с предпросмотром">
                       <ClipboardList className="w-4 h-4 mr-1" /> Счёт
                     </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "act" }); }} title="Сделать акт">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "act", clientName: name }); }} title="Акт с предпросмотром">
                       <CheckSquare className="w-4 h-4 mr-1" /> Акт
                     </Button>
                     {telegram && (
