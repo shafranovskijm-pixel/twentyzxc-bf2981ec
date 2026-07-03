@@ -51,6 +51,108 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   other: "Прочее",
 };
 
+type DateParts = { day: number; month: number; year: number };
+
+const parseDateParts = (value?: string | null): DateParts | null => {
+  if (!value) return null;
+  const raw = String(value).trim();
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
+  const dmy = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})$/);
+
+  let day: number;
+  let month: number;
+  let year: number;
+
+  if (iso) {
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else if (dmy) {
+    day = Number(dmy[1]);
+    month = Number(dmy[2]);
+    year = Number(dmy[3]);
+    if (year < 100) year += 2000;
+  } else {
+    return null;
+  }
+
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900) return null;
+
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day) {
+    return null;
+  }
+
+  return { day, month, year };
+};
+
+const formatRuDateNumeric = (value?: string | null) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  return `${String(parsed.day).padStart(2, "0")}.${String(parsed.month).padStart(2, "0")}.${parsed.year}`;
+};
+
+const formatRuDateLong = (value: string) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return "";
+  return new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day)).toLocaleDateString("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+};
+
+const datePartsToSerial = (value?: string | null) => {
+  const parsed = parseDateParts(value);
+  return parsed ? parsed.year * 10000 + parsed.month * 100 + parsed.day : null;
+};
+
+const addYearsToRuDate = (value: string, years: number) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  return formatRuDateNumeric(`${parsed.year + years}-${String(parsed.month).padStart(2, "0")}-${String(parsed.day).padStart(2, "0")}`);
+};
+
+const addDaysToIsoDate = (value: string, days: number) => {
+  const parsed = parseDateParts(value);
+  if (!parsed) return null;
+  const date = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+};
+
+const extractRuPeriod = (deadline?: string | null) => {
+  if (!deadline) return null;
+  const matches = deadline.match(/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/g) || [];
+  if (matches.length < 2) return null;
+  const from = formatRuDateNumeric(matches[0]);
+  const to = formatRuDateNumeric(matches[1]);
+  return from && to ? { from, to } : null;
+};
+
+const syncFrdoServicesWithDeadline = (items: ServiceItem[], deadline?: string | null): ServiceItem[] => {
+  const period = extractRuPeriod(deadline);
+  if (!period) return items;
+
+  let changed = false;
+  const synced = items.map((service) => {
+    const shouldSync = /ФИС\s*ФРДО/i.test(service.name) && (/за\s+период/i.test(service.name) || /информационно-консультацион/i.test(service.name));
+    if (!shouldSync) return service;
+
+    const nextName = /за\s+период\s+с\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+по\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/i.test(service.name)
+      ? service.name.replace(/за\s+период\s+с\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}\s+по\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/i, `за период с ${period.from} по ${period.to}`)
+      : `${service.name.replace(/\s+$/g, "")} за период с ${period.from} по ${period.to}`;
+
+    if (nextName === service.name) return service;
+    changed = true;
+    return { ...service, name: nextName };
+  });
+
+  return changed ? synced : items;
+};
+
 const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
@@ -109,8 +211,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   // Year derived from docDate — used for auto-numbering and reset every Jan 1
   const docYear = useMemo(() => {
-    const y = new Date(docDate).getFullYear();
-    return isNaN(y) ? new Date().getFullYear() : y;
+    const parsed = parseDateParts(docDate);
+    return parsed?.year || new Date().getFullYear();
   }, [docDate]);
 
   // Replace "/" with "-" so doc_number can be safely used in filenames / storage paths
@@ -295,12 +397,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         toast.warning("По этому клиенту не найдено ни договоров, ни актов");
       }
 
-      const fromTs = new Date(periodFrom).getTime();
-      const toTs = new Date(periodTo).getTime();
+      const fromTs = datePartsToSerial(periodFrom);
+      const toTs = datePartsToSerial(periodTo);
       const inPeriod = (dStr?: string | null) => {
-        if (!dStr) return false;
-        const t = new Date(dStr).getTime();
-        return !isNaN(t) && t >= fromTs && t <= toTs;
+        if (!dStr || fromTs === null || toTs === null) return false;
+        const t = datePartsToSerial(dStr);
+        return t !== null && t >= fromTs && t <= toTs;
       };
 
       const rows: ReconciliationRow[] = [];
@@ -414,19 +516,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             .order("contract_date", { ascending: false })
             .limit(1);
           const lc = lastContracts?.[0];
-          const fmtRu = (iso?: string | null) => {
-            if (!iso) return null;
-            const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (!m) return null;
-            return `${m[3]}.${m[2]}.${m[1]}`;
-          };
           let contractDeadline: string | undefined;
           if (lc?.contract_date) {
-            const from = fmtRu(lc.contract_date);
-            let to = fmtRu(lc.paid_until);
+            const from = formatRuDateNumeric(lc.contract_date);
+            let to = formatRuDateNumeric(lc.paid_until);
             if (!to && from) {
-              const [d, m, y] = from.split(".");
-              to = `${d}.${m}.${Number(y) + 1}`;
+              to = addYearsToRuDate(from, 1);
             }
             if (from && to) contractDeadline = `${from} по ${to}`;
           }
@@ -536,18 +631,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     if (p.paymentTerms) setPaymentTerms(p.paymentTerms);
     // Sync FRDO service description date range with the applied deadline
     if (p.deadline && contractSubType === "frdo") {
-      const m = p.deadline.match(/(\d{2}\.\d{2}\.\d{4}).*?(\d{2}\.\d{2}\.\d{4})/);
-      if (m) {
-        const [, dateFrom, dateTo] = m;
-        setServices(prev => prev.map(s =>
-          s.name.includes("ФИС ФРДО") && s.name.includes("за период")
-            ? { ...s, name: s.name.replace(/за период с \d{2}\.\d{2}\.\d{4} по \d{2}\.\d{2}\.\d{4}/, `за период с ${dateFrom} по ${dateTo}`) }
-            : s
-        ));
-      }
+      setServices(prev => syncFrdoServicesWithDeadline(prev, p.deadline));
     }
     prevContractPrefillRef.current = null;
   }, [contractSubType]);
+
+  useEffect(() => {
+    if (docType !== "contract" || contractSubType !== "frdo") return;
+    setServices(prev => syncFrdoServicesWithDeadline(prev, deadline));
+  }, [deadline, docType, contractSubType]);
 
   const filteredClients = useMemo(() => {
     if (!clientSearch) return clients;
@@ -644,9 +736,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   const total = services.reduce((s, i) => s + i.qty * i.price, 0);
 
   const formatDate = (iso: string) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    return d.toLocaleDateString("ru-RU", { day: "2-digit", month: "long", year: "numeric" });
+    return formatRuDateLong(iso);
   };
 
   const generate = async (typeOverride?: DocType) => {
@@ -698,13 +788,20 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
     const linkedContract = contracts.find(c => c.id === linkedContractId);
 
+    const effectiveServices = contractSubType === "frdo"
+      ? syncFrdoServicesWithDeadline(services, deadline)
+      : services;
+    if (effectiveServices !== services) {
+      setServices(effectiveServices);
+    }
+
     const docData: DocumentData = {
       type: effectiveType,
       number: effectiveNumber,
       date: formatDate(docDate),
       company,
       client,
-      services: services.filter(s => s.name.trim()),
+      services: effectiveServices.filter(s => s.name.trim()),
       subject,
       deadline,
       paymentTerms,
@@ -770,9 +867,12 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Save document to DB with upsert logic (called on send)
   const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
     let targetContractId = linkedContractId || null;
+    const servicesForSave = contractSubType === "frdo"
+      ? syncFrdoServicesWithDeadline(services, deadline)
+      : services;
     const filteredServices = docType === "reconciliation"
       ? (reconRows as any[])
-      : services.filter(s => s.name.trim());
+      : servicesForSave.filter(s => s.name.trim());
     const reconTotal = reconRows.reduce((s, r) => s + (Number(r.debit) || 0) - (Number(r.credit) || 0), 0);
 
     // Step 1: Upsert main document (check by doc_type + doc_number)
@@ -838,9 +938,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           const daysMatch = deadline.match(/(\d+)\s*(рабоч|календар|дн)/i);
           if (daysMatch && docDate) {
             const days = parseInt(daysMatch[1]);
-            const start = new Date(docDate);
-            start.setDate(start.getDate() + days);
-            parsedServiceDeadline = start.toISOString().split("T")[0];
+            parsedServiceDeadline = addDaysToIsoDate(docDate, days);
           }
         }
       }
@@ -1764,7 +1862,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
               {discountAmount > 0 && (
                 <div className="text-right text-sm text-muted-foreground">
                   Сумма со скидкой: <span className="font-semibold text-foreground">{(total - discountAmount).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
-                  {discountDeadline && <span> (при оплате до {new Date(discountDeadline).toLocaleDateString("ru-RU")})</span>}
+                  {discountDeadline && <span> (при оплате до {formatDate(discountDeadline)})</span>}
                 </div>
               )}
             </div>
@@ -2142,7 +2240,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                     </div>
                   </div>
                   <div className="flex gap-3 text-xs text-muted-foreground">
-                    <span>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</span>
+                    <span>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</span>
                     <span>{doc.client_name}</span>
                   </div>
                 </div>
@@ -2169,7 +2267,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                     <TableRow key={doc.id}>
                       <TableCell><Badge variant="outline" className={typeInfo.color}>{typeInfo.label}</Badge></TableCell>
                       <TableCell className="font-mono">№{doc.doc_number}</TableCell>
-                      <TableCell>{new Date(doc.doc_date).toLocaleDateString("ru-RU")}</TableCell>
+                      <TableCell>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</TableCell>
                       <TableCell>{doc.client_name}</TableCell>
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
                       <TableCell>
