@@ -574,6 +574,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               syncing={syncing}
               fillFromContract={fillFromContract}
               syncRequisites={syncRequisites}
+              onOpenQuickDocument={(docType) => setQuickDoc({ open: true, docType, clientName: name })}
             />
 
             <Button onClick={saveClient} disabled={saving} className="w-full">
@@ -1231,6 +1232,7 @@ interface ClientCardSectionsProps {
   syncing: boolean;
   fillFromContract: () => void;
   syncRequisites: (byInn?: boolean) => void;
+  onOpenQuickDocument: (docType: "contract" | "invoice" | "act") => void;
 }
 
 const ClientCardSections = (p: ClientCardSectionsProps) => {
@@ -1260,7 +1262,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Договоры <span className="text-muted-foreground">({contracts.length})</span></span>
           </AccordionTrigger>
           <AccordionContent>
-            <ContractsSection clientName={p.clientName} />
+            <ContractsSection clientName={p.clientName} onOpenContract={() => p.onOpenQuickDocument("contract")} />
           </AccordionContent>
         </AccordionItem>
       )}
@@ -1284,7 +1286,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
             <span className="flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Документы <span className="text-muted-foreground">({documents.length})</span></span>
           </AccordionTrigger>
           <AccordionContent>
-            <DocumentsSection clientName={p.clientName} clientId={p.editingId} />
+            <DocumentsSection clientName={p.clientName} clientId={p.editingId} onOpenQuickDocument={p.onOpenQuickDocument} />
           </AccordionContent>
         </AccordionItem>
       )}
@@ -1404,7 +1406,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
 // ============================================================
 // Section renderers (data reused via React Query cache)
 // ============================================================
-const ContractsSection = ({ clientName }: { clientName: string }) => {
+const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; onOpenContract: () => void }) => {
   const queryClient = useQueryClient();
   const { data: contracts = [], isLoading } = useClientContracts(clientName);
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
@@ -1453,13 +1455,29 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
   return (
     <div className="space-y-1">
       {contracts.map((c: any) => (
-        <div key={c.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
-          <span className="font-mono text-xs">№{c.contract_number || "—"}</span>
-          <span className="text-muted-foreground text-xs">{fmt(c.contract_date)}</span>
-          {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
-          {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
+        <div
+          key={c.id}
+          role="button"
+          tabIndex={0}
+          onClick={onOpenContract}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onOpenContract();
+            }
+          }}
+          className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm cursor-pointer transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          title="Открыть договор с предпросмотром"
+        >
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+            <span className="font-mono text-xs">№{c.contract_number || "—"}</span>
+            <span className="text-muted-foreground text-xs">{fmt(c.contract_date)}</span>
+            {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
+            {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
+          </div>
           <button
-            onClick={async () => {
+            onClick={async (e) => {
+              e.stopPropagation();
               const newStatus = c.payment_status === "оплачено" ? "не оплачено" : "оплачено";
               await supabase.from("contracts").update({ payment_status: newStatus } as any).eq("id", c.id);
               queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
@@ -1475,7 +1493,8 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
               variant="ghost"
               size="icon"
               className="h-6 w-6 shrink-0"
-              onClick={async () => {
+              onClick={async (e) => {
+                e.stopPropagation();
                 const { data } = await supabase.storage.from("contracts").createSignedUrl(c.file_path!, 300);
                 if (data?.signedUrl) window.open(data.signedUrl, "_blank");
                 else toast.error("Не удалось открыть файл");
@@ -1488,7 +1507,10 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
             variant="ghost"
             size="icon"
             className="h-6 w-6 shrink-0"
-            onClick={() => handleDownload(c)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload(c);
+            }}
             disabled={downloadingId === c.id}
             title="Скачать PDF"
           >
@@ -1500,7 +1522,7 @@ const ContractsSection = ({ clientName }: { clientName: string }) => {
   );
 };
 
-const DocumentsSection = ({ clientName, clientId }: { clientName: string; clientId?: string }) => {
+const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clientName: string; clientId?: string; onOpenQuickDocument?: (docType: "contract" | "invoice" | "act") => void }) => {
   const { data: documents = [] } = useClientDocuments(clientName);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [resendDoc, setResendDoc] = useState<any | null>(null);
@@ -1529,27 +1551,48 @@ const DocumentsSection = ({ clientName, clientId }: { clientName: string; client
   return (
     <>
       <div className="space-y-1">
-        {documents.map((d: any) => (
-          <div key={d.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm">
-            <Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[d.doc_type] || d.doc_type}</Badge>
-            <span className="font-mono text-xs">№{d.doc_number}</span>
-            <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
-            {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+        {documents.map((d: any) => {
+          const canOpenBuilder = ["contract", "invoice", "act"].includes(d.doc_type);
+          return (
+          <div
+            key={d.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              if (d.html_content) setPreviewHtml(d.html_content);
+              else if (canOpenBuilder) onOpenQuickDocument?.(d.doc_type);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                if (d.html_content) setPreviewHtml(d.html_content);
+                else if (canOpenBuilder) onOpenQuickDocument?.(d.doc_type);
+              }
+            }}
+            className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm cursor-pointer transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            title="Открыть предпросмотр документа"
+          >
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+              <Badge variant="outline" className="text-xs">{DOC_TYPE_LABELS[d.doc_type] || d.doc_type}</Badge>
+              <span className="font-mono text-xs">№{d.doc_number}</span>
+              <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
+              {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+            </div>
             {d.html_content && (
               <div className="flex items-center gap-0.5 shrink-0">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setPreviewHtml(d.html_content)} title="Просмотр">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setPreviewHtml(d.html_content); }} title="Просмотр">
                   <Eye className="w-3.5 h-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(d)} disabled={downloadingId === d.id} title="Скачать PDF">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); handleDownload(d); }} disabled={downloadingId === d.id} title="Скачать PDF">
                   {downloadingId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setResendDoc(d)} title="Отправить заново по email">
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setResendDoc(d); }} title="Отправить заново по email">
                   <Send className="w-3.5 h-3.5" />
                 </Button>
               </div>
             )}
           </div>
-        ))}
+        );})}
       </div>
       <Dialog open={!!previewHtml} onOpenChange={(open) => { if (!open) setPreviewHtml(null); }}>
         <DialogContent className="max-w-4xl w-[95vw] h-[85vh] flex flex-col p-0 gap-0">
