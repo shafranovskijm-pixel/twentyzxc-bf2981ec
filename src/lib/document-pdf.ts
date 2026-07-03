@@ -110,6 +110,19 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   return pdf.output("blob");
 }
 
+export async function generatePdfBase64(htmlContent: string): Promise<string> {
+  const blob = await generatePdfBlob(htmlContent);
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = String(reader.result || "");
+      resolve(result.includes(",") ? result.split(",")[1] : result);
+    };
+    reader.onerror = () => reject(reader.error || new Error("Не удалось прочитать PDF"));
+    reader.readAsDataURL(blob);
+  });
+}
+
 /** Convert a Blob to base64 (without data: prefix). */
 export async function blobToBase64(blob: Blob): Promise<string> {
   const buf = await blob.arrayBuffer();
