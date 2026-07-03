@@ -400,6 +400,33 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           fillServicesFromContract(latest.id, latest);
         }
       }
+      // For new contract: pull "Период оказания услуг" (deadline) from the
+      // most recent generated contract document for this client.
+      if (initialDocType === "contract") {
+        (async () => {
+          const { data } = await supabase
+            .from("generated_documents")
+            .select("metadata")
+            .eq("client_name", initialClientName)
+            .eq("doc_type", "contract")
+            .order("created_at", { ascending: false })
+            .limit(1);
+          const meta = data?.[0]?.metadata;
+          if (!meta) return;
+          const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
+          const prevDeadline = parsed?.deadline as string | undefined;
+          const prevSubType = parsed?.contractSubType as ContractSubType | undefined;
+          if (!prevDeadline && !prevSubType) return;
+          prevContractPrefillRef.current = { deadline: prevDeadline };
+          if (prevSubType && prevSubType !== contractSubType) {
+            setContractSubType(prevSubType);
+          } else if (prevDeadline) {
+            // Same subtype — apply immediately (subtype effect won't fire)
+            setDeadline(prevDeadline);
+            prevContractPrefillRef.current = null;
+          }
+        })();
+      }
       onMounted?.();
     }
   }, [initialClientName, clients]);
