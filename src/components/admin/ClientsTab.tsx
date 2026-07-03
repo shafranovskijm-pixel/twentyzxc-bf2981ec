@@ -75,6 +75,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [quickDoc, setQuickDoc] = useState<{ open: boolean; docType: "contract" | "invoice" | "act"; clientName: string }>({ open: false, docType: "contract", clientName: "" });
   const [name, setName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [phone, setPhone] = useState("");
