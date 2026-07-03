@@ -29,6 +29,7 @@ import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
+import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
 import SignPdfCard from "./SignPdfCard";
 import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
