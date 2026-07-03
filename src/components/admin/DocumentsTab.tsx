@@ -207,6 +207,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   const [lookingUp, setLookingUp] = useState(false);
 
+  // Deferred override applied AFTER contractSubType-defaults effect runs
+  const prevContractPrefillRef = useRef<{ deadline?: string; subject?: string; paymentTerms?: string } | null>(null);
+
   // Helper: fill client requisites from clients array by client_name
   const fillClientFromName = useCallback((name: string) => {
     const client = clients.find(c => c.name === name);
@@ -397,6 +400,33 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           fillServicesFromContract(latest.id, latest);
         }
       }
+      // For new contract: pull "Период оказания услуг" (deadline) from the
+      // most recent generated contract document for this client.
+      if (initialDocType === "contract") {
+        (async () => {
+          const { data } = await supabase
+            .from("generated_documents")
+            .select("metadata")
+            .eq("client_name", initialClientName)
+            .eq("doc_type", "contract")
+            .order("created_at", { ascending: false })
+            .limit(1);
+          const meta = data?.[0]?.metadata;
+          if (!meta) return;
+          const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
+          const prevDeadline = parsed?.deadline as string | undefined;
+          const prevSubType = parsed?.contractSubType as ContractSubType | undefined;
+          if (!prevDeadline && !prevSubType) return;
+          prevContractPrefillRef.current = { deadline: prevDeadline };
+          if (prevSubType && prevSubType !== contractSubType) {
+            setContractSubType(prevSubType);
+          } else if (prevDeadline) {
+            // Same subtype — apply immediately (subtype effect won't fire)
+            setDeadline(prevDeadline);
+            prevContractPrefillRef.current = null;
+          }
+        })();
+      }
       onMounted?.();
     }
   }, [initialClientName, clients]);
@@ -466,6 +496,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       setPaymentTerms("");
       setServices([{ name: "", qty: 1, price: 0 }]);
     }
+  }, [contractSubType]);
+
+  // Apply deferred prefill (from previous contract) AFTER the subtype-defaults
+  // effect above has populated deadline/subject/paymentTerms.
+  useEffect(() => {
+    const p = prevContractPrefillRef.current;
+    if (!p) return;
+    if (p.deadline) setDeadline(p.deadline);
+    if (p.subject) setSubject(p.subject);
+    if (p.paymentTerms) setPaymentTerms(p.paymentTerms);
+    prevContractPrefillRef.current = null;
   }, [contractSubType]);
 
   const filteredClients = useMemo(() => {
