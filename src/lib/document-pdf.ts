@@ -73,7 +73,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-  const margin = 10;
+  const margin = 0;
   const usable = pdfHeight - margin * 2;
   // Convert canvas-space ranges → pdf-mm (imgHeight is in mm, corresponds to canvas.height px)
   const pxToMm = imgHeight / canvas.height;
