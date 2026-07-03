@@ -173,7 +173,6 @@ const baseStyles = `
       box-shadow: 0 8px 22px rgba(21,23,30,.04);
       break-inside: avoid;
     }
-    .section:has(h2) { break-inside: auto; }
     p { margin: 5px 0; }
     .indent { text-indent: 22px; }
     ul { margin: 6px 0 6px 22px; }
