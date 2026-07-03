@@ -251,7 +251,7 @@ export function generateNmoContractHtml(data: DocumentData): string {
 
     <div class="section">
       <h2>3. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</h2>
-      <p class="indent">3.1. Сумма оплаты по договору определяется в соответствии со спецификацией (Приложение № 1 к настоящему Договору), которая является неотъемлемой частью Договора и составляет <strong>${formatMoney(total)}</strong> рублей, НДС нет.</p>
+      <p class="indent">3.1. Сумма оплаты по договору определяется в соответствии со спецификацией (Приложение № 1 к настоящему Договору), которая является неотъемлемой частью Договора и составляет <strong>${formatMoney(total)}</strong> рублей, НДС не облагается (НПД).</p>
       ${data.discountAmount && data.discountDeadline ? `<p class="indent"><strong>При оплате до ${data.discountDeadline} сумма составляет ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : data.discountAmount ? `<p class="indent"><strong>Сумма со скидкой: ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : ''}
       <p class="indent">3.2. Заказчик оплачивает услуги, указанные в приложении №1, ${data.paymentTerms || "авансом в размере 100%"} на основании счета, выставленного Исполнителем, не позднее 5 (пяти) банковских дней после выставления счета.</p>
       <p class="indent">3.3. Обязательства Заказчика по оплате считаются исполненными в момент поступления денежных средств на расчетный счет Исполнителя.</p>
@@ -382,7 +382,7 @@ export function generateNmoContractHtml(data: DocumentData): string {
           </tr>
         </tfoot>
       </table>
-      <p style="margin-top:15px;">Стоимость услуг составляет по настоящей спецификации <strong>${formatMoney(total)}</strong> рублей. НДС нет.</p>
+      <p style="margin-top:15px;">Стоимость услуг составляет по настоящей спецификации <strong>${formatMoney(total)}</strong> рублей. НДС не облагается (НПД).</p>
       <div class="signatures">
         <div class="signature-block">
           <p><strong>Исполнитель:</strong></p>

@@ -253,7 +253,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
 
     <div class="section">
       <h2>3. СТОИМОСТЬ УСЛУГ И ПОРЯДОК РАСЧЕТОВ</h2>
-      <p class="indent">3.1. Сумма оплаты по договору определяется в соответствии со спецификацией (Приложение № 1 к настоящему Договору), которая является неотъемлемой частью Договора и составляет <strong>${formatMoney(total)}</strong> рублей, НДС нет.</p>
+      <p class="indent">3.1. Сумма оплаты по договору определяется в соответствии со спецификацией (Приложение № 1 к настоящему Договору), которая является неотъемлемой частью Договора и составляет <strong>${formatMoney(total)}</strong> рублей, НДС не облагается (НПД).</p>
       ${/вайб/i.test(cl.name || "") ? `<p class="indent">Указанная сумма является окончательной стоимостью услуг УЦ и не подлежит изменению в зависимости от количества документов, информация о которых будет выложена в ФИС ФРДО.</p>` : ''}
       ${data.discountAmount && data.discountDeadline ? `<p class="indent"><strong>При оплате до ${data.discountDeadline} сумма составляет ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : data.discountAmount ? `<p class="indent"><strong>Сумма со скидкой: ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : ''}
       <p class="indent">3.2. Заказчик оплачивает услуги, указанные в приложении №1, ${data.paymentTerms || "авансом в размере 100%"} на основании счета, выставленного УЦ, не позднее 5 (пяти) банковских дней после выставления счета.</p>
@@ -392,7 +392,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
           </tr>
         </tfoot>
       </table>
-      <p style="margin-top:15px;">Стоимость услуг составляет по настоящей спецификации <strong>${formatMoney(total)}</strong> рублей. НДС нет.</p>
+      <p style="margin-top:15px;">Стоимость услуг составляет по настоящей спецификации <strong>${formatMoney(total)}</strong> рублей. НДС не облагается (НПД).</p>
       <div class="signatures">
         <div class="signature-block">
           <p><strong>УЦ:</strong></p>
