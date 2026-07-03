@@ -1554,6 +1554,31 @@ const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; 
           >
             {downloadingId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (!confirm(`Удалить договор №${c.contract_number || ""}?`)) return;
+              try {
+                if (c.file_path) {
+                  await supabase.storage.from("contracts").remove([c.file_path]);
+                }
+                const { error } = await supabase.from("contracts").delete().eq("id", c.id);
+                if (error) throw error;
+                queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
+                queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
+                queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+                toast.success("Договор удалён");
+              } catch (err: any) {
+                toast.error(`Ошибка: ${err?.message || "не удалось удалить"}`);
+              }
+            }}
+            title="Удалить договор"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
         </div>
       ))}
     </div>
@@ -1562,6 +1587,7 @@ const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; 
 
 const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clientName: string; clientId?: string; onOpenQuickDocument?: (docType: "contract" | "invoice" | "act") => void }) => {
   const { data: documents = [] } = useClientDocuments(clientName);
+  const queryClient = useQueryClient();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [resendDoc, setResendDoc] = useState<any | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -1626,6 +1652,27 @@ const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clien
                 </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setResendDoc(d); }} title="Отправить заново по email">
                   <Send className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Удалить документ №${d.doc_number}?`)) return;
+                    try {
+                      const { error } = await supabase.from("generated_documents").delete().eq("id", d.id);
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["client-history-docs", clientName] });
+                      queryClient.invalidateQueries({ queryKey: ["admin-documents"] });
+                      toast.success("Документ удалён");
+                    } catch (err: any) {
+                      toast.error(`Ошибка: ${err?.message || "не удалось удалить"}`);
+                    }
+                  }}
+                  title="Удалить документ"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
             )}
