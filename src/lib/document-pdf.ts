@@ -31,7 +31,20 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   const noBreakRanges: Array<{ top: number; bottom: number }> = noBreakEls
     .map((el) => {
       const r = el.getBoundingClientRect();
-      return { top: r.top - bodyRect.top, bottom: r.bottom - bodyRect.top };
+      let top = r.top - bodyRect.top;
+      let bottom = r.bottom - bodyRect.top;
+      // Expand to include absolutely-positioned / overflowing descendants
+      // (e.g. stamp images anchored with bottom:-10px on the signature block).
+      el.querySelectorAll<HTMLElement>("*").forEach((child) => {
+        const cr = child.getBoundingClientRect();
+        if (cr.width === 0 && cr.height === 0) return;
+        const cTop = cr.top - bodyRect.top;
+        const cBottom = cr.bottom - bodyRect.top;
+        if (cTop < top) top = cTop;
+        if (cBottom > bottom) bottom = cBottom;
+      });
+      // Small safety padding so borders/shadows aren't clipped.
+      return { top, bottom: bottom + 8 };
     })
     .filter((r) => r.bottom > r.top)
     .sort((a, b) => a.top - b.top);
