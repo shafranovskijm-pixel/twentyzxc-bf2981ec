@@ -75,6 +75,8 @@ const Admin = () => {
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const [docInitialAutoSend, setDocInitialAutoSend] = useState(false);
   const [clientsInitialName, setClientsInitialName] = useState("");
+  const [contractsInitialClientName, setContractsInitialClientName] = useState("");
+  const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
 
@@ -930,17 +932,27 @@ const Admin = () => {
                 initialClientName={clientsInitialName}
                 onConsumed={() => setClientsInitialName("")}
                 onNavigate={(section, params) => {
-                  setDocInitialClientName(params?.clientName || "");
-                  setDocInitialDocType(params?.docType || "");
+                  if (section === "contracts") {
+                    setContractsInitialClientName(params?.clientName || "");
+                    setContractsAutoOpenNew(true);
+                  } else {
+                    setDocInitialClientName(params?.clientName || "");
+                    setDocInitialDocType(params?.docType || "");
+                  }
                   setActiveSection(section);
                 }}
               />}
               {activeSection === "sales" && <SalesTab />}
               {activeSection === "proposals" && <ProposalsTab />}
-              {activeSection === "contracts" && <ContractsTab onOpenClient={(name) => {
-                setClientsInitialName(name);
-                handleSectionChange("clients");
-              }} />}
+              {activeSection === "contracts" && <ContractsTab
+                onOpenClient={(name) => {
+                  setClientsInitialName(name);
+                  handleSectionChange("clients");
+                }}
+                initialClientName={contractsInitialClientName}
+                autoOpenNew={contractsAutoOpenNew}
+                onConsumed={() => { setContractsInitialClientName(""); setContractsAutoOpenNew(false); }}
+              />}
               {activeSection === "organizations" && <OrganizationsTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
                 setDocInitialContractId(task.contract_id || "");
