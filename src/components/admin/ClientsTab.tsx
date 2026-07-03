@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
+import QuickDocumentDialog from "./QuickDocumentDialog";
 
 interface Client {
   id: string;
@@ -74,6 +75,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [quickDoc, setQuickDoc] = useState<{ open: boolean; docType: "contract" | "invoice" | "act"; clientName: string }>({ open: false, docType: "contract", clientName: "" });
   const [name, setName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [phone, setPhone] = useState("");
@@ -502,13 +504,13 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               <div className="flex items-center gap-2">
                 {editingId && onNavigate && (
                   <>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("contracts", { clientName: name }); }} title="Создать договор">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "contract", clientName: name }); }} title="Договор с предпросмотром">
                       <FileText className="w-4 h-4 mr-1" /> Договор
                     </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "invoice" }); }} title="Сделать счёт">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "invoice", clientName: name }); }} title="Счёт с предпросмотром">
                       <ClipboardList className="w-4 h-4 mr-1" /> Счёт
                     </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); onNavigate("documents", { clientName: name, docType: "act" }); }} title="Сделать акт">
+                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "act", clientName: name }); }} title="Акт с предпросмотром">
                       <CheckSquare className="w-4 h-4 mr-1" /> Акт
                     </Button>
                     {telegram && (
@@ -702,6 +704,12 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
           )}
         </CardContent>
       </Card>
+      <QuickDocumentDialog
+        open={quickDoc.open}
+        onOpenChange={(v) => setQuickDoc((q) => ({ ...q, open: v }))}
+        clientName={quickDoc.clientName}
+        docType={quickDoc.docType}
+      />
     </div>
   );
 };
