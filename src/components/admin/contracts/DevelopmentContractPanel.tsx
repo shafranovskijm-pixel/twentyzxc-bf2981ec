@@ -11,7 +11,7 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { toast } from "sonner";
-import { Loader2, Search, ChevronsUpDown, FileText, GraduationCap, Building2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Search, ChevronsUpDown, FileText, FileType, GraduationCap, Building2, Plus, Trash2 } from "lucide-react";
 import {
   generateDevelopmentContractHtml,
   type DevelopmentClient,
@@ -198,6 +198,50 @@ export const DevelopmentContractPanel = () => {
     }
   };
 
+  const generateWord = async () => {
+    if (!selected) return toast.error("Выберите организацию");
+    if (!canGenerate) return toast.error("Заполните обязательные поля");
+    setGenerating(true);
+    const tid = toast.loading("Формирую Word...");
+    try {
+      // Пустые строки слушателей — заполните вручную в Word
+      const emptyStudents = Array.from(
+        { length: Math.max(1, parseInt(studentsCount, 10) || 1) },
+        () => ({ fio: "", snils: "" }),
+      );
+      const html = generateDevelopmentContractHtml({
+        number,
+        date,
+        client: selected,
+        programName,
+        hours: parseInt(hours, 10) || 72,
+        form,
+        studentsCount: parseInt(studentsCount, 10) || 1,
+        pricePerStudent: parseFloat(pricePerStudent) || 0,
+        students: emptyStudents,
+      });
+      // Word (.doc) читает HTML c MHTML-обёрткой
+      const wordHtml =
+        `<html xmlns:o="urn:schemas-microsoft-com:office:office" ` +
+        `xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">` +
+        `<head><meta charset="utf-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>` +
+        `<w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--></head><body>${html}</body></html>`;
+      const blob = new Blob(["\ufeff", wordHtml], { type: "application/msword" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Договор ${number.replace("/", "-")} ${selected.name.slice(0, 40)}.doc`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast.success("Word-файл готов — слушателей заполните в Word", { id: tid });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Ошибка: ${e?.message || "не удалось"}`, { id: tid });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -337,10 +381,16 @@ export const DevelopmentContractPanel = () => {
           </div>
         </div>
 
-        <Button className="w-full" onClick={generate} disabled={generating || !canGenerate} size="lg">
-          {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
-          Сгенерировать договор
-        </Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Button onClick={generate} disabled={generating || !canGenerate} size="lg">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
+            Сгенерировать PDF
+          </Button>
+          <Button onClick={generateWord} disabled={generating || !canGenerate} size="lg" variant="outline">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileType className="w-4 h-4 mr-2" />}
+            Скачать в Word (слушатели вручную)
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
