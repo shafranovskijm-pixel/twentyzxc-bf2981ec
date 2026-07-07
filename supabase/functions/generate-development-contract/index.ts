@@ -9,7 +9,25 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "content-disposition, content-length, x-document-mime-type",
 };
+
+const docMimeTypes = {
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword;charset=utf-8",
+} as const;
+
+function downloadHeaders(format: "docx" | "doc", length: number) {
+  return {
+    ...corsHeaders,
+    // supabase-js returns Blob only for octet-stream/pdf. With the native Word MIME
+    // it decodes the ZIP as text and the downloaded .docx becomes unreadable.
+    "Content-Type": "application/octet-stream",
+    "X-Document-Mime-Type": docMimeTypes[format],
+    "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(`contract.${format}`)}`,
+    "Content-Length": String(length),
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -25,22 +43,14 @@ Deno.serve(async (req) => {
     if (body.format === "docx") {
       const bytes = await generateDevelopmentContractDocxBytes(body.data);
       return new Response(bytes, {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          "Content-Length": String(bytes.length),
-        },
+        headers: downloadHeaders("docx", bytes.length),
       });
     }
 
     if (body.format === "doc") {
       const bytes = generateDevelopmentContractDocBytes(body.data);
       return new Response(bytes, {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "application/msword;charset=utf-8",
-          "Content-Length": String(bytes.length),
-        },
+        headers: downloadHeaders("doc", bytes.length),
       });
     }
 

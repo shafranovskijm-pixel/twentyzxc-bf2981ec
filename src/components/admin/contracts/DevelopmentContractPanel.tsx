@@ -241,7 +241,7 @@ export const DevelopmentContractPanel = () => {
       const mime = format === "docx"
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         : "application/msword;charset=utf-8";
-      downloadBlob(blob.type ? blob : new Blob([blob], { type: mime }), format);
+      downloadBlob(new Blob([blob], { type: mime }), format);
       toast.success(`Word (.${format}) готов с текстом договора`, { id: tid });
     } catch (e: any) {
       console.error(e);
