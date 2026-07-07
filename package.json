@@ -59,6 +59,7 @@
     "framer-motion": "^11.18.2",
     "html-docx-js": "^0.3.1",
     "html-docx-js-typescript": "^0.1.5",
+    "html-to-docx": "^1.8.0",
     "html2canvas": "1.4.1",
     "input-otp": "^1.4.2",
     "jspdf": "2.5.2",
