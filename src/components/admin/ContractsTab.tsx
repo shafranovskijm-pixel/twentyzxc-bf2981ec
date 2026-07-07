@@ -17,6 +17,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
+import DevelopmentContractPanel from "./contracts/DevelopmentContractPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { resendContractEmail } from "@/lib/resend-contract";
 
@@ -749,12 +750,18 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         <TabsList>
           <TabsTrigger value="active">Активные ({activeCount})</TabsTrigger>
           <TabsTrigger value="archive" className="gap-2"><Archive className="w-4 h-4" />Архив ({archiveCount})</TabsTrigger>
+          <TabsTrigger value="development" className="gap-2">
+            <FileCheck className="w-4 h-4" />Договор развития
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="active" className="mt-4">
           {renderTable(paginatedItems, false)}
         </TabsContent>
         <TabsContent value="archive" className="mt-4">
           {renderTable(paginatedItems, true)}
+        </TabsContent>
+        <TabsContent value="development" className="mt-4">
+          <DevelopmentContractPanel />
         </TabsContent>
       </Tabs>
 
