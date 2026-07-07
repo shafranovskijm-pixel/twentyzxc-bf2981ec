@@ -7,16 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { toast } from "sonner";
-import { Loader2, Search, ChevronsUpDown, FileText, FileType, GraduationCap, Building2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Search, ChevronsUpDown, FileText, FileType, GraduationCap, Building2, Plus, Trash2, Eye } from "lucide-react";
 import {
   generateDevelopmentContractHtml,
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
+// @ts-ignore — no types
+import htmlDocx from "html-docx-js/dist/html-docx";
 
 interface ClientRow {
   id: string;
@@ -55,6 +58,7 @@ export const DevelopmentContractPanel = () => {
   const [students, setStudents] = useState<StudentRow[]>([{ fio: "", snils: "" }]);
 
   const [generating, setGenerating] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
   // Список клиентов CRM для выбора
   const { data: clients = [] } = useQuery({
@@ -163,23 +167,34 @@ export const DevelopmentContractPanel = () => {
 
   const canGenerate = !!selected?.name && !!number && !!date && !!programName && parseFloat(pricePerStudent) > 0;
 
+  const buildHtml = (emptyStudents = false) =>
+    generateDevelopmentContractHtml({
+      number,
+      date,
+      client: selected!,
+      programName,
+      hours: parseInt(hours, 10) || 72,
+      form,
+      studentsCount: parseInt(studentsCount, 10) || 1,
+      pricePerStudent: parseFloat(pricePerStudent) || 0,
+      students: emptyStudents
+        ? Array.from({ length: Math.max(1, parseInt(studentsCount, 10) || 1) }, () => ({ fio: "", snils: "" }))
+        : students,
+    });
+
+  const openPreview = () => {
+    if (!selected) return toast.error("Выберите организацию");
+    if (!canGenerate) return toast.error("Заполните обязательные поля");
+    setPreviewHtml(buildHtml(false));
+  };
+
   const generate = async () => {
     if (!selected) return toast.error("Выберите организацию");
     if (!canGenerate) return toast.error("Заполните обязательные поля");
     setGenerating(true);
     const tid = toast.loading("Генерирую договор...");
     try {
-      const html = generateDevelopmentContractHtml({
-        number,
-        date,
-        client: selected,
-        programName,
-        hours: parseInt(hours, 10) || 72,
-        form,
-        studentsCount: parseInt(studentsCount, 10) || 1,
-        pricePerStudent: parseFloat(pricePerStudent) || 0,
-        students,
-      });
+      const html = buildHtml(false);
       const blob = await generatePdfBlob(html);
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
@@ -202,38 +217,19 @@ export const DevelopmentContractPanel = () => {
     if (!selected) return toast.error("Выберите организацию");
     if (!canGenerate) return toast.error("Заполните обязательные поля");
     setGenerating(true);
-    const tid = toast.loading("Формирую Word...");
+    const tid = toast.loading("Формирую Word (.docx)...");
     try {
-      // Пустые строки слушателей — заполните вручную в Word
-      const emptyStudents = Array.from(
-        { length: Math.max(1, parseInt(studentsCount, 10) || 1) },
-        () => ({ fio: "", snils: "" }),
-      );
-      const html = generateDevelopmentContractHtml({
-        number,
-        date,
-        client: selected,
-        programName,
-        hours: parseInt(hours, 10) || 72,
-        form,
-        studentsCount: parseInt(studentsCount, 10) || 1,
-        pricePerStudent: parseFloat(pricePerStudent) || 0,
-        students: emptyStudents,
-      });
-      // Word (.doc) читает HTML c MHTML-обёрткой
-      const wordHtml =
-        `<html xmlns:o="urn:schemas-microsoft-com:office:office" ` +
-        `xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">` +
-        `<head><meta charset="utf-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View>` +
-        `<w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--></head><body>${html}</body></html>`;
-      const blob = new Blob(["\ufeff", wordHtml], { type: "application/msword" });
+      const html = buildHtml(true);
+      const fullHtml =
+        `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+      const blob: Blob = htmlDocx.asBlob(fullHtml, { orientation: "portrait", margins: { top: 720, right: 720, bottom: 720, left: 720 } });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Договор ${number.replace("/", "-")} ${selected.name.slice(0, 40)}.doc`;
+      a.download = `Договор ${number.replace("/", "-")} ${selected.name.slice(0, 40)}.docx`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      toast.success("Word-файл готов — слушателей заполните в Word", { id: tid });
+      toast.success("Word (.docx) готов — слушателей заполните в Word", { id: tid });
     } catch (e: any) {
       console.error(e);
       toast.error(`Ошибка: ${e?.message || "не удалось"}`, { id: tid });
@@ -381,16 +377,33 @@ export const DevelopmentContractPanel = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <Button onClick={openPreview} disabled={!canGenerate} size="lg" variant="secondary">
+            <Eye className="w-4 h-4 mr-2" />
+            Предпросмотр
+          </Button>
           <Button onClick={generate} disabled={generating || !canGenerate} size="lg">
             {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileText className="w-4 h-4 mr-2" />}
             Сгенерировать PDF
           </Button>
           <Button onClick={generateWord} disabled={generating || !canGenerate} size="lg" variant="outline">
             {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileType className="w-4 h-4 mr-2" />}
-            Скачать в Word (слушатели вручную)
+            Скачать .docx (слушатели вручную)
           </Button>
         </div>
+
+        <Dialog open={!!previewHtml} onOpenChange={(o) => !o && setPreviewHtml(null)}>
+          <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6">
+              <DialogTitle>Предпросмотр договора №{number}</DialogTitle>
+            </DialogHeader>
+            <iframe
+              title="Предпросмотр"
+              srcDoc={previewHtml || ""}
+              className="flex-1 w-full border-0 rounded-b-lg bg-white"
+            />
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
