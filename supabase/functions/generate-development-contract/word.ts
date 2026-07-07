@@ -13,12 +13,11 @@ import {
   WidthType,
   TabStopPosition,
   TabStopType,
-} from "docx";
-import JSZip from "jszip";
+} from "npm:docx@8.5.0";
 import {
   generateDevelopmentContractHtml,
   type DevelopmentContractInput,
-} from "@/lib/development-contract-template";
+} from "./template.ts";
 
 const EXECUTOR = {
   short: 'АНО ДПО и С "Институт развития"',
