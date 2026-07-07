@@ -15,9 +15,14 @@ import { toast } from "sonner";
 import { Loader2, Search, ChevronsUpDown, FileText, FileType, GraduationCap, Building2, Plus, Trash2, Eye } from "lucide-react";
 import {
   generateDevelopmentContractHtml,
+  type DevelopmentContractInput,
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
+import {
+  generateDevelopmentContractDocBlob,
+  generateDevelopmentContractDocxBlob,
+} from "@/lib/development-contract-word";
 
 interface ClientRow {
   id: string;
@@ -165,8 +170,7 @@ export const DevelopmentContractPanel = () => {
 
   const canGenerate = !!selected?.name && !!number && !!date && !!programName && parseFloat(pricePerStudent) > 0;
 
-  const buildHtml = (emptyStudents = false) =>
-    generateDevelopmentContractHtml({
+  const buildContractInput = (emptyStudents = false): DevelopmentContractInput => ({
       number,
       date,
       client: selected!,
@@ -179,6 +183,17 @@ export const DevelopmentContractPanel = () => {
         ? Array.from({ length: Math.max(1, parseInt(studentsCount, 10) || 1) }, () => ({ fio: "", snils: "" }))
         : students,
     });
+
+  const buildHtml = (emptyStudents = false) => generateDevelopmentContractHtml(buildContractInput(emptyStudents));
+
+  const downloadBlob = (blob: Blob, extension: "pdf" | "docx" | "doc") => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Договор ${number.replace("/", "-")} ${selected!.name.slice(0, 40)}.${extension}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
 
   const openPreview = () => {
     if (!selected) return toast.error("Выберите организацию");
@@ -196,11 +211,7 @@ export const DevelopmentContractPanel = () => {
       const blob = await generatePdfBlob(html);
       const url = URL.createObjectURL(blob);
       window.open(url, "_blank");
-      // Триггер скачивания
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Договор ${number.replace("/", "-")} ${selected.name.slice(0, 40)}.pdf`;
-      a.click();
+      downloadBlob(blob, "pdf");
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       toast.success("Договор сгенерирован", { id: tid });
     } catch (e: any) {
@@ -217,37 +228,29 @@ export const DevelopmentContractPanel = () => {
     setGenerating(true);
     const tid = toast.loading("Формирую Word (.docx)...");
     try {
-      const html = buildHtml(true);
-      // Шаблон уже возвращает полный <!DOCTYPE html>...</html>
-      // @ts-ignore — нет типов
-      const mod = await import("@turbodocx/html-to-docx/dist/html-to-docx.browser.esm.js");
-      const HTMLtoDOCX = (mod as any).default || mod;
-      const out = await HTMLtoDOCX(html, null, {
-        orientation: "portrait",
-        margins: { top: 720, right: 720, bottom: 720, left: 720 },
-        table: { row: { cantSplit: true } },
-      });
-      const blob: Blob = out instanceof Blob ? out : new Blob([out as ArrayBuffer], {
-        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      });
-      // Валидация: реальный .docx — это ZIP, начинается с "PK" и весит > 1 КБ
-      if (!blob || blob.size < 1024) {
-        throw new Error(`Файл получился пустой (${blob?.size || 0} байт)`);
-      }
-      const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
-      if (head[0] !== 0x50 || head[1] !== 0x4b) {
-        throw new Error("Некорректный формат .docx (нет ZIP-подписи)");
-      }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `Договор ${number.replace("/", "-")} ${selected.name.slice(0, 40)}.docx`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      toast.success("Word (.docx) готов — слушателей заполните в Word", { id: tid });
+      const blob = await generateDevelopmentContractDocxBlob(buildContractInput(true));
+      downloadBlob(blob, "docx");
+      toast.success("Word (.docx) готов с текстом договора", { id: tid });
     } catch (e: any) {
       console.error(e);
-      toast.error(`Ошибка: ${e?.message || "не удалось"}`, { id: tid });
+      toast.error(`Ошибка DOCX: ${e?.message || "не удалось сформировать файл"}`, { id: tid });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const generateDoc = async () => {
+    if (!selected) return toast.error("Выберите организацию");
+    if (!canGenerate) return toast.error("Заполните обязательные поля");
+    setGenerating(true);
+    const tid = toast.loading("Формирую Word (.doc)...");
+    try {
+      const blob = generateDevelopmentContractDocBlob(buildContractInput(true));
+      downloadBlob(blob, "doc");
+      toast.success("Word (.doc) готов с текстом договора", { id: tid });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(`Ошибка DOC: ${e?.message || "не удалось сформировать файл"}`, { id: tid });
     } finally {
       setGenerating(false);
     }
@@ -392,7 +395,7 @@ export const DevelopmentContractPanel = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
           <Button onClick={openPreview} disabled={!canGenerate} size="lg" variant="secondary">
             <Eye className="w-4 h-4 mr-2" />
             Предпросмотр
@@ -403,7 +406,11 @@ export const DevelopmentContractPanel = () => {
           </Button>
           <Button onClick={generateWord} disabled={generating || !canGenerate} size="lg" variant="outline">
             {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileType className="w-4 h-4 mr-2" />}
-            Скачать .docx (слушатели вручную)
+            Скачать .docx
+          </Button>
+          <Button onClick={generateDoc} disabled={generating || !canGenerate} size="lg" variant="outline">
+            {generating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileType className="w-4 h-4 mr-2" />}
+            Скачать .doc
           </Button>
         </div>
 
