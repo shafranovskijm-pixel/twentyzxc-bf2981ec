@@ -18,8 +18,6 @@ import {
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
-// @ts-ignore — нет типов
-import HTMLtoDOCX from "@turbodocx/html-to-docx";
 
 interface ClientRow {
   id: string;
@@ -222,6 +220,9 @@ export const DevelopmentContractPanel = () => {
       const html = buildHtml(true);
       const fullHtml =
         `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+      // @ts-ignore — нет типов
+      const mod = await import("@turbodocx/html-to-docx");
+      const HTMLtoDOCX = (mod as any).default || mod;
       const out = await HTMLtoDOCX(fullHtml, null, {
         orientation: "portrait",
         margins: { top: 720, right: 720, bottom: 720, left: 720 },
