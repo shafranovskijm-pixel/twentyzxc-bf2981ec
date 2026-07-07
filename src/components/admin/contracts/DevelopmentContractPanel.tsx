@@ -228,6 +228,14 @@ export const DevelopmentContractPanel = () => {
       const blob = out instanceof Blob ? out : new Blob([out as any], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
+      // Валидация: реальный .docx — это ZIP, начинается с "PK" и весит > 1 КБ
+      if (!blob || blob.size < 1024) {
+        throw new Error(`Файл получился пустой (${blob?.size || 0} байт)`);
+      }
+      const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
+      if (head[0] !== 0x50 || head[1] !== 0x4b) {
+        throw new Error("Некорректный формат .docx (нет ZIP-подписи)");
+      }
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
