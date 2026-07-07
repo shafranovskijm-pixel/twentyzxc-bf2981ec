@@ -218,12 +218,11 @@ export const DevelopmentContractPanel = () => {
     const tid = toast.loading("Формирую Word (.docx)...");
     try {
       const html = buildHtml(true);
-      const fullHtml =
-        `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+      // Шаблон уже возвращает полный <!DOCTYPE html>...</html>
       // @ts-ignore — нет типов
       const mod = await import("@turbodocx/html-to-docx/dist/html-to-docx.browser.esm.js");
       const HTMLtoDOCX = (mod as any).default || mod;
-      const out = await HTMLtoDOCX(fullHtml, null, {
+      const out = await HTMLtoDOCX(html, null, {
         orientation: "portrait",
         margins: { top: 720, right: 720, bottom: 720, left: 720 },
         table: { row: { cantSplit: true } },
