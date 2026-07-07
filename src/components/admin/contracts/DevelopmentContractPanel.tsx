@@ -237,6 +237,7 @@ export const DevelopmentContractPanel = () => {
       const html = buildHtml(true);
       const fullHtml =
         `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+      const htmlDocx = await loadHtmlDocx();
       const blob: Blob = htmlDocx.asBlob(fullHtml, { orientation: "portrait", margins: { top: 720, right: 720, bottom: 720, left: 720 } });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
