@@ -19,10 +19,6 @@ import {
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
-import {
-  generateDevelopmentContractDocBlob,
-  generateDevelopmentContractDocxBlob,
-} from "@/lib/development-contract-word";
 
 interface ClientRow {
   id: string;
@@ -222,39 +218,41 @@ export const DevelopmentContractPanel = () => {
     }
   };
 
-  const generateWord = async () => {
+  const generateOnServer = async (format: "docx" | "doc") => {
     if (!selected) return toast.error("Выберите организацию");
     if (!canGenerate) return toast.error("Заполните обязательные поля");
     setGenerating(true);
-    const tid = toast.loading("Формирую Word (.docx)...");
+    const tid = toast.loading(`Формирую Word (.${format}) на сервере...`);
     try {
-      const blob = await generateDevelopmentContractDocxBlob(buildContractInput(true));
-      downloadBlob(blob, "docx");
-      toast.success("Word (.docx) готов с текстом договора", { id: tid });
+      const { data, error } = await supabase.functions.invoke(
+        "generate-development-contract",
+        { body: { format, data: buildContractInput(true) } },
+      );
+      if (error) throw error;
+      let blob: Blob;
+      if (data instanceof Blob) blob = data;
+      else if (data instanceof ArrayBuffer) blob = new Blob([data]);
+      else if (data && typeof data === "object" && "error" in (data as any)) {
+        throw new Error((data as any).error);
+      } else {
+        blob = new Blob([data as BlobPart]);
+      }
+      if (!blob || blob.size < 500) throw new Error("сервер вернул пустой файл");
+      const mime = format === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "application/msword;charset=utf-8";
+      downloadBlob(blob.type ? blob : new Blob([blob], { type: mime }), format);
+      toast.success(`Word (.${format}) готов с текстом договора`, { id: tid });
     } catch (e: any) {
       console.error(e);
-      toast.error(`Ошибка DOCX: ${e?.message || "не удалось сформировать файл"}`, { id: tid });
+      toast.error(`Ошибка ${format.toUpperCase()}: ${e?.message || "не удалось сформировать файл"}`, { id: tid });
     } finally {
       setGenerating(false);
     }
   };
 
-  const generateDoc = async () => {
-    if (!selected) return toast.error("Выберите организацию");
-    if (!canGenerate) return toast.error("Заполните обязательные поля");
-    setGenerating(true);
-    const tid = toast.loading("Формирую Word (.doc)...");
-    try {
-      const blob = generateDevelopmentContractDocBlob(buildContractInput(true));
-      downloadBlob(blob, "doc");
-      toast.success("Word (.doc) готов с текстом договора", { id: tid });
-    } catch (e: any) {
-      console.error(e);
-      toast.error(`Ошибка DOC: ${e?.message || "не удалось сформировать файл"}`, { id: tid });
-    } finally {
-      setGenerating(false);
-    }
-  };
+  const generateWord = () => generateOnServer("docx");
+  const generateDoc = () => generateOnServer("doc");
 
   return (
     <Card>
