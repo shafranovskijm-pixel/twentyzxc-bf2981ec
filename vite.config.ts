@@ -21,4 +21,7 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ["@turbodocx/html-to-docx"],
   },
+  define: {
+    global: "globalThis",
+  },
 }));
