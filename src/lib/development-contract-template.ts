@@ -179,8 +179,6 @@ const styles = `
   .signature-block { width: 48%; font-size: 11pt; position: relative; padding-bottom: 40px; }
   .signature-block p { text-indent: 0; margin: 2px 0; }
   .signature-line { border-top: 1px solid #111; margin-top: 44px; padding-top: 3px; position: relative; min-height: 22px; }
-  .signature-img { position: absolute; height: 46px; bottom: 0; left: 60px; }
-  .stamp-img { position: absolute; height: 96px; opacity: 0.88; bottom: -14px; left: 10px; }
   .page-break { page-break-before: always; break-before: page; padding-top: 30px; }
   strong { font-weight: bold; }
 </style>
@@ -338,9 +336,7 @@ export function generateDevelopmentContractHtml(data: DevelopmentContractInput):
         <p>БИК: ${EXECUTOR.bank_bik}</p>
         <div class="signature-line">
           _______________ / ${EXECUTOR.director_short} /
-          <img class="signature-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/signature.png" />
         </div>
-        <img class="stamp-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/stamp.png" />
       </div>
       <div class="signature-block">
         <p><strong>Заказчик:</strong></p>
@@ -382,9 +378,7 @@ export function generateDevelopmentContractHtml(data: DevelopmentContractInput):
           <p><strong>Исполнитель:</strong></p>
           <div class="signature-line">
             _______________ / ${EXECUTOR.director_short} /
-            <img class="signature-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/signature.png" />
           </div>
-          <img class="stamp-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
@@ -425,9 +419,7 @@ export function generateDevelopmentContractHtml(data: DevelopmentContractInput):
           <p><strong>Исполнитель:</strong></p>
           <div class="signature-line">
             _______________ / ${EXECUTOR.director_short} /
-            <img class="signature-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/signature.png" />
           </div>
-          <img class="stamp-img" src="${typeof window !== 'undefined' ? window.location.origin : ''}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
