@@ -371,7 +371,7 @@ function buildDocxChildren(data: DevelopmentContractInput) {
   ];
 }
 
-export async function generateDevelopmentContractDocxBlob(data: DevelopmentContractInput): Promise<Blob> {
+export async function generateDevelopmentContractDocxBytes(data: DevelopmentContractInput): Promise<Uint8Array> {
   const doc = new Document({
     creator: "24ZXC",
     title: `Договор № ${data.number}`,
@@ -392,35 +392,19 @@ export async function generateDevelopmentContractDocxBlob(data: DevelopmentContr
     }],
   });
 
-  const blob = await Packer.toBlob(doc);
-  await validateDevelopmentContractDocxBlob(blob);
-  return blob;
+  const bytes = await Packer.toBuffer(doc);
+  const u8 = new Uint8Array(bytes);
+  if (u8.length < 8_000 || u8[0] !== 0x50 || u8[1] !== 0x4b) {
+    throw new Error("DOCX не сформирован корректно");
+  }
+  return u8;
 }
 
-export function generateDevelopmentContractDocBlob(data: DevelopmentContractInput): Blob {
+export function generateDevelopmentContractDocBytes(data: DevelopmentContractInput): Uint8Array {
   const html = generateDevelopmentContractHtml(data);
   const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
   if (text.length < 1000 || !text.includes("Договор") || !text.includes("Институт развития")) {
     throw new Error("DOC не сформирован: в файле нет текста договора");
   }
-  return new Blob([`\ufeff${html}`], { type: "application/msword;charset=utf-8" });
-}
-
-export async function validateDevelopmentContractDocxBlob(blob: Blob): Promise<void> {
-  if (!blob || blob.size < 8_000) {
-    throw new Error(`DOCX не сформирован: файл слишком маленький (${blob?.size || 0} байт)`);
-  }
-  const head = new Uint8Array(await blob.slice(0, 2).arrayBuffer());
-  if (head[0] !== 0x50 || head[1] !== 0x4b) {
-    throw new Error("DOCX не сформирован: файл не является ZIP-документом Word");
-  }
-  const zip = await JSZip.loadAsync(blob);
-  const xml = await zip.file("word/document.xml")?.async("text");
-  if (!xml) {
-    throw new Error("DOCX не сформирован: внутри нет word/document.xml");
-  }
-  const plainText = xml.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  if (plainText.length < 1000 || !plainText.includes("Договор") || !plainText.includes("Институт развития")) {
-    throw new Error("DOCX не сформирован: внутри файла нет текста договора");
-  }
+  return new TextEncoder().encode(`\ufeff${html}`);
 }
