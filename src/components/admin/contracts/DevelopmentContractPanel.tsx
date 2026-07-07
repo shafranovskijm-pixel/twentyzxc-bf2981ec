@@ -18,8 +18,23 @@ import {
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
-// @ts-ignore — no types
-import htmlDocx from "html-docx-js/dist/html-docx";
+
+// html-docx-js использует `with`-statement, который ломает Rollup.
+// Грузим библиотеку с CDN по требованию.
+const HTML_DOCX_CDN = "https://unpkg.com/html-docx-js@0.3.1/dist/html-docx.js";
+let htmlDocxPromise: Promise<any> | null = null;
+const loadHtmlDocx = (): Promise<any> => {
+  if ((window as any).htmlDocx) return Promise.resolve((window as any).htmlDocx);
+  if (htmlDocxPromise) return htmlDocxPromise;
+  htmlDocxPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = HTML_DOCX_CDN;
+    s.onload = () => resolve((window as any).htmlDocx);
+    s.onerror = () => reject(new Error("Не удалось загрузить html-docx-js"));
+    document.head.appendChild(s);
+  });
+  return htmlDocxPromise;
+};
 
 interface ClientRow {
   id: string;
@@ -222,6 +237,7 @@ export const DevelopmentContractPanel = () => {
       const html = buildHtml(true);
       const fullHtml =
         `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
+      const htmlDocx = await loadHtmlDocx();
       const blob: Blob = htmlDocx.asBlob(fullHtml, { orientation: "portrait", margins: { top: 720, right: 720, bottom: 720, left: 720 } });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
