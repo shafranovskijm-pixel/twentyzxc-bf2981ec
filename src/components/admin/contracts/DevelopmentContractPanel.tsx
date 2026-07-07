@@ -18,7 +18,8 @@ import {
   type DevelopmentClient,
 } from "@/lib/development-contract-template";
 import { generatePdfBlob } from "@/lib/document-pdf";
-import { asBlob as htmlToDocxBlob } from "html-docx-js-typescript";
+// @ts-ignore — нет типов
+import HTMLtoDOCX from "@turbodocx/html-to-docx";
 
 interface ClientRow {
   id: string;
@@ -221,11 +222,12 @@ export const DevelopmentContractPanel = () => {
       const html = buildHtml(true);
       const fullHtml =
         `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
-      const out = await htmlToDocxBlob(fullHtml, {
+      const out = await HTMLtoDOCX(fullHtml, null, {
         orientation: "portrait",
         margins: { top: 720, right: 720, bottom: 720, left: 720 },
+        table: { row: { cantSplit: true } },
       });
-      const blob = out instanceof Blob ? out : new Blob([out as any], {
+      const blob: Blob = out instanceof Blob ? out : new Blob([out as ArrayBuffer], {
         type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
       // Валидация: реальный .docx — это ZIP, начинается с "PK" и весит > 1 КБ
