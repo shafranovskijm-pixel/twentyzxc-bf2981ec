@@ -221,7 +221,7 @@ export const DevelopmentContractPanel = () => {
       const fullHtml =
         `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${html}</body></html>`;
       // @ts-ignore — нет типов
-      const mod = await import("@turbodocx/html-to-docx");
+      const mod = await import("@turbodocx/html-to-docx/dist/html-to-docx.browser.esm.js");
       const HTMLtoDOCX = (mod as any).default || mod;
       const out = await HTMLtoDOCX(fullHtml, null, {
         orientation: "portrait",
