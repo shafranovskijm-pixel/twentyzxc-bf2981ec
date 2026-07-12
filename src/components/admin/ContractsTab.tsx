@@ -634,7 +634,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                       </TableCell>
                       <TableCell>
                         {c.contract_number ? (
-                          <button onClick={() => startEdit(c)} className="font-mono hover:underline hover:text-primary transition-colors cursor-pointer">
+                          <button onClick={() => openDocs(c)} className="font-mono hover:underline hover:text-primary transition-colors cursor-pointer">
                             {c.contract_number}
                           </button>
                         ) : "—"}
