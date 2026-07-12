@@ -81,6 +81,24 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
 
+  // Sidebar visibility
+  const [hiddenSections, setHiddenSections] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(SIDEBAR_HIDDEN_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  const toggleSectionHidden = (id: string, hide: boolean) => {
+    setHiddenSections(prev => {
+      const next = hide ? Array.from(new Set([...prev, id])) : prev.filter(x => x !== id);
+      localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event(SIDEBAR_VISIBILITY_EVENT));
+      if (hide && activeSection === id) setActiveSection("profile");
+      return next;
+    });
+  };
+
   // Theme state
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem("admin-theme");
