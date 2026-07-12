@@ -81,6 +81,7 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const [docInitialAutoSend, setDocInitialAutoSend] = useState(false);
+  const [docInitialEditDocId, setDocInitialEditDocId] = useState("");
   const [clientsInitialName, setClientsInitialName] = useState("");
   const [contractsInitialClientName, setContractsInitialClientName] = useState("");
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
