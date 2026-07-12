@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAdminAuth } from "@/hooks/use-admin-auth";
@@ -15,21 +15,20 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import { defaultMenuItems as sidebarMenuItems, HIDDEN_STORAGE_KEY as SIDEBAR_HIDDEN_KEY, SIDEBAR_VISIBILITY_EVENT } from "@/components/admin/AdminSidebar";
 import Footer from "@/components/Footer";
 // dropdown removed — settings moved to dedicated sections
-import ClientsTab from "@/components/admin/ClientsTab";
-import ContractsTab from "@/components/admin/ContractsTab";
-import OrganizationsTab from "@/components/admin/OrganizationsTab";
-import PlannerTab from "@/components/admin/PlannerTab";
-import DocumentsTab from "@/components/admin/DocumentsTab";
-import RequisitesTab from "@/components/admin/RequisitesTab";
-
-import HistoryTab from "@/components/admin/HistoryTab";
-import TzTab from "@/components/admin/TzTab";
-import NmoTab from "@/components/admin/NmoTab";
-import FrdoTab from "@/components/admin/FrdoTab";
-import SalesTab from "@/components/admin/SalesTab";
-import ProposalsTab from "@/components/admin/ProposalsTab";
+const ClientsTab = lazy(() => import("@/components/admin/ClientsTab"));
+const ContractsTab = lazy(() => import("@/components/admin/ContractsTab"));
+const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
+const PlannerTab = lazy(() => import("@/components/admin/PlannerTab"));
+const DocumentsTab = lazy(() => import("@/components/admin/DocumentsTab"));
+const RequisitesTab = lazy(() => import("@/components/admin/RequisitesTab"));
+const HistoryTab = lazy(() => import("@/components/admin/HistoryTab"));
+const TzTab = lazy(() => import("@/components/admin/TzTab"));
+const NmoTab = lazy(() => import("@/components/admin/NmoTab"));
+const FrdoTab = lazy(() => import("@/components/admin/FrdoTab"));
+const SalesTab = lazy(() => import("@/components/admin/SalesTab"));
+const ProposalsTab = lazy(() => import("@/components/admin/ProposalsTab"));
+const InlineAIChat = lazy(() => import("@/components/admin/InlineAIChat"));
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
-import InlineAIChat from "@/components/admin/InlineAIChat";
 import { Save, X, Plus, Loader2, Search, Share2, Mail, Sparkles, Trash2, Building2, History, GraduationCap, FileCheck, Sun, Moon, Camera, RotateCcw, Palette, User, CreditCard, Check, Settings, ChevronLeft, ChevronRight, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
@@ -737,7 +736,7 @@ const Admin = () => {
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-
+              <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
               {activeSection === "profile" && (
                 <div className="flex gap-6">
                   {/* Vertical tabs */}
@@ -1057,6 +1056,7 @@ const Admin = () => {
               {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
               {activeSection === "tz" && <TzTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}
+              </Suspense>
                 </motion.div>
               </AnimatePresence>
             </main>
