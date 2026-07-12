@@ -811,6 +811,31 @@ const Admin = () => {
                             </div>
                           </CardContent>
                         </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Menu className="h-5 w-5" />Пункты меню</CardTitle>
+                            <CardDescription>Скройте разделы, которыми не пользуетесь. Их можно вернуть в любой момент.</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {sidebarMenuItems.map((item) => {
+                              const Icon = item.icon;
+                              const isHidden = hiddenSections.includes(item.id);
+                              return (
+                                <div key={item.id} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span className="text-sm truncate">{item.label}</span>
+                                  </div>
+                                  <Switch
+                                    checked={!isHidden}
+                                    onCheckedChange={(checked) => toggleSectionHidden(item.id, !checked)}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </CardContent>
+                        </Card>
                       </>
                     )}
 
