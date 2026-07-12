@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { generatePdfBlob } from "./document-pdf";
+import { generatePdfBlob, blobToBase64 } from "./document-pdf";
 
 export interface ResendOptions {
   contractId: string;
@@ -150,64 +150,74 @@ async function uploadAndSign(
 }
 
 /**
- * Get signed URL for a kind of document — prefer stored PDF, fallback to regenerating from HTML.
- * Returns { url, label } or null if neither stored file nor source HTML exist.
+ * Get PDF bytes for a kind of document — prefer stored PDF, fallback to regenerating from HTML.
+ * Returns { base64, filename, label } or null if neither stored file nor source HTML exist.
  */
-async function getOrBuildPdfUrl(
+async function getOrBuildPdfAttachment(
   kind: "contract" | "invoice",
   opts: ResendOptions
-): Promise<{ url: string; label: string } | null> {
-  // 1. Try stored PDF
+): Promise<{ base64: string; filename: string; label: string } | null> {
+  const doc = await findLatestDoc(kind, opts);
+  const labelPrefix = kind === "contract" ? "Договор" : "Счёт";
+
+  // 1. Try stored PDF — download bytes directly (no signed URL)
   const stored = await findStoredPdf(opts.contractId, kind);
   if (stored) {
-    const url = await trySignedUrl(stored.file_path);
-    if (url) {
-      // Try to enrich label from generated_documents (number/date) — fallback to file_name
-      const doc = await findLatestDoc(kind, opts);
-      const label = doc
-        ? `${kind === "contract" ? "Договор" : "Счёт"} №${doc.doc_number} от ${formatDate(doc.doc_date)}`
-        : stored.file_name;
-      return { url, label };
+    try {
+      const { data, error } = await supabase.storage.from("contracts").download(stored.file_path);
+      if (!error && data) {
+        const base64 = await blobToBase64(data);
+        const filename = doc
+          ? `${labelPrefix}_${safeFilename(doc.doc_number)}_${doc.doc_date}.pdf`
+          : stored.file_name;
+        const label = doc
+          ? `${labelPrefix} №${doc.doc_number} от ${formatDate(doc.doc_date)}`
+          : stored.file_name;
+        return { base64, filename, label };
+      }
+    } catch {
+      // fall through to regenerate
     }
   }
 
-  // 2. Fallback — regenerate from stored HTML
-  const doc = await findLatestDoc(kind, opts);
+  // 2. Fallback — regenerate PDF from stored HTML
   if (!doc) return null;
-
   const blob = await generatePdfBlob(doc.html_content);
+  const base64 = await blobToBase64(blob);
   const safeNum = safeFilename(doc.doc_number);
-  const displayName = `${kind === "contract" ? "Договор" : "Счёт"}_${safeNum}_${doc.doc_date}.pdf`;
-  const storageName = `${kind === "contract" ? "Dogovor" : "Schet"}_${safeNum}_${doc.doc_date}.pdf`;
-  const url = await uploadAndSign(blob, displayName, storageName, opts.contractId);
-  return { url, label: `${kind === "contract" ? "Договор" : "Счёт"} №${doc.doc_number} от ${formatDate(doc.doc_date)}` };
+  const filename = `${labelPrefix}_${safeNum}_${doc.doc_date}.pdf`;
+  // Best-effort: also persist so future sends are faster (ignore failure)
+  try {
+    const storageName = `${kind === "contract" ? "Dogovor" : "Schet"}_${safeNum}_${doc.doc_date}.pdf`;
+    await uploadAndSign(blob, filename, storageName, opts.contractId);
+  } catch {}
+  return { base64, filename, label: `${labelPrefix} №${doc.doc_number} от ${formatDate(doc.doc_date)}` };
 }
 
 /** Resend an existing contract (and optionally invoice) PDF by email. */
 export async function resendContractEmail(opts: ResendOptions): Promise<void> {
-  const contractRes = await getOrBuildPdfUrl("contract", opts);
+  const contractRes = await getOrBuildPdfAttachment("contract", opts);
   if (!contractRes) {
     throw new Error("Договор не найден ни в файлах, ни в Конструкторе. Сначала создайте документ.");
   }
 
-  const invoiceRes = opts.includeInvoice ? await getOrBuildPdfUrl("invoice", opts) : null;
+  const invoiceRes = opts.includeInvoice ? await getOrBuildPdfAttachment("invoice", opts) : null;
 
-  const contractUrl = contractRes.url;
-  const invoiceUrl = invoiceRes?.url ?? null;
+  const hasInvoice = !!invoiceRes;
   const docLabel = contractRes.label;
-  const invoiceBtn = invoiceUrl
-    ? `<p style="margin: 24px 0;"><a href="${invoiceUrl}" style="display:inline-block;padding:12px 24px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;font-weight:500;">📎 Скачать Счёт (PDF)</a></p>`
-    : "";
+
+  const attachments: { filename: string; base64: string; contentType: string }[] = [
+    { filename: contractRes.filename, base64: contractRes.base64, contentType: "application/pdf" },
+  ];
+  if (invoiceRes) {
+    attachments.push({ filename: invoiceRes.filename, base64: invoiceRes.base64, contentType: "application/pdf" });
+  }
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <p>Добрый день!</p>
-      <p>Повторно направляем Вам документ${invoiceUrl ? "ы" : ""}: <strong>${docLabel}</strong>.</p>
-      <p style="margin: 24px 0;">
-        <a href="${contractUrl}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:500;">📎 Скачать Договор (PDF)</a>
-      </p>
-      ${invoiceBtn}
-      <p style="color:#6b7280;font-size:13px;">Ссылки действительны 7 дней.</p>
+      <p>Направляем Вам документ${hasInvoice ? "ы" : ""}: <strong>${docLabel}</strong>${hasInvoice ? " (договор и счёт)" : ""} во вложении.</p>
+      <p style="color:#6b7280;font-size:13px;">Если файл${hasInvoice ? "ы" : ""} не открыва${hasInvoice ? "ются" : "ется"}, ответьте на это письмо — пришлём повторно.</p>
       <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
       <p style="color:#9ca3af;font-size:12px;">Синтагма — автоматизированная система документооборота</p>
     </div>
@@ -215,7 +225,7 @@ export async function resendContractEmail(opts: ResendOptions): Promise<void> {
 
   const recipients = [opts.email.trim(), ...(opts.cc?.trim() ? [opts.cc.trim()] : [])].filter(Boolean);
   const { data, error } = await supabase.functions.invoke("send-document-email", {
-    body: { to: recipients.join(","), subject: docLabel, html },
+    body: { to: recipients.join(","), subject: docLabel, html, attachments },
   });
   if (error) throw error;
   if (!data?.success) throw new Error(data?.error || "Ошибка отправки");
