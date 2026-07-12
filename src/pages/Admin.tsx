@@ -1053,7 +1053,7 @@ const Admin = () => {
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} initialEditDocId={docInitialEditDocId} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); setDocInitialEditDocId(""); }} />}
               {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
               {activeSection === "tz" && <TzTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}
