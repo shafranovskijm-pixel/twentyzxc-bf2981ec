@@ -736,7 +736,7 @@ const Admin = () => {
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-
+              <Suspense fallback={<div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>}>
               {activeSection === "profile" && (
                 <div className="flex gap-6">
                   {/* Vertical tabs */}
