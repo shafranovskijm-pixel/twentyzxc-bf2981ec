@@ -216,8 +216,19 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         .order("created_at", { ascending: false });
       (byNum.data || []).forEach((d) => { if (!list.has(d.id)) list.set(d.id, d); });
     }
-    setDocsList(Array.from(list.values()));
+    const items = Array.from(list.values());
+    setDocsList(items);
     setDocsLoading(false);
+    // Auto-generate contract document if none exists
+    const hasContract = items.some((d) => d.doc_type === "contract");
+    if (!hasContract) {
+      toast.info("Договор ещё не сгенерирован — открываю конструктор");
+      createDocFor(c, "contract");
+    }
+  };
+
+  const openDocsFromNumber = (c: Contract) => {
+    openDocs(c);
   };
 
   const editDoc = (docId: string) => {
@@ -537,7 +548,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     {c.contract_number && (
                       <button
-                        onClick={() => startEdit(c)}
+                        onClick={() => openDocs(c)}
                         className="font-mono hover:text-primary hover:underline underline-offset-2 transition-colors cursor-pointer"
                       >№{c.contract_number}</button>
                     )}
@@ -623,7 +634,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                       </TableCell>
                       <TableCell>
                         {c.contract_number ? (
-                          <button onClick={() => startEdit(c)} className="font-mono hover:underline hover:text-primary transition-colors cursor-pointer">
+                          <button onClick={() => openDocs(c)} className="font-mono hover:underline hover:text-primary transition-colors cursor-pointer">
                             {c.contract_number}
                           </button>
                         ) : "—"}
