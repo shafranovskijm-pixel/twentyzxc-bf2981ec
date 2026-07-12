@@ -1071,9 +1071,14 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                         <div className="font-medium text-sm">{label} №{d.doc_number}</div>
                         <div className="text-xs text-muted-foreground">{d.doc_date ? new Date(d.doc_date).toLocaleDateString("ru-RU") : ""}</div>
                       </div>
-                      <Button size="sm" variant="outline" onClick={() => editDoc(d.id)}>
-                        <Pencil className="w-3.5 h-3.5 mr-1.5" /> Открыть
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => openPreview(d)}>
+                          <FileText className="w-3.5 h-3.5 mr-1.5" /> Открыть
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => editDoc(d.id)} title="Редактировать в конструкторе">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -1091,6 +1096,36 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
           </div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setDocsOpen(false)}>Закрыть</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{previewTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 min-h-[60vh] bg-white rounded-md overflow-hidden">
+            {previewLoading ? (
+              <div className="flex justify-center items-center h-full"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+            ) : previewHtml ? (
+              <iframe
+                title={previewTitle}
+                srcDoc={previewHtml}
+                className="w-full h-full border-0"
+                style={{ minHeight: "60vh" }}
+              />
+            ) : (
+              <div className="flex justify-center items-center h-full text-muted-foreground text-sm">Пусто</div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Закрыть</Button>
+            {previewDocId && (
+              <Button variant="outline" onClick={() => { editDoc(previewDocId); setPreviewOpen(false); }}>
+                <Pencil className="w-4 h-4 mr-1.5" /> Редактировать
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
