@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { defaultMenuItems as sidebarMenuItems, HIDDEN_STORAGE_KEY as SIDEBAR_HIDDEN_KEY, SIDEBAR_VISIBILITY_EVENT } from "@/components/admin/AdminSidebar";
 import Footer from "@/components/Footer";
 // dropdown removed — settings moved to dedicated sections
 import ClientsTab from "@/components/admin/ClientsTab";
@@ -79,6 +80,24 @@ const Admin = () => {
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
+
+  // Sidebar visibility
+  const [hiddenSections, setHiddenSections] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem(SIDEBAR_HIDDEN_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  });
+  const toggleSectionHidden = (id: string, hide: boolean) => {
+    setHiddenSections(prev => {
+      const next = hide ? Array.from(new Set([...prev, id])) : prev.filter(x => x !== id);
+      localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(next));
+      window.dispatchEvent(new Event(SIDEBAR_VISIBILITY_EVENT));
+      if (hide && activeSection === id) setActiveSection("profile");
+      return next;
+    });
+  };
 
   // Theme state
   const [isDark, setIsDark] = useState(() => {
@@ -790,6 +809,31 @@ const Admin = () => {
                               )}
                               <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
                             </div>
+                          </CardContent>
+                        </Card>
+
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Menu className="h-5 w-5" />Пункты меню</CardTitle>
+                            <CardDescription>Скройте разделы, которыми не пользуетесь. Их можно вернуть в любой момент.</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            {sidebarMenuItems.map((item) => {
+                              const Icon = item.icon;
+                              const isHidden = hiddenSections.includes(item.id);
+                              return (
+                                <div key={item.id} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                    <span className="text-sm truncate">{item.label}</span>
+                                  </div>
+                                  <Switch
+                                    checked={!isHidden}
+                                    onCheckedChange={(checked) => toggleSectionHidden(item.id, !checked)}
+                                  />
+                                </div>
+                              );
+                            })}
                           </CardContent>
                         </Card>
                       </>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -26,7 +26,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
-const defaultMenuItems = [
+export const defaultMenuItems = [
   { id: "sales", label: "Продажи", icon: TrendingUp },
   { id: "proposals", label: "Коммерческие предложения", icon: FileSignature },
   { id: "planner", label: "Планер", icon: CalendarDays },
@@ -40,6 +40,19 @@ const defaultMenuItems = [
 ];
 
 const STORAGE_KEY = "admin-sidebar-order-v2";
+export const HIDDEN_STORAGE_KEY = "admin-sidebar-hidden-v1";
+export const SIDEBAR_VISIBILITY_EVENT = "admin-sidebar-visibility-changed";
+
+function readHidden(): string[] {
+  try {
+    const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -113,6 +126,19 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
     } catch {}
     return defaultMenuItems;
   });
+  const [hidden, setHidden] = useState<string[]>(() => readHidden());
+
+  useEffect(() => {
+    const update = () => setHidden(readHidden());
+    window.addEventListener(SIDEBAR_VISIBILITY_EVENT, update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener(SIDEBAR_VISIBILITY_EVENT, update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+
+  const visibleItems = items.filter((i) => !hidden.includes(i.id));
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -146,9 +172,9 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
 
         {/* Primary nav */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <nav className="flex flex-col items-center gap-1.5 justify-center flex-1">
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <SortableIconButton
                   key={item.id}
                   item={item}
