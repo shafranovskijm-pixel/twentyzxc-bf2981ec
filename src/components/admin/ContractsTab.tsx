@@ -675,6 +675,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                             <DropdownMenuItem onClick={() => startEdit(c)}>
                               <Pencil className="w-4 h-4 mr-2" /> Редактировать
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openDocs(c)}>
+                              <FileText className="w-4 h-4 mr-2" /> Договор и счёт
+                            </DropdownMenuItem>
                             {c.file_path && (
                               <DropdownMenuItem onClick={() => downloadFile(c.file_path!)}>
                                 <Download className="w-4 h-4 mr-2" /> Скачать файл
