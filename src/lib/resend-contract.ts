@@ -225,7 +225,7 @@ export async function resendContractEmail(opts: ResendOptions): Promise<void> {
 
   const recipients = [opts.email.trim(), ...(opts.cc?.trim() ? [opts.cc.trim()] : [])].filter(Boolean);
   const { data, error } = await supabase.functions.invoke("send-document-email", {
-    body: { to: recipients.join(","), subject: docLabel, html, attachments },
+    body: { to: recipients.join(","), subject: docLabel, html, attachments, async: true },
   });
   if (error) throw error;
   if (!data?.success) throw new Error(data?.error || "Ошибка отправки");

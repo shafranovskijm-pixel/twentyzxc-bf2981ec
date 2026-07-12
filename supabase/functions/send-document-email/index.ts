@@ -55,18 +55,22 @@ async function cmd(conn: Deno.Conn, line: string, expect: string, ms = 15000): P
   return resp;
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+type Attachment = { filename: string; base64: string; contentType?: string };
 
+async function sendEmail(payload: {
+  to: string;
+  subject: string;
+  html: string;
+  pdfBase64?: string;
+  pdfFilename?: string;
+  attachments?: Attachment[];
+}) {
   let conn: Deno.Conn | null = null;
   try {
-    const { to, subject, html, pdfBase64, pdfFilename, attachments } = await req.json();
+    const { to, subject, html, pdfBase64, pdfFilename, attachments } = payload;
 
     if (!to || !subject || !html) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Missing required fields: to, subject, html" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      throw new Error("Missing required fields: to, subject, html");
     }
 
     const host = Deno.env.get("SMTP_HOST")!;
@@ -76,10 +80,7 @@ serve(async (req) => {
     const smtpFrom = Deno.env.get("SMTP_FROM") || user;
 
     if (!host || !user || !pass) {
-      return new Response(
-        JSON.stringify({ success: false, error: "SMTP not configured" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      throw new Error("SMTP not configured");
     }
 
     const fromEmail = extractEmail(smtpFrom);
@@ -192,6 +193,39 @@ serve(async (req) => {
     try { await cmd(conn, "QUIT", "221", 3000); } catch {}
 
     console.log("Email sent OK");
+  } finally {
+    try { conn?.close(); } catch {}
+  }
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const payload = await req.json();
+    const { to, subject, html, async: sendAsync } = payload;
+
+    if (!to || !subject || !html) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing required fields: to, subject, html" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    if (sendAsync) {
+      EdgeRuntime.waitUntil(
+        sendEmail(payload).catch((error) => {
+          console.error("Async email send error:", error?.message || error);
+        }),
+      );
+
+      return new Response(
+        JSON.stringify({ success: true, queued: true }),
+        { status: 202, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    await sendEmail(payload);
 
     return new Response(
       JSON.stringify({ success: true }),
@@ -203,7 +237,5 @@ serve(async (req) => {
       JSON.stringify({ success: false, error: error?.message || "Failed to send email" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-  } finally {
-    try { conn?.close(); } catch {}
   }
 });

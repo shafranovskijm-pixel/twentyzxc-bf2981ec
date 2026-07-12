@@ -1390,7 +1390,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         </div>
       `;
 
-      setEmailProgress({ step: 'Отправка письма...', percent: 70 });
+      setEmailProgress({ step: 'Постановка письма в отправку...', percent: 70 });
 
       const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
       const { data, error } = await supabase.functions.invoke('send-document-email', {
@@ -1399,6 +1399,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           subject: docLabel,
           html: emailHtml,
           attachments,
+          async: true,
         },
       });
       if (error) throw error;
@@ -1413,7 +1414,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       }
 
       setEmailProgress({ step: 'Готово!', percent: 100 });
-      toast.success(`Документ${hasInvoice ? 'ы' : ''} отправлен${hasInvoice ? 'ы' : ''} на ${emailTo} вложением`);
+      toast.success(`Документ${hasInvoice ? 'ы' : ''} поставлен${hasInvoice ? 'ы' : ''} в отправку на ${emailTo}`);
       setTimeout(() => {
         setEmailDialogOpen(false);
         setEmailTo("");
