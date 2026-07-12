@@ -317,7 +317,7 @@ const Admin = () => {
         const data = JSON.parse(raw);
         setDocInitialContractId(data.contractId || "");
         setDocInitialClientName(data.clientName || "");
-        setDocInitialDocType("act");
+        setDocInitialDocType(data.docType || "act");
         setDocInitialAutoSend(!!data.autoSend);
         setActiveSection("documents");
         sessionStorage.removeItem("pending_act");
