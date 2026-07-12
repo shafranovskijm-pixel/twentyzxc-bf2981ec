@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { resendContractEmail } from "@/lib/resend-contract";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
+import { generatePdfBase64 } from "@/lib/document-pdf";
 
 interface Contract {
   id: string;
@@ -97,6 +98,8 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
     const label = doc.doc_type === "contract" ? "Договор" : doc.doc_type === "invoice" ? "Счёт" : doc.doc_type === "act" ? "Акт" : doc.doc_type;
     setPreviewTitle(`${label} №${doc.doc_number}`);
     setPreviewDocId(doc.id);
+    setPreviewDocType(doc.doc_type);
+    setPreviewDocNumber(doc.doc_number);
     setPreviewHtml("");
     setPreviewOpen(true);
     setPreviewLoading(true);
@@ -107,6 +110,39 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
       .maybeSingle();
     setPreviewHtml((data as any)?.html_content || "");
     setPreviewLoading(false);
+  };
+
+  const [previewDocType, setPreviewDocType] = useState<string>("");
+  const [previewDocNumber, setPreviewDocNumber] = useState<string>("");
+  const [previewDownloading, setPreviewDownloading] = useState(false);
+
+  const downloadPreviewPdf = async () => {
+    if (!previewHtml) return;
+    setPreviewDownloading(true);
+    const tid = toast.loading("Генерация PDF...");
+    try {
+      const base64 = await generatePdfBase64(previewHtml);
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const label = previewDocType === "contract" ? "Договор" : previewDocType === "invoice" ? "Счёт" : previewDocType === "act" ? "Акт" : "Документ";
+      a.download = `${label}_${(previewDocNumber || "").replace(/\//g, "-")}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("PDF скачан", { id: tid });
+    } catch (e: any) {
+      toast.error(e?.message || "Не удалось сгенерировать PDF", { id: tid });
+    } finally {
+      setPreviewDownloading(false);
+    }
+  };
+
+  const sendPreviewByEmail = () => {
+    if (!docsContract) return;
+    setPreviewOpen(false);
+    openResend(docsContract);
   };
 
   const { data: contracts = [], isLoading, error: contractsError } = useQuery({
@@ -1119,13 +1155,20 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
               <div className="flex justify-center items-center h-full text-muted-foreground text-sm">Пусто</div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-wrap gap-2">
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Закрыть</Button>
             {previewDocId && (
               <Button variant="outline" onClick={() => { editDoc(previewDocId); setPreviewOpen(false); }}>
                 <Pencil className="w-4 h-4 mr-1.5" /> Редактировать
               </Button>
             )}
+            <Button variant="outline" onClick={downloadPreviewPdf} disabled={previewDownloading || !previewHtml}>
+              {previewDownloading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
+              Скачать PDF
+            </Button>
+            <Button onClick={sendPreviewByEmail} disabled={!docsContract}>
+              <Send className="w-4 h-4 mr-1.5" /> Отправить
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
