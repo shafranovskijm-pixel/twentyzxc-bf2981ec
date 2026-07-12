@@ -153,7 +153,7 @@ const syncFrdoServicesWithDeadline = (items: ServiceItem[], deadline?: string | 
   return changed ? synced : items;
 };
 
-const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, initialEditDocId, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; initialEditDocId?: string; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
