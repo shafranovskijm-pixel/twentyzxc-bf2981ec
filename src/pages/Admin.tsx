@@ -81,6 +81,7 @@ const Admin = () => {
   const [docInitialContractId, setDocInitialContractId] = useState("");
   const [docInitialDocType, setDocInitialDocType] = useState<string>("");
   const [docInitialAutoSend, setDocInitialAutoSend] = useState(false);
+  const [docInitialEditDocId, setDocInitialEditDocId] = useState("");
   const [clientsInitialName, setClientsInitialName] = useState("");
   const [contractsInitialClientName, setContractsInitialClientName] = useState("");
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
@@ -316,7 +317,7 @@ const Admin = () => {
         const data = JSON.parse(raw);
         setDocInitialContractId(data.contractId || "");
         setDocInitialClientName(data.clientName || "");
-        setDocInitialDocType("act");
+        setDocInitialDocType(data.docType || "act");
         setDocInitialAutoSend(!!data.autoSend);
         setActiveSection("documents");
         sessionStorage.removeItem("pending_act");
@@ -327,10 +328,25 @@ const Admin = () => {
       }
     };
     consumePendingAct();
+    const consumePendingEditDoc = () => {
+      const raw = sessionStorage.getItem("pending_edit_doc");
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        setDocInitialEditDocId(data.docId || "");
+        setActiveSection("documents");
+        sessionStorage.removeItem("pending_edit_doc");
+        return true;
+      } catch {
+        sessionStorage.removeItem("pending_edit_doc");
+        return false;
+      }
+    };
+    consumePendingEditDoc();
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
       if (detail.section === "documents") {
-        consumePendingAct() || setActiveSection("documents");
+        consumePendingAct() || consumePendingEditDoc() || setActiveSection("documents");
       } else if (detail.section) {
         setActiveSection(detail.section);
       }
@@ -1037,7 +1053,7 @@ const Admin = () => {
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
               }} />}
-              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); }} />}
+              {activeSection === "documents" && <DocumentsTab initialContractId={docInitialContractId} initialDocType={docInitialDocType} initialClientName={docInitialClientName} initialAutoSend={docInitialAutoSend} initialEditDocId={docInitialEditDocId} onMounted={() => { setDocInitialContractId(""); setDocInitialDocType(""); setDocInitialClientName(""); setDocInitialAutoSend(false); setDocInitialEditDocId(""); }} />}
               {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
               {activeSection === "tz" && <TzTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}

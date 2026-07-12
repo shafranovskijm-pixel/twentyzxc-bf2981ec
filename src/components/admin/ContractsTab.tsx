@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import TablePagination from "./TablePagination";
@@ -77,6 +77,12 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
   const [resendEmail, setResendEmail] = useState("");
   const [resendIncludeInvoice, setResendIncludeInvoice] = useState(true);
   const [resendSending, setResendSending] = useState(false);
+
+  // Documents (contract/invoice) list dialog
+  const [docsOpen, setDocsOpen] = useState(false);
+  const [docsContract, setDocsContract] = useState<Contract | null>(null);
+  const [docsList, setDocsList] = useState<Array<{ id: string; doc_type: string; doc_number: string; doc_date: string; created_at: string }>>([]);
+  const [docsLoading, setDocsLoading] = useState(false);
 
   const { data: contracts = [], isLoading, error: contractsError } = useQuery({
     queryKey: ["admin-contracts"],
@@ -188,6 +194,49 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
   };
 
   const isPaid = (status: string | null) => (status || "").toLowerCase().trim() === "оплачено";
+
+  const openDocs = async (c: Contract) => {
+    setDocsContract(c);
+    setDocsOpen(true);
+    setDocsLoading(true);
+    setDocsList([]);
+    // Match by contract_id OR by doc_number == contract_number (legacy docs)
+    const byId = await supabase
+      .from("generated_documents")
+      .select("id,doc_type,doc_number,doc_date,created_at")
+      .eq("contract_id", c.id)
+      .order("created_at", { ascending: false });
+    const list = new Map<string, any>();
+    (byId.data || []).forEach((d) => list.set(d.id, d));
+    if (c.contract_number) {
+      const byNum = await supabase
+        .from("generated_documents")
+        .select("id,doc_type,doc_number,doc_date,created_at")
+        .eq("doc_number", c.contract_number)
+        .order("created_at", { ascending: false });
+      (byNum.data || []).forEach((d) => { if (!list.has(d.id)) list.set(d.id, d); });
+    }
+    setDocsList(Array.from(list.values()));
+    setDocsLoading(false);
+  };
+
+  const editDoc = (docId: string) => {
+    sessionStorage.setItem("pending_edit_doc", JSON.stringify({ docId }));
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
+    setDocsOpen(false);
+  };
+
+  const createDocFor = (c: Contract, docType: "contract" | "invoice") => {
+    sessionStorage.setItem("pending_act", JSON.stringify({
+      contractId: c.id,
+      clientName: c.client_name,
+      docType,
+      autoSend: false,
+    }));
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
+    toast.success(`Открываю конструктор: ${docType === "contract" ? "Договор" : "Счёт"}`);
+    setDocsOpen(false);
+  };
 
   const createActAndSend = (c: Contract) => {
     sessionStorage.setItem("pending_act", JSON.stringify({
@@ -518,6 +567,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                         <DropdownMenuItem onClick={() => startEdit(c)}>
                           <Pencil className="w-4 h-4 mr-2" /> Редактировать
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDocs(c)}>
+                          <FileText className="w-4 h-4 mr-2" /> Договор и счёт
+                        </DropdownMenuItem>
                         {c.file_path && (
                           <DropdownMenuItem onClick={() => downloadFile(c.file_path!)}>
                             <Download className="w-4 h-4 mr-2" /> Скачать файл
@@ -622,6 +674,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => startEdit(c)}>
                               <Pencil className="w-4 h-4 mr-2" /> Редактировать
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openDocs(c)}>
+                              <FileText className="w-4 h-4 mr-2" /> Договор и счёт
                             </DropdownMenuItem>
                             {c.file_path && (
                               <DropdownMenuItem onClick={() => downloadFile(c.file_path!)}>
@@ -807,6 +862,57 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
               {resendSending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Send className="w-4 h-4 mr-2" />}
               Отправить
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={docsOpen} onOpenChange={setDocsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Документы договора</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {docsContract?.client_name}
+              {docsContract?.contract_number ? ` · №${docsContract.contract_number}` : ""}
+            </div>
+
+            {docsLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+            ) : docsList.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
+                Документы в Конструкторе ещё не созданы.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {docsList.map((d) => {
+                  const label = d.doc_type === "contract" ? "Договор" : d.doc_type === "invoice" ? "Счёт" : d.doc_type === "act" ? "Акт" : d.doc_type;
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{label} №{d.doc_number}</div>
+                        <div className="text-xs text-muted-foreground">{d.doc_date ? new Date(d.doc_date).toLocaleDateString("ru-RU") : ""}</div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => editDoc(d.id)}>
+                        <Pencil className="w-3.5 h-3.5 mr-1.5" /> Открыть
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => docsContract && createDocFor(docsContract, "contract")}>
+                <Plus className="w-4 h-4 mr-1.5" /> Новый договор
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => docsContract && createDocFor(docsContract, "invoice")}>
+                <Plus className="w-4 h-4 mr-1.5" /> Новый счёт
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDocsOpen(false)}>Закрыть</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
