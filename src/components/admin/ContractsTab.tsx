@@ -22,6 +22,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { resendContractEmail } from "@/lib/resend-contract";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
+import { generatePdfBase64 } from "@/lib/document-pdf";
 
 interface Contract {
   id: string;
