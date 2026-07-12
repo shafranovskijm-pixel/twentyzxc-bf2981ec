@@ -58,6 +58,7 @@ serve(async (req) => {
         tls: useImplicitTls,
         auth: { username: user, password: pass },
       },
+      debug: { log: true, allowUnsecure: false, encodeLB: true, noStartTLS: false },
       client: { warning: "ignore" },
     });
 
