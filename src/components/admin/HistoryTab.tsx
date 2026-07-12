@@ -247,20 +247,38 @@ const HistoryTab = () => {
     return data.signedUrl;
   };
 
+  const fetchHtml = async (row: UnifiedRow): Promise<string | null> => {
+    if (row.html_content) return row.html_content;
+    const rawId = row.id.slice(3);
+    if (row.source === "generated_documents") {
+      const { data } = await supabase.from("generated_documents" as any)
+        .select("html_content").eq("id", rawId).maybeSingle();
+      return (data as any)?.html_content || null;
+    }
+    if (row.source === "tz_documents") {
+      const { data } = await supabase.from("tz_documents" as any)
+        .select("html_content").eq("id", rawId).maybeSingle();
+      return (data as any)?.html_content || null;
+    }
+    return null;
+  };
+
   const handleView = async (row: UnifiedRow) => {
-    if (row.html_content) {
-      setPreviewHtml(embedDocImages(row.html_content));
-      return;
+    if (row.source === "generated_documents" || row.source === "tz_documents") {
+      const html = await fetchHtml(row);
+      if (html) { setPreviewHtml(embedDocImages(html)); return; }
     }
     const url = await openSignedUrl(row);
     if (url) setPreviewPdfUrl(url);
   };
 
   const handleDownload = async (row: UnifiedRow) => {
-    if (row.html_content) {
+    if (row.source === "generated_documents" || row.source === "tz_documents") {
+      const html = await fetchHtml(row);
+      if (!html) { toast.error("Не удалось загрузить документ"); return; }
       try {
         toast.info("Генерация PDF...");
-        const base64 = await generatePdfBase64(embedDocImages(row.html_content));
+        const base64 = await generatePdfBase64(embedDocImages(html));
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
