@@ -96,13 +96,23 @@ const HistoryTab = () => {
   const { data: rows = [], isLoading, error: historyError } = useQuery({
     queryKey: ["unified-documents"],
     queryFn: async (): Promise<UnifiedRow[]> => {
+      // NOTE: html_content is intentionally omitted here — it can be huge.
+      // It is lazy-fetched in handleView/handleDownload only when needed.
       const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes, tzRes] = await Promise.all([
-        supabase.from("generated_documents" as any).select("*").order("created_at", { ascending: false }),
-        supabase.from("contract_files" as any).select("*").order("created_at", { ascending: false }),
-        supabase.from("nmo_documents" as any).select("*").order("created_at", { ascending: false }),
+        supabase.from("generated_documents" as any)
+          .select("id, doc_type, doc_number, doc_date, client_name, total_amount, created_at")
+          .order("created_at", { ascending: false }),
+        supabase.from("contract_files" as any)
+          .select("id, contract_id, file_path, file_name, metadata, created_at")
+          .order("created_at", { ascending: false }),
+        supabase.from("nmo_documents" as any)
+          .select("id, registration_id, file_path, file_name, created_at")
+          .order("created_at", { ascending: false }),
         supabase.from("contracts" as any).select("id, client_name, contract_number"),
         supabase.from("nmo_registrations" as any).select("id, organization_name"),
-        supabase.from("tz_documents" as any).select("*").order("created_at", { ascending: false }),
+        supabase.from("tz_documents" as any)
+          .select("id, tz_number, tz_date, client_name, created_at")
+          .order("created_at", { ascending: false }),
       ]);
 
       const contractsById = new Map<string, any>((contractsRes.data || []).map((c: any) => [c.id, c]));
@@ -120,7 +130,7 @@ const HistoryTab = () => {
           doc_date: d.doc_date || d.created_at,
           client_name: d.client_name || "—",
           total_amount: d.total_amount,
-          html_content: d.html_content,
+          html_content: undefined,
         });
       }
 
@@ -163,7 +173,7 @@ const HistoryTab = () => {
           doc_number: t.tz_number,
           doc_date: t.tz_date || t.created_at,
           client_name: t.client_name || "—",
-          html_content: t.html_content,
+          html_content: undefined,
         });
       }
 
@@ -237,20 +247,38 @@ const HistoryTab = () => {
     return data.signedUrl;
   };
 
+  const fetchHtml = async (row: UnifiedRow): Promise<string | null> => {
+    if (row.html_content) return row.html_content;
+    const rawId = row.id.slice(3);
+    if (row.source === "generated_documents") {
+      const { data } = await supabase.from("generated_documents" as any)
+        .select("html_content").eq("id", rawId).maybeSingle();
+      return (data as any)?.html_content || null;
+    }
+    if (row.source === "tz_documents") {
+      const { data } = await supabase.from("tz_documents" as any)
+        .select("html_content").eq("id", rawId).maybeSingle();
+      return (data as any)?.html_content || null;
+    }
+    return null;
+  };
+
   const handleView = async (row: UnifiedRow) => {
-    if (row.html_content) {
-      setPreviewHtml(embedDocImages(row.html_content));
-      return;
+    if (row.source === "generated_documents" || row.source === "tz_documents") {
+      const html = await fetchHtml(row);
+      if (html) { setPreviewHtml(embedDocImages(html)); return; }
     }
     const url = await openSignedUrl(row);
     if (url) setPreviewPdfUrl(url);
   };
 
   const handleDownload = async (row: UnifiedRow) => {
-    if (row.html_content) {
+    if (row.source === "generated_documents" || row.source === "tz_documents") {
+      const html = await fetchHtml(row);
+      if (!html) { toast.error("Не удалось загрузить документ"); return; }
       try {
         toast.info("Генерация PDF...");
-        const base64 = await generatePdfBase64(embedDocImages(row.html_content));
+        const base64 = await generatePdfBase64(embedDocImages(html));
         const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
