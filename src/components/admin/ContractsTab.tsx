@@ -20,6 +20,8 @@ import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
 import DevelopmentContractPanel from "./contracts/DevelopmentContractPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { resendContractEmail } from "@/lib/resend-contract";
+import { useSiteSettings } from "@/hooks/use-site-settings";
+import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
 
 interface Contract {
   id: string;
@@ -48,6 +50,7 @@ interface ContractsTabProps {
 
 const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
+  const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
@@ -216,19 +219,154 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         .order("created_at", { ascending: false });
       (byNum.data || []).forEach((d) => { if (!list.has(d.id)) list.set(d.id, d); });
     }
-    const items = Array.from(list.values());
+    let items = Array.from(list.values());
     setDocsList(items);
     setDocsLoading(false);
-    // Auto-generate contract document if none exists
+    // Auto-generate contract document silently if none exists
     const hasContract = items.some((d) => d.doc_type === "contract");
     if (!hasContract) {
-      toast.info("Договор ещё не сгенерирован — открываю конструктор");
-      createDocFor(c, "contract");
+      const ok = await autoGenerateContract(c, items);
+      if (ok) {
+        // Refresh the list
+        const refresh = await supabase
+          .from("generated_documents")
+          .select("id,doc_type,doc_number,doc_date,created_at")
+          .eq("contract_id", c.id)
+          .order("created_at", { ascending: false });
+        const map = new Map<string, any>();
+        (refresh.data || []).forEach((d) => map.set(d.id, d));
+        if (c.contract_number) {
+          const r2 = await supabase
+            .from("generated_documents")
+            .select("id,doc_type,doc_number,doc_date,created_at")
+            .eq("doc_number", c.contract_number)
+            .order("created_at", { ascending: false });
+          (r2.data || []).forEach((d) => { if (!map.has(d.id)) map.set(d.id, d); });
+        }
+        setDocsList(Array.from(map.values()));
+      }
     }
   };
 
-  const openDocsFromNumber = (c: Contract) => {
-    openDocs(c);
+  const autoGenerateContract = async (c: Contract, existing: any[]): Promise<boolean> => {
+    try {
+      toast.loading("Генерирую договор...", { id: "auto-gen-contract" });
+      // Load client requisites
+      const { data: clientRow } = await supabase
+        .from("clients")
+        .select("inn, kpp, ogrn, legal_address, director_name, director_post")
+        .eq("name", c.client_name)
+        .maybeSingle();
+
+      // Try to pull services/metadata from an existing invoice for this contract
+      let services: Array<{ name: string; qty: number; price: number }> = [];
+      let subject = "";
+      let deadline = "";
+      let paymentTerms = "";
+      const invoiceMeta = existing.find((d) => d.doc_type === "invoice");
+      if (invoiceMeta) {
+        const { data: inv } = await supabase
+          .from("generated_documents")
+          .select("services, metadata")
+          .eq("id", invoiceMeta.id)
+          .maybeSingle();
+        if (inv?.services) {
+          try {
+            const parsed = typeof inv.services === "string" ? JSON.parse(inv.services) : inv.services;
+            if (Array.isArray(parsed)) services = parsed;
+          } catch {}
+        }
+        if (inv?.metadata) {
+          try {
+            const m = typeof inv.metadata === "string" ? JSON.parse(inv.metadata) : inv.metadata;
+            subject = m?.subject || "";
+            deadline = m?.deadline || "";
+            paymentTerms = m?.paymentTerms || "";
+          } catch {}
+        }
+      }
+      if (services.length === 0) {
+        services = [{
+          name: c.contract_type || "Услуги по договору",
+          qty: 1,
+          price: Number(c.amount) || 0,
+        }];
+      }
+
+      const company: CompanyRequisites = {
+        company_name: settings.company_name || "",
+        company_short_name: settings.company_short_name || "",
+        company_inn: settings.company_inn || "",
+        company_kpp: settings.company_kpp || "",
+        company_ogrn: settings.company_ogrn || "",
+        company_legal_address: settings.company_legal_address || "",
+        company_actual_address: settings.company_actual_address || "",
+        company_bank_account: settings.company_bank_account || "",
+        company_bank_bik: settings.company_bank_bik || "",
+        company_bank_corr: settings.company_bank_corr || "",
+        company_bank_name: settings.company_bank_name || "",
+        company_director_name: settings.company_director_name || "",
+        company_director_post: settings.company_director_post || "",
+        company_phone: settings.company_phone || "",
+        company_email: settings.company_email || "",
+      };
+      const client: ClientRequisites = {
+        name: c.client_name,
+        inn: clientRow?.inn || "",
+        kpp: clientRow?.kpp || "",
+        ogrn: clientRow?.ogrn || "",
+        address: clientRow?.legal_address || "",
+        director_name: clientRow?.director_name || "",
+        director_post: clientRow?.director_post || "",
+      };
+
+      const dateStr = c.contract_date
+        ? new Date(c.contract_date).toLocaleDateString("ru-RU")
+        : new Date().toLocaleDateString("ru-RU");
+      const docNumber = c.contract_number || "";
+      if (!docNumber) {
+        toast.error("У договора нет номера", { id: "auto-gen-contract" });
+        return false;
+      }
+
+      const total = services.reduce((s, i) => s + Number(i.qty || 0) * Number(i.price || 0), 0);
+
+      const docData: DocumentData = {
+        type: "contract",
+        number: docNumber,
+        date: dateStr,
+        company,
+        client,
+        services,
+        subject,
+        deadline,
+        paymentTerms,
+      };
+      const html = generateContractHtml(docData);
+
+      const { error: insertError } = await supabase.from("generated_documents").insert({
+        doc_type: "contract",
+        doc_number: docNumber,
+        doc_date: c.contract_date || new Date().toISOString().split("T")[0],
+        client_name: c.client_name,
+        client_inn: clientRow?.inn || null,
+        contract_id: c.id,
+        total_amount: total,
+        services: JSON.stringify(services),
+        html_content: html,
+        metadata: JSON.stringify({ subject, deadline, paymentTerms }),
+      });
+      if (insertError) {
+        toast.error(`Не удалось сохранить: ${insertError.message}`, { id: "auto-gen-contract" });
+        return false;
+      }
+      queryClient.invalidateQueries({ queryKey: ["generated-documents"] });
+      toast.success("Договор сгенерирован", { id: "auto-gen-contract" });
+      return true;
+    } catch (e: any) {
+      toast.error(`Ошибка генерации: ${e?.message || e}`, { id: "auto-gen-contract" });
+      return false;
+    }
   };
 
   const editDoc = (docId: string) => {
