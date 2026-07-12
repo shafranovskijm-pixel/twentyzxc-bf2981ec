@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import FilesFolderCard from "./files/FilesFolderCard";
 import BulkFolderUpload from "./files/BulkFolderUpload";
+import { blobToBase64 } from "@/lib/document-pdf";
 
 interface ContractFolder {
   id: string;
@@ -156,29 +157,33 @@ const FilesTab = () => {
     if (!emailFile || !emailTo.trim()) return toast.error("Укажите email");
     setEmailSending(true);
     try {
-      const { data: signedData, error: signedError } = await supabase.storage
+      const { data: fileBlob, error: downloadError } = await supabase.storage
         .from("contracts")
-        .createSignedUrl(emailFile.file_path, 60 * 60 * 24 * 7);
-      if (signedError || !signedData?.signedUrl) throw new Error("Не удалось создать ссылку");
+        .download(emailFile.file_path);
+      if (downloadError || !fileBlob) throw new Error("Не удалось скачать файл для вложения");
+      const base64 = await blobToBase64(fileBlob);
 
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <p>Добрый день!</p>
-          <p>Направляем Вам документ: <strong>${emailFile.file_name}</strong>.</p>
-          <p style="margin: 24px 0;">
-            <a href="${signedData.signedUrl}" style="display: inline-block; padding: 12px 24px; background: #2563eb; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500;">📎 Скачать</a>
-          </p>
-          <p style="color: #6b7280; font-size: 13px;">Ссылка действительна 7 дней.</p>
+          <p>Направляем Вам документ: <strong>${emailFile.file_name}</strong> во вложении.</p>
+          <p style="color: #6b7280; font-size: 13px;">Если файл не открывается, ответьте на это письмо — пришлём повторно.</p>
         </div>
       `;
 
       const recipients = [emailTo.trim(), ...(emailCc.trim() ? [emailCc.trim()] : [])].filter(Boolean);
       const { error } = await supabase.functions.invoke("send-document-email", {
-        body: { to: recipients.join(","), subject: emailFile.file_name, html: emailHtml },
+        body: {
+          to: recipients.join(","),
+          subject: emailFile.file_name,
+          html: emailHtml,
+          attachments: [{ filename: emailFile.file_name, base64, contentType: fileBlob.type || "application/octet-stream" }],
+          async: true,
+        },
       });
       if (error) throw error;
 
-      toast.success("Письмо отправлено");
+      toast.success("Письмо поставлено в отправку");
       setEmailFile(null);
       setEmailTo("");
     } catch (e: any) {
