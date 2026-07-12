@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import { defaultMenuItems as sidebarMenuItems, HIDDEN_STORAGE_KEY as SIDEBAR_HIDDEN_KEY, SIDEBAR_VISIBILITY_EVENT } from "@/components/admin/AdminSidebar";
 import Footer from "@/components/Footer";
 // dropdown removed — settings moved to dedicated sections
 import ClientsTab from "@/components/admin/ClientsTab";
