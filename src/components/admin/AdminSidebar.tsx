@@ -172,7 +172,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
 
         {/* Primary nav */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <nav className="flex flex-col items-center gap-1.5 justify-center flex-1">
               {visibleItems.map((item) => (
                 <SortableIconButton
