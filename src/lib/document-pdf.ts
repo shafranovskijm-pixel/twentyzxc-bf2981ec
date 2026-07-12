@@ -54,7 +54,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
     .filter((r) => r.bottom > r.top && r.bottom - r.top < bodyHeight * 0.8)
     .sort((a, b) => a.top - b.top);
 
-  const renderScale = bodyHeight > 14000 ? 1.25 : bodyHeight > 10000 ? 1.5 : 2;
+  const renderScale = bodyHeight > 14000 ? 1 : bodyHeight > 10000 ? 1.15 : 1.35;
   const canvas = await html2canvas(body, {
     scale: renderScale,
     useCORS: true,
@@ -125,7 +125,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
       canvas.width,
       sliceCanvasHeight,
     );
-    const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.92);
+    const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.72);
     pdf.addImage(sliceData, "JPEG", 0, margin, pdfWidth, pageHeight, undefined, "FAST");
     consumed += pageHeight;
     page++;
