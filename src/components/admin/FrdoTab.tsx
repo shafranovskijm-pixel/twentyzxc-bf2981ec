@@ -61,37 +61,53 @@ const FrdoTab = () => {
     }
   };
 
+  const fetchAsBase64 = async (url: string): Promise<{ base64: string; contentType: string }> => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Не удалось загрузить файл: ${url}`);
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const buf = new Uint8Array(await res.arrayBuffer());
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < buf.length; i += chunk) {
+      binary += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i + chunk)));
+    }
+    return { base64: btoa(binary), contentType };
+  };
+
   const handleSend = async () => {
     if (!email.trim()) return toast.error("Укажите email получателя");
     if (selectedDocs.length === 0) return toast.error("Выберите хотя бы один документ");
 
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
     const docs = FRDO_DOCUMENTS.filter((d) => selectedDocs.includes(d.id));
-    const isSinglePrikaz = selectedDocs.length === 1 && selectedDocs[0] === "prikaz";
+    const hasPrikaz = selectedDocs.includes("prikaz");
+    const hasTerms = selectedDocs.includes("terms");
+    const isSinglePrikaz = selectedDocs.length === 1 && hasPrikaz;
 
-    const linksHtml = docs
-      .map((d) => `<li style="margin-bottom:8px;"><a href="${d.path}" style="color:#2563eb;">${d.label}</a></li>`)
-      .join("");
-
-    const instructionHtml = `
-      <p style="color:#555;">Мне чтобы приступить к регистрации, нужно чтобы Вы подписали соглашение во вложении электронной подписью, формат подписи DER, тип подписи «присоединённая», для подписания нужна программа КриптоАрм и/или КриптоПро.</p>
-      <p style="color:#555;">(видеоинструкция — <a href="https://disk.yandex.ru/i/QTZtMfOsbHEzgQ" style="color:#2563eb;">https://disk.yandex.ru/i/QTZtMfOsbHEzgQ</a>).</p>
-      <p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации, ответственный должен быть тот же человек, на которого зарегистрирована ЭЦП. После подписания отсканировать в PDF, после чего PDF подписать электронной подписью.</p>
-    `;
-    let bodyText: string;
-    if (isSinglePrikaz) {
-      bodyText = instructionHtml;
-    } else {
-      bodyText = `<p style="color:#555;">Направляем вам пакет документов ФИС ФРДО для работы:</p>` + instructionHtml;
+    const parts: string[] = [];
+    if (hasTerms) {
+      parts.push(
+        `<p style="color:#555;">Мне чтобы приступить к регистрации, нужно чтобы Вы подписали соглашение во вложении электронной подписью, формат подписи DER, тип подписи «присоединённая», для подписания нужна программа КриптоАрм и/или КриптоПро.</p>`,
+        `<p style="color:#555;">(видеоинструкция — <a href="https://disk.yandex.ru/i/QTZtMfOsbHEzgQ" style="color:#2563eb;">https://disk.yandex.ru/i/QTZtMfOsbHEzgQ</a>).</p>`,
+      );
     }
+    if (hasPrikaz) {
+      parts.push(
+        `<p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации, ответственный должен быть тот же человек, на которого зарегистрирована ЭЦП. После подписания отсканировать в PDF, после чего PDF подписать электронной подписью.</p>`,
+      );
+    }
+    const instructionHtml = parts.join("");
+    const intro = isSinglePrikaz
+      ? ""
+      : `<p style="color:#555;">Направляем вам ${docs.length > 1 ? "пакет документов" : "документ"} ФИС ФРДО:</p>`;
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
         <h2 style="color:#1a1a1a;">${isSinglePrikaz ? "Приказ ФИС ФРДО" : "Документы ФИС ФРДО"}</h2>
         <p style="color:#555;">Здравствуйте!</p>
-        ${bodyText}
-        <ul style="list-style:none;padding:0;">${linksHtml}</ul>
-        <p style="color:#555;margin-top:24px;">Пожалуйста, скачайте и ознакомьтесь с документами. При возникновении вопросов свяжитесь с нами.</p>
+        ${intro}
+        ${instructionHtml}
+        <p style="color:#555;margin-top:24px;">Файлы прикреплены к письму. При возникновении вопросов свяжитесь с нами.</p>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
         <p style="color:#999;font-size:12px;">С уважением, команда Синтагма</p>
       </div>
@@ -99,11 +115,18 @@ const FrdoTab = () => {
 
     setSending(true);
     try {
+      const attachments = await Promise.all(
+        docs.map(async (d) => {
+          const { base64, contentType } = await fetchAsBase64(d.path);
+          return { filename: d.path.split("/").pop() || `${d.id}`, base64, contentType };
+        }),
+      );
       const { data, error } = await supabase.functions.invoke("send-document-email", {
         body: {
           to: email,
           subject: isSinglePrikaz ? `Приказ ФИС ФРДО — ${clientName}` : `Документы ФИС ФРДО — ${clientName}`,
           html,
+          attachments,
         },
       });
       if (error) throw error;
@@ -136,20 +159,24 @@ const FrdoTab = () => {
     if (!doc) return;
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
     const isPrikaz = doc.id === "prikaz";
+    const isTerms = doc.id === "terms";
 
-    const bodyText = isPrikaz
-      ? `<p style="color:#555;">Мне чтобы приступить к регистрации, нужно чтобы Вы подписали соглашение во вложении электронной подписью, формат подписи DER, тип подписи «присоединённая», для подписания нужна программа КриптоАрм и/или КриптоПро.</p>
-         <p style="color:#555;">(видеоинструкция — <a href="https://disk.yandex.ru/i/QTZtMfOsbHEzgQ" style="color:#2563eb;">https://disk.yandex.ru/i/QTZtMfOsbHEzgQ</a>).</p>
-         <p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации, ответственный должен быть тот же человек, на которого зарегистрирована ЭЦП. После подписания отсканировать в PDF, после чего PDF подписать электронной подписью.</p>`
-      : `<p style="color:#555;">Направляем вам документ ФИС ФРДО:</p>`;
+    let bodyText = "";
+    if (isPrikaz) {
+      bodyText = `<p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации, ответственный должен быть тот же человек, на которого зарегистрирована ЭЦП. После подписания отсканировать в PDF, после чего PDF подписать электронной подписью.</p>`;
+    } else if (isTerms) {
+      bodyText = `<p style="color:#555;">Мне чтобы приступить к регистрации, нужно чтобы Вы подписали соглашение во вложении электронной подписью, формат подписи DER, тип подписи «присоединённая», для подписания нужна программа КриптоАрм и/или КриптоПро.</p>
+         <p style="color:#555;">(видеоинструкция — <a href="https://disk.yandex.ru/i/QTZtMfOsbHEzgQ" style="color:#2563eb;">https://disk.yandex.ru/i/QTZtMfOsbHEzgQ</a>).</p>`;
+    } else {
+      bodyText = `<p style="color:#555;">Направляем вам документ ФИС ФРДО:</p>`;
+    }
 
     const html = `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
         <h2 style="color:#1a1a1a;">${doc.label}</h2>
         <p style="color:#555;">Здравствуйте!</p>
         ${bodyText}
-        <p style="margin:16px 0;"><a href="${doc.path}" style="color:#2563eb;font-weight:600;">${doc.label}</a></p>
-        <p style="color:#555;margin-top:24px;">Пожалуйста, скачайте документ. При возникновении вопросов свяжитесь с нами.</p>
+        <p style="color:#555;margin-top:24px;">Файл прикреплён к письму. При возникновении вопросов свяжитесь с нами.</p>
         <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
         <p style="color:#999;font-size:12px;">С уважением, команда Синтагма</p>
       </div>
@@ -157,11 +184,14 @@ const FrdoTab = () => {
 
     setSendingOne(docId);
     try {
+      const { base64, contentType } = await fetchAsBase64(doc.path);
+      const filename = doc.path.split("/").pop() || doc.label;
       const { data, error } = await supabase.functions.invoke("send-document-email", {
         body: {
           to: email,
           subject: `${doc.label} — ${clientName}`,
           html,
+          attachments: [{ filename, base64, contentType }],
         },
       });
       if (error) throw error;
