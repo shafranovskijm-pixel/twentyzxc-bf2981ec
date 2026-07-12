@@ -265,7 +265,14 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
             .order("created_at", { ascending: false });
           (r2.data || []).forEach((d) => { if (!map.has(d.id)) map.set(d.id, d); });
         }
-        setDocsList(Array.from(map.values()));
+        const merged = Array.from(map.values());
+        setDocsList(merged);
+        // Auto-open preview of the newly generated contract
+        const created = merged.find((d) => d.doc_type === "contract");
+        if (created) {
+          setDocsOpen(false);
+          await openPreview(created);
+        }
       }
     }
   };
