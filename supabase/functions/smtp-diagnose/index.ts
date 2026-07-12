@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,21 +10,38 @@ function extractEmail(raw: string): string {
   return match ? match[1] : raw.trim();
 }
 
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+async function readAll(conn: Deno.Conn, ms = 3000): Promise<string> {
+  let out = "";
+  const buf = new Uint8Array(4096);
+  const deadline = Date.now() + ms;
+  while (Date.now() < deadline) {
+    const remaining = deadline - Date.now();
+    const readP = conn.read(buf);
+    const timeoutP = new Promise<null>((r) => setTimeout(() => r(null), remaining));
+    const n = await Promise.race([readP, timeoutP]);
+    if (n === null) break;
+    if (n === 0) break;
+    out += dec.decode(buf.subarray(0, n as number));
+    // if last line matches "NNN "
+    const lines = out.trim().split(/\r?\n/);
+    if (/^\d{3} /.test(lines[lines.length - 1])) break;
+  }
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const started = Date.now();
   let outboundIp = "unknown";
   const attemptTimeMsk = new Date().toLocaleString("ru-RU", { timeZone: "Europe/Moscow" });
+  const dialog: string[] = [];
 
   try {
     const { to } = await req.json().catch(() => ({ to: "" }));
-    if (!to) {
-      return new Response(JSON.stringify({ error: "to required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     try {
       const ipResp = await fetch("https://api.ipify.org?format=json");
@@ -36,8 +52,6 @@ serve(async (req) => {
     const port = parseInt(Deno.env.get("SMTP_PORT") || "465");
     const user = Deno.env.get("SMTP_USER")!;
     const pass = Deno.env.get("SMTP_PASS")!;
-    const fromRaw = Deno.env.get("SMTP_FROM") || user;
-    const fromEmail = extractEmail(fromRaw);
 
     if (!host || !user || !pass) {
       return new Response(
@@ -46,36 +60,36 @@ serve(async (req) => {
       );
     }
 
-    // Choose TLS mode per port:
-    //  465 -> implicit TLS
-    //  587/25/2525 -> STARTTLS
+    // Raw diagnostic: connect, greet, EHLO — log everything.
+    let conn: Deno.Conn;
     const useImplicitTls = port === 465;
+    if (useImplicitTls) {
+      conn = await Deno.connectTls({ hostname: host, port });
+      dialog.push(`> [TLS connect ${host}:${port}]`);
+    } else {
+      conn = await Deno.connect({ hostname: host, port });
+      dialog.push(`> [TCP connect ${host}:${port}]`);
+    }
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: host,
-        port,
-        tls: useImplicitTls,
-        auth: { username: user, password: pass },
-      },
-      client: { warning: "ignore" },
-    });
+    const greeting = await readAll(conn, 5000);
+    dialog.push(`< ${JSON.stringify(greeting)}`);
 
-    await client.send({
-      from: fromEmail,
-      to,
-      subject: "SMTP диагностика — тест",
-      content: "Это тестовое письмо для проверки работоспособности SMTP.\nЕсли вы его получили — отправка работает корректно.",
-    });
-    await client.close();
+    // EHLO with our public IP as hostname (some servers reject bogus FQDNs)
+    const ehloName = outboundIp !== "unknown" ? `[${outboundIp}]` : "sintagma.local";
+    await conn.write(enc.encode(`EHLO ${ehloName}\r\n`));
+    dialog.push(`> EHLO ${ehloName}`);
+    const ehloResp = await readAll(conn, 5000);
+    dialog.push(`< ${JSON.stringify(ehloResp)}`);
+
+    try { conn.close(); } catch {}
 
     return new Response(
       JSON.stringify({
         success: true,
-        to,
         outbound_ip: outboundIp,
         attempt_time_msk: attemptTimeMsk,
-        smtp: { host, port, user: fromEmail, tls: useImplicitTls ? "implicit" : "starttls" },
+        smtp: { host, port, tls: useImplicitTls ? "implicit" : "plain-then-starttls" },
+        dialog,
         duration_ms: Date.now() - started,
       }, null, 2),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -86,10 +100,10 @@ serve(async (req) => {
       JSON.stringify({
         success: false,
         error: errMsg,
+        dialog,
         outbound_ip: outboundIp,
         attempt_time_msk: attemptTimeMsk,
         duration_ms: Date.now() - started,
-        hint: "Если ошибка сохраняется — проверить в Timeweb, что SMTP не заблокирован для внешних клиентов, и что порт/пароль указаны верно.",
       }, null, 2),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
