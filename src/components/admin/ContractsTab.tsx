@@ -20,6 +20,8 @@ import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
 import DevelopmentContractPanel from "./contracts/DevelopmentContractPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { resendContractEmail } from "@/lib/resend-contract";
+import { useSiteSettings } from "@/hooks/use-site-settings";
+import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
 
 interface Contract {
   id: string;
@@ -48,6 +50,7 @@ interface ContractsTabProps {
 
 const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
+  const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [clientName, setClientName] = useState("");
