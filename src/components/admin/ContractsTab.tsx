@@ -370,7 +370,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
       return toast.error("Введите корректный email");
     }
     setResendSending(true);
-    const tid = toast.loading("Отправка договора и счёта...");
+    const tid = toast.loading("Готовлю файлы и ставлю письмо в отправку...");
     try {
       await resendContractEmail({
         contractId: resendContract.id,
@@ -379,7 +379,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         email,
         includeInvoice: resendIncludeInvoice,
       });
-      toast.success(`Отправлено повторно на ${email}`, { id: tid });
+      toast.success(`Письмо поставлено в отправку на ${email}`, { id: tid });
       setResendOpen(false);
       queryClient.invalidateQueries({ queryKey: ["contract-files"] });
     } catch (err: any) {
