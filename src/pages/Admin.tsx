@@ -62,7 +62,12 @@ const Admin = () => {
   const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
-  const [activeSection, setActiveSection] = useState("sales");
+  const ADMIN_START_SECTION_KEY = "admin-start-section";
+  const [activeSection, setActiveSection] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ADMIN_START_SECTION_KEY) || "sales";
+    } catch { return "sales"; }
+  });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [sectionNonce, setSectionNonce] = useState(0);
   const handleSectionChange = (s: string) => {
@@ -70,6 +75,7 @@ const Admin = () => {
     // so any open inline forms / modals reset (e.g. "Back to list").
     setSectionNonce((n) => n + 1);
     setActiveSection(s);
+    try { localStorage.setItem(ADMIN_START_SECTION_KEY, s); } catch {}
   };
   const [docInitialClientName, setDocInitialClientName] = useState("");
   const [docInitialContractId, setDocInitialContractId] = useState("");
