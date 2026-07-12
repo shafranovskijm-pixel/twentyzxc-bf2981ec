@@ -184,7 +184,9 @@ serve(async (req) => {
     message = message.replace(/\r?\n\./g, "\r\n..");
 
     await conn.write(enc.encode(message + "\r\n.\r\n"));
-    const dataResp = await readResp(conn, 30000);
+    // Большие вложения (PDF договора+счёта) timeweb принимает медленно —
+    // ждём финальный "250 OK" до 3 минут.
+    const dataResp = await readResp(conn, 180000);
     if (!dataResp.startsWith("250")) throw new Error(`DATA end failed: ${dataResp}`);
 
     try { await cmd(conn, "QUIT", "221", 3000); } catch {}
