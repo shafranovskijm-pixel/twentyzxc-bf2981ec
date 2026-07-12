@@ -230,14 +230,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
     sessionStorage.setItem("pending_act", JSON.stringify({
       contractId: c.id,
       clientName: c.client_name,
+      docType,
       autoSend: false,
     }));
-    // Reuse existing consumer but override with docType via a second navigate hop:
-    // simpler — dispatch a custom event with contract prefill.
     window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { section: "documents" } }));
-    // The existing consumer forces doc_type to "act" — for contract/invoice we need
-    // a separate path. Fall back: navigate and let user pick type; also toast a hint.
-    toast.info(`Открываю конструктор — выберите тип "${docType === "contract" ? "Договор" : "Счёт"}"`);
+    toast.success(`Открываю конструктор: ${docType === "contract" ? "Договор" : "Счёт"}`);
     setDocsOpen(false);
   };
 
