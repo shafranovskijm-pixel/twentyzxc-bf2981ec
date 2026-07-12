@@ -101,9 +101,37 @@ const Admin = () => {
       localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(next));
       window.dispatchEvent(new Event(SIDEBAR_VISIBILITY_EVENT));
       if (hide && activeSection === id) setActiveSection("profile");
+      // Persist to Supabase so preferences survive across devices/browsers.
+      if (user?.id) {
+        supabase
+          .from("user_ui_settings")
+          .upsert({ user_id: user.id, hidden_sidebar_sections: next }, { onConflict: "user_id" })
+          .then(({ error }) => { if (error) console.error("ui settings save", error); });
+      }
       return next;
     });
   };
+
+  // Load persisted UI settings from Supabase once the user is known.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("user_ui_settings")
+        .select("hidden_sidebar_sections")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      const remote = Array.isArray(data.hidden_sidebar_sections)
+        ? (data.hidden_sidebar_sections as string[]).filter(x => typeof x === "string")
+        : [];
+      setHiddenSections(remote);
+      try { localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(remote)); } catch {}
+      window.dispatchEvent(new Event(SIDEBAR_VISIBILITY_EVENT));
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Theme state
   const [isDark, setIsDark] = useState(() => {

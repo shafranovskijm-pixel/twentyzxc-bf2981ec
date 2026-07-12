@@ -1722,6 +1722,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_ui_settings: {
+        Row: {
+          hidden_sidebar_sections: Json
+          sidebar_order: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          hidden_sidebar_sections?: Json
+          sidebar_order?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          hidden_sidebar_sections?: Json
+          sidebar_order?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       playground_projects_public: {
