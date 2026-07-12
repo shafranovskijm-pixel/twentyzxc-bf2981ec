@@ -65,53 +65,48 @@ async function sendEmail(payload: {
   pdfFilename?: string;
   attachments?: Attachment[];
 }) {
+  const { to, subject, html, pdfBase64, pdfFilename, attachments } = payload;
+
+  if (!to || !subject || !html) {
+    throw new Error("Missing required fields: to, subject, html");
+  }
+
+  const host = Deno.env.get("SMTP_HOST")!;
+  const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
+  const user = Deno.env.get("SMTP_USER")!;
+  const pass = Deno.env.get("SMTP_PASS")!;
+  const smtpFrom = Deno.env.get("SMTP_FROM") || user;
+
+  if (!host || !user || !pass) {
+    throw new Error("SMTP not configured");
+  }
+
+  const fromEmail = extractEmail(smtpFrom);
+  const fromName = extractName(smtpFrom) || Deno.env.get("SMTP_FROM_NAME") || "Sintagma";
+  const useImplicitTls = port === 465;
+
+  const attList: Attachment[] = Array.isArray(attachments)
+    ? attachments.filter((a: any) => a && a.base64 && a.filename)
+    : (pdfBase64 && pdfFilename
+      ? [{ filename: pdfFilename, base64: pdfBase64, contentType: "application/pdf" }]
+      : []);
+
+  const recipients = to.split(/[,;]\s*/).map((e: string) => extractEmail(e.trim())).filter(Boolean);
+
+  console.log(`SMTP ${host}:${port} tls=${useImplicitTls ? "implicit" : "starttls"} to=${recipients.join(",")} attachments=${attList.length}`);
+
   let conn: Deno.Conn | null = null;
   try {
-    const { to, subject, html, pdfBase64, pdfFilename, attachments } = payload;
-
-    if (!to || !subject || !html) {
-      throw new Error("Missing required fields: to, subject, html");
-    }
-
-    const host = Deno.env.get("SMTP_HOST")!;
-    const port = parseInt(Deno.env.get("SMTP_PORT") || "587");
-    const user = Deno.env.get("SMTP_USER")!;
-    const pass = Deno.env.get("SMTP_PASS")!;
-    const smtpFrom = Deno.env.get("SMTP_FROM") || user;
-
-    if (!host || !user || !pass) {
-      throw new Error("SMTP not configured");
-    }
-
-    const fromEmail = extractEmail(smtpFrom);
-    const fromName = extractName(smtpFrom) || Deno.env.get("SMTP_FROM_NAME") || "Sintagma";
-    const useImplicitTls = port === 465;
-
-    const attList: { filename: string; base64: string; contentType?: string }[] = Array.isArray(attachments)
-      ? attachments.filter((a: any) => a && a.base64 && a.filename)
-      : (pdfBase64 && pdfFilename
-        ? [{ filename: pdfFilename, base64: pdfBase64, contentType: "application/pdf" }]
-        : []);
-
-    const recipients = to.split(/[,;]\s*/).map((e: string) => extractEmail(e.trim())).filter(Boolean);
-
-    console.log(`SMTP ${host}:${port} tls=${useImplicitTls ? "implicit" : "starttls"} to=${recipients.join(",")}`);
-
     if (useImplicitTls) {
       conn = await Deno.connectTls({ hostname: host, port });
     } else {
       conn = await Deno.connect({ hostname: host, port });
     }
 
-    const greeting = await readResp(conn, 10000);
+    const greeting = await readResp(conn, 15000);
     if (!greeting.startsWith("220")) throw new Error(`Bad greeting: ${greeting}`);
 
-    let ehloName = "sintagma.local";
-    try {
-      const ip = (await (await fetch("https://api.ipify.org?format=json")).json()).ip;
-      if (ip) ehloName = `[${ip}]`;
-    } catch {}
-
+    const ehloName = "sintagma.local";
     await cmd(conn, `EHLO ${ehloName}`, "250");
 
     if (!useImplicitTls) {
@@ -136,61 +131,51 @@ async function sendEmail(payload: {
     const htmlB64 = base64Encode(enc.encode(html));
     const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
 
-    let message: string;
+    const headerLines: string[] = [
+      `From: ${encodedFrom}`,
+      `To: ${recipients.map((r) => `<${r}>`).join(", ")}`,
+      `Subject: ${encodedSubject}`,
+      `Date: ${new Date().toUTCString()}`,
+      `MIME-Version: 1.0`,
+    ];
+
+    // Write in chunks to avoid holding an enormous string in memory,
+    // and to keep the TCP write buffers flowing.
+    const writeStr = async (s: string) => {
+      const bytes = enc.encode(s);
+      let off = 0;
+      while (off < bytes.length) {
+        const n = await (conn as Deno.Conn).write(bytes.subarray(off, Math.min(off + 65536, bytes.length)));
+        off += n;
+      }
+    };
+
     if (attList.length > 0) {
-      const parts: string[] = [
-        `From: ${encodedFrom}`,
-        `To: ${recipients.map((r) => `<${r}>`).join(", ")}`,
-        `Subject: ${encodedSubject}`,
-        `Date: ${new Date().toUTCString()}`,
-        `MIME-Version: 1.0`,
-        `Content-Type: multipart/mixed; boundary="${boundary}"`,
-        ``,
-        `--${boundary}`,
-        `Content-Type: text/html; charset="UTF-8"`,
-        `Content-Transfer-Encoding: base64`,
-        ``,
-        htmlChunked,
-      ];
+      headerLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+      await writeStr(headerLines.join("\r\n") + "\r\n\r\n");
+      await writeStr(`--${boundary}\r\nContent-Type: text/html; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${htmlChunked}\r\n`);
       for (const a of attList) {
         const chunked = a.base64.match(/.{1,76}/g)?.join("\r\n") || a.base64;
         const encName = mimeEncode(a.filename);
         const ct = a.contentType || "application/octet-stream";
-        parts.push(
-          `--${boundary}`,
-          `Content-Type: ${ct}; name="${encName}"`,
-          `Content-Transfer-Encoding: base64`,
-          `Content-Disposition: attachment; filename="${encName}"`,
-          ``,
-          chunked,
+        await writeStr(
+          `--${boundary}\r\nContent-Type: ${ct}; name="${encName}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${encName}"\r\n\r\n`,
         );
+        await writeStr(chunked + "\r\n");
       }
-      parts.push(`--${boundary}--`);
-      message = parts.join("\r\n");
+      await writeStr(`--${boundary}--\r\n`);
     } else {
-      message = [
-        `From: ${encodedFrom}`,
-        `To: ${recipients.map((r) => `<${r}>`).join(", ")}`,
-        `Subject: ${encodedSubject}`,
-        `Date: ${new Date().toUTCString()}`,
-        `MIME-Version: 1.0`,
-        `Content-Type: text/html; charset="UTF-8"`,
-        `Content-Transfer-Encoding: base64`,
-        ``,
-        htmlChunked,
-      ].join("\r\n");
+      headerLines.push(`Content-Type: text/html; charset="UTF-8"`, `Content-Transfer-Encoding: base64`);
+      await writeStr(headerLines.join("\r\n") + "\r\n\r\n" + htmlChunked + "\r\n");
     }
 
-    // Dot-stuffing
-    message = message.replace(/\r?\n\./g, "\r\n..");
+    await writeStr(".\r\n");
 
-    await conn.write(enc.encode(message + "\r\n.\r\n"));
-    // Большие вложения (PDF договора+счёта) timeweb принимает медленно —
-    // ждём финальный "250 OK" до 3 минут.
-    const dataResp = await readResp(conn, 180000);
+    // Большие вложения — ждём финальный "250 OK" до 5 минут.
+    const dataResp = await readResp(conn, 300000);
     if (!dataResp.startsWith("250")) throw new Error(`DATA end failed: ${dataResp}`);
 
-    try { await cmd(conn, "QUIT", "221", 3000); } catch {}
+    try { await cmd(conn, "QUIT", "221", 5000); } catch {}
 
     console.log("Email sent OK");
   } finally {
