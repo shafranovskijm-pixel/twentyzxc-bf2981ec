@@ -96,13 +96,23 @@ const HistoryTab = () => {
   const { data: rows = [], isLoading, error: historyError } = useQuery({
     queryKey: ["unified-documents"],
     queryFn: async (): Promise<UnifiedRow[]> => {
+      // NOTE: html_content is intentionally omitted here — it can be huge.
+      // It is lazy-fetched in handleView/handleDownload only when needed.
       const [genRes, fileRes, nmoRes, contractsRes, nmoRegsRes, tzRes] = await Promise.all([
-        supabase.from("generated_documents" as any).select("*").order("created_at", { ascending: false }),
-        supabase.from("contract_files" as any).select("*").order("created_at", { ascending: false }),
-        supabase.from("nmo_documents" as any).select("*").order("created_at", { ascending: false }),
+        supabase.from("generated_documents" as any)
+          .select("id, doc_type, doc_number, doc_date, client_name, total_amount, created_at")
+          .order("created_at", { ascending: false }),
+        supabase.from("contract_files" as any)
+          .select("id, contract_id, file_path, file_name, metadata, created_at")
+          .order("created_at", { ascending: false }),
+        supabase.from("nmo_documents" as any)
+          .select("id, registration_id, file_path, file_name, created_at")
+          .order("created_at", { ascending: false }),
         supabase.from("contracts" as any).select("id, client_name, contract_number"),
         supabase.from("nmo_registrations" as any).select("id, organization_name"),
-        supabase.from("tz_documents" as any).select("*").order("created_at", { ascending: false }),
+        supabase.from("tz_documents" as any)
+          .select("id, tz_number, tz_date, client_name, created_at")
+          .order("created_at", { ascending: false }),
       ]);
 
       const contractsById = new Map<string, any>((contractsRes.data || []).map((c: any) => [c.id, c]));
@@ -120,7 +130,7 @@ const HistoryTab = () => {
           doc_date: d.doc_date || d.created_at,
           client_name: d.client_name || "—",
           total_amount: d.total_amount,
-          html_content: d.html_content,
+          html_content: undefined,
         });
       }
 
@@ -163,7 +173,7 @@ const HistoryTab = () => {
           doc_number: t.tz_number,
           doc_date: t.tz_date || t.created_at,
           client_name: t.client_name || "—",
-          html_content: t.html_content,
+          html_content: undefined,
         });
       }
 
