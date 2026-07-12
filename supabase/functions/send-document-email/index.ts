@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -96,33 +95,91 @@ async function sendEmail(payload: {
 
   console.log(`SMTP ${host}:${port} tls=${useImplicitTls ? "implicit" : "starttls"} to=${recipients.join(",")} attachments=${attList.length}`);
 
-  const client = new SMTPClient({
-    connection: {
-      hostname: host,
-      port,
-      tls: useImplicitTls,
-      auth: { username: user, password: pass },
-    },
-    pool: false,
-    debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: false },
-  });
-
+  let conn: Deno.Conn | null = null;
   try {
-    await client.send({
-      from: `${fromName} <${fromEmail}>`,
-      to: recipients,
-      subject,
-      html,
-      attachments: attList.map((a) => ({
-        filename: a.filename,
-        content: a.base64,
-        encoding: "base64",
-        contentType: a.contentType || "application/octet-stream",
-      })),
-    });
+    if (useImplicitTls) {
+      conn = await Deno.connectTls({ hostname: host, port });
+    } else {
+      conn = await Deno.connect({ hostname: host, port });
+    }
+
+    const greeting = await readResp(conn, 15000);
+    if (!greeting.startsWith("220")) throw new Error(`Bad greeting: ${greeting}`);
+
+    const ehloName = "sintagma.local";
+    await cmd(conn, `EHLO ${ehloName}`, "250");
+
+    if (!useImplicitTls) {
+      await cmd(conn, "STARTTLS", "220");
+      conn = await Deno.startTls(conn as Deno.TcpConn, { hostname: host });
+      await cmd(conn, `EHLO ${ehloName}`, "250");
+    }
+
+    await cmd(conn, "AUTH LOGIN", "334");
+    await cmd(conn, base64Encode(enc.encode(user)), "334");
+    await cmd(conn, base64Encode(enc.encode(pass)), "235");
+
+    await cmd(conn, `MAIL FROM:<${fromEmail}>`, "250");
+    for (const r of recipients) {
+      await cmd(conn, `RCPT TO:<${r}>`, "250");
+    }
+    await cmd(conn, "DATA", "354");
+
+    const boundary = `----=_Part_${Date.now()}`;
+    const encodedSubject = mimeEncode(subject);
+    const encodedFrom = `${mimeEncode(fromName)} <${fromEmail}>`;
+    const htmlB64 = base64Encode(enc.encode(html));
+    const htmlChunked = htmlB64.match(/.{1,76}/g)?.join("\r\n") || htmlB64;
+
+    const headerLines: string[] = [
+      `From: ${encodedFrom}`,
+      `To: ${recipients.map((r) => `<${r}>`).join(", ")}`,
+      `Subject: ${encodedSubject}`,
+      `Date: ${new Date().toUTCString()}`,
+      `MIME-Version: 1.0`,
+    ];
+
+    // Write in chunks to avoid holding an enormous string in memory,
+    // and to keep the TCP write buffers flowing.
+    const writeStr = async (s: string) => {
+      const bytes = enc.encode(s);
+      let off = 0;
+      while (off < bytes.length) {
+        const n = await (conn as Deno.Conn).write(bytes.subarray(off, Math.min(off + 65536, bytes.length)));
+        off += n;
+      }
+    };
+
+    if (attList.length > 0) {
+      headerLines.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);
+      await writeStr(headerLines.join("\r\n") + "\r\n\r\n");
+      await writeStr(`--${boundary}\r\nContent-Type: text/html; charset="UTF-8"\r\nContent-Transfer-Encoding: base64\r\n\r\n${htmlChunked}\r\n`);
+      for (const a of attList) {
+        const chunked = a.base64.match(/.{1,76}/g)?.join("\r\n") || a.base64;
+        const encName = mimeEncode(a.filename);
+        const ct = a.contentType || "application/octet-stream";
+        await writeStr(
+          `--${boundary}\r\nContent-Type: ${ct}; name="${encName}"\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="${encName}"\r\n\r\n`,
+        );
+        await writeStr(chunked + "\r\n");
+      }
+      await writeStr(`--${boundary}--\r\n`);
+    } else {
+      headerLines.push(`Content-Type: text/html; charset="UTF-8"`, `Content-Transfer-Encoding: base64`);
+      await writeStr(headerLines.join("\r\n") + "\r\n\r\n" + htmlChunked + "\r\n");
+    }
+
+    await writeStr(".\r\n");
+
+    // Большие вложения — ждём финальный "250 OK" до 5 минут.
+    const dataResp = await readResp(conn, 300000);
+    if (!dataResp.startsWith("250")) throw new Error(`DATA end failed: ${dataResp}`);
+
+    try { await cmd(conn, "QUIT", "221", 5000); } catch {}
+
     console.log("Email sent OK");
   } finally {
-    try { await client.close(); } catch {}
+    try { conn?.close(); } catch {}
   }
 }
 
