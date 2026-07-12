@@ -796,7 +796,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
               </Label>
             </div>
             <p className="text-xs text-muted-foreground">
-              PDF будут заново сгенерированы из последнего сохранённого документа в Конструкторе. Ссылки в письме действуют 7 дней.
+              Файлы прикрепляются к письму. Если PDF уже сохранён в файлах договора — берём его напрямую (быстро); иначе PDF генерируется из последнего документа в Конструкторе (может занять до 10–20 секунд).
             </p>
           </div>
           <DialogFooter>
