@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileCheck, Send, Loader2, CheckSquare } from "lucide-react";
+import { FileCheck, Send, Loader2, CheckSquare, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ const FrdoTab = () => {
   const [email, setEmail] = useState("");
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
+  const [sendingOne, setSendingOne] = useState<string | null>(null);
 
   const { data: clients = [] } = useQuery({
     queryKey: ["frdo-clients"],
@@ -113,6 +114,63 @@ const FrdoTab = () => {
     }
   };
 
+  const handleDownloadOne = (docId: string) => {
+    const doc = FRDO_DOCUMENTS.find((d) => d.id === docId);
+    if (!doc) return;
+    // force download attribute via anchor
+    const a = document.createElement("a");
+    a.href = doc.path;
+    a.download = doc.path.split("/").pop() || doc.label;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleSendOne = async (docId: string) => {
+    if (!email.trim()) return toast.error("Укажите email получателя");
+    const doc = FRDO_DOCUMENTS.find((d) => d.id === docId);
+    if (!doc) return;
+    const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
+    const isPrikaz = doc.id === "prikaz";
+
+    const bodyText = isPrikaz
+      ? `<p style="color:#555;">Приказ во вложении нужно заполнить на бланке организации.</p>
+         <p style="color:#555;">После подписать от руки и поставить печать, отсканировать в PDF, после чего PDF подписать электронной подписью.</p>`
+      : `<p style="color:#555;">Направляем вам документ ФИС ФРДО:</p>`;
+
+    const html = `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
+        <h2 style="color:#1a1a1a;">${doc.label}</h2>
+        <p style="color:#555;">Здравствуйте!</p>
+        ${bodyText}
+        <p style="margin:16px 0;"><a href="${doc.path}" style="color:#2563eb;font-weight:600;">${doc.label}</a></p>
+        <p style="color:#555;margin-top:24px;">Пожалуйста, скачайте документ. При возникновении вопросов свяжитесь с нами.</p>
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+        <p style="color:#999;font-size:12px;">С уважением, команда Синтагма</p>
+      </div>
+    `;
+
+    setSendingOne(docId);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-document-email", {
+        body: {
+          to: email,
+          subject: `${doc.label} — ${clientName}`,
+          html,
+        },
+      });
+      if (error) throw error;
+      if (data && !data.success) throw new Error(data.error || "Ошибка отправки");
+      toast.success(`«${doc.label}» отправлен на ${email}`);
+    } catch (err: any) {
+      toast.error(err.message || "Ошибка отправки email");
+    } finally {
+      setSendingOne(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -165,16 +223,40 @@ const FrdoTab = () => {
             </div>
             <div className="space-y-2 border rounded-sm p-3">
               {FRDO_DOCUMENTS.map((doc) => (
-                <label
+                <div
                   key={doc.id}
-                  className="flex items-center gap-3 py-1.5 px-2 rounded-sm hover:bg-muted/50 cursor-pointer transition-colors"
+                  className="flex items-center gap-3 py-1.5 px-2 rounded-sm hover:bg-muted/50 transition-colors group"
                 >
                   <Checkbox
                     checked={selectedDocs.includes(doc.id)}
                     onCheckedChange={() => toggleDoc(doc.id)}
+                    id={`frdo-${doc.id}`}
                   />
-                  <span className="text-sm">{doc.label}</span>
-                </label>
+                  <label htmlFor={`frdo-${doc.id}`} className="text-sm flex-1 cursor-pointer truncate">
+                    {doc.label}
+                  </label>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    title="Скачать"
+                    onClick={() => handleDownloadOne(doc.id)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    title={email ? `Отправить только этот документ на ${email}` : "Сначала укажите email"}
+                    disabled={!email.trim() || sendingOne === doc.id}
+                    onClick={() => handleSendOne(doc.id)}
+                  >
+                    {sendingOne === doc.id
+                      ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      : <Send className="h-3.5 w-3.5" />}
+                  </Button>
+                </div>
               ))}
             </div>
           </div>
