@@ -86,6 +86,28 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
   const [docsContract, setDocsContract] = useState<Contract | null>(null);
   const [docsList, setDocsList] = useState<Array<{ id: string; doc_type: string; doc_number: string; doc_date: string; created_at: string }>>([]);
   const [docsLoading, setDocsLoading] = useState(false);
+  // Document preview dialog
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [previewTitle, setPreviewTitle] = useState<string>("");
+  const [previewDocId, setPreviewDocId] = useState<string>("");
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  const openPreview = async (doc: { id: string; doc_type: string; doc_number: string }) => {
+    const label = doc.doc_type === "contract" ? "Договор" : doc.doc_type === "invoice" ? "Счёт" : doc.doc_type === "act" ? "Акт" : doc.doc_type;
+    setPreviewTitle(`${label} №${doc.doc_number}`);
+    setPreviewDocId(doc.id);
+    setPreviewHtml("");
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    const { data } = await supabase
+      .from("generated_documents")
+      .select("html_content")
+      .eq("id", doc.id)
+      .maybeSingle();
+    setPreviewHtml((data as any)?.html_content || "");
+    setPreviewLoading(false);
+  };
 
   const { data: contracts = [], isLoading, error: contractsError } = useQuery({
     queryKey: ["admin-contracts"],
