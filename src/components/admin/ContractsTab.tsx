@@ -865,6 +865,57 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={docsOpen} onOpenChange={setDocsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Документы договора</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {docsContract?.client_name}
+              {docsContract?.contract_number ? ` · №${docsContract.contract_number}` : ""}
+            </div>
+
+            {docsLoading ? (
+              <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
+            ) : docsList.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground text-center">
+                Документы в Конструкторе ещё не созданы.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {docsList.map((d) => {
+                  const label = d.doc_type === "contract" ? "Договор" : d.doc_type === "invoice" ? "Счёт" : d.doc_type === "act" ? "Акт" : d.doc_type;
+                  return (
+                    <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm">{label} №{d.doc_number}</div>
+                        <div className="text-xs text-muted-foreground">{d.doc_date ? new Date(d.doc_date).toLocaleDateString("ru-RU") : ""}</div>
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => editDoc(d.id)}>
+                        <Pencil className="w-3.5 h-3.5 mr-1.5" /> Открыть
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t">
+              <Button variant="outline" size="sm" onClick={() => docsContract && createDocFor(docsContract, "contract")}>
+                <Plus className="w-4 h-4 mr-1.5" /> Новый договор
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => docsContract && createDocFor(docsContract, "invoice")}>
+                <Plus className="w-4 h-4 mr-1.5" /> Новый счёт
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDocsOpen(false)}>Закрыть</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
