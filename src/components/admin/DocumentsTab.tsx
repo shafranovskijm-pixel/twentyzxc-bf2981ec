@@ -1524,6 +1524,26 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [fillClientFromName]);
 
+  // Load an existing generated document into the editor when navigated with an ID
+  useEffect(() => {
+    if (!initialEditDocId) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from("generated_documents")
+        .select("*")
+        .eq("id", initialEditDocId)
+        .maybeSingle();
+      if (error || !data) {
+        toast.error("Документ не найден");
+        onMounted?.();
+        return;
+      }
+      loadDocumentForEdit(data);
+      onMounted?.();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEditDocId]);
+
   if (settingsLoading || clientsLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
