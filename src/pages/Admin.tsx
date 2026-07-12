@@ -1056,6 +1056,7 @@ const Admin = () => {
               {activeSection === "reconciliation" && <DocumentsTab key="reconciliation" forceDocType="reconciliation" hideTypeSelector initialClientName={docInitialClientName} onMounted={() => { setDocInitialClientName(""); }} />}
               {activeSection === "tz" && <TzTab />}
               {activeSection === "ai-chat" && <InlineAIChat />}
+              </Suspense>
                 </motion.div>
               </AnimatePresence>
             </main>
