@@ -1155,13 +1155,20 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
               <div className="flex justify-center items-center h-full text-muted-foreground text-sm">Пусто</div>
             )}
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-wrap gap-2">
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Закрыть</Button>
             {previewDocId && (
               <Button variant="outline" onClick={() => { editDoc(previewDocId); setPreviewOpen(false); }}>
                 <Pencil className="w-4 h-4 mr-1.5" /> Редактировать
               </Button>
             )}
+            <Button variant="outline" onClick={downloadPreviewPdf} disabled={previewDownloading || !previewHtml}>
+              {previewDownloading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
+              Скачать PDF
+            </Button>
+            <Button onClick={sendPreviewByEmail} disabled={!docsContract}>
+              <Send className="w-4 h-4 mr-1.5" /> Отправить
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
