@@ -328,10 +328,25 @@ const Admin = () => {
       }
     };
     consumePendingAct();
+    const consumePendingEditDoc = () => {
+      const raw = sessionStorage.getItem("pending_edit_doc");
+      if (!raw) return false;
+      try {
+        const data = JSON.parse(raw);
+        setDocInitialEditDocId(data.docId || "");
+        setActiveSection("documents");
+        sessionStorage.removeItem("pending_edit_doc");
+        return true;
+      } catch {
+        sessionStorage.removeItem("pending_edit_doc");
+        return false;
+      }
+    };
+    consumePendingEditDoc();
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail || {};
       if (detail.section === "documents") {
-        consumePendingAct() || setActiveSection("documents");
+        consumePendingAct() || consumePendingEditDoc() || setActiveSection("documents");
       } else if (detail.section) {
         setActiveSection(detail.section);
       }
