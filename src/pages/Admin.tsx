@@ -130,8 +130,10 @@ const Admin = () => {
       if (cancelled || error || !data) return;
       const remote = normalizeSidebarIds(data.hidden_sidebar_sections);
       const remoteOrder = normalizeSidebarIds(data.sidebar_order);
-      setHiddenSections(remote);
-      try { localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(remote)); } catch {}
+      const localHidden = readLocalSidebarIds(SIDEBAR_HIDDEN_KEY);
+      const nextHidden = remote.length === 0 && localHidden.length > 0 ? localHidden : remote;
+      setHiddenSections(nextHidden);
+      try { localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(nextHidden)); } catch {}
       if (remoteOrder.length > 0) {
         try { localStorage.setItem(SIDEBAR_ORDER_STORAGE_KEY, JSON.stringify(remoteOrder)); } catch {}
       }
