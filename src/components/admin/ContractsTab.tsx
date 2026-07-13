@@ -419,7 +419,16 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         total_amount: total,
         services: JSON.stringify(services),
         html_content: html,
-        metadata: JSON.stringify({ subject, deadline, paymentTerms }),
+        metadata: JSON.stringify({
+          subject,
+          deadline,
+          paymentTerms,
+          clientKpp: client.kpp,
+          clientOgrn: client.ogrn,
+          clientAddress: client.address,
+          clientDirectorName: client.director_name,
+          clientDirectorPost: client.director_post,
+        }),
       });
       if (insertError) {
         toast.error(`Не удалось сохранить: ${insertError.message}`, { id: "auto-gen-contract" });
