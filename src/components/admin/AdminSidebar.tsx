@@ -39,7 +39,7 @@ export const defaultMenuItems = [
   { id: "ai-chat", label: "AI Ассистент", icon: MessageSquare },
 ];
 
-const STORAGE_KEY = "admin-sidebar-order-v2";
+export const SIDEBAR_ORDER_STORAGE_KEY = "admin-sidebar-order-v2";
 export const HIDDEN_STORAGE_KEY = "admin-sidebar-hidden-v1";
 export const SIDEBAR_VISIBILITY_EVENT = "admin-sidebar-visibility-changed";
 
@@ -114,7 +114,7 @@ function SortableIconButton({
 const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, inSheet, className }: AdminSidebarProps) => {
   const [items, setItems] = useState(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY);
       if (saved) {
         const order: string[] = JSON.parse(saved);
         const sorted = order
@@ -153,7 +153,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
         const oldIdx = prev.findIndex(i => i.id === active.id);
         const newIdx = prev.findIndex(i => i.id === over.id);
         const next = arrayMove(prev, oldIdx, newIdx);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next.map(i => i.id)));
+        localStorage.setItem(SIDEBAR_ORDER_STORAGE_KEY, JSON.stringify(next.map(i => i.id)));
         return next;
       });
     }
