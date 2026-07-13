@@ -54,6 +54,21 @@ function readHidden(): string[] {
   }
 }
 
+function readOrderedItems(): typeof defaultMenuItems {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY);
+    if (saved) {
+      const order: string[] = JSON.parse(saved);
+      const sorted = order
+        .map(id => defaultMenuItems.find(m => m.id === id))
+        .filter(Boolean) as typeof defaultMenuItems;
+      const missing = defaultMenuItems.filter(m => !order.includes(m.id));
+      return [...sorted, ...missing] as typeof defaultMenuItems;
+    }
+  } catch {}
+  return defaultMenuItems;
+}
+
 interface AdminSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
@@ -112,24 +127,14 @@ function SortableIconButton({
 }
 
 const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, inSheet, className }: AdminSidebarProps) => {
-  const [items, setItems] = useState(() => {
-    try {
-      const saved = localStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY);
-      if (saved) {
-        const order: string[] = JSON.parse(saved);
-        const sorted = order
-          .map(id => defaultMenuItems.find(m => m.id === id))
-          .filter(Boolean) as typeof defaultMenuItems;
-        const missing = defaultMenuItems.filter(m => !order.includes(m.id));
-        return [...sorted, ...missing];
-      }
-    } catch {}
-    return defaultMenuItems;
-  });
+  const [items, setItems] = useState(readOrderedItems);
   const [hidden, setHidden] = useState<string[]>(() => readHidden());
 
   useEffect(() => {
-    const update = () => setHidden(readHidden());
+    const update = () => {
+      setHidden(readHidden());
+      setItems(readOrderedItems());
+    };
     window.addEventListener(SIDEBAR_VISIBILITY_EVENT, update);
     window.addEventListener("storage", update);
     return () => {
