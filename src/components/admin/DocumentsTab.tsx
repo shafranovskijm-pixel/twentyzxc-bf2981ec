@@ -313,9 +313,30 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   // Deferred override applied AFTER contractSubType-defaults effect runs
   const prevContractPrefillRef = useRef<{ deadline?: string; subject?: string; paymentTerms?: string } | null>(null);
 
-  // Helper: fill client requisites from clients array by client_name
-  const fillClientFromName = useCallback((name: string) => {
-    const client = clients.find(c => c.name === name);
+  // Helper: fill client requisites from clients array by client_name.
+  // Falls back to a direct DB lookup when the clients cache doesn't have a match
+  // (e.g. when this runs during initial mount before the query resolves, or
+  // when the stored client_name has minor whitespace/quote differences).
+  const fillClientFromName = useCallback(async (name: string) => {
+    const norm = (s: string) => (s || "").replace(/[«»"'`\s]+/g, "").toLowerCase();
+    const target = norm(name);
+    let client: any = clients.find(c => c.name === name)
+      || clients.find(c => norm(c.name) === target);
+    if (!client && name?.trim()) {
+      const { data } = await supabase
+        .from("clients")
+        .select("name,inn,kpp,ogrn,legal_address,director_name,director_post")
+        .ilike("name", name.trim())
+        .limit(1)
+        .maybeSingle();
+      if (data) client = data;
+      if (!client) {
+        const { data: all } = await supabase
+          .from("clients")
+          .select("name,inn,kpp,ogrn,legal_address,director_name,director_post");
+        client = (all || []).find((c: any) => norm(c.name) === target);
+      }
+    }
     if (client) {
       setClientInn(client.inn || "");
       setClientKpp(client.kpp || "");
@@ -1507,20 +1528,21 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         if (meta.paymentTerms !== undefined) setPaymentTerms(meta.paymentTerms);
         if (meta.discountAmount !== undefined) setDiscountAmount(meta.discountAmount || 0);
         if (meta.discountDeadline !== undefined) setDiscountDeadline(meta.discountDeadline || "");
-        if (meta.clientKpp !== undefined) setClientKpp(meta.clientKpp);
-        if (meta.clientOgrn !== undefined) setClientOgrn(meta.clientOgrn);
-        if (meta.clientAddress !== undefined) setClientAddress(meta.clientAddress);
-        if (meta.clientDirectorName !== undefined) setClientDirectorName(meta.clientDirectorName);
-        if (meta.clientDirectorPost !== undefined) setClientDirectorPost(meta.clientDirectorPost);
+        if (meta.clientKpp) setClientKpp(meta.clientKpp);
+        if (meta.clientOgrn) setClientOgrn(meta.clientOgrn);
+        if (meta.clientAddress) setClientAddress(meta.clientAddress);
+        if (meta.clientDirectorName) setClientDirectorName(meta.clientDirectorName);
+        if (meta.clientDirectorPost) setClientDirectorPost(meta.clientDirectorPost);
         if (meta.periodFrom) setPeriodFrom(meta.periodFrom);
         if (meta.periodTo) setPeriodTo(meta.periodTo);
         if (meta.openingBalance !== undefined) setOpeningBalance(Number(meta.openingBalance) || 0);
-        // If client requisites are not present in metadata, fall back to the client card.
-        const hasClientReqs = ["clientKpp","clientOgrn","clientAddress","clientDirectorName","clientDirectorPost"].some(k => meta[k] !== undefined);
-        if (!hasClientReqs) fillClientFromName(doc.client_name);
-      } catch { /* keep current */ }
+        // If any key client requisite is missing/empty in metadata, fall back to the client card.
+        const hasClientReqs = ["clientKpp","clientOgrn","clientAddress","clientDirectorName"]
+          .every(k => meta[k] && String(meta[k]).trim().length > 0);
+        if (!hasClientReqs) void fillClientFromName(doc.client_name);
+      } catch { void fillClientFromName(doc.client_name); }
     } else {
-      fillClientFromName(doc.client_name);
+      void fillClientFromName(doc.client_name);
     }
 
     toast.info("Документ загружен в редактор");
