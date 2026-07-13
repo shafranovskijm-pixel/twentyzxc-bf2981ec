@@ -159,6 +159,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
         const newIdx = prev.findIndex(i => i.id === over.id);
         const next = arrayMove(prev, oldIdx, newIdx);
         localStorage.setItem(SIDEBAR_ORDER_STORAGE_KEY, JSON.stringify(next.map(i => i.id)));
+        window.dispatchEvent(new Event(SIDEBAR_VISIBILITY_EVENT));
         return next;
       });
     }
