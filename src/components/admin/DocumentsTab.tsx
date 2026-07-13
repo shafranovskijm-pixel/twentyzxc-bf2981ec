@@ -1515,6 +1515,9 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         if (meta.periodFrom) setPeriodFrom(meta.periodFrom);
         if (meta.periodTo) setPeriodTo(meta.periodTo);
         if (meta.openingBalance !== undefined) setOpeningBalance(Number(meta.openingBalance) || 0);
+        // If client requisites are not present in metadata, fall back to the client card.
+        const hasClientReqs = ["clientKpp","clientOgrn","clientAddress","clientDirectorName","clientDirectorPost"].some(k => meta[k] !== undefined);
+        if (!hasClientReqs) fillClientFromName(doc.client_name);
       } catch { /* keep current */ }
     } else {
       fillClientFromName(doc.client_name);
