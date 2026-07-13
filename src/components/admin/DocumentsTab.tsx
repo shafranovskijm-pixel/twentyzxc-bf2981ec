@@ -882,7 +882,33 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     setPreviewInvoiceHtml(invoiceHtml ? embedDocImages(invoiceHtml) : null);
     setPreviewTab("contract");
 
-    toast.success("Документ сформирован. Для сохранения отправьте на email или в Telegram.");
+    // Auto-save/update client card with entered requisites (so they persist on next open)
+    if (clientName.trim()) {
+      try {
+        const existingClient = clients.find(c => c.name === clientName);
+        const payload: Record<string, any> = {
+          name: clientName,
+          inn: clientInn || existingClient?.inn || null,
+          kpp: clientKpp || existingClient?.kpp || null,
+          ogrn: clientOgrn || existingClient?.ogrn || null,
+          legal_address: clientAddress || existingClient?.legal_address || null,
+          director_name: clientDirectorName || existingClient?.director_name || null,
+          director_post: clientDirectorPost || existingClient?.director_post || null,
+        };
+        if (existingClient) {
+          await supabase.from("clients").update(payload).eq("id", existingClient.id);
+        } else {
+          await supabase.from("clients").insert(payload as any);
+        }
+        queryClient.invalidateQueries({ queryKey: ["doc-clients"] });
+        queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+        queryClient.invalidateQueries({ queryKey: ["planner-clients"] });
+      } catch (e) {
+        console.error("[DOC] Failed to sync client card on generate:", e);
+      }
+    }
+
+    toast.success("Документ сформирован, реквизиты сохранены в карточке клиента.");
   };
 
   // Save document to DB with upsert logic (called on send)
