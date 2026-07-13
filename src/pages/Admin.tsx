@@ -894,8 +894,16 @@ const Admin = () => {
 
                         <Card>
                           <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Menu className="h-5 w-5" />Пункты меню</CardTitle>
-                            <CardDescription>Скройте разделы, которыми не пользуетесь. Их можно вернуть в любой момент.</CardDescription>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <CardTitle className="flex items-center gap-2"><Menu className="h-5 w-5" />Пункты меню</CardTitle>
+                                <CardDescription>Скройте разделы, которыми не пользуетесь. Их можно вернуть в любой момент.</CardDescription>
+                              </div>
+                              <Button size="sm" onClick={saveSidebarSettings} disabled={savingSidebarSettings} className="gap-2 sm:shrink-0">
+                                {savingSidebarSettings ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                                Сохранить
+                              </Button>
+                            </div>
                           </CardHeader>
                           <CardContent className="space-y-3">
                             {sidebarMenuItems.map((item) => {
