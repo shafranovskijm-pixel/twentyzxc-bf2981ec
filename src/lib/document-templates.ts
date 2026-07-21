@@ -508,11 +508,27 @@ export function generateInvoiceHtml(data: DocumentData): string {
 export function generateActHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
   const total = totalSum(services);
-  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}</head><body>
+  const actStyles = `
+    <style>
+      body.act-mode { padding: 12mm 12mm 8mm; font-size: 9.2pt; line-height: 1.25; }
+      body.act-mode h1 { font-size: 18pt; margin: 2px 0 2px; }
+      body.act-mode h1::after { margin: 4px auto 0; }
+      body.act-mode .kicker { margin: 2px 0 0; font-size: 8pt; }
+      body.act-mode .header-row { margin: 4px 0 6px; font-size: 9pt; }
+      body.act-mode .section { margin: 4px 0; }
+      body.act-mode .section p { margin: 2px 0; }
+      body.act-mode .services-table.act-items-table { font-size: 8.7pt; margin-top: 2px; }
+      body.act-mode .services-table.act-items-table thead th { padding: 4px 5px; font-size: 8pt; }
+      body.act-mode .services-table.act-items-table tbody td { padding: 3px 5px; }
+      body.act-mode .services-table.act-items-table tfoot td { padding: 3px 5px; }
+      body.act-mode .act-signatures { margin-top: 8px; }
+    </style>
+  `;
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Акт №${num}</title>${baseStyles}${actStyles}</head><body class="act-mode">
     ${brandStrip}
     <div class="kicker">Act of Services</div>
     <h1>Акт №${num}</h1>
-    <p style="text-align:center;color:#5a5a63;font-size:10.5pt;margin-top:-4px;">выполненных работ (оказанных услуг)</p>
+    <p style="text-align:center;color:#5a5a63;font-size:9.5pt;margin-top:-2px;">выполненных работ (оказанных услуг)</p>
     <div class="header-row">
       <span>г. Владивосток</span>
       <span>${date}</span>
@@ -523,13 +539,13 @@ export function generateActHtml(data: DocumentData): string {
       <p>${clientIntroPhrase(cl, "Заказчик", true)}, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
-    ${servicesTableHtml(services)}
-    <div class="section" style="margin-top:15px;">
+    ${servicesTableHtml(services).replace('class="services-table"', 'class="services-table act-items-table"')}
+    <div class="section act-acceptance-text" style="margin-top:6px;">
       <p>Общая стоимость выполненных работ (оказанных услуг) составляет <strong>${formatMoney(total)} руб.</strong></p>
-      <p style="margin-top:10px;">Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
+      <p style="margin-top:4px;">Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
     </div>
-    <div class="signatures">
-      <div class="signature-block" data-no-break="true">
+    <div class="signatures act-signatures">
+      <div class="signature-block act-signature-card" data-no-break="true">
         <p><strong>Исполнитель:</strong></p>
         <p>${c.company_name}</p>
         <p>ИНН ${c.company_inn}${c.company_kpp ? ` КПП ${c.company_kpp}` : ""}</p>
@@ -543,7 +559,7 @@ export function generateActHtml(data: DocumentData): string {
         </div>
         <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
       </div>
-      <div class="signature-block">
+      <div class="signature-block act-signature-card">
         <p><strong>Заказчик:</strong></p>
         <p>${cl.name}</p>
         <p>ИНН ${cl.inn}${isIndividualEntrepreneur(cl) ? (cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : "") : (cl.kpp ? ` КПП ${cl.kpp}` : "") + (cl.ogrn ? ` ОГРН ${cl.ogrn}` : "")}</p>

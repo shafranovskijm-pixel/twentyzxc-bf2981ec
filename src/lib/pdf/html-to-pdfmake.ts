@@ -140,6 +140,11 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
   const headEl = tbl.querySelector("thead tr");
   const headerCells = headEl ? Array.from(headEl.querySelectorAll("th,td")) : [];
   const columns = headerCells.length || 6;
+  const isAct = tbl.classList.contains("act-items-table");
+  const cellPadTop = isAct ? 3 : 6;
+  const cellPadBody = isAct ? 2 : 4;
+  const fontHead = isAct ? 8 : 8.5;
+  const fontCell = isAct ? 9 : 10;
   if (headEl) {
     rows.push(
       headerCells.map((th) => ({
@@ -147,7 +152,8 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
         style: "tableHeader",
         fillColor: COLORS.darkBar,
         alignment: /qty|price|sum|money/.test(th.className) ? "right" : "left",
-        margin: [4, 6, 4, 6],
+        margin: [4, cellPadTop, 4, cellPadTop],
+        fontSize: fontHead,
       })),
     );
   }
@@ -157,7 +163,8 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
       style: "tableCell",
       alignment: /money|num/.test(td.className) ? (td.classList.contains("num") ? "center" : "right") : "left",
       color: td.classList.contains("num") ? COLORS.faint : COLORS.text,
-      margin: [4, 4, 4, 4],
+      margin: [4, cellPadBody, 4, cellPadBody],
+      fontSize: fontCell,
     }));
     if (cells.length) rows.push(cells);
   });
@@ -170,11 +177,11 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
       const cell: PmNode = {
         text: textOf(td),
         alignment: /money/.test(td.className) ? "right" : "right",
-        fontSize: isGrand ? 11 : 9.5,
+        fontSize: isGrand ? (isAct ? 10 : 11) : (isAct ? 8.8 : 9.5),
         bold: isGrand,
         color: isGrand ? COLORS.text : COLORS.muted,
         fillColor: isGrand ? COLORS.gold : undefined,
-        margin: [6, isGrand ? 8 : 5, 6, isGrand ? 8 : 5],
+        margin: [6, isGrand ? (isAct ? 5 : 8) : (isAct ? 3 : 5), 6, isGrand ? (isAct ? 5 : 8) : (isAct ? 3 : 5)],
       };
       if (colspan > 1) cell.colSpan = colspan;
       // pdfmake requires filler cells when colSpan > 1
@@ -319,7 +326,8 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
   // Invoice uses a single receiver block. Render a compact card so the
   // signature always fits under the totals on the same A4 page instead of
   // being pushed to a blank second page by pdfmake's unbreakable logic.
-  const compact = blocks.length === 1;
+  const isAct = container.classList.contains("act-signatures");
+  const compact = blocks.length === 1 || isAct;
   const cols = blocks.map((block) => {
     // 1) Header text lines (party name, INN, address, bank…)
     const headerLines: PmNode[] = [];
@@ -386,7 +394,12 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       margin: [0, compact ? 4 : 8, 0, 0],
     };
 
-    return { stack: [...headerLines, stage], style: "signature", margin: [0, 0, 0, 0] };
+    return {
+      stack: [...headerLines, stage],
+      style: "signature",
+      margin: [0, 0, 0, 0],
+      fontSize: isAct ? 8.2 : undefined,
+    };
   });
   // Two-column signature block with gold left rule using a wrapping table per column
   const wrapped = cols.map((c) => ({
@@ -398,7 +411,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
         {
           stack: c.stack,
           fillColor: COLORS.warmBg,
-          margin: compact ? [8, 6, 8, 8] : [10, 10, 10, 12],
+          margin: isAct ? [7, 5, 7, 6] : (compact ? [8, 6, 8, 8] : [10, 10, 10, 12]),
         },
       ]],
     },
@@ -422,7 +435,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
   return {
     columns: wrapped,
     columnGap: 12,
-    margin: [0, 14, 0, 0],
+    margin: [0, isAct ? 6 : 14, 0, 0],
     unbreakable: true,
   };
 }
