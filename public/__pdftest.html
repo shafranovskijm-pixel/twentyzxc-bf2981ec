@@ -1,15 +1,21 @@
 <!doctype html><meta charset=utf-8><title>pdftest</title>
 <script type="module">
   window.__run = async (docId) => {
+    console.log("step1: import supabase");
     const supMod = await import('/src/integrations/supabase/client.ts');
     const { supabase } = supMod;
+    console.log("step2: query doc");
     const { data, error } = await supabase.from('generated_documents')
       .select('html_content, doc_number').eq('id', docId).single();
     if (error) throw new Error(error.message);
+    console.log("step3: loaded html len=", data.html_content.length, "num=", data.doc_number);
+    console.log("step4: import pdf module");
     const pdfMod = await import('/src/lib/document-pdf.ts');
+    console.log("step5: render");
     const t0 = performance.now();
     const blob = await pdfMod.generatePdfBlob(data.html_content, { title: `Договор №${data.doc_number}` });
     const ms = Math.round(performance.now() - t0);
+    console.log("step6: rendered", blob.size, "in", ms, "ms");
     const buf = new Uint8Array(await blob.arrayBuffer());
     let bin = ""; for (let i=0;i<buf.length;i+=32768) bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i+32768)));
     return { ok: true, ms, size: buf.length, b64: btoa(bin) };
