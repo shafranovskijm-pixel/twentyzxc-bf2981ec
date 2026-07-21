@@ -121,9 +121,15 @@ export async function renderPdfFromHtml(html: string, meta?: { title?: string })
     info: { title: documentTitle, creator: "24ZXC", producer: "24ZXC PDF" },
   };
 
+  // pdfmake 0.3+ returns a Promise from getBlob(); older versions used a callback.
+  const doc = pdfMake.createPdf(docDefinition);
+  const result = doc.getBlob();
+  if (result && typeof (result as Promise<Blob>).then === "function") {
+    return await (result as Promise<Blob>);
+  }
   return await new Promise<Blob>((resolve, reject) => {
     try {
-      pdfMake.createPdf(docDefinition).getBlob((b: Blob) => resolve(b));
+      doc.getBlob((b: Blob) => resolve(b));
     } catch (e) {
       reject(e);
     }
