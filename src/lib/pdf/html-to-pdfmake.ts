@@ -426,10 +426,14 @@ export function walk(node: Element, out: PmNode[], images: Record<string, string
       const inner: PmNode[] = [];
       walk(el, inner, images);
       if (inner.length) {
-        // Mark the first node as page-break-before; wrap the rest as an
-        // unbreakable stack when it plausibly fits on one page.
+        // Only force a page break before the annex. Individual pieces (the
+        // services table via dontBreakRows, the signatures block via
+        // unbreakable) already protect themselves against mid-block splits,
+        // so we must NOT wrap the whole annex as unbreakable — long PDN
+        // annexes are taller than one page and would otherwise be pushed
+        // off the document entirely.
         inner[0] = { ...inner[0], pageBreak: "before" };
-        out.push({ stack: inner, unbreakable: true, margin: [0, 0, 0, 0] });
+        for (const n of inner) out.push(n);
       }
       continue;
     }
