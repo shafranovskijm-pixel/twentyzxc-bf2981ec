@@ -294,53 +294,61 @@ function genericTable(tbl: HTMLTableElement): PmNode {
 function signaturesBlock(container: Element, images: Record<string, string>): PmNode {
   const blocks = Array.from(container.querySelectorAll(".signature-block"));
   const cols = blocks.map((block) => {
-    const lines: PmNode[] = [];
-    // Header lines: <p> children (excluding those containing images)
+    // 1) Header text lines (party name, INN, address, bank…)
+    const headerLines: PmNode[] = [];
+    let signatureLineEl: Element | null = null;
     Array.from(block.children).forEach((child) => {
       const tag = child.tagName.toLowerCase();
       if (tag === "p") {
         const parts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        if (parts.length) lines.push({ text: parts, margin: [0, 1, 0, 1] });
-      } else if (child.classList.contains("signature-line")) {
-        // Text of the line + optional inline signature image
-        const textParts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        lines.push({ text: " ", margin: [0, 20, 0, 0] });
-        const imgEl = child.querySelector("img.signature-img");
-        const imgSrc = imgEl?.getAttribute("src") || "";
-        const imgData = images[imgSrc];
-        if (imgData) {
-          lines.push({
-            columns: [
-              { width: 60, text: "" },
-              { width: 90, image: imgData, fit: [90, 30] },
-              { width: "*", text: textParts, fontSize: 9.5 },
-            ],
-            columnGap: 4,
-            margin: [0, -6, 0, 0],
-          });
-        } else {
-          lines.push({ text: textParts, fontSize: 9.5 });
-        }
-        // Underline
-        lines.push({
-          canvas: [{ type: "line", x1: 0, y1: 0, x2: 210, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
-          margin: [0, 2, 0, 0],
-        });
+        if (parts.length) headerLines.push({ text: parts, margin: [0, 1, 0, 1] });
+      } else if (child.classList.contains("signature-line") && !signatureLineEl) {
+        signatureLineEl = child;
       }
     });
-    // Stamp on the исполнитель side
+
+    // 2) Signature stage — fixed-height footer that holds line + signature + stamp
+    //    side-by-side so the stamp never pushes the card taller.
     const stampEl = block.querySelector("img.stamp-img");
-    const stampSrc = stampEl?.getAttribute("src") || "";
-    const stampData = images[stampSrc];
-    if (stampData) {
-      lines.push({ image: stampData, width: 110, opacity: 0.9, margin: [0, 6, 0, 0] });
+    const stampData = stampEl ? images[stampEl.getAttribute("src") || ""] : "";
+    const sigImgEl = block.querySelector("img.signature-img");
+    const sigImgData = sigImgEl ? images[sigImgEl.getAttribute("src") || ""] : "";
+    const sigCaption = signatureLineEl
+      ? inlineNodes(signatureLineEl.childNodes).filter((p) => !p._image)
+      : [];
+
+    // Right side: invisible top spacer → signature image (if any) → underline → caption.
+    const rightStack: PmNode[] = [];
+    rightStack.push({ text: " ", margin: [0, 8, 0, 0] });
+    if (sigImgData) {
+      rightStack.push({ image: sigImgData, fit: [95, 32], alignment: "center", margin: [0, 0, 0, -6] });
+    } else {
+      rightStack.push({ text: " ", margin: [0, 14, 0, 0] });
     }
-    return {
-      stack: lines,
-      style: "signature",
-      margin: [0, 0, 0, 0],
-      // Gold left border via table trick
+    rightStack.push({
+      canvas: [{ type: "line", x1: 0, y1: 0, x2: 175, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
+      margin: [0, 0, 0, 2],
+    });
+    if (sigCaption.length) {
+      rightStack.push({ text: sigCaption, fontSize: 9, color: COLORS.text });
+    }
+
+    // Left side: stamp fits into fixed cell so it overlaps the signature line
+    // area without inflating card height.
+    const leftCell: PmNode = stampData
+      ? { image: stampData, fit: [92, 92], opacity: 0.92, alignment: "center", margin: [0, -6, 0, 0] }
+      : { text: "" };
+
+    const stage: PmNode = {
+      columns: [
+        { width: 100, stack: [leftCell] },
+        { width: "*", stack: rightStack },
+      ],
+      columnGap: 6,
+      margin: [0, 8, 0, 0],
     };
+
+    return { stack: [...headerLines, stage], style: "signature", margin: [0, 0, 0, 0] };
   });
   // Two-column signature block with gold left rule using a wrapping table per column
   const wrapped = cols.map((c) => ({
@@ -348,11 +356,13 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
     layout: "noBorders",
     unbreakable: true,
   }));
-  if (wrapped.length === 1) return { ...wrapped[0], margin: [0, 14, 0, 0] };
+  if (wrapped.length === 1) return { ...wrapped[0], margin: [0, 14, 0, 0], unbreakable: true };
+  // Wrap the whole two-column signatures row as unbreakable so the two parties
+  // never split across pages.
   return {
-    columns: wrapped,
-    columnGap: 12,
+    stack: [{ columns: wrapped, columnGap: 12 }],
     margin: [0, 14, 0, 0],
+    unbreakable: true,
   };
 }
 
