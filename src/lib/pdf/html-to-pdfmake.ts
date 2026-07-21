@@ -140,6 +140,11 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
   const headEl = tbl.querySelector("thead tr");
   const headerCells = headEl ? Array.from(headEl.querySelectorAll("th,td")) : [];
   const columns = headerCells.length || 6;
+  const isAct = tbl.classList.contains("act-items-table");
+  const cellPadTop = isAct ? 3 : 6;
+  const cellPadBody = isAct ? 2 : 4;
+  const fontHead = isAct ? 8 : 8.5;
+  const fontCell = isAct ? 9 : 10;
   if (headEl) {
     rows.push(
       headerCells.map((th) => ({
@@ -147,7 +152,8 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
         style: "tableHeader",
         fillColor: COLORS.darkBar,
         alignment: /qty|price|sum|money/.test(th.className) ? "right" : "left",
-        margin: [4, 6, 4, 6],
+        margin: [4, cellPadTop, 4, cellPadTop],
+        fontSize: fontHead,
       })),
     );
   }
@@ -157,7 +163,8 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
       style: "tableCell",
       alignment: /money|num/.test(td.className) ? (td.classList.contains("num") ? "center" : "right") : "left",
       color: td.classList.contains("num") ? COLORS.faint : COLORS.text,
-      margin: [4, 4, 4, 4],
+      margin: [4, cellPadBody, 4, cellPadBody],
+      fontSize: fontCell,
     }));
     if (cells.length) rows.push(cells);
   });
@@ -170,11 +177,11 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
       const cell: PmNode = {
         text: textOf(td),
         alignment: /money/.test(td.className) ? "right" : "right",
-        fontSize: isGrand ? 11 : 9.5,
+        fontSize: isGrand ? (isAct ? 10 : 11) : (isAct ? 8.8 : 9.5),
         bold: isGrand,
         color: isGrand ? COLORS.text : COLORS.muted,
         fillColor: isGrand ? COLORS.gold : undefined,
-        margin: [6, isGrand ? 8 : 5, 6, isGrand ? 8 : 5],
+        margin: [6, isGrand ? (isAct ? 5 : 8) : (isAct ? 3 : 5), 6, isGrand ? (isAct ? 5 : 8) : (isAct ? 3 : 5)],
       };
       if (colspan > 1) cell.colSpan = colspan;
       // pdfmake requires filler cells when colSpan > 1
