@@ -1,0 +1,19 @@
+<!doctype html><meta charset=utf-8><title>pdftest</title>
+<script type="module">
+  window.__run = async (docId) => {
+    const supMod = await import('/src/integrations/supabase/client.ts');
+    const { supabase } = supMod;
+    const { data, error } = await supabase.from('generated_documents')
+      .select('html_content, doc_number').eq('id', docId).single();
+    if (error) throw new Error(error.message);
+    const pdfMod = await import('/src/lib/document-pdf.ts');
+    const t0 = performance.now();
+    const blob = await pdfMod.generatePdfBlob(data.html_content, { title: `Договор №${data.doc_number}` });
+    const ms = Math.round(performance.now() - t0);
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    let bin = ""; for (let i=0;i<buf.length;i+=32768) bin += String.fromCharCode.apply(null, Array.from(buf.subarray(i, i+32768)));
+    return { ok: true, ms, size: buf.length, b64: btoa(bin) };
+  };
+  window.__ready = true;
+</script>
+Ready.
