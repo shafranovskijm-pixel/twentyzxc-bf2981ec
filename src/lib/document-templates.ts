@@ -285,12 +285,12 @@ function servicesTableHtml(services: ServiceItem[]): string {
     <table class="services-table">
       <thead>
         <tr>
-          <th class="num" style="width:5%">№</th>
-          <th>Наименование</th>
+          <th class="num" style="width:4%">№</th>
+          <th style="width:52%">Наименование</th>
           <th class="qty" style="width:8%">Кол-во</th>
-          <th class="qty" style="width:10%">Ед.</th>
-          <th class="price" style="width:15%">Цена, ₽</th>
-          <th class="sum" style="width:17%">Сумма, ₽</th>
+          <th class="qty" style="width:7%">Ед.</th>
+          <th class="price" style="width:14%">Цена, ₽</th>
+          <th class="sum" style="width:15%">Сумма, ₽</th>
         </tr>
       </thead>
       <tbody>
