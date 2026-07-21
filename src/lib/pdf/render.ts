@@ -14,10 +14,13 @@ async function getPdfMake() {
       ]);
       const pdfMake: any = (pdfMakeMod as any).default || pdfMakeMod;
       const vfs: any = (vfsMod as any).default || vfsMod;
-      // Newer builds expose { pdfMake: { vfs } } — cover both shapes.
-      if (vfs?.pdfMake?.vfs) pdfMake.vfs = vfs.pdfMake.vfs;
-      else if (vfs?.vfs) pdfMake.vfs = vfs.vfs;
-      else if (typeof vfs === "object") pdfMake.vfs = vfs;
+      // pdfmake 0.3+ uses addVirtualFileSystem(); older builds exposed .vfs.
+      const vfsMap = vfs?.pdfMake?.vfs || vfs?.vfs || vfs;
+      if (typeof pdfMake.addVirtualFileSystem === "function") {
+        pdfMake.addVirtualFileSystem(vfsMap);
+      } else {
+        pdfMake.vfs = vfsMap;
+      }
       pdfMake.fonts = {
         Roboto: {
           normal: "Roboto-Regular.ttf",
