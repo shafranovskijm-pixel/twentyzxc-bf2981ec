@@ -409,6 +409,21 @@ export function walk(node: Element, out: PmNode[], images: Record<string, string
 
     if (classes.includes("brand-strip")) continue;
 
+    // Appendices / annexes (Спецификация, Поручение на обработку ПДн, …)
+    // must always start on a new page and try to stay together so the
+    // heading + table + totals + signatures do not split across pages.
+    if (classes.includes("page-break")) {
+      const inner: PmNode[] = [];
+      walk(el, inner, images);
+      if (inner.length) {
+        // Mark the first node as page-break-before; wrap the rest as an
+        // unbreakable stack when it plausibly fits on one page.
+        inner[0] = { ...inner[0], pageBreak: "before" };
+        out.push({ stack: inner, unbreakable: true, margin: [0, 0, 0, 0] });
+      }
+      continue;
+    }
+
     if (classes.includes("kicker")) {
       out.push({ text: textOf(el), style: "kicker" });
       continue;
