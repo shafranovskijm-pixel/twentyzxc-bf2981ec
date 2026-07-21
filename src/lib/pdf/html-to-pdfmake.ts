@@ -326,7 +326,8 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
   // Invoice uses a single receiver block. Render a compact card so the
   // signature always fits under the totals on the same A4 page instead of
   // being pushed to a blank second page by pdfmake's unbreakable logic.
-  const compact = blocks.length === 1;
+  const isAct = container.classList.contains("act-signatures");
+  const compact = blocks.length === 1 || isAct;
   const cols = blocks.map((block) => {
     // 1) Header text lines (party name, INN, address, bank…)
     const headerLines: PmNode[] = [];
@@ -393,7 +394,12 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       margin: [0, compact ? 4 : 8, 0, 0],
     };
 
-    return { stack: [...headerLines, stage], style: "signature", margin: [0, 0, 0, 0] };
+    return {
+      stack: [...headerLines, stage],
+      style: "signature",
+      margin: [0, 0, 0, 0],
+      fontSize: isAct ? 8.2 : undefined,
+    };
   });
   // Two-column signature block with gold left rule using a wrapping table per column
   const wrapped = cols.map((c) => ({
@@ -405,7 +411,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
         {
           stack: c.stack,
           fillColor: COLORS.warmBg,
-          margin: compact ? [8, 6, 8, 8] : [10, 10, 10, 12],
+          margin: isAct ? [7, 5, 7, 6] : (compact ? [8, 6, 8, 8] : [10, 10, 10, 12]),
         },
       ]],
     },
@@ -429,7 +435,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
   return {
     columns: wrapped,
     columnGap: 12,
-    margin: [0, 14, 0, 0],
+    margin: [0, isAct ? 6 : 14, 0, 0],
     unbreakable: true,
   };
 }
