@@ -326,7 +326,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       rightStack.push({ text: " ", margin: [0, 14, 0, 0] });
     }
     rightStack.push({
-      canvas: [{ type: "line", x1: 0, y1: 0, x2: 175, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
+      canvas: [{ type: "line", x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
       margin: [0, 0, 0, 2],
     });
     if (sigCaption.length) {
@@ -341,7 +341,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
 
     const stage: PmNode = {
       columns: [
-        { width: 100, stack: [leftCell] },
+        { width: 85, stack: [leftCell] },
         { width: "*", stack: rightStack },
       ],
       columnGap: 6,
