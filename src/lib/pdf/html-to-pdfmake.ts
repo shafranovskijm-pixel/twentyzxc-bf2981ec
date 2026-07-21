@@ -352,15 +352,25 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
   });
   // Two-column signature block with gold left rule using a wrapping table per column
   const wrapped = cols.map((c) => ({
-    table: { widths: [3, "*"], body: [[{ text: "", fillColor: COLORS.gold }, { stack: c.stack, fillColor: COLORS.warmBg, margin: [10, 10, 10, 12] }]] },
+    width: "*",
+    table: {
+      widths: [3, "*"],
+      body: [[
+        { text: "", fillColor: COLORS.gold },
+        { stack: c.stack, fillColor: COLORS.warmBg, margin: [10, 10, 10, 12] },
+      ]],
+    },
     layout: "noBorders",
-    unbreakable: true,
   }));
-  if (wrapped.length === 1) return { ...wrapped[0], margin: [0, 14, 0, 0], unbreakable: true };
-  // Wrap the whole two-column signatures row as unbreakable so the two parties
-  // never split across pages.
+  if (wrapped.length === 1) {
+    const single: any = { ...wrapped[0] };
+    delete single.width;
+    return { ...single, margin: [0, 14, 0, 0], unbreakable: true };
+  }
+  // Keep two parties together on the same page.
   return {
-    stack: [{ columns: wrapped, columnGap: 12 }],
+    columns: wrapped,
+    columnGap: 12,
     margin: [0, 14, 0, 0],
     unbreakable: true,
   };
