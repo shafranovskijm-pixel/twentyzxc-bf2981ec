@@ -272,10 +272,16 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
     if (c.contract_number) {
       const byNum = await supabase
         .from("generated_documents")
-        .select("id,doc_type,doc_number,doc_date,created_at")
+        .select("id,doc_type,doc_number,doc_date,created_at,client_name,client_inn,contract_id")
         .eq("doc_number", c.contract_number)
+        .eq("client_name", c.client_name)
         .order("created_at", { ascending: false });
-      (byNum.data || []).forEach((d) => { if (!list.has(d.id)) list.set(d.id, d); });
+      (byNum.data || []).forEach((d: any) => {
+        // Only include legacy docs that either belong to this contract or have no contract_id yet
+        if (list.has(d.id)) return;
+        if (d.contract_id && d.contract_id !== c.id) return;
+        list.set(d.id, d);
+      });
     }
     let items = Array.from(list.values());
     setDocsList(items);
@@ -296,10 +302,15 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         if (c.contract_number) {
           const r2 = await supabase
             .from("generated_documents")
-            .select("id,doc_type,doc_number,doc_date,created_at")
+            .select("id,doc_type,doc_number,doc_date,created_at,client_name,client_inn,contract_id")
             .eq("doc_number", c.contract_number)
+            .eq("client_name", c.client_name)
             .order("created_at", { ascending: false });
-          (r2.data || []).forEach((d) => { if (!map.has(d.id)) map.set(d.id, d); });
+          (r2.data || []).forEach((d: any) => {
+            if (map.has(d.id)) return;
+            if (d.contract_id && d.contract_id !== c.id) return;
+            map.set(d.id, d);
+          });
         }
         const merged = Array.from(map.values());
         setDocsList(merged);
