@@ -55,7 +55,7 @@ const HeroSection = () => {
           {/* Tagline */}
           <div className="inline-flex items-center gap-3 mb-8 animate-fade-in">
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary/60" />
-            <span className="text-xs sm:text-sm tracking-[0.3em] uppercase text-primary font-light">Под ключ · Премиум-разработка</span>
+            <span className="text-xs sm:text-sm tracking-[0.25em] uppercase text-primary font-light text-center leading-relaxed">Сайты, разработка приложений, сопровождение образовательной деятельности</span>
             <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary/60" />
           </div>
 
@@ -66,7 +66,7 @@ const HeroSection = () => {
             onClick={() => navigate('/admin')}
             title="Админ-панель"
           >
-            <span className="sr-only">24ZXC — Сайты, реклама и веб-приложения под ключ</span>
+            <span className="sr-only">24ZXC — Сайты, разработка приложений, сопровождение образовательной деятельности</span>
             <span className="absolute inset-0 flex items-center justify-center text-6xl md:text-8xl lg:text-9xl font-display font-bold text-primary/30 blur-2xl" aria-hidden="true">
               24ZXC
             </span>
