@@ -274,7 +274,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
         .from("generated_documents")
         .select("id,doc_type,doc_number,doc_date,created_at,client_name,client_inn,contract_id")
         .eq("doc_number", c.contract_number)
-        .or(`client_name.eq.${c.client_name},client_inn.eq.${c.client_inn ?? ''}`)
+        .eq("client_name", c.client_name)
         .order("created_at", { ascending: false });
       (byNum.data || []).forEach((d: any) => {
         // Only include legacy docs that either belong to this contract or have no contract_id yet
@@ -304,7 +304,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
             .from("generated_documents")
             .select("id,doc_type,doc_number,doc_date,created_at,client_name,client_inn,contract_id")
             .eq("doc_number", c.contract_number)
-            .or(`client_name.eq.${c.client_name},client_inn.eq.${c.client_inn ?? ''}`)
+            .eq("client_name", c.client_name)
             .order("created_at", { ascending: false });
           (r2.data || []).forEach((d: any) => {
             if (map.has(d.id)) return;
