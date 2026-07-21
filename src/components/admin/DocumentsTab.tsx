@@ -1107,6 +1107,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             .select("id")
             .eq("doc_type", "invoice")
             .eq("doc_number", docNumber)
+            .eq("contract_id", targetContractId)
             .maybeSingle();
 
           const invoicePayload = {
