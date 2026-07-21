@@ -1,0 +1,26 @@
+<!doctype html><meta charset=utf-8><title>pdftest2</title>
+<script type="module">
+  window.__run = async () => {
+    console.log("importing pdfmake");
+    const [pdfMakeMod, vfsMod] = await Promise.all([
+      import('pdfmake/build/pdfmake'),
+      import('pdfmake/build/vfs_fonts'),
+    ]);
+    const pdfMake = pdfMakeMod.default || pdfMakeMod;
+    const vfs = (vfsMod.default || vfsMod);
+    console.log("addVFS", typeof pdfMake.addVirtualFileSystem, "vfsKeys", Object.keys(vfs).slice(0,4));
+    pdfMake.addVirtualFileSystem(vfs);
+    pdfMake.fonts = { Roboto: { normal:'Roboto-Regular.ttf', bold:'Roboto-Medium.ttf', italics:'Roboto-Italic.ttf', bolditalics:'Roboto-MediumItalic.ttf' } };
+    console.log("createPdf minimal");
+    const t0=performance.now();
+    const blob = await new Promise((resolve,reject)=>{
+      const doc = pdfMake.createPdf({ content: [{ text: 'Тест кириллицы. Страница 1', fontSize: 14 }] });
+      const timer = setTimeout(()=>reject(new Error('pdfmake timeout 20s')), 20000);
+      doc.getBlob((b)=>{ clearTimeout(timer); resolve(b); });
+    });
+    console.log("blob ok", blob.size, "in", Math.round(performance.now()-t0),"ms");
+    window.__result = { ok:true, size: blob.size };
+  };
+  window.__ready = true;
+</script>
+Ready.
