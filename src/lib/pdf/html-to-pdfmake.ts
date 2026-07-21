@@ -220,29 +220,52 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
 /** Bank-header table (invoice top block). */
 function bankHeaderTable(tbl: HTMLTableElement): PmNode {
   const rows: PmNode[][] = [];
-  tbl.querySelectorAll("tr").forEach((tr) => {
-    const tds = Array.from(tr.querySelectorAll("td"));
-    const cells = tds.map((td) => {
+  const occupied = new Map<number, Set<number>>();
+
+  const markOccupied = (rowIndex: number, colIndex: number) => {
+    if (!occupied.has(rowIndex)) occupied.set(rowIndex, new Set());
+    occupied.get(rowIndex)!.add(colIndex);
+  };
+  const isOccupied = (rowIndex: number, colIndex: number) => occupied.get(rowIndex)?.has(colIndex) || false;
+
+  Array.from(tbl.querySelectorAll("tr")).forEach((tr, rowIndex) => {
+    const row: PmNode[] = [];
+    let colIndex = 0;
+    Array.from(tr.querySelectorAll("td")).forEach((td) => {
+      while (isOccupied(rowIndex, colIndex)) {
+        row[colIndex] = {};
+        colIndex += 1;
+      }
+
+      const colspan = parseInt(td.getAttribute("colspan") || "1", 10);
+      const rowspan = parseInt(td.getAttribute("rowspan") || "1", 10);
       const cell: PmNode = {
         text: inlineNodes(td.childNodes),
         style: "bankCell",
         fillColor: COLORS.warmBg,
         margin: [6, 5, 6, 5],
       };
-      const colspan = parseInt(td.getAttribute("colspan") || "1", 10);
-      const rowspan = parseInt(td.getAttribute("rowspan") || "1", 10);
       if (colspan > 1) cell.colSpan = colspan;
       if (rowspan > 1) cell.rowSpan = rowspan;
-      return cell;
+
+      row[colIndex] = cell;
+      for (let c = 1; c < colspan; c += 1) row[colIndex + c] = {};
+      for (let r = 1; r < rowspan; r += 1) {
+        for (let c = 0; c < colspan; c += 1) markOccupied(rowIndex + r, colIndex + c);
+      }
+      colIndex += colspan;
     });
-    const expanded: PmNode[] = [];
-    for (const c of cells) {
-      expanded.push(c);
-      if (c.colSpan && c.colSpan > 1) for (let k = 1; k < c.colSpan; k++) expanded.push({});
+
+    while (isOccupied(rowIndex, colIndex)) {
+      row[colIndex] = {};
+      colIndex += 1;
     }
-    if (expanded.length) rows.push(expanded);
+    if (row.length) rows.push(row);
   });
   const cols = rows.reduce((m, r) => Math.max(m, r.length), 0);
+  rows.forEach((r) => {
+    for (let i = 0; i < cols; i += 1) if (!r[i]) r[i] = {};
+  });
   return {
     table: {
       widths: cols === 3 ? ["*", 80, 140] : Array(cols).fill("*"),
