@@ -1,4 +1,6 @@
 /** Render an HTML document into a PDF Blob via html2canvas + jsPDF. */
+import { ensurePdfFont } from "./pdf-fonts";
+
 export async function generatePdfBlob(
   htmlContent: string,
   meta?: { title?: string },
@@ -66,7 +68,7 @@ export async function generatePdfBlob(
     .filter((r) => r.bottom > r.top && r.bottom - r.top < bodyHeight * 0.8)
     .sort((a, b) => a.top - b.top);
 
-  const renderScale = bodyHeight > 14000 ? 1 : bodyHeight > 10000 ? 1.15 : 1.35;
+  const renderScale = bodyHeight > 14000 ? 1.35 : bodyHeight > 10000 ? 1.6 : 2;
   const canvas = await html2canvas(body, {
     scale: renderScale,
     useCORS: true,
@@ -77,7 +79,7 @@ export async function generatePdfBlob(
     windowWidth: 794,
     windowHeight: bodyHeight,
     logging: false,
-    imageTimeout: 5000,
+    imageTimeout: 15000,
   });
   document.body.removeChild(iframe);
 
@@ -85,7 +87,7 @@ export async function generatePdfBlob(
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-  const headerMm = 14;
+  const headerMm = 12;
   const footerMm = 10;
   const usable = pdfHeight - headerMm - footerMm;
   // Convert canvas-space ranges → pdf-mm (imgHeight is in mm, corresponds to canvas.height px)
@@ -138,14 +140,16 @@ export async function generatePdfBlob(
       canvas.width,
       sliceCanvasHeight,
     );
-    const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.72);
-    pdf.addImage(sliceData, "JPEG", 0, headerMm, pdfWidth, pageHeight, undefined, "FAST");
+    const sliceData = sliceCanvas.toDataURL("image/png");
+    pdf.addImage(sliceData, "PNG", 0, headerMm, pdfWidth, pageHeight, undefined, "SLOW");
     consumed += pageHeight;
     page++;
     if (page > 50) break; // safety
   }
 
-  // Draw native header + footer on every page.
+  // Draw native header + footer on every page. Register a Unicode font so
+  // Cyrillic doesn't render as gibberish under the default Helvetica.
+  const fontFamily = await ensurePdfFont(pdf);
   const totalPages = pdf.getNumberOfPages();
   const title = (meta?.title || "").trim();
   for (let i = 1; i <= totalPages; i++) {
@@ -154,20 +158,20 @@ export async function generatePdfBlob(
     pdf.setFillColor(21, 23, 30);
     pdf.rect(0, 0, pdfWidth, headerMm, "F");
     pdf.setTextColor(245, 245, 240);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(13);
-    pdf.text("24", 14, headerMm - 5);
+    pdf.setFont(fontFamily, "bold");
+    pdf.setFontSize(12);
+    pdf.text("24", 14, headerMm - 4);
     pdf.setTextColor(212, 190, 55);
-    pdf.text("ZXC", 14 + pdf.getTextWidth("24"), headerMm - 5);
-    pdf.setFont("helvetica", "normal");
+    pdf.text("ZXC", 14 + pdf.getTextWidth("24"), headerMm - 4);
+    pdf.setFont(fontFamily, "normal");
     pdf.setFontSize(7);
     pdf.setTextColor(212, 190, 55);
-    pdf.text("WEB & LICENSING STUDIO", pdfWidth - 14, headerMm - 5, { align: "right" });
+    pdf.text("WEB & LICENSING STUDIO", pdfWidth - 14, headerMm - 4, { align: "right" });
     // Footer: gold hairline + page number
     pdf.setDrawColor(212, 190, 55);
     pdf.setLineWidth(0.3);
     pdf.line(14, pdfHeight - footerMm + 2, pdfWidth - 14, pdfHeight - footerMm + 2);
-    pdf.setFont("helvetica", "normal");
+    pdf.setFont(fontFamily, "normal");
     pdf.setFontSize(8);
     pdf.setTextColor(90, 90, 99);
     if (title) pdf.text(title, 14, pdfHeight - 4);

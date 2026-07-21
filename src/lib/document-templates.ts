@@ -233,7 +233,7 @@ const baseStyles = `
       padding-bottom: 2px; position: relative; min-height: 0; font-size: 10pt;
     }
     .signature-img { position: absolute; height: 48px; bottom: 2px; left: 80px; }
-    .stamp-img { position: absolute; height: 115px; opacity: 0.9; bottom: -10px; left: 0; }
+    .stamp-img { position: absolute; height: 138px; opacity: 0.9; bottom: -10px; left: 0; }
     .bank-header {
       margin-bottom: 18px; border: none;
       border-top: 2px solid #15171e; border-bottom: 2px solid #d4be37;
@@ -440,7 +440,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
     body.invoice-mode .signatures { margin-top: 18px; }
     body.invoice-mode .signature-block { width: 60%; padding: 10px 14px 50px; font-size: 9.5pt; }
     body.invoice-mode .signature-line { margin-top: 44px; }
-    body.invoice-mode .stamp-img { height: 104px; bottom: -6px; }
+    body.invoice-mode .stamp-img { height: 125px; bottom: -6px; }
   </style>
   </head><body class="invoice-mode">
     ${brandStrip}
