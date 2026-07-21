@@ -190,11 +190,17 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
     }
     if (expanded.length) rows.push(expanded);
   });
+  // Column widths: keep 6-col contract layout, widen name column for 5-col
+  // specification tables so the description doesn't collapse into a tall
+  // narrow strip. Fallback: equal widths.
+  let widths: any = Array(columns).fill("*");
+  if (columns === 6) widths = [20, "*", 40, 40, 65, 75];
+  else if (columns === 5) widths = ["*", 55, 40, 70, 70];
   return {
     table: {
       headerRows: headEl ? 1 : 0,
       dontBreakRows: true,
-      widths: columns === 6 ? [20, "*", 40, 40, 65, 75] : Array(columns).fill("*"),
+      widths,
       body: rows,
     },
     layout: {
