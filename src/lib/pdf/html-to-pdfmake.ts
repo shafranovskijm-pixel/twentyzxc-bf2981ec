@@ -336,7 +336,14 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       const tag = child.tagName.toLowerCase();
       if (tag === "p") {
         const parts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        if (parts.length) headerLines.push({ text: parts, margin: [0, compact ? 0 : 1, 0, compact ? 0 : 1], fontSize: compact ? 9 : undefined });
+        if (parts.length) {
+          headerLines.push({
+            text: parts,
+            margin: [0, isAct ? 0 : compact ? 0 : 1, 0, isAct ? 0 : compact ? 0 : 1],
+            fontSize: isAct ? 7.4 : compact ? 9 : undefined,
+            lineHeight: isAct ? 1.12 : undefined,
+          });
+        }
       } else if (child.classList.contains("signature-line") && !signatureLineEl) {
         signatureLineEl = child;
       }
@@ -354,23 +361,23 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
 
     // Right side: invisible top spacer → signature image (if any) → underline → caption.
     const rightStack: PmNode[] = [];
-    rightStack.push({ text: " ", margin: [0, compact ? 4 : 8, 0, 0] });
+    rightStack.push({ text: " ", margin: [0, isAct ? 1 : compact ? 4 : 8, 0, 0] });
     if (sigImgData) {
       rightStack.push({
         image: sigImgData,
-        fit: compact ? [78, 24] : [95, 32],
+        fit: isAct ? [62, 20] : compact ? [78, 24] : [95, 32],
         alignment: "center",
-        margin: [0, 0, 0, -6],
+        margin: [0, 0, 0, isAct ? -5 : -6],
       });
     } else {
-      rightStack.push({ text: " ", margin: [0, compact ? 10 : 14, 0, 0] });
+      rightStack.push({ text: " ", margin: [0, isAct ? 7 : compact ? 10 : 14, 0, 0] });
     }
     rightStack.push({
-      canvas: [{ type: "line", x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
-      margin: [0, 0, 0, 2],
+      canvas: [{ type: "line", x1: 0, y1: 0, x2: isAct ? 120 : 130, y2: 0, lineWidth: 0.6, lineColor: COLORS.text }],
+      margin: [0, 0, 0, 1],
     });
     if (sigCaption.length) {
-      rightStack.push({ text: sigCaption, fontSize: compact ? 8.5 : 9, color: COLORS.text });
+      rightStack.push({ text: sigCaption, fontSize: isAct ? 7.4 : compact ? 8.5 : 9, color: COLORS.text, lineHeight: isAct ? 1.1 : undefined });
     }
 
     // Left side: stamp fits into fixed cell so it overlaps the signature line
@@ -378,27 +385,27 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
     const leftCell: PmNode = stampData
       ? {
           image: stampData,
-          fit: compact ? [72, 72] : [92, 92],
+          fit: isAct ? [58, 58] : compact ? [72, 72] : [92, 92],
           opacity: 0.92,
           alignment: "center",
-          margin: [0, compact ? -4 : -6, 0, 0],
+          margin: [0, isAct ? -2 : compact ? -4 : -6, 0, 0],
         }
       : { text: "" };
 
     const stage: PmNode = {
       columns: [
-        { width: compact ? 72 : 85, stack: [leftCell] },
+        { width: isAct ? 60 : compact ? 72 : 85, stack: [leftCell] },
         { width: "*", stack: rightStack },
       ],
       columnGap: 6,
-      margin: [0, compact ? 4 : 8, 0, 0],
+      margin: [0, isAct ? 1 : compact ? 4 : 8, 0, 0],
     };
 
     return {
       stack: [...headerLines, stage],
       style: "signature",
       margin: [0, 0, 0, 0],
-      fontSize: isAct ? 8.2 : undefined,
+      fontSize: isAct ? 7.4 : undefined,
     };
   });
   // Two-column signature block with gold left rule using a wrapping table per column
@@ -411,7 +418,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
         {
           stack: c.stack,
           fillColor: COLORS.warmBg,
-          margin: isAct ? [7, 5, 7, 6] : (compact ? [8, 6, 8, 8] : [10, 10, 10, 12]),
+          margin: isAct ? [6, 3, 6, 3] : (compact ? [8, 6, 8, 8] : [10, 10, 10, 12]),
         },
       ]],
     },
