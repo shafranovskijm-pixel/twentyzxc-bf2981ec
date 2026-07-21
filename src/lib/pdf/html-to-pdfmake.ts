@@ -316,6 +316,10 @@ function genericTable(tbl: HTMLTableElement): PmNode {
 /** Render a .signatures container as a two-column layout. */
 function signaturesBlock(container: Element, images: Record<string, string>): PmNode {
   const blocks = Array.from(container.querySelectorAll(".signature-block"));
+  // Invoice uses a single receiver block. Render a compact card so the
+  // signature always fits under the totals on the same A4 page instead of
+  // being pushed to a blank second page by pdfmake's unbreakable logic.
+  const compact = blocks.length === 1;
   const cols = blocks.map((block) => {
     // 1) Header text lines (party name, INN, address, bank…)
     const headerLines: PmNode[] = [];
@@ -324,7 +328,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       const tag = child.tagName.toLowerCase();
       if (tag === "p") {
         const parts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        if (parts.length) headerLines.push({ text: parts, margin: [0, 1, 0, 1] });
+        if (parts.length) headerLines.push({ text: parts, margin: [0, compact ? 0 : 1, 0, compact ? 0 : 1], fontSize: compact ? 9 : undefined });
       } else if (child.classList.contains("signature-line") && !signatureLineEl) {
         signatureLineEl = child;
       }
@@ -342,33 +346,44 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
 
     // Right side: invisible top spacer → signature image (if any) → underline → caption.
     const rightStack: PmNode[] = [];
-    rightStack.push({ text: " ", margin: [0, 8, 0, 0] });
+    rightStack.push({ text: " ", margin: [0, compact ? 4 : 8, 0, 0] });
     if (sigImgData) {
-      rightStack.push({ image: sigImgData, fit: [95, 32], alignment: "center", margin: [0, 0, 0, -6] });
+      rightStack.push({
+        image: sigImgData,
+        fit: compact ? [78, 24] : [95, 32],
+        alignment: "center",
+        margin: [0, 0, 0, -6],
+      });
     } else {
-      rightStack.push({ text: " ", margin: [0, 14, 0, 0] });
+      rightStack.push({ text: " ", margin: [0, compact ? 10 : 14, 0, 0] });
     }
     rightStack.push({
       canvas: [{ type: "line", x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
       margin: [0, 0, 0, 2],
     });
     if (sigCaption.length) {
-      rightStack.push({ text: sigCaption, fontSize: 9, color: COLORS.text });
+      rightStack.push({ text: sigCaption, fontSize: compact ? 8.5 : 9, color: COLORS.text });
     }
 
     // Left side: stamp fits into fixed cell so it overlaps the signature line
     // area without inflating card height.
     const leftCell: PmNode = stampData
-      ? { image: stampData, fit: [92, 92], opacity: 0.92, alignment: "center", margin: [0, -6, 0, 0] }
+      ? {
+          image: stampData,
+          fit: compact ? [72, 72] : [92, 92],
+          opacity: 0.92,
+          alignment: "center",
+          margin: [0, compact ? -4 : -6, 0, 0],
+        }
       : { text: "" };
 
     const stage: PmNode = {
       columns: [
-        { width: 85, stack: [leftCell] },
+        { width: compact ? 72 : 85, stack: [leftCell] },
         { width: "*", stack: rightStack },
       ],
       columnGap: 6,
-      margin: [0, 8, 0, 0],
+      margin: [0, compact ? 4 : 8, 0, 0],
     };
 
     return { stack: [...headerLines, stage], style: "signature", margin: [0, 0, 0, 0] };
@@ -380,15 +395,28 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       widths: [3, "*"],
       body: [[
         { text: "", fillColor: COLORS.gold },
-        { stack: c.stack, fillColor: COLORS.warmBg, margin: [10, 10, 10, 12] },
+        {
+          stack: c.stack,
+          fillColor: COLORS.warmBg,
+          margin: compact ? [8, 6, 8, 8] : [10, 10, 10, 12],
+        },
       ]],
     },
     layout: "noBorders",
   }));
   if (wrapped.length === 1) {
+    // Compact invoice signature: right-aligned narrow card, tight top margin,
+    // and NOT marked unbreakable so pdfmake never forces it onto a new page
+    // when there is room under the totals block.
     const single: any = { ...wrapped[0] };
     delete single.width;
-    return { ...single, margin: [0, 14, 0, 0], unbreakable: true };
+    return {
+      columns: [
+        { width: "*", text: "" },
+        { width: 240, stack: [single] },
+      ],
+      margin: [0, 6, 0, 0],
+    };
   }
   // Keep two parties together on the same page.
   return {
