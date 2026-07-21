@@ -1,5 +1,8 @@
 /** Render an HTML document into a PDF Blob via html2canvas + jsPDF. */
-export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
+export async function generatePdfBlob(
+  htmlContent: string,
+  meta?: { title?: string },
+): Promise<Blob> {
   const html2canvas = (await import("html2canvas")).default;
   const { jsPDF } = await import("jspdf");
 
@@ -21,6 +24,15 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   await new Promise((r) => setTimeout(r, 500));
 
   const body = iframe.contentDocument!.body;
+  // Hide the HTML brand-strip: we draw a native repeating header in jsPDF instead.
+  // Also collapse the reserved top padding so content starts right after the drawn header.
+  const strip = iframe.contentDocument!.querySelector<HTMLElement>(".brand-strip");
+  if (strip) strip.style.display = "none";
+  const bodyStyle = body.style;
+  const prevPadTop = bodyStyle.paddingTop;
+  bodyStyle.paddingTop = "6mm";
+  // force layout
+  void body.offsetHeight;
   const bodyHeight = body.scrollHeight;
   iframe.style.height = bodyHeight + "px";
 
@@ -29,7 +41,7 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   // a rendered PDF page never slices through text, rows, signature or stamp imagery.
   const noBreakEls = Array.from(
     iframe.contentDocument!.querySelectorAll<HTMLElement>(
-      "[data-no-break='true'], .signatures, .signature-block, .signature-line, .bank-header, .services-table tr, h1, h2, h3, p, li"
+      "[data-no-break='true'], .signatures, .signature-block, .signature-line, .bank-header, .bank-header tr, .services-table tr, .totals-box, .section, h1, h2, h3, p, li"
     )
   );
   const bodyRect = body.getBoundingClientRect();
@@ -73,8 +85,9 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
   const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-  const margin = 0;
-  const usable = pdfHeight - margin * 2;
+  const headerMm = 14;
+  const footerMm = 10;
+  const usable = pdfHeight - headerMm - footerMm;
   // Convert canvas-space ranges → pdf-mm (imgHeight is in mm, corresponds to canvas.height px)
   const pxToMm = imgHeight / canvas.height;
   const scale = canvas.height / bodyHeight; // px canvas per body px
@@ -126,11 +139,43 @@ export async function generatePdfBlob(htmlContent: string): Promise<Blob> {
       sliceCanvasHeight,
     );
     const sliceData = sliceCanvas.toDataURL("image/jpeg", 0.72);
-    pdf.addImage(sliceData, "JPEG", 0, margin, pdfWidth, pageHeight, undefined, "FAST");
+    pdf.addImage(sliceData, "JPEG", 0, headerMm, pdfWidth, pageHeight, undefined, "FAST");
     consumed += pageHeight;
     page++;
     if (page > 50) break; // safety
   }
+
+  // Draw native header + footer on every page.
+  const totalPages = pdf.getNumberOfPages();
+  const title = (meta?.title || "").trim();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    // Header: dark bar with 24ZXC brand
+    pdf.setFillColor(21, 23, 30);
+    pdf.rect(0, 0, pdfWidth, headerMm, "F");
+    pdf.setTextColor(245, 245, 240);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(13);
+    pdf.text("24", 14, headerMm - 5);
+    pdf.setTextColor(212, 190, 55);
+    pdf.text("ZXC", 14 + pdf.getTextWidth("24"), headerMm - 5);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(7);
+    pdf.setTextColor(212, 190, 55);
+    pdf.text("WEB & LICENSING STUDIO", pdfWidth - 14, headerMm - 5, { align: "right" });
+    // Footer: gold hairline + page number
+    pdf.setDrawColor(212, 190, 55);
+    pdf.setLineWidth(0.3);
+    pdf.line(14, pdfHeight - footerMm + 2, pdfWidth - 14, pdfHeight - footerMm + 2);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(90, 90, 99);
+    if (title) pdf.text(title, 14, pdfHeight - 4);
+    pdf.text(`Страница ${i} из ${totalPages}`, pdfWidth - 14, pdfHeight - 4, { align: "right" });
+  }
+
+  // restore (iframe already removed, but keep for safety in case future code reuses body)
+  void prevPadTop;
   return pdf.output("blob");
 }
 
