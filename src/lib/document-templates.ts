@@ -222,7 +222,7 @@ const baseStyles = `
     .section { margin: 12px 0; }
     .signatures { display: flex; justify-content: space-between; margin-top: 28px; gap: 24px; }
     .signature-block {
-      width: 48%; position: relative; padding: 14px 16px 40px;
+      width: 48%; position: relative; padding: 14px 16px 20px;
       background: #faf8ef; border-left: 3px solid #d4be37; border-radius: 4px;
       font-size: 10pt; line-height: 1.5;
     }
@@ -233,7 +233,11 @@ const baseStyles = `
       padding-bottom: 2px; position: relative; min-height: 0; font-size: 10pt;
     }
     .signature-img { position: absolute; height: 48px; bottom: 2px; left: 80px; }
-    .stamp-img { position: absolute; height: 138px; opacity: 0.9; bottom: -10px; left: 0; }
+    .stamp-img {
+      position: absolute; height: 120px; opacity: 0.9;
+      right: -10px; top: 50%; transform: translateY(-50%);
+      pointer-events: none;
+    }
     .bank-header {
       margin-bottom: 18px; border: none;
       border-top: 2px solid #15171e; border-bottom: 2px solid #d4be37;
@@ -281,12 +285,12 @@ function servicesTableHtml(services: ServiceItem[]): string {
     <table class="services-table">
       <thead>
         <tr>
-          <th class="num" style="width:5%">№</th>
-          <th>Наименование</th>
+          <th class="num" style="width:4%">№</th>
+          <th style="width:52%">Наименование</th>
           <th class="qty" style="width:8%">Кол-во</th>
-          <th class="qty" style="width:10%">Ед.</th>
-          <th class="price" style="width:15%">Цена, ₽</th>
-          <th class="sum" style="width:17%">Сумма, ₽</th>
+          <th class="qty" style="width:7%">Ед.</th>
+          <th class="price" style="width:14%">Цена, ₽</th>
+          <th class="sum" style="width:15%">Сумма, ₽</th>
         </tr>
       </thead>
       <tbody>
