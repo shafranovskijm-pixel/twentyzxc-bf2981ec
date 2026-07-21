@@ -190,11 +190,17 @@ function servicesTable(tbl: HTMLTableElement): PmNode {
     }
     if (expanded.length) rows.push(expanded);
   });
+  // Column widths: keep 6-col contract layout, widen name column for 5-col
+  // specification tables so the description doesn't collapse into a tall
+  // narrow strip. Fallback: equal widths.
+  let widths: any = Array(columns).fill("*");
+  if (columns === 6) widths = [20, "*", 40, 40, 65, 75];
+  else if (columns === 5) widths = ["*", 55, 40, 70, 70];
   return {
     table: {
       headerRows: headEl ? 1 : 0,
       dontBreakRows: true,
-      widths: columns === 6 ? [20, "*", 40, 40, 65, 75] : Array(columns).fill("*"),
+      widths,
       body: rows,
     },
     layout: {
@@ -288,65 +294,85 @@ function genericTable(tbl: HTMLTableElement): PmNode {
 function signaturesBlock(container: Element, images: Record<string, string>): PmNode {
   const blocks = Array.from(container.querySelectorAll(".signature-block"));
   const cols = blocks.map((block) => {
-    const lines: PmNode[] = [];
-    // Header lines: <p> children (excluding those containing images)
+    // 1) Header text lines (party name, INN, address, bank…)
+    const headerLines: PmNode[] = [];
+    let signatureLineEl: Element | null = null;
     Array.from(block.children).forEach((child) => {
       const tag = child.tagName.toLowerCase();
       if (tag === "p") {
         const parts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        if (parts.length) lines.push({ text: parts, margin: [0, 1, 0, 1] });
-      } else if (child.classList.contains("signature-line")) {
-        // Text of the line + optional inline signature image
-        const textParts = inlineNodes(child.childNodes).filter((p) => !p._image);
-        lines.push({ text: " ", margin: [0, 20, 0, 0] });
-        const imgEl = child.querySelector("img.signature-img");
-        const imgSrc = imgEl?.getAttribute("src") || "";
-        const imgData = images[imgSrc];
-        if (imgData) {
-          lines.push({
-            columns: [
-              { width: 60, text: "" },
-              { width: 90, image: imgData, fit: [90, 30] },
-              { width: "*", text: textParts, fontSize: 9.5 },
-            ],
-            columnGap: 4,
-            margin: [0, -6, 0, 0],
-          });
-        } else {
-          lines.push({ text: textParts, fontSize: 9.5 });
-        }
-        // Underline
-        lines.push({
-          canvas: [{ type: "line", x1: 0, y1: 0, x2: 210, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
-          margin: [0, 2, 0, 0],
-        });
+        if (parts.length) headerLines.push({ text: parts, margin: [0, 1, 0, 1] });
+      } else if (child.classList.contains("signature-line") && !signatureLineEl) {
+        signatureLineEl = child;
       }
     });
-    // Stamp on the исполнитель side
+
+    // 2) Signature stage — fixed-height footer that holds line + signature + stamp
+    //    side-by-side so the stamp never pushes the card taller.
     const stampEl = block.querySelector("img.stamp-img");
-    const stampSrc = stampEl?.getAttribute("src") || "";
-    const stampData = images[stampSrc];
-    if (stampData) {
-      lines.push({ image: stampData, width: 110, opacity: 0.9, margin: [0, 6, 0, 0] });
+    const stampData = stampEl ? images[stampEl.getAttribute("src") || ""] : "";
+    const sigImgEl = block.querySelector("img.signature-img");
+    const sigImgData = sigImgEl ? images[sigImgEl.getAttribute("src") || ""] : "";
+    const sigCaption = signatureLineEl
+      ? inlineNodes(signatureLineEl.childNodes).filter((p) => !p._image)
+      : [];
+
+    // Right side: invisible top spacer → signature image (if any) → underline → caption.
+    const rightStack: PmNode[] = [];
+    rightStack.push({ text: " ", margin: [0, 8, 0, 0] });
+    if (sigImgData) {
+      rightStack.push({ image: sigImgData, fit: [95, 32], alignment: "center", margin: [0, 0, 0, -6] });
+    } else {
+      rightStack.push({ text: " ", margin: [0, 14, 0, 0] });
     }
-    return {
-      stack: lines,
-      style: "signature",
-      margin: [0, 0, 0, 0],
-      // Gold left border via table trick
+    rightStack.push({
+      canvas: [{ type: "line", x1: 0, y1: 0, x2: 130, y2: 0, lineWidth: 0.7, lineColor: COLORS.text }],
+      margin: [0, 0, 0, 2],
+    });
+    if (sigCaption.length) {
+      rightStack.push({ text: sigCaption, fontSize: 9, color: COLORS.text });
+    }
+
+    // Left side: stamp fits into fixed cell so it overlaps the signature line
+    // area without inflating card height.
+    const leftCell: PmNode = stampData
+      ? { image: stampData, fit: [92, 92], opacity: 0.92, alignment: "center", margin: [0, -6, 0, 0] }
+      : { text: "" };
+
+    const stage: PmNode = {
+      columns: [
+        { width: 85, stack: [leftCell] },
+        { width: "*", stack: rightStack },
+      ],
+      columnGap: 6,
+      margin: [0, 8, 0, 0],
     };
+
+    return { stack: [...headerLines, stage], style: "signature", margin: [0, 0, 0, 0] };
   });
   // Two-column signature block with gold left rule using a wrapping table per column
   const wrapped = cols.map((c) => ({
-    table: { widths: [3, "*"], body: [[{ text: "", fillColor: COLORS.gold }, { stack: c.stack, fillColor: COLORS.warmBg, margin: [10, 10, 10, 12] }]] },
+    width: "*",
+    table: {
+      widths: [3, "*"],
+      body: [[
+        { text: "", fillColor: COLORS.gold },
+        { stack: c.stack, fillColor: COLORS.warmBg, margin: [10, 10, 10, 12] },
+      ]],
+    },
     layout: "noBorders",
-    unbreakable: true,
   }));
-  if (wrapped.length === 1) return { ...wrapped[0], margin: [0, 14, 0, 0] };
+  if (wrapped.length === 1) {
+    const single: any = { ...wrapped[0] };
+    delete single.width;
+    return { ...single, margin: [0, 14, 0, 0], unbreakable: true };
+  }
+  // Keep two parties together on the same page.
   return {
     columns: wrapped,
     columnGap: 12,
     margin: [0, 14, 0, 0],
+    unbreakable: true,
   };
 }
 
@@ -392,6 +418,25 @@ export function walk(node: Element, out: PmNode[], images: Record<string, string
     const classes = classList(el);
 
     if (classes.includes("brand-strip")) continue;
+
+    // Appendices / annexes (Спецификация, Поручение на обработку ПДн, …)
+    // must always start on a new page and try to stay together so the
+    // heading + table + totals + signatures do not split across pages.
+    if (classes.includes("page-break")) {
+      const inner: PmNode[] = [];
+      walk(el, inner, images);
+      if (inner.length) {
+        // Only force a page break before the annex. Individual pieces (the
+        // services table via dontBreakRows, the signatures block via
+        // unbreakable) already protect themselves against mid-block splits,
+        // so we must NOT wrap the whole annex as unbreakable — long PDN
+        // annexes are taller than one page and would otherwise be pushed
+        // off the document entirely.
+        inner[0] = { ...inner[0], pageBreak: "before" };
+        for (const n of inner) out.push(n);
+      }
+      continue;
+    }
 
     if (classes.includes("kicker")) {
       out.push({ text: textOf(el), style: "kicker" });
