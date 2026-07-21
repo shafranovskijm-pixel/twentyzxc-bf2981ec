@@ -428,23 +428,27 @@ export function generateInvoiceHtml(data: DocumentData): string {
   const total = totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}
   <style>
-    body.invoice-mode { padding: 20mm 14mm 12mm; font-size: 10pt; line-height: 1.4; }
-    body.invoice-mode .brand-strip { height: 12mm; padding: 0 14mm; }
-    body.invoice-mode h1 { font-size: 18pt; margin: 4px 0 2px; }
-    body.invoice-mode h1::after { margin: 6px auto 0; }
-    body.invoice-mode .header-row { margin: 8px 0 10px; }
-    body.invoice-mode .section { margin: 8px 0; }
-    body.invoice-mode .bank-header { margin-bottom: 10px; }
-    body.invoice-mode .bank-header td { padding: 5px 8px; font-size: 9.5pt; }
-    body.invoice-mode .services-table { font-size: 9.5pt; margin-top: 4px; }
-    body.invoice-mode .services-table thead th { padding: 6px 6px; font-size: 8.5pt; }
-    body.invoice-mode .services-table tbody td { padding: 5px 6px; }
-    body.invoice-mode .services-table tfoot td { padding: 5px 6px; font-size: 9.5pt; }
-    body.invoice-mode .services-table tfoot tr.grand td { font-size: 11pt; }
-    body.invoice-mode .signatures { margin-top: 18px; }
-    body.invoice-mode .signature-block { width: 60%; padding: 10px 14px 50px; font-size: 9.5pt; }
-    body.invoice-mode .signature-line { margin-top: 44px; }
-    body.invoice-mode .stamp-img { height: 125px; bottom: -6px; }
+    body.invoice-mode { padding: 12mm 12mm 8mm; font-size: 9pt; line-height: 1.3; }
+    body.invoice-mode .brand-strip { height: 9mm; padding: 0 12mm; }
+    body.invoice-mode h1 { font-size: 15pt; margin: 2px 0 1px; }
+    body.invoice-mode h1::after { margin: 3px auto 0; }
+    body.invoice-mode .header-row { margin: 4px 0 6px; font-size: 9pt; }
+    body.invoice-mode .section { margin: 4px 0; }
+    body.invoice-mode .section p { margin: 2px 0; }
+    body.invoice-mode .bank-header { margin-bottom: 6px; }
+    body.invoice-mode .bank-header td { padding: 3px 6px; font-size: 8.5pt; }
+    body.invoice-mode .bank-header p { margin: 1px 0; }
+    body.invoice-mode .services-table { font-size: 8.5pt; margin-top: 2px; }
+    body.invoice-mode .services-table thead th { padding: 4px 5px; font-size: 8pt; }
+    body.invoice-mode .services-table tbody td { padding: 3px 5px; }
+    body.invoice-mode .services-table tfoot td { padding: 3px 5px; font-size: 8.5pt; }
+    body.invoice-mode .services-table tfoot tr.grand td { font-size: 10pt; }
+    body.invoice-mode .signatures { margin-top: 8px; }
+    body.invoice-mode .signature-block { width: 60%; padding: 6px 10px 30px; font-size: 9pt; }
+    body.invoice-mode .signature-block p { margin: 2px 0; }
+    body.invoice-mode .signature-line { margin-top: 28px; }
+    body.invoice-mode .stamp-img { height: 95px; bottom: -4px; }
+    body.invoice-mode .kicker { margin: 2px 0 0; font-size: 8pt; }
   </style>
   </head><body class="invoice-mode">
     ${brandStrip}
