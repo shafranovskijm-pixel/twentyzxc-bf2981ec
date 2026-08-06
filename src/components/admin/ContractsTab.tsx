@@ -45,11 +45,12 @@ interface Contract {
 interface ContractsTabProps {
   onOpenClient?: (name: string) => void;
   initialClientName?: string;
+  initialSearch?: string;
   autoOpenNew?: boolean;
   onConsumed?: () => void;
 }
 
-const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
+const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
