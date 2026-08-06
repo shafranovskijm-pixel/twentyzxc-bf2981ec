@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
+import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,33 +17,33 @@ import Index from "./pages/Index";
 // to start fast even on slow / region-throttled connections (Yandex Browser
 // without VPN). This keeps Three.js, dnd-kit, recharts, jspdf, html2canvas
 // and admin code out of the home-page chunk.
-const Portfolio = lazy(() => import("./pages/Portfolio"));
-const Frdo = lazy(() => import("./pages/Frdo"));
-const Licensing = lazy(() => import("./pages/Licensing"));
-const About = lazy(() => import("./pages/About"));
-const Policy = lazy(() => import("./pages/Policy"));
-const Templates = lazy(() => import("./pages/Templates"));
-const TemplateDetail = lazy(() => import("./pages/TemplateDetail"));
-const TemplatePreview = lazy(() => import("./pages/TemplatePreview"));
-const Landing = lazy(() => import("./pages/services/Landing"));
-const Corporate = lazy(() => import("./pages/services/Corporate"));
-const Ecommerce = lazy(() => import("./pages/services/Ecommerce"));
-const WebApp = lazy(() => import("./pages/services/WebApp"));
-const Nmo = lazy(() => import("./pages/services/Nmo"));
-const Flowrish = lazy(() => import("./pages/projects/Flowrish"));
-const Chmuleva = lazy(() => import("./pages/projects/Chmuleva"));
-const Lanmei = lazy(() => import("./pages/projects/Lanmei"));
-const LadyFrost = lazy(() => import("./pages/projects/LadyFrost"));
-const PrNutrition = lazy(() => import("./pages/projects/PrNutrition"));
-const Status = lazy(() => import("./pages/projects/Status"));
-const SpinRide = lazy(() => import("./pages/projects/SpinRide"));
-const Reviews = lazy(() => import("./pages/Reviews"));
-const Playground = lazy(() => import("./pages/Playground"));
-const PlaygroundView = lazy(() => import("./pages/PlaygroundView"));
-const Admin = lazy(() => import("./pages/Admin"));
-const OrgPanel = lazy(() => import("./pages/OrgPanel"));
-const OrgLanding = lazy(() => import("./pages/OrgLanding"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Portfolio = lazyWithRetry(() => import("./pages/Portfolio"));
+const Frdo = lazyWithRetry(() => import("./pages/Frdo"));
+const Licensing = lazyWithRetry(() => import("./pages/Licensing"));
+const About = lazyWithRetry(() => import("./pages/About"));
+const Policy = lazyWithRetry(() => import("./pages/Policy"));
+const Templates = lazyWithRetry(() => import("./pages/Templates"));
+const TemplateDetail = lazyWithRetry(() => import("./pages/TemplateDetail"));
+const TemplatePreview = lazyWithRetry(() => import("./pages/TemplatePreview"));
+const Landing = lazyWithRetry(() => import("./pages/services/Landing"));
+const Corporate = lazyWithRetry(() => import("./pages/services/Corporate"));
+const Ecommerce = lazyWithRetry(() => import("./pages/services/Ecommerce"));
+const WebApp = lazyWithRetry(() => import("./pages/services/WebApp"));
+const Nmo = lazyWithRetry(() => import("./pages/services/Nmo"));
+const Flowrish = lazyWithRetry(() => import("./pages/projects/Flowrish"));
+const Chmuleva = lazyWithRetry(() => import("./pages/projects/Chmuleva"));
+const Lanmei = lazyWithRetry(() => import("./pages/projects/Lanmei"));
+const LadyFrost = lazyWithRetry(() => import("./pages/projects/LadyFrost"));
+const PrNutrition = lazyWithRetry(() => import("./pages/projects/PrNutrition"));
+const Status = lazyWithRetry(() => import("./pages/projects/Status"));
+const SpinRide = lazyWithRetry(() => import("./pages/projects/SpinRide"));
+const Reviews = lazyWithRetry(() => import("./pages/Reviews"));
+const Playground = lazyWithRetry(() => import("./pages/Playground"));
+const PlaygroundView = lazyWithRetry(() => import("./pages/PlaygroundView"));
+const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const OrgPanel = lazyWithRetry(() => import("./pages/OrgPanel"));
+const OrgLanding = lazyWithRetry(() => import("./pages/OrgLanding"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
