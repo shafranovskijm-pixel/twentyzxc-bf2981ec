@@ -1094,6 +1094,11 @@ const Admin = () => {
                   setContractsInitialSearch(name);
                   handleSectionChange("contracts");
                 }}
+                onNewContract={(name) => {
+                  setContractsInitialClientName(name);
+                  setContractsAutoOpenNew(true);
+                  handleSectionChange("contracts");
+                }}
               />}
               {activeSection === "organizations" && <OrganizationsTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {

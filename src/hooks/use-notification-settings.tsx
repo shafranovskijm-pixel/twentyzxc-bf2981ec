@@ -2,6 +2,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const NOTIFICATION_SETTINGS_KEY = "telegram_notifications";
+export const NOTIFICATION_DISMISSED_KEY = "telegram_notifications_dismissed";
+
+export type DismissedMap = Record<string, string>;
 
 export type NotificationSettings = {
   overdue: boolean;
@@ -60,5 +63,41 @@ export function useNotificationSettings() {
     settings: query.data || defaultNotificationSettings,
     isLoading: query.isLoading,
     update,
+  };
+}
+
+export function useDismissedNotifications() {
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: ["notification-dismissed"],
+    queryFn: async (): Promise<DismissedMap> => {
+      const { data, error } = await supabase
+        .from("site_settings")
+        .select("value")
+        .eq("key", NOTIFICATION_DISMISSED_KEY)
+        .maybeSingle();
+      if (error) throw error;
+      return ((data?.value as DismissedMap) || {}) as DismissedMap;
+    },
+  });
+
+  const save = async (next: DismissedMap) => {
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({ key: NOTIFICATION_DISMISSED_KEY, value: next as any }, { onConflict: "key" });
+    if (error) throw error;
+    queryClient.setQueryData(["notification-dismissed"], next);
+    return next;
+  };
+
+  const dismiss = (key: string, snapshot: string) => save({ ...(query.data || {}), [key]: snapshot });
+  const restoreAll = () => save({});
+
+  return {
+    dismissed: query.data || ({} as DismissedMap),
+    isLoading: query.isLoading,
+    dismiss,
+    restoreAll,
   };
 }
