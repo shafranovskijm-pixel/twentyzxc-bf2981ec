@@ -182,6 +182,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
 
   // Auto-open "Новый договор" with prefilled client (triggered from ClientsTab)
   useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch]);
+
+  useEffect(() => {
     if (!autoOpenNew) return;
     if (isLoading) return; // wait for contracts list to compute next number
     resetForm();
