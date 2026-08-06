@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getNotificationSettings } from "../_shared/notification-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,10 +124,16 @@ serve(async (req) => {
       }
     }
 
-    const overdueCount = overdue?.length || 0;
-    const expiringCount = expiring?.length || 0;
-    const renewalCount = renewalReminders.length;
-    const serviceReminderCount = serviceReminders.length;
+    const notifSettings = await getNotificationSettings(supabase);
+    const overdueList = notifSettings.overdue ? (overdue || []) : [];
+    const expiringList = notifSettings.expiring ? (expiring || []) : [];
+    const renewalList = notifSettings.renewals ? renewalReminders : [];
+    const serviceList = notifSettings.deadlines ? serviceReminders : [];
+
+    const overdueCount = overdueList.length;
+    const expiringCount = expiringList.length;
+    const renewalCount = renewalList.length;
+    const serviceReminderCount = serviceList.length;
 
     if (overdueCount === 0 && expiringCount === 0 && renewalCount === 0 && serviceReminderCount === 0 && !isTest) {
       console.log("No notifications needed");
@@ -148,7 +155,7 @@ serve(async (req) => {
 
     if (overdueCount > 0) {
       text += `🔴 <b>Просрочено (${overdueCount}):</b>\n`;
-      for (const c of overdue!) {
+      for (const c of overdueList) {
         const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
         const num = c.contract_number ? `№${c.contract_number}` : "";
         const paidUntil = c.paid_until
@@ -161,7 +168,7 @@ serve(async (req) => {
 
     if (renewalCount > 0) {
       text += `🔄 <b>Продление договоров через 2 недели (${renewalCount}):</b>\n`;
-      for (const c of renewalReminders) {
+      for (const c of renewalList) {
         const todayDate = new Date(today);
         const contractDate = new Date(c.contract_date!);
         const nextAnniversary = new Date(contractDate);
@@ -182,7 +189,7 @@ serve(async (req) => {
 
     if (expiringCount > 0) {
       text += `🟡 <b>Истекает в ближайшие 3 дня (${expiringCount}):</b>\n`;
-      for (const c of expiring!) {
+      for (const c of expiringList) {
         const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
         const num = c.contract_number ? `№${c.contract_number}` : "";
         const paidUntil = c.paid_until
@@ -194,7 +201,7 @@ serve(async (req) => {
 
     if (serviceReminderCount > 0) {
       text += `\n📋 <b>Истекающие сроки услуг (${serviceReminderCount}):</b>\n`;
-      for (const r of serviceReminders) {
+      for (const r of serviceList) {
         const emoji = r.label === "1 мес" ? "🔴" : r.label === "2 мес" ? "🟠" : "🟡";
         const dlStr = new Date(r.deadline).toLocaleDateString("ru-RU");
         text += `  ${emoji} Через ${r.label}: ${r.name} (до ${dlStr})\n`;
