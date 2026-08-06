@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { lazyWithRetry } from "@/lib/lazy-with-retry";
 import { Helmet } from "react-helmet-async";
 import { AnimatePresence, motion } from "framer-motion";
