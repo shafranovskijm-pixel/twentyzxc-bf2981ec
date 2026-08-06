@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getNotificationSettings } from "../_shared/notification-settings.ts";
+import { getNotificationSettings, getDismissedNotifications, isDismissed } from "../_shared/notification-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -109,26 +109,36 @@ serve(async (req) => {
       throw err4;
     }
 
-    const serviceReminders: { name: string; deadline: string; daysLeft: number; label: string }[] = [];
+    const serviceReminders: { id: string; name: string; deadline: string; daysLeft: number; label: string }[] = [];
     const todayMs = new Date(today).getTime();
     for (const cl of (allClientsWithDeadline || [])) {
       const dlMs = new Date(cl.service_deadline!).getTime();
       const diffDays = Math.round((dlMs - todayMs) / (1000 * 60 * 60 * 24));
       // Check for approximately 3 months (85-95 days), 2 months (55-65 days), 1 month (25-35 days)
       if (diffDays >= 85 && diffDays <= 95) {
-        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "3 мес" });
+        serviceReminders.push({ id: cl.id, name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "3 мес" });
       } else if (diffDays >= 55 && diffDays <= 65) {
-        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "2 мес" });
+        serviceReminders.push({ id: cl.id, name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "2 мес" });
       } else if (diffDays >= 25 && diffDays <= 35) {
-        serviceReminders.push({ name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "1 мес" });
+        serviceReminders.push({ id: cl.id, name: cl.name, deadline: cl.service_deadline!, daysLeft: diffDays, label: "1 мес" });
       }
     }
 
     const notifSettings = await getNotificationSettings(supabase);
-    const overdueList = notifSettings.overdue ? (overdue || []) : [];
-    const expiringList = notifSettings.expiring ? (expiring || []) : [];
-    const renewalList = notifSettings.renewals ? renewalReminders : [];
-    const serviceList = notifSettings.deadlines ? serviceReminders : [];
+    const dismissedMap = await getDismissedNotifications(supabase);
+    const overdueList = (notifSettings.overdue ? (overdue || []) : [])
+      .filter((c) => !isDismissed(dismissedMap, `overdue:${c.id}`, String(c.paid_until)));
+    const expiringList = (notifSettings.expiring ? (expiring || []) : [])
+      .filter((c) => !isDismissed(dismissedMap, `expiring:${c.id}`, String(c.paid_until)));
+    const renewalList = (notifSettings.renewals ? renewalReminders : []).filter((c) => {
+      const todayDate = new Date(today);
+      const nextAnniversary = new Date(c.contract_date!);
+      nextAnniversary.setFullYear(todayDate.getFullYear());
+      if (nextAnniversary < todayDate) nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
+      return !isDismissed(dismissedMap, `renewals:${c.id}`, String(nextAnniversary.getFullYear()));
+    });
+    const serviceList = (notifSettings.deadlines ? serviceReminders : [])
+      .filter((r) => !isDismissed(dismissedMap, `deadlines:${r.id}`, String(r.deadline)));
 
     const overdueCount = overdueList.length;
     const expiringCount = expiringList.length;
