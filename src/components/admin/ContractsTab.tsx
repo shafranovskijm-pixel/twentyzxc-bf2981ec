@@ -45,11 +45,12 @@ interface Contract {
 interface ContractsTabProps {
   onOpenClient?: (name: string) => void;
   initialClientName?: string;
+  initialSearch?: string;
   autoOpenNew?: boolean;
   onConsumed?: () => void;
 }
 
-const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
+const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
@@ -180,6 +181,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, autoOpenNew, onConsumed
   };
 
   // Auto-open "Новый договор" with prefilled client (triggered from ClientsTab)
+  useEffect(() => {
+    if (initialSearch) setSearch(initialSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSearch]);
+
   useEffect(() => {
     if (!autoOpenNew) return;
     if (isLoading) return; // wait for contracts list to compute next number

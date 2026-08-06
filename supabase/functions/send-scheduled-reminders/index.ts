@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getNotificationSettings } from "../_shared/notification-settings.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,6 +42,15 @@ serve(async (req) => {
     if (!reminders || reminders.length === 0) {
       return new Response(
         JSON.stringify({ success: true, sent: 0 }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const notifSettings = await getNotificationSettings(supabase);
+    if (!notifSettings.tasks) {
+      console.log("Task reminders disabled in settings");
+      return new Response(
+        JSON.stringify({ success: true, sent: 0, skipped: reminders.length, reason: "disabled" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
