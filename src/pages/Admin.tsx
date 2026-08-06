@@ -17,6 +17,7 @@ import Footer from "@/components/Footer";
 // dropdown removed — settings moved to dedicated sections
 const ClientsTab = lazy(() => import("@/components/admin/ClientsTab"));
 const ContractsTab = lazy(() => import("@/components/admin/ContractsTab"));
+const NotificationsTab = lazy(() => import("@/components/admin/NotificationsTab"));
 const OrganizationsTab = lazy(() => import("@/components/admin/OrganizationsTab"));
 const PlannerTab = lazy(() => import("@/components/admin/PlannerTab"));
 const DocumentsTab = lazy(() => import("@/components/admin/DocumentsTab"));
@@ -83,6 +84,7 @@ const Admin = () => {
   const [docInitialEditDocId, setDocInitialEditDocId] = useState("");
   const [clientsInitialName, setClientsInitialName] = useState("");
   const [contractsInitialClientName, setContractsInitialClientName] = useState("");
+  const [contractsInitialSearch, setContractsInitialSearch] = useState("");
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
@@ -1082,8 +1084,15 @@ const Admin = () => {
                   handleSectionChange("clients");
                 }}
                 initialClientName={contractsInitialClientName}
+                initialSearch={contractsInitialSearch}
                 autoOpenNew={contractsAutoOpenNew}
                 onConsumed={() => { setContractsInitialClientName(""); setContractsAutoOpenNew(false); }}
+              />}
+              {activeSection === "notifications" && <NotificationsTab
+                onOpenContracts={(name) => {
+                  setContractsInitialSearch(name);
+                  handleSectionChange("contracts");
+                }}
               />}
               {activeSection === "organizations" && <OrganizationsTab />}
               {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
