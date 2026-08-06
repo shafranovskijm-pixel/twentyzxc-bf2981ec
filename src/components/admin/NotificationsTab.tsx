@@ -6,16 +6,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CalendarClock, Clock, UserPlus, RefreshCw, Hourglass, BellOff, FileText } from "lucide-react";
+import { AlertTriangle, CalendarClock, Clock, UserPlus, RefreshCw, Hourglass, BellOff, FileText, X, Undo2, FilePlus2 } from "lucide-react";
 import { isBefore, addDays, subHours, format } from "date-fns";
 import {
   useNotificationSettings,
+  useDismissedNotifications,
   notificationTypeLabels,
   type NotificationSettings,
 } from "@/hooks/use-notification-settings";
 
 interface NotificationsTabProps {
   onOpenContracts: (clientName: string) => void;
+  onNewContract?: (clientName: string) => void;
 }
 
 type Item = {
@@ -26,10 +28,13 @@ type Item = {
   label: string;
   meta?: string;
   clientName?: string;
+  dismissKey: string;
+  snapshot: string;
 };
 
-const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
+const NotificationsTab = ({ onOpenContracts, onNewContract }: NotificationsTabProps) => {
   const { settings, update } = useNotificationSettings();
+  const { dismissed, dismiss, restoreAll } = useDismissedNotifications();
   const [saving, setSaving] = useState<string | null>(null);
 
   const toggle = async (key: keyof NotificationSettings, value: boolean) => {
@@ -106,6 +111,8 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
         if (isBefore(due, now)) {
           list.push({
             id: `overdue-${c.id}`,
+            dismissKey: `overdue:${c.id}`,
+            snapshot: String(c.paid_until),
             type: "overdue",
             icon: AlertTriangle,
             color: "text-destructive",
@@ -116,6 +123,8 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
         } else if (isBefore(due, addDays(now, 7))) {
           list.push({
             id: `exp-${c.id}`,
+            dismissKey: `expiring:${c.id}`,
+            snapshot: String(c.paid_until),
             type: "expiring",
             icon: CalendarClock,
             color: "text-amber-400",
@@ -135,6 +144,8 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
         if (days >= 0 && days <= 14) {
           list.push({
             id: `renew-${c.id}`,
+            dismissKey: `renewals:${c.id}`,
+            snapshot: String(anniversary.getFullYear()),
             type: "renewals",
             icon: RefreshCw,
             color: "text-primary",
@@ -151,6 +162,8 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
       if (days >= 0 && days <= 95) {
         list.push({
           id: `deadline-${cl.id}`,
+          dismissKey: `deadlines:${cl.id}`,
+          snapshot: String(cl.service_deadline),
           type: "deadlines",
           icon: Hourglass,
           color: "text-sky-400",
@@ -162,12 +175,14 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
     });
 
     tasks.forEach((t) =>
-      list.push({ id: `task-${t.id}`, type: "tasks", icon: Clock, color: "text-blue-400", label: t.title, meta: "задача на сегодня" })
+      list.push({ id: `task-${t.id}`, dismissKey: `tasks:${t.id}`, snapshot: new Date().toISOString().split("T")[0], type: "tasks", icon: Clock, color: "text-blue-400", label: t.title, meta: "задача на сегодня" })
     );
 
     leads.forEach((l) =>
       list.push({
         id: `lead-${l.id}`,
+        dismissKey: `leads:${l.id}`,
+        snapshot: String(l.created_at || ""),
         type: "leads",
         icon: UserPlus,
         color: "text-emerald-400",
@@ -180,7 +195,28 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
     return list;
   }, [contracts, clients, tasks, leads]);
 
-  const visibleItems = items.filter((i) => settings[i.type]);
+  const enabledItems = items.filter((i) => settings[i.type]);
+  const isHidden = (i: Item) => dismissed[i.dismissKey] === i.snapshot;
+  const visibleItems = enabledItems.filter((i) => !isHidden(i));
+  const hiddenCount = enabledItems.length - visibleItems.length;
+
+  const handleDismiss = async (i: Item) => {
+    try {
+      await dismiss(i.dismissKey, i.snapshot);
+      toast.success("Напоминание скрыто");
+    } catch (e: any) {
+      toast.error(e?.message || "Не удалось скрыть");
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await restoreAll();
+      toast.success("Скрытые напоминания возвращены");
+    } catch (e: any) {
+      toast.error(e?.message || "Не удалось восстановить");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -212,7 +248,15 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
             <CardTitle className="text-lg">Активные упоминания</CardTitle>
             <CardDescription>То, что бот пришлёт по включённым типам</CardDescription>
           </div>
-          <Badge variant="outline">{visibleItems.length}</Badge>
+          <div className="flex items-center gap-2">
+            {hiddenCount > 0 && (
+              <Button size="sm" variant="ghost" className="gap-1.5 text-xs" onClick={handleRestore}>
+                <Undo2 className="w-3.5 h-3.5" />
+                Скрыто: {hiddenCount} · Показать
+              </Button>
+            )}
+            <Badge variant="outline">{visibleItems.length}</Badge>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {visibleItems.length === 0 ? (
@@ -229,12 +273,23 @@ const NotificationsTab = ({ onOpenContracts }: NotificationsTabProps) => {
                     <div className="text-sm leading-tight">{n.label}</div>
                     {n.meta && <div className="text-xs text-muted-foreground mt-0.5">{n.meta}</div>}
                   </div>
-                  {n.clientName && (
-                    <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => onOpenContracts(n.clientName!)}>
-                      <FileText className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Договоры</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {n.clientName && (n.type === "deadlines" || n.type === "renewals") && onNewContract && (
+                      <Button size="sm" variant="default" className="gap-1.5" onClick={() => onNewContract(n.clientName!)}>
+                        <FilePlus2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Новый договор</span>
+                      </Button>
+                    )}
+                    {n.clientName && (
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => onOpenContracts(n.clientName!)}>
+                        <FileText className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Договоры</span>
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" className="px-2 text-muted-foreground hover:text-destructive" title="Скрыть напоминание" onClick={() => handleDismiss(n)}>
+                      <X className="w-4 h-4" />
                     </Button>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
