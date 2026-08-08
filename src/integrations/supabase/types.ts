@@ -76,6 +76,77 @@ export type Database = {
           },
         ]
       }
+      client_projects: {
+        Row: {
+          call_script: string | null
+          client_id: string
+          created_at: string
+          email_body: string | null
+          email_subject: string | null
+          id: string
+          next_step: string | null
+          next_step_at: string | null
+          price: number
+          progress_completed: number
+          progress_total: number
+          risk_level: string
+          risk_note: string | null
+          scope_summary: string | null
+          service_type: string
+          stage: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          call_script?: string | null
+          client_id: string
+          created_at?: string
+          email_body?: string | null
+          email_subject?: string | null
+          id?: string
+          next_step?: string | null
+          next_step_at?: string | null
+          price?: number
+          progress_completed?: number
+          progress_total?: number
+          risk_level?: string
+          risk_note?: string | null
+          scope_summary?: string | null
+          service_type: string
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          call_script?: string | null
+          client_id?: string
+          created_at?: string
+          email_body?: string | null
+          email_subject?: string | null
+          id?: string
+          next_step?: string | null
+          next_step_at?: string | null
+          price?: number
+          progress_completed?: number
+          progress_total?: number
+          risk_level?: string
+          risk_note?: string | null
+          scope_summary?: string | null
+          service_type?: string
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           contact_person: string | null
