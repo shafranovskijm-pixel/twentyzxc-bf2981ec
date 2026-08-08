@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import DocumentsTab from "./DocumentsTab";
 
 type DocType = "contract" | "invoice" | "act";
+type ContractSubType = "site" | "frdo" | "nmo" | "twenty_eight" | "other";
 
 const LABELS: Record<DocType, string> = {
   contract: "Договор",
@@ -14,9 +15,10 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   clientName: string;
   docType: DocType;
+  initialContractSubType?: ContractSubType;
 }
 
-const QuickDocumentDialog = ({ open, onOpenChange, clientName, docType }: Props) => {
+const QuickDocumentDialog = ({ open, onOpenChange, clientName, docType, initialContractSubType }: Props) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
@@ -26,9 +28,10 @@ const QuickDocumentDialog = ({ open, onOpenChange, clientName, docType }: Props)
         <div className="flex-1 overflow-auto px-6 py-4">
           {open && (
             <DocumentsTab
-              key={`${clientName}-${docType}`}
+              key={`${clientName}-${docType}-${initialContractSubType || "default"}`}
               initialClientName={clientName}
               initialDocType={docType}
+              initialContractSubType={initialContractSubType}
             />
           )}
         </div>

@@ -19,6 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
 import QuickDocumentDialog from "./QuickDocumentDialog";
+import { ActiveProjectsOverview, ClientProjectPanel } from "./ClientProjectsPanel";
 
 interface Client {
   id: string;
@@ -46,6 +47,7 @@ interface Client {
 const SERVICE_OPTIONS = [
   { value: "ФРДО", label: "ФРДО", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   { value: "САЙТ", label: "САЙТ", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
+  { value: "ЛИЦЕНЗИЯ 28-ФЗ", label: "28-ФЗ", color: "bg-teal-500/20 text-teal-400 border-teal-500/30" },
   { value: "ПРОЧЕЕ", label: "ПРОЧЕЕ", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
 ];
 
@@ -75,7 +77,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [quickDoc, setQuickDoc] = useState<{ open: boolean; docType: "contract" | "invoice" | "act"; clientName: string }>({ open: false, docType: "contract", clientName: "" });
+  const [quickDoc, setQuickDoc] = useState<{ open: boolean; docType: "contract" | "invoice" | "act"; clientName: string; contractSubType?: "twenty_eight" }>({ open: false, docType: "contract", clientName: "" });
   const [name, setName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [phone, setPhone] = useState("");
@@ -95,6 +97,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [directorName, setDirectorName] = useState("");
   const [directorPost, setDirectorPost] = useState("");
   const [search, setSearch] = useState("");
+  const [serviceFilter, setServiceFilter] = useState("all");
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -259,6 +262,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setLegalAddress(c.legal_address || ""); setDirectorName(c.director_name || "");
     setDirectorPost(c.director_post || "");
     setShowForm(true);
+    setTimeout(() => document.getElementById("client-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" }), 75);
   };
 
   useEffect(() => {
@@ -274,7 +278,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
       toast.info("Карточка не найдена — заполните и сохраните");
     }
     setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.getElementById("client-workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
     onConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -424,6 +428,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   };
 
   const filtered = clients.filter((c) => {
+    if (serviceFilter !== "all" && c.service_type !== serviceFilter) return false;
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     return c.name.toLowerCase().includes(s) ||
@@ -441,19 +446,41 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[150px]" />
-        <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
-          {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
-          <span className="hidden sm:inline">Импорт из договоров</span>
-        </Button>
-        <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
-          {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
-          <span className="hidden sm:inline">Синхр. все реквизиты</span>
-        </Button>
-        <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
-          <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Добавить</span>
-        </Button>
+      <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <div className="relative min-w-[190px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Организация, ИНН, контакт или телефон..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="pl-9" />
+          </div>
+          <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
+            {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
+            <span className="hidden sm:inline">Импорт из договоров</span>
+          </Button>
+          <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
+            {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
+            <span className="hidden sm:inline">Синхр. реквизиты</span>
+          </Button>
+          <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
+            <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Новый клиент</span>
+          </Button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+          <span className="mr-1 text-xs font-medium text-muted-foreground">Показать:</span>
+          <Button variant={serviceFilter === "all" ? "secondary" : "ghost"} size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => { setServiceFilter("all"); setCurrentPage(1); }}>Все</Button>
+          {SERVICE_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              variant={serviceFilter === option.value ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 rounded-full px-3 text-xs"
+              onClick={() => { setServiceFilter(option.value); setCurrentPage(1); }}
+            >
+              {option.label}
+            </Button>
+          ))}
+          <span className="ml-auto text-xs text-muted-foreground">Найдено: {filtered.length} из {clients.length}</span>
+        </div>
 
         <AlertDialog open={!!importConfirm} onOpenChange={(open) => !open && setImportConfirm(null)}>
           <AlertDialogContent>
@@ -496,11 +523,21 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         </AlertDialog>
       </div>
 
+      <ActiveProjectsOverview onOpenClient={(clientId) => {
+        const client = clients.find((item) => item.id === clientId);
+        if (client) {
+          startEdit(client);
+        }
+      }} />
+
       {showForm && (
-        <Card>
-          <CardHeader>
+        <Card id="client-workspace" className="scroll-mt-4 overflow-hidden border-primary/30 shadow-md">
+          <CardHeader className="border-b bg-gradient-to-r from-primary/10 via-primary/5 to-transparent">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle className="text-lg">{editingId ? "Редактировать клиента" : "Новый клиент"}</CardTitle>
+              <div>
+                <CardTitle className="text-lg">{editingId ? "Карточка клиента" : "Новый клиент"}</CardTitle>
+                {editingId && <p className="mt-1 text-sm text-muted-foreground">Контакты, этап работы, документы и история в одном экране.</p>}
+              </div>
               <div className="flex items-center gap-2">
                 {editingId && onNavigate && (
                   <>
@@ -545,6 +582,22 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                 contactPerson={contactPerson}
                 clientId={editingId}
                 clientName={name}
+              />
+            )}
+
+            {editingId && (
+              <ClientProjectPanel
+                client={{
+                  id: editingId,
+                  name,
+                  inn,
+                  kpp,
+                  ogrn,
+                  legal_address: legalAddress,
+                  director_name: directorName,
+                  email,
+                }}
+                onGenerateContract={() => setQuickDoc({ open: true, docType: "contract", clientName: name, contractSubType: "twenty_eight" })}
               />
             )}
 
@@ -659,7 +712,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                         <TableCell className="font-mono text-xs">{c.inn || "—"}</TableCell>
                         <TableCell>
                           <Select value={c.service_type || ""} onValueChange={(v) => updateServiceType(c.id, v)}>
-                            <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none focus:ring-0">
+                            <SelectTrigger className="h-7 w-[130px] border-none bg-transparent p-0 shadow-none focus:ring-0">
                               <SelectValue>{getServiceBadge(c.service_type)}</SelectValue>
                             </SelectTrigger>
                             <SelectContent>
@@ -710,6 +763,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         onOpenChange={(v) => setQuickDoc((q) => ({ ...q, open: v }))}
         clientName={quickDoc.clientName}
         docType={quickDoc.docType}
+        initialContractSubType={quickDoc.contractSubType}
       />
     </div>
   );

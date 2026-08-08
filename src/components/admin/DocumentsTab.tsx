@@ -27,6 +27,7 @@ import {
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
+import { generateTwentyEightContractHtml } from "@/lib/twenty-eight-documents";
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
 import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
@@ -35,7 +36,7 @@ import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
 
 type DocType = "contract" | "invoice" | "act" | "reconciliation";
-type ContractSubType = "site" | "frdo" | "nmo" | "other";
+type ContractSubType = "site" | "frdo" | "nmo" | "twenty_eight" | "other";
 
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
@@ -48,6 +49,7 @@ const CONTRACT_TYPE_LABELS: Record<ContractSubType, string> = {
   site: "Сайт",
   frdo: "ФРДО",
   nmo: "НМО",
+  twenty_eight: "28-ФЗ",
   other: "Прочее",
 };
 
@@ -153,7 +155,7 @@ const syncFrdoServicesWithDeadline = (items: ServiceItem[], deadline?: string | 
   return changed ? synced : items;
 };
 
-const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, initialEditDocId, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; initialEditDocId?: string; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
+const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, initialAutoSend, initialEditDocId, initialContractSubType, onMounted, forceDocType, hideTypeSelector }: { initialContractId?: string; initialDocType?: string; initialClientName?: string; initialAutoSend?: boolean; initialEditDocId?: string; initialContractSubType?: ContractSubType; onMounted?: () => void; forceDocType?: DocType; hideTypeSelector?: boolean }) => {
   const queryClient = useQueryClient();
   const { settings, isLoading: settingsLoading } = useSiteSettings();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
@@ -205,7 +207,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   const [docType, setDocType] = useState<DocType>(forceDocType || "contract");
   const [pendingAutoSend, setPendingAutoSend] = useState(false);
-  const [contractSubType, setContractSubType] = useState<ContractSubType>("site");
+  const [contractSubType, setContractSubType] = useState<ContractSubType>(initialContractSubType || "site");
   const [docNumber, setDocNumber] = useState("");
   const [docDate, setDocDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -623,6 +625,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           price: 24000,
         },
       ]);
+    } else if (contractSubType === "twenty_eight") {
+      setSubject("Сопровождение подготовки и подачи сведений для внесения изменений в реестр лицензий на образовательную деятельность в связи с требованиями Федерального закона № 28-ФЗ");
+      setDeadline("до 31.08.2026 при передаче полного комплекта документов и 100% предоплате до 12.08.2026");
+      setPaymentTerms("100% предоплата");
+      setServices([
+        {
+          name: "Лицензионный комплаенс 28-ФЗ: аудит 26 программ, сопоставление до 18 программ-кандидатов, одно согласование с лицензирующим органом, подготовка одного пакета заявления, сопровождение одной подачи и одна отработка формального замечания. Разработка и переработка образовательных программ не входят",
+          qty: 1,
+          price: 35000,
+        },
+      ]);
     } else if (contractSubType === "site") {
       setSubject("Разработка веб-сайта");
       setDeadline("30 рабочих дней");
@@ -841,6 +854,8 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             html = generateFrdoContractHtml(docData);
           } else if (contractSubType === "nmo") {
             html = generateNmoContractHtml(docData);
+          } else if (contractSubType === "twenty_eight") {
+            html = generateTwentyEightContractHtml(docData);
           } else {
             html = generateContractHtml(docData);
           }
@@ -1367,7 +1382,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     };
     let html = "";
     switch (type) {
-      case "contract": html = generateContractHtml(docData); break;
+      case "contract": html = contractSubType === "twenty_eight" ? generateTwentyEightContractHtml(docData) : generateContractHtml(docData); break;
       case "invoice": html = generateInvoiceHtml(docData); break;
       case "act": html = generateActHtml(docData); break;
     }
