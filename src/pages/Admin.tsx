@@ -1114,9 +1114,6 @@ const Admin = () => {
                 </motion.div>
               </AnimatePresence>
             </main>
-            <div className={activeTheme ? "relative z-10" : ""}>
-              <Footer />
-            </div>
           </div>
         </div>
       
