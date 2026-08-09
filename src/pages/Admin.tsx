@@ -89,6 +89,7 @@ const Admin = () => {
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
   /** Theme animation and atmospheric decor only run on the appearance settings screen. */
+  const showThemeDecor = activeSection === "profile" && profileSubTab === "appearance";
   const [savingSidebarSettings, setSavingSidebarSettings] = useState(false);
 
   // Sidebar visibility
