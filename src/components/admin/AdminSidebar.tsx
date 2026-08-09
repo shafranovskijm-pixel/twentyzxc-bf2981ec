@@ -88,12 +88,13 @@ function SortableNavButton({
   item,
   isActive,
   onClick,
-  showLabel,
+  expanded,
 }: {
   item: (typeof defaultMenuItems)[0];
   isActive: boolean;
   onClick: () => void;
-  showLabel: boolean;
+  /** Always-expanded variant (mobile sheet). Otherwise labels appear from xl up. */
+  expanded: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = {
@@ -103,38 +104,12 @@ function SortableNavButton({
   };
   const Icon = item.icon;
 
-  if (showLabel) {
-    return (
-      <div ref={setNodeRef} style={style} className="group/item relative w-full">
-        <button
-          onClick={onClick}
-          title={item.label}
-          aria-label={item.label}
-          aria-current={isActive ? "page" : undefined}
-          className={cn(
-            "w-full h-10 pl-3 pr-8 rounded-lg flex items-center gap-3 text-sm text-left transition-colors duration-200",
-            isActive
-              ? "bg-primary/15 text-primary font-medium"
-              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-          )}
-        >
-          <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{item.label}</span>
-        </button>
-        <span
-          {...attributes}
-          {...listeners}
-          aria-label={`Переместить «${item.label}»`}
-          className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity p-1"
-        >
-          <GripVertical className="h-3.5 w-3.5" />
-        </span>
-      </div>
-    );
-  }
-
   return (
-    <div ref={setNodeRef} style={style} className="group/item relative">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn("group/item relative", expanded ? "w-full" : "xl:w-full")}
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -143,26 +118,35 @@ function SortableNavButton({
             aria-label={item.label}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
+              "h-10 rounded-lg flex items-center transition-colors duration-200 text-sm",
+              expanded
+                ? "w-full justify-start gap-3 pl-3 pr-8 text-left"
+                : "w-10 justify-center xl:w-full xl:justify-start xl:gap-3 xl:pl-3 xl:pr-8 xl:text-left",
               isActive
-                ? "bg-primary/20 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.3)]"
-                : "text-muted-foreground hover:text-primary hover:bg-primary/15"
+                ? "bg-primary/15 text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className={cn("shrink-0", expanded ? "h-4 w-4" : "h-5 w-5 xl:h-4 xl:w-4")} />
+            <span className={cn("truncate", expanded ? "inline" : "hidden xl:inline")}>{item.label}</span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
-          {item.label}
-        </TooltipContent>
+        {!expanded && (
+          <TooltipContent side="right" sideOffset={8} className="xl:hidden">
+            {item.label}
+          </TooltipContent>
+        )}
       </Tooltip>
       <span
         {...attributes}
         {...listeners}
         aria-label={`Переместить «${item.label}»`}
-        className="absolute -left-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity p-0.5"
+        className={cn(
+          "absolute top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity",
+          expanded ? "right-1 p-1" : "-left-1 p-0.5 xl:left-auto xl:right-1 xl:p-1"
+        )}
       >
-        <GripVertical className="h-3 w-3" />
+        <GripVertical className={cn(expanded ? "h-3.5 w-3.5" : "h-3 w-3 xl:h-3.5 xl:w-3.5")} />
       </span>
     </div>
   );
@@ -242,7 +226,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
                   key={item.id}
                   item={item}
                   isActive={activeSection === item.id}
-                  showLabel={expanded}
+                  expanded={expanded}
                   onClick={() => onSectionChange(item.id)}
                 />
               ))}
