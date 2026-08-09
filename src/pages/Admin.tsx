@@ -88,6 +88,7 @@ const Admin = () => {
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
+  /** Theme animation and atmospheric decor only run on the appearance settings screen. */
   const [savingSidebarSettings, setSavingSidebarSettings] = useState(false);
 
   // Sidebar visibility
