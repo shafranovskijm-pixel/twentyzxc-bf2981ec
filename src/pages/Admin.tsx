@@ -642,7 +642,7 @@ const Admin = () => {
 
         {/* Mobile sidebar inside Sheet */}
         <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-          <SheetContent side="left" className="p-0 w-16 border-r-0 [&>button]:hidden">
+          <SheetContent side="left" className="p-0 w-72 border-r-0 [&>button]:hidden">
             <AdminSidebar
               activeSection={activeSection}
               onSectionChange={(s) => { handleSectionChange(s); setMobileSidebarOpen(false); }}
@@ -664,17 +664,9 @@ const Admin = () => {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <span className="text-xl font-bold text-primary select-none">Σ</span>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-foreground leading-tight truncate">СИНТАГМА</div>
-                <div className="text-[10px] text-muted-foreground leading-tight">Администратор</div>
-              </div>
-              <Badge variant="outline" className="ml-2 text-[10px] px-1.5 py-0 h-5 border-primary/30 text-primary cursor-pointer hover:bg-primary/10 transition-colors hidden sm:inline-flex">
-                <CreditCard className="h-3 w-3 mr-1" />Тариф
-              </Badge>
-            </div>
-            <h1 className="text-base font-medium text-muted-foreground hidden md:block">{sectionTitles[activeSection] || activeSection}</h1>
+            <h1 className="flex-1 min-w-0 truncate text-base font-medium text-foreground">
+              {sectionTitles[activeSection] || activeSection}
+            </h1>
             <div className="flex items-center gap-1">
               <NotificationsPanel onNavigate={setActiveSection} />
               <Button
@@ -697,7 +689,8 @@ const Admin = () => {
             </div>
           </header>
 
-          {/* Decorative banner */}
+          {/* Theme preview — only in Профиль → Оформление */}
+          {activeSection === "profile" && profileSubTab === "appearance" && (
           <div
             className="h-24 sm:h-32 relative overflow-hidden shrink-0 group select-none"
             onTouchStart={handleBannerTouchStart}
@@ -760,8 +753,9 @@ const Admin = () => {
             </div>
             <input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={handleBannerUpload} />
           </div>
+          )}
 
-          <main className="flex-1 p-3 sm:p-6 max-w-5xl pb-24">
+          <main className="relative z-10 flex-1 w-full max-w-[1600px] bg-background p-4 sm:p-6 pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${activeSection}-${sectionNonce}`}
