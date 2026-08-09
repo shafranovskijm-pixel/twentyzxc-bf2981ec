@@ -382,7 +382,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     date: new Date(createdAt).toLocaleDateString("ru-RU"),
     clientName, clientOrg, clientEmail, clientPhone,
     introText, footerText, discountPercent,
-    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("ru-RU") : null,
+    validUntil: validUntil ? formatDateRu(validUntil) || null : null,
     items: items.filter(i => i.included).map(i => ({
       title: i.title, description: i.description, price: i.price, qty: i.qty,
     })) as ProposalRenderItem[],
@@ -551,7 +551,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           </Button>
           <div>
             <h2 className="text-xl font-semibold">
-              {proposalId ? `Редактирование КП ${number ? "№" + number : ""}` : "Новое КП"}
+              {savedId ? `Редактирование КП ${number ? "№" + number : ""}` : "Новое КП"}
             </h2>
             <p className="text-xs text-muted-foreground">Изменения в превью отображаются в реальном времени</p>
           </div>
@@ -572,11 +572,47 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid xl:grid-cols-2 gap-4">
         {/* LEFT — controls */}
         <div className="space-y-4">
-          <Card className="p-4 space-y-3">
-            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Клиент</h3>
+          <Card className="p-4 space-y-3 bg-card">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Клиент</h3>
+              <Popover open={clientPickerOpen} onOpenChange={setClientPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" aria-label="Выбрать клиента из CRM">
+                    <Users className="h-3.5 w-3.5" /> Выбрать из CRM
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder="Поиск клиента…" />
+                    <CommandList>
+                      <CommandEmpty>Клиенты не найдены</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map(c => (
+                          <CommandItem
+                            key={c.id}
+                            value={`${c.name} ${c.contact_person || ""} ${c.email || ""}`}
+                            onSelect={() => pickClient(c)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", clientOrg === c.name ? "opacity-100" : "opacity-0")} />
+                            <div className="min-w-0">
+                              <div className="truncate">{c.name}</div>
+                              {(c.contact_person || c.email) && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {[c.contact_person, c.email].filter(Boolean).join(" · ")}
+                                </div>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label className="text-xs">ФИО</Label>
                 <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Иван Иванов" /></div>
@@ -589,7 +625,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             </div>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 space-y-3 bg-card">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Услуги</h3>
               <Button size="sm" variant="ghost" onClick={addCustom} className="gap-1 text-xs">
@@ -651,7 +687,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             </div>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 space-y-3 bg-card">
             <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Параметры</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -662,6 +698,9 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
               <div className="space-y-1">
                 <Label className="text-xs">Действует до</Label>
                 <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+                {validUntil && !isValidIsoDate(validUntil) && (
+                  <p className="text-[11px] text-destructive">Некорректная дата — нужен формат ГГГГ-ММ-ДД, год 2000–9999</p>
+                )}
               </div>
             </div>
             <div className="space-y-1">
@@ -675,14 +714,14 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             <div className="pt-2 border-t flex justify-between text-sm">
               <span className="text-muted-foreground">Итого к оплате:</span>
               <span className="font-bold text-lg text-primary tabular-nums">
-                {new Intl.NumberFormat("ru-RU").format(Math.round(totals.total))} ₽
+                {formatMoneyRub(totals.total)}
               </span>
             </div>
           </Card>
         </div>
 
         {/* RIGHT — preview */}
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="xl:sticky xl:top-4 xl:self-start">
           <Card className="overflow-hidden bg-white">
             <div className="bg-muted/50 px-3 py-2 text-xs text-muted-foreground border-b flex items-center justify-between">
               <span>Предпросмотр (так выглядит PDF)</span>
