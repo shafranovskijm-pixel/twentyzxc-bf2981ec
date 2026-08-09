@@ -1096,7 +1096,6 @@ const Admin = () => {
               />}
               {activeSection === "sales" && <SalesTab />}
               {activeSection === "proposals" && <ProposalsTab
-                key={`proposals-${proposalsInitialProposalId || proposalsInitialClientId || (proposalsAutoOpenNew ? "new" : "list")}`}
                 initialClientId={proposalsInitialClientId}
                 initialClientName={proposalsInitialClientName}
                 initialProposalId={proposalsInitialProposalId}
