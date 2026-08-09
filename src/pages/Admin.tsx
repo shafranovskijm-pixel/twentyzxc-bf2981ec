@@ -13,8 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AdminSidebar from "@/components/admin/AdminSidebar";
-import { defaultMenuItems as sidebarMenuItems, HIDDEN_STORAGE_KEY as SIDEBAR_HIDDEN_KEY, SIDEBAR_ORDER_STORAGE_KEY, SIDEBAR_VISIBILITY_EVENT } from "@/components/admin/AdminSidebar";
-import Footer from "@/components/Footer";
+import { defaultMenuItems as sidebarMenuItems, HIDDEN_STORAGE_KEY as SIDEBAR_HIDDEN_KEY, SIDEBAR_ORDER_STORAGE_KEY, SIDEBAR_VISIBILITY_EVENT, PINNED_MENU_IDS } from "@/components/admin/AdminSidebar";
 // dropdown removed — settings moved to dedicated sections
 const ClientsTab = lazyWithRetry(() => import("@/components/admin/ClientsTab"));
 const ContractsTab = lazyWithRetry(() => import("@/components/admin/ContractsTab"));
@@ -94,7 +93,7 @@ const Admin = () => {
   // Sidebar visibility
   const normalizeSidebarIds = (value: unknown) => (
     Array.isArray(value)
-      ? value.filter((x): x is string => typeof x === "string" && sidebarMenuItems.some(item => item.id === x))
+      ? value.filter((x): x is string => typeof x === "string" && sidebarMenuItems.some(item => item.id === x) && !PINNED_MENU_IDS.includes(x))
       : []
   );
 
@@ -111,6 +110,7 @@ const Admin = () => {
   });
 
   const toggleSectionHidden = (id: string, hide: boolean) => {
+    if (PINNED_MENU_IDS.includes(id)) return;
     setHiddenSections(prev => {
       const next = hide ? Array.from(new Set([...prev, id])) : prev.filter(x => x !== id);
       localStorage.setItem(SIDEBAR_HIDDEN_KEY, JSON.stringify(next));
