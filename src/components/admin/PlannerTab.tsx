@@ -427,14 +427,15 @@ function EdgeDropZone({ id, side, isCharging }: { id: string; side: "left" | "ri
 
 /* ─── Add Task Popover for Month View ─── */
 function AddTaskForm({
-  date, clients, contracts, onAddTask, onClose,
+  date, clients, contracts, onAddTask, onClose, initialClientId,
 }: {
   date: Date; clients: Client[]; contracts: Contract[];
   onAddTask: (date: string, title: string, clientId?: string, contractId?: string) => void;
   onClose: () => void;
+  initialClientId?: string;
 }) {
   const [newTitle, setNewTitle] = useState("");
-  const [newClientId, setNewClientId] = useState<string>("");
+  const [newClientId, setNewClientId] = useState<string>(initialClientId || "");
   const [newContractId, setNewContractId] = useState<string>("");
   const [clientSearchOpen, setClientSearchOpen] = useState(false);
   const dateStr = format(date, "yyyy-MM-dd");
@@ -497,7 +498,12 @@ function AddTaskForm({
    MAIN PLANNER COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 
-const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docType?: string) => void }) => {
+const PlannerTab = ({ onCreateDocument, initialClientName, onConsumed }: {
+  onCreateDocument?: (task: Task, docType?: string) => void;
+  /** Optional client name to preselect in a freshly opened "new task" form. */
+  initialClientName?: string;
+  onConsumed?: () => void;
+}) => {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
@@ -511,6 +517,7 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
   const [filterClientId, setFilterClientId] = useState<string>("all");
   const [filterClientOpen, setFilterClientOpen] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [prefillClientId, setPrefillClientId] = useState<string>("");
   const edgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const edgeHoverIdRef = useRef<string | null>(null);
@@ -562,6 +569,17 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // Preselect a client and open the "new task" form when navigated from CRM.
+  useEffect(() => {
+    if (!initialClientName || clients.length === 0) return;
+    const target = initialClientName.trim().toLowerCase();
+    const found = clients.find((c) => c.name.trim().toLowerCase() === target);
+    setPrefillClientId(found?.id || "");
+    setShowAddTask(true);
+    onConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialClientName, clients.length]);
 
   const updateTask = useMutation({
     mutationFn: async (updates: { id: string } & Partial<Task>) => {
@@ -836,7 +854,8 @@ const PlannerTab = ({ onCreateDocument }: { onCreateDocument?: (task: Task, docT
                           clients={clients}
                           contracts={contracts}
                           onAddTask={handleAddTask}
-                          onClose={() => setShowAddTask(false)}
+                          initialClientId={prefillClientId}
+                          onClose={() => { setShowAddTask(false); setPrefillClientId(""); }}
                         />
                       </div>
                     ) : (

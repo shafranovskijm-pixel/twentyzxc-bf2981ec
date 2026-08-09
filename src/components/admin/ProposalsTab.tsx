@@ -15,6 +15,7 @@ import { Plus, Trash2, FileDown, Mail, Save, FileSignature, Edit, Settings2, X, 
 import { renderProposalHtml, calcProposalTotals, type ProposalRenderItem } from "@/lib/proposal-template";
 import { generatePdfBlob, downloadBlob, blobToBase64, safePdfFilename } from "@/lib/document-pdf";
 import { formatMoneyRub, formatDateRu, isValidIsoDate } from "@/lib/proposal-utils";
+import { resolveProposalsEntry, buildProposalPrefill } from "@/lib/client-workspace-utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -82,9 +83,36 @@ const statusColors: Record<string, string> = {
   rejected: "bg-red-500/15 text-red-400",
 };
 
-export default function ProposalsTab() {
-  const [view, setView] = useState<"list" | "editor">("list");
-  const [editingId, setEditingId] = useState<string | null>(null);
+export interface ProposalsTabProps {
+  initialClientId?: string;
+  initialClientName?: string;
+  initialProposalId?: string;
+  autoOpenNew?: boolean;
+  onConsumed?: () => void;
+}
+
+export default function ProposalsTab({
+  initialClientId,
+  initialClientName,
+  initialProposalId,
+  autoOpenNew,
+  onConsumed,
+}: ProposalsTabProps = {}) {
+  /** Entry state is resolved once so re-renders never spawn a second draft. */
+  const [entry] = useState(() => resolveProposalsEntry({ initialProposalId, autoOpenNew }));
+  const [prefill] = useState(() =>
+    entry.view === "editor" && !entry.editingId && (initialClientId || initialClientName)
+      ? { clientId: initialClientId || "", clientName: initialClientName || "" }
+      : null
+  );
+  const [view, setView] = useState<"list" | "editor">(entry.view);
+  const [editingId, setEditingId] = useState<string | null>(entry.editingId);
+  const [prefillActive, setPrefillActive] = useState(entry.view === "editor" && !!prefill);
+
+  useEffect(() => {
+    if (entry.view === "editor") onConsumed?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -123,7 +151,9 @@ export default function ProposalsTab() {
     return (
       <ProposalEditor
         proposalId={editingId}
-        onClose={() => { setView("list"); setEditingId(null); load(); }}
+        prefillClientId={prefillActive ? prefill?.clientId : undefined}
+        prefillClientName={prefillActive ? prefill?.clientName : undefined}
+        onClose={() => { setPrefillActive(false); setView("list"); setEditingId(null); load(); }}
       />
     );
   }
@@ -289,7 +319,12 @@ export default function ProposalsTab() {
   );
 }
 
-function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; onClose: () => void }) {
+function ProposalEditor({ proposalId, onClose, prefillClientId, prefillClientName }: {
+  proposalId: string | null;
+  onClose: () => void;
+  prefillClientId?: string;
+  prefillClientName?: string;
+}) {
   const [catalog, setCatalog] = useState<Catalog[]>([]);
   const [clients, setClients] = useState<CrmClient[]>([]);
   const [clientPickerOpen, setClientPickerOpen] = useState(false);
@@ -359,8 +394,24 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           service_key: c.key, title: c.title, description: c.description, price: Number(c.default_price),
           qty: 1, sort_order: i, included: true,
         })));
+        // pre-fill the client coming from CRM (nothing is written to the DB here)
+        if (prefillClientId || prefillClientName) {
+          let q = supabase.from("clients").select("name, contact_person, director_name, email, phone").limit(1);
+          q = prefillClientId ? q.eq("id", prefillClientId) : q.eq("name", prefillClientName || "");
+          const { data: crm } = await q.maybeSingle();
+          const pre = buildProposalPrefill(crm as any) || (prefillClientName
+            ? { clientOrg: prefillClientName, clientName: "", clientEmail: "", clientPhone: "" }
+            : null);
+          if (pre) {
+            setClientOrg(pre.clientOrg);
+            setClientName(pre.clientName);
+            setClientEmail(pre.clientEmail);
+            setClientPhone(pre.clientPhone);
+          }
+        }
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposalId]);
 
   const pickClient = (c: CrmClient) => {
