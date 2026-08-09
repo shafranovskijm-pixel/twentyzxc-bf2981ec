@@ -44,12 +44,17 @@ export const SIDEBAR_ORDER_STORAGE_KEY = "admin-sidebar-order-v2";
 export const HIDDEN_STORAGE_KEY = "admin-sidebar-hidden-v1";
 export const SIDEBAR_VISIBILITY_EVENT = "admin-sidebar-visibility-changed";
 
+/** Sections that are core to the CRM and can never be hidden from the menu. */
+export const PINNED_MENU_IDS = ["proposals"];
+
 function readHidden(): string[] {
   try {
     const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
     if (!raw) return [];
     const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.filter((x) => typeof x === "string") : [];
+    return Array.isArray(arr)
+      ? arr.filter((x) => typeof x === "string" && !PINNED_MENU_IDS.includes(x))
+      : [];
   } catch {
     return [];
   }
@@ -79,14 +84,16 @@ interface AdminSidebarProps {
   className?: string;
 }
 
-function SortableIconButton({
+function SortableNavButton({
   item,
   isActive,
   onClick,
+  showLabel,
 }: {
   item: (typeof defaultMenuItems)[0];
   isActive: boolean;
   onClick: () => void;
+  showLabel: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const style = {
@@ -96,12 +103,45 @@ function SortableIconButton({
   };
   const Icon = item.icon;
 
+  if (showLabel) {
+    return (
+      <div ref={setNodeRef} style={style} className="group/item relative w-full">
+        <button
+          onClick={onClick}
+          title={item.label}
+          aria-label={item.label}
+          aria-current={isActive ? "page" : undefined}
+          className={cn(
+            "w-full h-10 pl-3 pr-8 rounded-lg flex items-center gap-3 text-sm text-left transition-colors duration-200",
+            isActive
+              ? "bg-primary/15 text-primary font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="truncate">{item.label}</span>
+        </button>
+        <span
+          {...attributes}
+          {...listeners}
+          aria-label={`Переместить «${item.label}»`}
+          className="absolute right-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity p-1"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div ref={setNodeRef} style={style} className="group/item relative">
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             onClick={onClick}
+            title={item.label}
+            aria-label={item.label}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
               isActive
@@ -119,6 +159,7 @@ function SortableIconButton({
       <span
         {...attributes}
         {...listeners}
+        aria-label={`Переместить «${item.label}»`}
         className="absolute -left-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity p-0.5"
       >
         <GripVertical className="h-3 w-3" />
@@ -145,6 +186,8 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
   }, []);
 
   const visibleItems = items.filter((i) => !hidden.includes(i.id));
+  // Expanded (labelled) layout: wide desktop and inside the mobile sheet.
+  const expanded = !!inSheet;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -169,23 +212,37 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
   return (
     <TooltipProvider delayDuration={200}>
       <aside className={cn(
-        "w-16 shrink-0 border-r flex flex-col items-center py-4 gap-1.5 z-30 transition-colors duration-500",
+        "shrink-0 border-r flex flex-col py-4 gap-1 z-30 transition-colors duration-500",
+        expanded ? "w-72 px-3 items-stretch" : "w-16 items-center xl:w-60 xl:px-3 xl:items-stretch",
         inSheet ? "h-full" : "sticky top-0 h-screen",
         themeClass || "border-border bg-card",
         className
       )}>
         {/* Logo */}
-        <a href="/" className="mb-4 text-xs font-bold text-primary tracking-widest select-none hover:opacity-80 transition-opacity" title="На главную">24</a>
+        <a
+          href="/"
+          title="На главную"
+          className={cn(
+            "mb-4 select-none hover:opacity-80 transition-opacity text-primary font-bold tracking-widest",
+            expanded ? "px-3 text-sm" : "text-xs self-center xl:self-start xl:px-3 xl:text-sm"
+          )}
+        >
+          24<span className={cn("text-foreground", expanded ? "" : "hidden xl:inline")}>ZXC CRM</span>
+        </a>
 
         {/* Primary nav */}
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-            <nav className="flex flex-col items-center gap-1.5 justify-center flex-1">
+            <nav className={cn(
+              "flex flex-col gap-1 flex-1 overflow-y-auto",
+              expanded ? "items-stretch" : "items-center justify-center xl:items-stretch xl:justify-start"
+            )}>
               {visibleItems.map((item) => (
-                <SortableIconButton
+                <SortableNavButton
                   key={item.id}
                   item={item}
                   isActive={activeSection === item.id}
+                  showLabel={expanded}
                   onClick={() => onSectionChange(item.id)}
                 />
               ))}
@@ -198,9 +255,15 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
           <TooltipTrigger asChild>
             <button
               onClick={onSignOut}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 mt-auto"
+              title="Выйти"
+              aria-label="Выйти"
+              className={cn(
+                "h-10 rounded-lg flex items-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 mt-auto",
+                expanded ? "w-full gap-3 pl-3 text-sm" : "w-10 justify-center self-center xl:w-full xl:gap-3 xl:pl-3 xl:justify-start xl:self-stretch xl:text-sm"
+              )}
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span className={cn(expanded ? "" : "hidden xl:inline")}>Выйти</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>

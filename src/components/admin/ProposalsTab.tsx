@@ -11,9 +11,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Plus, Trash2, FileDown, Mail, Save, FileSignature, Edit, Settings2, X, ArrowLeft, GripVertical } from "lucide-react";
+import { Plus, Trash2, FileDown, Mail, Save, FileSignature, Edit, Settings2, X, ArrowLeft, Search, Users, Wallet, AlertTriangle, Check } from "lucide-react";
 import { renderProposalHtml, calcProposalTotals, type ProposalRenderItem } from "@/lib/proposal-template";
 import { generatePdfBlob, downloadBlob, blobToBase64, safePdfFilename } from "@/lib/document-pdf";
+import { formatMoneyRub, formatDateRu, isValidIsoDate } from "@/lib/proposal-utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+type CrmClient = {
+  id: string;
+  name: string;
+  contact_person: string | null;
+  director_name: string | null;
+  email: string | null;
+  phone: string | null;
+};
 
 type Catalog = {
   id: string;
@@ -74,6 +87,8 @@ export default function ProposalsTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -88,6 +103,22 @@ export default function ProposalsTab() {
 
   useEffect(() => { load(); }, []);
 
+  const stats = useMemo(() => ({
+    count: proposals.length,
+    total: proposals.reduce((s, p) => s + (Number(p.total_amount) || 0), 0),
+    noClient: proposals.filter(p => !p.client_org && !p.client_name).length,
+  }), [proposals]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return proposals.filter(p => {
+      if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (!q) return true;
+      return [p.number, p.client_name, p.client_org, p.client_email]
+        .some(v => (v || "").toLowerCase().includes(q));
+    });
+  }, [proposals, search, statusFilter]);
+
   if (view === "editor") {
     return (
       <ProposalEditor
@@ -98,10 +129,10 @@ export default function ProposalsTab() {
   }
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-5 pb-24">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-semibold">Коммерческие предложения</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Коммерческие предложения</h2>
           <p className="text-sm text-muted-foreground">Конструктор КП с экспортом в PDF и отправкой на email</p>
         </div>
         <Button onClick={() => { setEditingId(null); setView("editor"); }} className="gap-2">
@@ -109,39 +140,111 @@ export default function ProposalsTab() {
         </Button>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          { label: "Всего КП", value: String(stats.count), icon: FileSignature },
+          { label: "Общая сумма", value: formatMoneyRub(stats.total), icon: Wallet },
+          { label: "Без клиента", value: String(stats.noClient), icon: Users },
+        ].map(s => (
+          <Card key={s.label} className="bg-card p-4 flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <s.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">{s.label}</div>
+              <div className="text-lg font-semibold tabular-nums truncate">{s.value}</div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Поиск по номеру, клиенту или организации"
+            aria-label="Поиск по коммерческим предложениям"
+            className="pl-9 bg-card"
+          />
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {[["all", "Все"], ...Object.entries(statusLabels)].map(([value, label]) => (
+            <Button
+              key={value}
+              size="sm"
+              variant={statusFilter === value ? "default" : "outline"}
+              onClick={() => setStatusFilter(value)}
+              className="h-8 text-xs"
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {loading ? (
         <div className="text-sm text-muted-foreground py-12 text-center">Загрузка…</div>
       ) : proposals.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="p-12 text-center bg-card">
           <FileSignature className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
           <p className="text-muted-foreground mb-4">Пока нет коммерческих предложений</p>
           <Button onClick={() => { setEditingId(null); setView("editor"); }} className="gap-2">
             <Plus className="h-4 w-4" /> Создать первое КП
           </Button>
         </Card>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center bg-card text-sm text-muted-foreground">
+          Ничего не найдено по заданным условиям
+        </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden bg-card">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr className="text-left">
                   <th className="px-4 py-3 font-medium">№</th>
                   <th className="px-4 py-3 font-medium">Клиент</th>
-                  <th className="px-4 py-3 font-medium">Организация</th>
+                  <th className="px-4 py-3 font-medium">Контакт</th>
                   <th className="px-4 py-3 font-medium text-right">Сумма</th>
                   <th className="px-4 py-3 font-medium">Статус</th>
                   <th className="px-4 py-3 font-medium">Дата</th>
-                  <th className="px-4 py-3 font-medium sticky right-0 bg-muted/50">Действия</th>
+                  <th className="px-4 py-3 font-medium">Действует до</th>
+                  <th className="px-4 py-3 font-medium sticky right-0 bg-muted">Действия</th>
                 </tr>
               </thead>
               <tbody>
-                {proposals.map(p => (
-                  <tr key={p.id} className="border-t hover:bg-muted/30">
+                {filtered.map(p => (
+                  <tr
+                    key={p.id}
+                    tabIndex={0}
+                    role="button"
+                    onClick={() => { setEditingId(p.id); setView("editor"); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { setEditingId(p.id); setView("editor"); } }}
+                    className="border-t hover:bg-muted/40 cursor-pointer focus:outline-none focus:bg-muted/40"
+                  >
                     <td className="px-4 py-3 font-mono text-xs">{p.number || "—"}</td>
-                    <td className="px-4 py-3">{p.client_name || "—"}</td>
-                    <td className="px-4 py-3">{p.client_org || "—"}</td>
+                    <td className="px-4 py-3">
+                      {p.client_org || p.client_name ? (
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{p.client_org || p.client_name}</div>
+                          {p.client_org && p.client_name && (
+                            <div className="text-xs text-muted-foreground truncate">{p.client_name}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <Badge variant="outline" className="gap-1 border-amber-500/40 text-amber-500">
+                          <AlertTriangle className="h-3 w-3" /> Не указан клиент
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      <div className="truncate">{p.client_email || "—"}</div>
+                      {p.client_phone && <div className="truncate">{p.client_phone}</div>}
+                    </td>
                     <td className="px-4 py-3 text-right font-medium tabular-nums">
-                      {new Intl.NumberFormat("ru-RU").format(Math.round(Number(p.total_amount)))} ₽
+                      {formatMoneyRub(p.total_amount)}
                     </td>
                     <td className="px-4 py-3">
                       <Badge className={statusColors[p.status] || ""} variant="outline">
@@ -149,14 +252,24 @@ export default function ProposalsTab() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {new Date(p.created_at).toLocaleDateString("ru-RU")}
+                      {formatDateRu(p.created_at)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                      {formatDateRu(p.valid_until) || "—"}
                     </td>
                     <td className="px-4 py-2 sticky right-0 bg-card">
                       <div className="flex gap-1 justify-end">
-                        <Button size="icon" variant="ghost" onClick={() => { setEditingId(p.id); setView("editor"); }}>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          title="Редактировать КП"
+                          aria-label={`Редактировать КП ${p.number || ""}`}
+                          onClick={(e) => { e.stopPropagation(); setEditingId(p.id); setView("editor"); }}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={async () => {
+                        <Button size="icon" variant="ghost" title="Удалить КП" aria-label={`Удалить КП ${p.number || ""}`} onClick={async (e) => {
+                          e.stopPropagation();
                           if (!confirm("Удалить КП?")) return;
                           const { error } = await supabase.from("proposals").delete().eq("id", p.id);
                           if (error) toast.error(error.message); else { toast.success("Удалено"); load(); }
@@ -178,6 +291,10 @@ export default function ProposalsTab() {
 
 function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; onClose: () => void }) {
   const [catalog, setCatalog] = useState<Catalog[]>([]);
+  const [clients, setClients] = useState<CrmClient[]>([]);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
+  /** Id of the proposal currently being edited — set after the first insert to avoid duplicates. */
+  const [savedId, setSavedId] = useState<string | null>(proposalId);
   const [items, setItems] = useState<Item[]>([]);
   const [clientName, setClientName] = useState("");
   const [clientOrg, setClientOrg] = useState("");
@@ -198,6 +315,17 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     setCatalog((data as Catalog[]) || []);
     return (data as Catalog[]) || [];
   };
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name, contact_person, director_name, email, phone")
+        .order("name");
+      if (error) { toast.error("Не удалось загрузить клиентов: " + error.message); return; }
+      setClients((data as CrmClient[]) || []);
+    })();
+  }, []);
 
   // initial load
   useEffect(() => {
@@ -235,6 +363,15 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     })();
   }, [proposalId]);
 
+  const pickClient = (c: CrmClient) => {
+    setClientOrg(c.name || "");
+    setClientName(c.contact_person || c.director_name || "");
+    setClientEmail(c.email || "");
+    setClientPhone(c.phone || "");
+    setClientPickerOpen(false);
+    toast.success(`Клиент «${c.name}» подставлен`);
+  };
+
   const totals = useMemo(
     () => calcProposalTotals(items.filter(i => i.included), discountPercent),
     [items, discountPercent]
@@ -245,7 +382,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     date: new Date(createdAt).toLocaleDateString("ru-RU"),
     clientName, clientOrg, clientEmail, clientPhone,
     introText, footerText, discountPercent,
-    validUntil: validUntil ? new Date(validUntil).toLocaleDateString("ru-RU") : null,
+    validUntil: validUntil ? formatDateRu(validUntil) || null : null,
     items: items.filter(i => i.included).map(i => ({
       title: i.title, description: i.description, price: i.price, qty: i.qty,
     })) as ProposalRenderItem[],
@@ -276,10 +413,20 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
   };
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
+  /** Returns an error message when the form is not ready to be saved. */
+  const validate = (): string | null => {
+    if (!clientOrg.trim() && !clientName.trim()) return "Укажите клиента: организацию или ФИО";
+    if (!items.some(i => i.included)) return "Добавьте хотя бы одну включённую услугу";
+    if (validUntil && !isValidIsoDate(validUntil)) return "Некорректная дата «Действует до» (формат ГГГГ-ММ-ДД, год 2000–9999)";
+    return null;
+  };
+
   const save = async (): Promise<string | null> => {
+    const problem = validate();
+    if (problem) { toast.error(problem); return null; }
     setSaving(true);
     try {
-      let id = proposalId;
+      let id = savedId;
       const payload = {
         client_name: clientName || null,
         client_org: clientOrg || null,
@@ -300,13 +447,16 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           .select().single();
         if (error) throw error;
         id = created.id;
+        setSavedId(created.id);
         setNumber(created.number);
+        setCreatedAt(created.created_at);
       } else {
         const { error } = await supabase.from("proposals").update(payload).eq("id", id);
         if (error) throw error;
       }
       // replace items
-      await supabase.from("proposal_items").delete().eq("proposal_id", id);
+      const { error: delErr } = await supabase.from("proposal_items").delete().eq("proposal_id", id);
+      if (delErr) throw delErr;
       if (items.length > 0) {
         const { error: itErr } = await supabase.from("proposal_items").insert(
           items.map((it, i) => ({
@@ -330,8 +480,16 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
   const downloadPdf = async () => {
     setWorking("pdf");
     try {
-      const blob = await generatePdfBlob(html);
-      const fname = safePdfFilename(`KP-${number || "draft"}-${clientOrg || clientName || "client"}.pdf`);
+      const id = await save();
+      if (!id) return;
+      const { data: fresh } = await supabase.from("proposals").select("number, created_at").eq("id", id).maybeSingle();
+      const docNumber = fresh?.number || number;
+      const blob = await generatePdfBlob(renderProposalHtml({
+        ...renderData,
+        number: docNumber,
+        date: formatDateRu(fresh?.created_at || createdAt),
+      }));
+      const fname = safePdfFilename(`KP-${docNumber || "draft"}-${clientOrg || clientName || "client"}.pdf`);
       downloadBlob(blob, fname);
       toast.success("PDF готов");
     } catch (e: any) {
@@ -345,20 +503,26 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     try {
       const id = await save();
       if (!id) return;
-      const blob = await generatePdfBlob(html);
+      const { data: fresh } = await supabase.from("proposals").select("number, created_at").eq("id", id).maybeSingle();
+      const docNumber = fresh?.number || number;
+      const blob = await generatePdfBlob(renderProposalHtml({
+        ...renderData,
+        number: docNumber,
+        date: formatDateRu(fresh?.created_at || createdAt),
+      }));
       const base64 = await blobToBase64(blob);
-      const fname = safePdfFilename(`KP-${number || id.slice(0,8)}.pdf`);
-      const subj = `Коммерческое предложение №${number || ""} — 24ZXC`;
+      const fname = safePdfFilename(`KP-${docNumber || id.slice(0, 8)}.pdf`);
+      const subj = `Коммерческое предложение №${docNumber || ""} — 24ZXC`;
       const emailHtml = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#15171e">
           <div style="border-left:3px solid #d4be37;padding:8px 16px;margin-bottom:20px">
             <div style="font-size:11px;letter-spacing:2px;color:#d4be37;text-transform:uppercase">24ZXC</div>
-            <div style="font-size:18px;font-weight:600;margin-top:4px">Коммерческое предложение №${number || ""}</div>
+            <div style="font-size:18px;font-weight:600;margin-top:4px">Коммерческое предложение №${docNumber || ""}</div>
           </div>
           <p>Здравствуйте${clientName ? ", " + clientName : ""}!</p>
           <p>Направляем коммерческое предложение по запрошенным услугам. Документ во вложении.</p>
-          <p>Итоговая сумма: <b>${new Intl.NumberFormat("ru-RU").format(Math.round(totals.total))} ₽</b></p>
-          ${validUntil ? `<p style="color:#8a8a93;font-size:13px">Предложение действительно до ${new Date(validUntil).toLocaleDateString("ru-RU")}.</p>` : ""}
+          <p>Итоговая сумма: <b>${formatMoneyRub(totals.total)}</b></p>
+          ${validUntil ? `<p style="color:#8a8a93;font-size:13px">Предложение действительно до ${formatDateRu(validUntil)}.</p>` : ""}
           <p>С уважением,<br>команда 24ZXC<br><a href="https://24zxc.ru" style="color:#d4be37">24zxc.ru</a></p>
         </div>`;
       const { data, error } = await supabase.functions.invoke("send-document-email", {
@@ -387,7 +551,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           </Button>
           <div>
             <h2 className="text-xl font-semibold">
-              {proposalId ? `Редактирование КП ${number ? "№" + number : ""}` : "Новое КП"}
+              {savedId ? `Редактирование КП ${number ? "№" + number : ""}` : "Новое КП"}
             </h2>
             <p className="text-xs text-muted-foreground">Изменения в превью отображаются в реальном времени</p>
           </div>
@@ -408,11 +572,47 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid xl:grid-cols-2 gap-4">
         {/* LEFT — controls */}
         <div className="space-y-4">
-          <Card className="p-4 space-y-3">
-            <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Клиент</h3>
+          <Card className="p-4 space-y-3 bg-card">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Клиент</h3>
+              <Popover open={clientPickerOpen} onOpenChange={setClientPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs" aria-label="Выбрать клиента из CRM">
+                    <Users className="h-3.5 w-3.5" /> Выбрать из CRM
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder="Поиск клиента…" />
+                    <CommandList>
+                      <CommandEmpty>Клиенты не найдены</CommandEmpty>
+                      <CommandGroup>
+                        {clients.map(c => (
+                          <CommandItem
+                            key={c.id}
+                            value={`${c.name} ${c.contact_person || ""} ${c.email || ""}`}
+                            onSelect={() => pickClient(c)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", clientOrg === c.name ? "opacity-100" : "opacity-0")} />
+                            <div className="min-w-0">
+                              <div className="truncate">{c.name}</div>
+                              {(c.contact_person || c.email) && (
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {[c.contact_person, c.email].filter(Boolean).join(" · ")}
+                                </div>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1"><Label className="text-xs">ФИО</Label>
                 <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Иван Иванов" /></div>
@@ -425,7 +625,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             </div>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 space-y-3 bg-card">
             <div className="flex items-center justify-between">
               <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Услуги</h3>
               <Button size="sm" variant="ghost" onClick={addCustom} className="gap-1 text-xs">
@@ -487,7 +687,7 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             </div>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="p-4 space-y-3 bg-card">
             <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Параметры</h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
@@ -498,6 +698,9 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
               <div className="space-y-1">
                 <Label className="text-xs">Действует до</Label>
                 <Input type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+                {validUntil && !isValidIsoDate(validUntil) && (
+                  <p className="text-[11px] text-destructive">Некорректная дата — нужен формат ГГГГ-ММ-ДД, год 2000–9999</p>
+                )}
               </div>
             </div>
             <div className="space-y-1">
@@ -511,14 +714,14 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
             <div className="pt-2 border-t flex justify-between text-sm">
               <span className="text-muted-foreground">Итого к оплате:</span>
               <span className="font-bold text-lg text-primary tabular-nums">
-                {new Intl.NumberFormat("ru-RU").format(Math.round(totals.total))} ₽
+                {formatMoneyRub(totals.total)}
               </span>
             </div>
           </Card>
         </div>
 
         {/* RIGHT — preview */}
-        <div className="lg:sticky lg:top-4 lg:self-start">
+        <div className="xl:sticky xl:top-4 xl:self-start">
           <Card className="overflow-hidden bg-white">
             <div className="bg-muted/50 px-3 py-2 text-xs text-muted-foreground border-b flex items-center justify-between">
               <span>Предпросмотр (так выглядит PDF)</span>
