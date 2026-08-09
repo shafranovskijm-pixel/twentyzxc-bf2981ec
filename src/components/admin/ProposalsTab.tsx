@@ -291,6 +291,10 @@ export default function ProposalsTab() {
 
 function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; onClose: () => void }) {
   const [catalog, setCatalog] = useState<Catalog[]>([]);
+  const [clients, setClients] = useState<CrmClient[]>([]);
+  const [clientPickerOpen, setClientPickerOpen] = useState(false);
+  /** Id of the proposal currently being edited — set after the first insert to avoid duplicates. */
+  const [savedId, setSavedId] = useState<string | null>(proposalId);
   const [items, setItems] = useState<Item[]>([]);
   const [clientName, setClientName] = useState("");
   const [clientOrg, setClientOrg] = useState("");
@@ -311,6 +315,17 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     setCatalog((data as Catalog[]) || []);
     return (data as Catalog[]) || [];
   };
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, name, contact_person, director_name, email, phone")
+        .order("name");
+      if (error) { toast.error("Не удалось загрузить клиентов: " + error.message); return; }
+      setClients((data as CrmClient[]) || []);
+    })();
+  }, []);
 
   // initial load
   useEffect(() => {
@@ -347,6 +362,15 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
       }
     })();
   }, [proposalId]);
+
+  const pickClient = (c: CrmClient) => {
+    setClientOrg(c.name || "");
+    setClientName(c.contact_person || c.director_name || "");
+    setClientEmail(c.email || "");
+    setClientPhone(c.phone || "");
+    setClientPickerOpen(false);
+    toast.success(`Клиент «${c.name}» подставлен`);
+  };
 
   const totals = useMemo(
     () => calcProposalTotals(items.filter(i => i.included), discountPercent),
@@ -389,10 +413,20 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
   };
   const removeItem = (idx: number) => setItems(items.filter((_, i) => i !== idx));
 
+  /** Returns an error message when the form is not ready to be saved. */
+  const validate = (): string | null => {
+    if (!clientOrg.trim() && !clientName.trim()) return "Укажите клиента: организацию или ФИО";
+    if (!items.some(i => i.included)) return "Добавьте хотя бы одну включённую услугу";
+    if (validUntil && !isValidIsoDate(validUntil)) return "Некорректная дата «Действует до» (формат ГГГГ-ММ-ДД, год 2000–9999)";
+    return null;
+  };
+
   const save = async (): Promise<string | null> => {
+    const problem = validate();
+    if (problem) { toast.error(problem); return null; }
     setSaving(true);
     try {
-      let id = proposalId;
+      let id = savedId;
       const payload = {
         client_name: clientName || null,
         client_org: clientOrg || null,
@@ -413,13 +447,16 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
           .select().single();
         if (error) throw error;
         id = created.id;
+        setSavedId(created.id);
         setNumber(created.number);
+        setCreatedAt(created.created_at);
       } else {
         const { error } = await supabase.from("proposals").update(payload).eq("id", id);
         if (error) throw error;
       }
       // replace items
-      await supabase.from("proposal_items").delete().eq("proposal_id", id);
+      const { error: delErr } = await supabase.from("proposal_items").delete().eq("proposal_id", id);
+      if (delErr) throw delErr;
       if (items.length > 0) {
         const { error: itErr } = await supabase.from("proposal_items").insert(
           items.map((it, i) => ({
@@ -443,8 +480,16 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
   const downloadPdf = async () => {
     setWorking("pdf");
     try {
-      const blob = await generatePdfBlob(html);
-      const fname = safePdfFilename(`KP-${number || "draft"}-${clientOrg || clientName || "client"}.pdf`);
+      const id = await save();
+      if (!id) return;
+      const { data: fresh } = await supabase.from("proposals").select("number, created_at").eq("id", id).maybeSingle();
+      const docNumber = fresh?.number || number;
+      const blob = await generatePdfBlob(renderProposalHtml({
+        ...renderData,
+        number: docNumber,
+        date: formatDateRu(fresh?.created_at || createdAt),
+      }));
+      const fname = safePdfFilename(`KP-${docNumber || "draft"}-${clientOrg || clientName || "client"}.pdf`);
       downloadBlob(blob, fname);
       toast.success("PDF готов");
     } catch (e: any) {
@@ -458,20 +503,26 @@ function ProposalEditor({ proposalId, onClose }: { proposalId: string | null; on
     try {
       const id = await save();
       if (!id) return;
-      const blob = await generatePdfBlob(html);
+      const { data: fresh } = await supabase.from("proposals").select("number, created_at").eq("id", id).maybeSingle();
+      const docNumber = fresh?.number || number;
+      const blob = await generatePdfBlob(renderProposalHtml({
+        ...renderData,
+        number: docNumber,
+        date: formatDateRu(fresh?.created_at || createdAt),
+      }));
       const base64 = await blobToBase64(blob);
-      const fname = safePdfFilename(`KP-${number || id.slice(0,8)}.pdf`);
-      const subj = `Коммерческое предложение №${number || ""} — 24ZXC`;
+      const fname = safePdfFilename(`KP-${docNumber || id.slice(0, 8)}.pdf`);
+      const subj = `Коммерческое предложение №${docNumber || ""} — 24ZXC`;
       const emailHtml = `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#15171e">
           <div style="border-left:3px solid #d4be37;padding:8px 16px;margin-bottom:20px">
             <div style="font-size:11px;letter-spacing:2px;color:#d4be37;text-transform:uppercase">24ZXC</div>
-            <div style="font-size:18px;font-weight:600;margin-top:4px">Коммерческое предложение №${number || ""}</div>
+            <div style="font-size:18px;font-weight:600;margin-top:4px">Коммерческое предложение №${docNumber || ""}</div>
           </div>
           <p>Здравствуйте${clientName ? ", " + clientName : ""}!</p>
           <p>Направляем коммерческое предложение по запрошенным услугам. Документ во вложении.</p>
-          <p>Итоговая сумма: <b>${new Intl.NumberFormat("ru-RU").format(Math.round(totals.total))} ₽</b></p>
-          ${validUntil ? `<p style="color:#8a8a93;font-size:13px">Предложение действительно до ${new Date(validUntil).toLocaleDateString("ru-RU")}.</p>` : ""}
+          <p>Итоговая сумма: <b>${formatMoneyRub(totals.total)}</b></p>
+          ${validUntil ? `<p style="color:#8a8a93;font-size:13px">Предложение действительно до ${formatDateRu(validUntil)}.</p>` : ""}
           <p>С уважением,<br>команда 24ZXC<br><a href="https://24zxc.ru" style="color:#d4be37">24zxc.ru</a></p>
         </div>`;
       const { data, error } = await supabase.functions.invoke("send-document-email", {
