@@ -906,14 +906,22 @@ const Admin = () => {
                             {sidebarMenuItems.map((item) => {
                               const Icon = item.icon;
                               const isHidden = hiddenSections.includes(item.id);
+                              const isPinned = PINNED_MENU_IDS.includes(item.id);
                               return (
                                 <div key={item.id} className="flex items-center justify-between gap-3 py-1.5 border-b border-border/50 last:border-0">
                                   <div className="flex items-center gap-3 min-w-0">
                                     <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                                     <span className="text-sm truncate">{item.label}</span>
+                                    {isPinned && (
+                                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 text-primary shrink-0">
+                                        Основной
+                                      </Badge>
+                                    )}
                                   </div>
                                   <Switch
-                                    checked={!isHidden}
+                                    checked={isPinned ? true : !isHidden}
+                                    disabled={isPinned}
+                                    aria-label={`Показывать раздел ${item.label}`}
                                     onCheckedChange={(checked) => toggleSectionHidden(item.id, !checked)}
                                   />
                                 </div>
