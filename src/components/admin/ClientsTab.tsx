@@ -806,7 +806,17 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                       <TableRow
                         key={c.id}
                         onClick={() => startEdit(c)}
-                        className="cursor-pointer"
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Открыть рабочее окно клиента ${c.name}`}
+                        onKeyDown={(e) => {
+                          if (e.target !== e.currentTarget) return;
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            startEdit(c);
+                          }
+                        }}
+                        className="cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
                       >
                         <TableCell className="font-medium">{c.name}</TableCell>
                         <TableCell className="font-mono text-xs">{c.inn || "—"}</TableCell>
