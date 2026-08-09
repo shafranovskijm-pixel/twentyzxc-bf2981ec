@@ -513,10 +513,10 @@ const Admin = () => {
           } : {}),
         } as React.CSSProperties : undefined}
       >
-        {activeTheme && <ThemeAnimation animation={activeTheme.animation} />}
+        {activeTheme && showThemeDecor && <ThemeAnimation animation={activeTheme.animation} />}
         
         {/* Atmospheric banner bleed — decorative fragments from banner image */}
-        {activeTheme && (
+        {activeTheme && showThemeDecor && (
           <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
             {/* Bottom-right corner — main bleed (blurred layer) */}
             <img
