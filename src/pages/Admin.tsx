@@ -757,10 +757,11 @@ const Admin = () => {
           </div>
           )}
 
-          <main className="relative z-10 flex-1 w-full max-w-[1600px] bg-background p-4 sm:p-6 pb-24">
+          <main className="relative z-10 flex-1 w-full bg-background p-4 sm:p-6 pb-24">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${activeSection}-${sectionNonce}`}
+                  className="w-full max-w-[1600px] mx-auto"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
