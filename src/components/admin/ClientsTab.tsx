@@ -575,9 +575,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                   className="h-9 font-medium"
                 />
               </div>
-              <Button variant="ghost" size="icon" onClick={requestClose} aria-label="Закрыть окно клиента" title="Закрыть">
-                <X className="w-4 h-4" />
-              </Button>
+              <span className="w-6 shrink-0" aria-hidden />
             </div>
             {editingId && (
               <ClientQuickFacts
