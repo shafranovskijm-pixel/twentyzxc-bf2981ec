@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare, Eye } from "lucide-react";
-import { KeyRound, Building2, User, Copy } from "lucide-react";
+import { KeyRound, Building2, User, Copy, MoreHorizontal, ChevronDown, FileSignature, CalendarPlus } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { matchClientProposals } from "@/lib/client-workspace-utils";
+import { formatMoneyRub, formatDateRu } from "@/lib/proposal-utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -74,6 +78,9 @@ async function fetchDadata(params: { inn?: string; query?: string }) {
 const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabProps = {}) => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [quickDoc, setQuickDoc] = useState<{ open: boolean; docType: "contract" | "invoice" | "act"; clientName: string }>({ open: false, docType: "contract", clientName: "" });
   const [name, setName] = useState("");
@@ -245,7 +252,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setFrdoPasswordPo(""); setPaymentDate("");
     setServiceDeadline("");
     setInn(""); setKpp(""); setOgrn(""); setLegalAddress(""); setDirectorName(""); setDirectorPost("");
-    setEditingId(null); setShowForm(false);
+    setEditingId(null);
   };
 
   const startEdit = (c: Client) => {
@@ -260,6 +267,28 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setDirectorPost(c.director_post || "");
     setShowForm(true);
   };
+
+  /** Serialized form state — used to detect unsaved changes before closing the sheet. */
+  const formValues = useMemo(() => JSON.stringify({
+    name, contactPerson, phone, email, telegram, notes, serviceType,
+    frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline,
+    inn, kpp, ogrn, legalAddress, directorName, directorPost,
+  }), [name, contactPerson, phone, email, telegram, notes, serviceType, frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline, inn, kpp, ogrn, legalAddress, directorName, directorPost]);
+  const isDirty = showForm && formValues !== snapshot;
+
+  // Take a snapshot whenever the sheet opens with a different record.
+  useEffect(() => {
+    if (showForm) setSnapshot(formValues);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showForm, editingId]);
+
+  const openNewClient = () => { resetForm(); setShowForm(true); };
+  const requestClose = () => {
+    if (isDirty) { setConfirmClose(true); return; }
+    setShowForm(false);
+    resetForm();
+  };
+  const forceClose = () => { setConfirmClose(false); setShowForm(false); resetForm(); };
 
   useEffect(() => {
     if (!initialClientName || isLoading) return;
@@ -369,8 +398,9 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setSyncingAll(false);
   };
 
-  const saveClient = async () => {
-    if (!name.trim()) return toast.error("Укажите название организации");
+  /** Saves the client and keeps the workspace open. Returns the client id or null. */
+  const saveClient = async (): Promise<string | null> => {
+    if (!name.trim()) { toast.error("Укажите название организации"); return null; }
     setSaving(true);
     try {
       const payload = {
@@ -393,21 +423,27 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         director_name: directorName.trim() || null,
         director_post: directorPost.trim() || null,
       };
+      let id = editingId;
       if (editingId) {
         const { error } = await supabase.from("clients").update(payload as any).eq("id", editingId);
         if (error) throw error;
         toast.success("Клиент обновлён");
       } else {
-        const { error } = await supabase.from("clients").insert(payload as any);
+        const { data: created, error } = await supabase.from("clients").insert(payload as any).select("id").single();
         if (error) throw error;
+        id = created?.id || null;
+        setEditingId(id);
         toast.success("Клиент добавлен");
       }
       queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
-      resetForm();
+      setSnapshot(formValues);
+      return id;
     } catch {
       toast.error("Ошибка сохранения");
+      return null;
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   const updateServiceType = async (clientId: string, value: string) => {
@@ -439,20 +475,41 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     return <Badge variant="outline" className={opt.color}>{opt.label}</Badge>;
   };
 
+  /** Save first, then run a follow-up action with the persisted client id. */
+  const saveAndThen = async (fn: (id: string) => void) => {
+    const id = await saveClient();
+    if (id) fn(id);
+  };
+  const createDocument = (docType: "contract" | "invoice" | "act") =>
+    saveAndThen(() => setQuickDoc({ open: true, docType, clientName: name.trim() }));
+  const createProposal = () =>
+    saveAndThen((id) => onNavigate?.("proposals", { clientId: id, clientName: name.trim(), autoOpenNew: true }));
+  const openProposal = (proposalId: string) => onNavigate?.("proposals", { proposalId });
+  const createTask = () =>
+    saveAndThen(() => onNavigate?.("planner", { clientName: name.trim() }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[150px]" />
-        <Button variant="outline" onClick={handleImportFromContracts} disabled={importing} size="sm" className="sm:size-default">
-          {importing ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <Download className="w-4 h-4 sm:mr-2" />}
-          <span className="hidden sm:inline">Импорт из договоров</span>
-        </Button>
-        <Button variant="outline" onClick={syncAllClients} disabled={syncingAll || clients.length === 0} size="sm" className="sm:size-default">
-          {syncingAll ? <Loader2 className="w-4 h-4 animate-spin sm:mr-2" /> : <RefreshCw className="w-4 h-4 sm:mr-2" />}
-          <span className="hidden sm:inline">Синхр. все реквизиты</span>
-        </Button>
-        <Button onClick={() => { resetForm(); setShowForm(true); }} size="sm" className="sm:size-default">
-          <Plus className="w-4 h-4 sm:mr-2" /><span className="hidden sm:inline">Добавить</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-1.5" aria-label="Действия со списком клиентов" title="Действия со списком">
+              {(importing || syncingAll) ? <Loader2 className="w-4 h-4 animate-spin" /> : <MoreHorizontal className="w-4 h-4" />}
+              <span className="hidden sm:inline">Действия со списком</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onSelect={() => handleImportFromContracts()} disabled={importing}>
+              <Download className="w-4 h-4 mr-2" /> Импорт из договоров
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => syncAllClients()} disabled={syncingAll || clients.length === 0}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Синхронизировать все реквизиты
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Button onClick={openNewClient} size="sm" className="gap-1.5">
+          <Plus className="w-4 h-4" /> Новый клиент
         </Button>
 
         <AlertDialog open={!!importConfirm} onOpenChange={(open) => !open && setImportConfirm(null)}>
@@ -496,44 +553,30 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         </AlertDialog>
       </div>
 
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <CardTitle className="text-lg">{editingId ? "Редактировать клиента" : "Новый клиент"}</CardTitle>
-              <div className="flex items-center gap-2">
-                {editingId && onNavigate && (
-                  <>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "contract", clientName: name }); }} title="Договор с предпросмотром">
-                      <FileText className="w-4 h-4 mr-1" /> Договор
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "invoice", clientName: name }); }} title="Счёт с предпросмотром">
-                      <ClipboardList className="w-4 h-4 mr-1" /> Счёт
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={async () => { await saveClient(); setQuickDoc({ open: true, docType: "act", clientName: name }); }} title="Акт с предпросмотром">
-                      <CheckSquare className="w-4 h-4 mr-1" /> Акт
-                    </Button>
-                    {telegram && (
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={`https://t.me/${telegram.replace(/^@/, '')}`} target="_blank" rel="noopener noreferrer">
-                          <Send className="w-4 h-4 mr-1" /> Telegram
-                        </a>
-                      </Button>
-                    )}
-                  </>
-                )}
-                <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
+      <Sheet open={showForm} onOpenChange={(o) => { if (!o) requestClose(); }}>
+        <SheetContent
+          side="right"
+          onEscapeKeyDown={(e) => { e.preventDefault(); requestClose(); }}
+          onInteractOutside={(e) => e.preventDefault()}
+          className="w-full sm:max-w-[760px] p-0 flex flex-col gap-0 bg-background"
+          aria-label="Рабочее окно клиента"
+        >
+          {/* Header */}
+          <div className="border-b px-4 sm:px-6 py-3 space-y-3 shrink-0">
+            <SheetTitle className="sr-only">{editingId ? `Клиент: ${name}` : "Новый клиент"}</SheetTitle>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <p className="text-xs text-muted-foreground">{editingId ? "Рабочее окно клиента" : "Новый клиент"}</p>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Название организации *"
+                  aria-label="Название организации"
+                  className="h-9 font-medium"
+                />
               </div>
+              <span className="w-6 shrink-0" aria-hidden />
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Always-visible: organization name */}
-            <div className="space-y-2">
-              <Label>Название организации *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="ООО Ромашка" />
-            </div>
-
-            {/* Quick facts strip (read-only) */}
             {editingId && (
               <ClientQuickFacts
                 phone={phone}
@@ -547,8 +590,74 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                 clientName={name}
               />
             )}
+            <div className="flex flex-wrap items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="gap-1.5" aria-label="Создать документ или задачу" title="Создать">
+                    <Plus className="w-4 h-4" /> Создать <ChevronDown className="w-3.5 h-3.5 opacity-60" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuItem onSelect={() => createProposal()}>
+                    <FileSignature className="w-4 h-4 mr-2" /> Коммерческое предложение
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => createDocument("contract")}>
+                    <FileText className="w-4 h-4 mr-2" /> Договор
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => createDocument("invoice")}>
+                    <ClipboardList className="w-4 h-4 mr-2" /> Счёт
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => createDocument("act")}>
+                    <CheckSquare className="w-4 h-4 mr-2" /> Акт
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => createTask()}>
+                    <CalendarPlus className="w-4 h-4 mr-2" /> Задачу
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {/* Sections: contracts + activity (open by default), then docs/tasks/edit groups */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="ghost" className="gap-1.5" aria-label="Дополнительные действия по клиенту" title="Действия">
+                    <MoreHorizontal className="w-4 h-4" /> Действия
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Реквизиты</DropdownMenuLabel>
+                  <DropdownMenuItem onSelect={() => fillFromContract()} disabled={syncing}>
+                    <FileText className="w-4 h-4 mr-2" /> Заполнить из договора
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => syncRequisites()} disabled={syncing}>
+                    <RefreshCw className="w-4 h-4 mr-2" /> Синхронизировать реквизиты
+                  </DropdownMenuItem>
+                  {telegram && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <a href={`https://t.me/${telegram.replace(/^@/, "")}`} target="_blank" rel="noopener noreferrer">
+                          <Send className="w-4 h-4 mr-2" /> Открыть Telegram
+                        </a>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {editingId && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={() => setDeleteConfirmId(editingId)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> Удалить клиента
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
             <ClientCardSections
               editingId={editingId}
               clientName={name}
@@ -575,15 +684,66 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               fillFromContract={fillFromContract}
               syncRequisites={syncRequisites}
               onOpenQuickDocument={(docType) => setQuickDoc({ open: true, docType, clientName: name })}
+              onOpenProposal={openProposal}
+              onCreateProposal={createProposal}
             />
+          </div>
 
-            <Button onClick={saveClient} disabled={saving} className="w-full">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingId ? "Сохранить изменения" : "Добавить"}
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {/* Sticky footer */}
+          <div className="border-t px-4 sm:px-6 py-3 flex items-center justify-between gap-3 bg-background shrink-0">
+            <span className="text-xs text-muted-foreground">
+              {isDirty ? "Есть несохранённые изменения" : "Все изменения сохранены"}
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={requestClose}>Закрыть</Button>
+              <Button onClick={() => saveClient()} disabled={saving} size="sm" className="gap-1.5">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Сохранить
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={confirmClose} onOpenChange={(o) => !o && setConfirmClose(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Закрыть без сохранения?</AlertDialogTitle>
+            <AlertDialogDescription>
+              В карточке клиента есть несохранённые изменения. Они будут потеряны.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Продолжить редактирование</AlertDialogCancel>
+            <AlertDialogAction onClick={forceClose}>Закрыть без сохранения</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={(o) => !o && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить клиента?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Карточка клиента будет удалена без возможности восстановления.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                const id = deleteConfirmId!;
+                setDeleteConfirmId(null);
+                await deleteClient(id);
+                if (editingId === id) forceClose();
+              }}
+            >
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardContent className="p-0">
@@ -606,20 +766,17 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               {/* Mobile cards */}
               <div className="sm:hidden divide-y">
                 {filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((c) => (
-                  <div key={c.id} className="p-3 space-y-2">
+                  <div
+                    key={c.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => startEdit(c)}
+                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); startEdit(c); } }}
+                    className="p-3 space-y-2 cursor-pointer active:bg-muted/60 transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-2">
-                      <button
-                        onClick={() => startEdit(c)}
-                        className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm"
-                      >
-                        {c.name}
-                      </button>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {getServiceBadge(c.service_type)}
-                        <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => deleteClient(c.id)}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+                      <span className="font-medium text-sm">{c.name}</span>
+                      <span className="shrink-0">{getServiceBadge(c.service_type)}</span>
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       {c.inn && <span className="font-mono">ИНН: {c.inn}</span>}
@@ -642,22 +799,18 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                       <TableHead>Телефон</TableHead>
                       <TableHead>Оплата</TableHead>
                       <TableHead>Срок услуг</TableHead>
-                      <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((c) => (
-                      <TableRow key={c.id}>
-                        <TableCell>
-                          <button
-                            onClick={() => startEdit(c)}
-                            className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors"
-                          >
-                            {c.name}
-                          </button>
-                        </TableCell>
+                      <TableRow
+                        key={c.id}
+                        onClick={() => startEdit(c)}
+                        className="cursor-pointer"
+                      >
+                        <TableCell className="font-medium">{c.name}</TableCell>
                         <TableCell className="font-mono text-xs">{c.inn || "—"}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <Select value={c.service_type || ""} onValueChange={(v) => updateServiceType(c.id, v)}>
                             <SelectTrigger className="h-7 w-[110px] border-none bg-transparent p-0 shadow-none focus:ring-0">
                               <SelectValue>{getServiceBadge(c.service_type)}</SelectValue>
@@ -683,11 +836,6 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                             const color = diff < 0 ? "text-destructive" : diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
                             return <span className={color}>{dl.toLocaleDateString("ru-RU")}</span>;
                           })() : "—"}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" onClick={() => deleteClient(c.id)} className="text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -722,7 +870,13 @@ const DOC_TYPE_LABELS: Record<string, string> = {
 };
 
 interface ClientsTabProps {
-  onNavigate?: (section: string, params?: { clientName?: string; docType?: string }) => void;
+  onNavigate?: (section: string, params?: {
+    clientName?: string;
+    docType?: string;
+    clientId?: string;
+    proposalId?: string;
+    autoOpenNew?: boolean;
+  }) => void;
   initialClientName?: string;
   onConsumed?: () => void;
 }
@@ -1141,6 +1295,22 @@ const useClientTasks = (clientId: string) =>
     enabled: !!clientId,
   });
 
+/** Proposals matched to a client by organization or contact name (read-only). */
+const useClientProposals = (clientName: string, contactPerson: string) =>
+  useQuery({
+    queryKey: ["client-proposals", clientName, contactPerson],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("proposals")
+        .select("id, number, client_name, client_org, status, total_amount, created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return matchClientProposals(data || [], { name: clientName, contactPerson });
+    },
+    enabled: !!clientName,
+  });
+
 const useClientInteractions = (clientId: string) =>
   useQuery({
     queryKey: ["client-interactions", clientId],
@@ -1271,6 +1441,8 @@ interface ClientCardSectionsProps {
   fillFromContract: () => void;
   syncRequisites: (byInn?: boolean) => void;
   onOpenQuickDocument: (docType: "contract" | "invoice" | "act") => void;
+  onOpenProposal?: (proposalId: string) => void;
+  onCreateProposal?: () => void;
 }
 
 const ClientCardSections = (p: ClientCardSectionsProps) => {
@@ -1290,6 +1462,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
   const { data: documents = [] } = useClientDocuments(p.clientName);
   const { data: tasks = [] } = useClientTasks(p.editingId || "");
   const { data: interactions = [] } = useClientInteractions(p.editingId || "");
+  const { data: proposals = [] } = useClientProposals(p.clientName, p.contactPerson);
 
   return (
     <Accordion type="multiple" value={open} onValueChange={setOpen} className="w-full">
@@ -1313,6 +1486,42 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
           </AccordionTrigger>
           <AccordionContent>
             <InteractionLog clientId={p.editingId} />
+          </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {/* Proposals */}
+      {p.editingId && (
+        <AccordionItem value="proposals">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><FileSignature className="w-4 h-4" /> Коммерческие предложения <span className="text-muted-foreground">({proposals.length})</span></span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2 pt-1">
+              {proposals.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Пока нет КП по этому клиенту</p>
+              ) : (
+                proposals.map((pr: any) => (
+                  <button
+                    key={pr.id}
+                    type="button"
+                    onClick={() => p.onOpenProposal?.(pr.id)}
+                    className="w-full flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm hover:bg-muted/60 transition-colors"
+                  >
+                    <span className="min-w-0">
+                      <span className="font-medium">КП {pr.number || "—"}</span>
+                      <span className="block text-xs text-muted-foreground truncate">
+                        {pr.client_org || pr.client_name || "—"} · {formatDateRu(pr.created_at)}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-xs font-medium">{formatMoneyRub(pr.total_amount)}</span>
+                  </button>
+                ))
+              )}
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => p.onCreateProposal?.()}>
+                <Plus className="w-4 h-4" /> Новое КП
+              </Button>
+            </div>
           </AccordionContent>
         </AccordionItem>
       )}

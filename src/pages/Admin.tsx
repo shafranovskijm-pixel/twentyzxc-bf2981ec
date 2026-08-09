@@ -83,6 +83,11 @@ const Admin = () => {
   const [docInitialAutoSend, setDocInitialAutoSend] = useState(false);
   const [docInitialEditDocId, setDocInitialEditDocId] = useState("");
   const [clientsInitialName, setClientsInitialName] = useState("");
+  const [proposalsInitialClientId, setProposalsInitialClientId] = useState("");
+  const [proposalsInitialClientName, setProposalsInitialClientName] = useState("");
+  const [proposalsInitialProposalId, setProposalsInitialProposalId] = useState("");
+  const [proposalsAutoOpenNew, setProposalsAutoOpenNew] = useState(false);
+  const [plannerInitialClientName, setPlannerInitialClientName] = useState("");
   const [contractsInitialClientName, setContractsInitialClientName] = useState("");
   const [contractsInitialSearch, setContractsInitialSearch] = useState("");
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
@@ -1075,6 +1080,13 @@ const Admin = () => {
                   if (section === "contracts") {
                     setContractsInitialClientName(params?.clientName || "");
                     setContractsAutoOpenNew(true);
+                  } else if (section === "proposals") {
+                    setProposalsInitialClientId(params?.clientId || "");
+                    setProposalsInitialClientName(params?.clientName || "");
+                    setProposalsInitialProposalId(params?.proposalId || "");
+                    setProposalsAutoOpenNew(!!params?.autoOpenNew);
+                  } else if (section === "planner") {
+                    setPlannerInitialClientName(params?.clientName || "");
                   } else {
                     setDocInitialClientName(params?.clientName || "");
                     setDocInitialDocType(params?.docType || "");
@@ -1083,7 +1095,19 @@ const Admin = () => {
                 }}
               />}
               {activeSection === "sales" && <SalesTab />}
-              {activeSection === "proposals" && <ProposalsTab />}
+              {activeSection === "proposals" && <ProposalsTab
+                key={`proposals-${proposalsInitialProposalId || proposalsInitialClientId || (proposalsAutoOpenNew ? "new" : "list")}`}
+                initialClientId={proposalsInitialClientId}
+                initialClientName={proposalsInitialClientName}
+                initialProposalId={proposalsInitialProposalId}
+                autoOpenNew={proposalsAutoOpenNew}
+                onConsumed={() => {
+                  setProposalsInitialClientId("");
+                  setProposalsInitialClientName("");
+                  setProposalsInitialProposalId("");
+                  setProposalsAutoOpenNew(false);
+                }}
+              />}
               {activeSection === "contracts" && <ContractsTab
                 onOpenClient={(name) => {
                   setClientsInitialName(name);
@@ -1106,7 +1130,10 @@ const Admin = () => {
                 }}
               />}
               {activeSection === "organizations" && <OrganizationsTab />}
-              {activeSection === "planner" && <PlannerTab onCreateDocument={(task: any, docType?: string) => {
+              {activeSection === "planner" && <PlannerTab
+                initialClientName={plannerInitialClientName}
+                onConsumed={() => setPlannerInitialClientName("")}
+                onCreateDocument={(task: any, docType?: string) => {
                 setDocInitialContractId(task.contract_id || "");
                 setDocInitialDocType(docType || "");
                 setActiveSection("documents");
