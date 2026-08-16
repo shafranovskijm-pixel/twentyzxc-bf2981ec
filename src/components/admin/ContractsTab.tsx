@@ -9,9 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,6 +25,11 @@ import { resendContractEmail } from "@/lib/resend-contract";
 import { useSiteSettings } from "@/hooks/use-site-settings";
 import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
 import { generatePdfBase64 } from "@/lib/document-pdf";
+import {
+  getPaidUntilDaysLeft,
+  matchesContractValidity,
+  type ContractValidityFilter,
+} from "@/lib/contracts-validity";
 
 interface Contract {
   id: string;
@@ -176,6 +182,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
+  const [validityFilter, setValidityFilter] = useState<ContractValidityFilter>("all");
   const [inn, setInn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -821,6 +828,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     const isArchived = (c as any).is_archived ?? false;
     if (tab === "active" && isArchived) return false;
     if (tab === "archive" && !isArchived) return false;
+    if (!matchesContractValidity(c, validityFilter)) return false;
     if (!search.trim()) return true;
     const s = search.toLowerCase();
     const email = emailByClient.get(c.client_name.toLowerCase().trim());
@@ -846,17 +854,13 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   };
 
   const isPaidUntilSoon = (paidUntil: string | null) => {
-    if (!paidUntil) return false;
-    const date = new Date(paidUntil);
-    const now = new Date();
-    const diffMs = date.getTime() - now.getTime();
-    const diffDays = diffMs / (1000 * 60 * 60 * 24);
-    return diffDays <= 30 && diffDays >= 0;
+    const daysLeft = getPaidUntilDaysLeft(paidUntil);
+    return daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
   };
 
   const isPaidUntilExpired = (paidUntil: string | null) => {
-    if (!paidUntil) return false;
-    return new Date(paidUntil) < new Date();
+    const daysLeft = getPaidUntilDaysLeft(paidUntil);
+    return daysLeft !== null && daysLeft < 0;
   };
 
   const getAnniversaryDays = (contractDate: string | null, contractType: string | null): number | null => {
@@ -884,6 +888,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   // Reset page on search/tab change
   const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
   const handleTab = (v: string) => { setTab(v); setCurrentPage(1); };
+  const handleValidityFilter = (v: ContractValidityFilter) => { setValidityFilter(v); setCurrentPage(1); };
   const handlePageSize = (v: number) => { setPageSize(v); setCurrentPage(1); };
 
   const paginatedItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -895,7 +900,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
           <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            {search ? "Ничего не найдено" : isArchive ? "Архив пуст" : "Нет договоров"}
+            {search || validityFilter !== "all"
+              ? "По выбранным условиям договоров нет"
+              : isArchive
+                ? "Архив пуст"
+                : "Нет договоров"}
           </p>
         ) : (
           <>
@@ -1106,9 +1115,26 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input placeholder="Поиск по названию, номеру, email..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
-        <Button onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
+        <Select value={validityFilter} onValueChange={(value) => handleValidityFilter(value as ContractValidityFilter)}>
+          <SelectTrigger className="w-full sm:w-[220px]" aria-label="Фильтр по сроку действия">
+            <span className="flex min-w-0 items-center gap-2">
+              <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <SelectValue placeholder="Все сроки" />
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все сроки</SelectItem>
+            <SelectItem value="expired">Просрочены</SelectItem>
+            <SelectItem value="within-30">До 30 дней</SelectItem>
+            <SelectItem value="within-90">31–90 дней</SelectItem>
+            <SelectItem value="over-90">Более 90 дней</SelectItem>
+            <SelectItem value="no-term">Без срока</SelectItem>
+            <SelectItem value="one-time">Единоразовые</SelectItem>
+          </SelectContent>
+        </Select>
+        <Button className="sm:shrink-0" onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
           <Plus className="w-4 h-4 mr-2" />Добавить
         </Button>
       </div>
