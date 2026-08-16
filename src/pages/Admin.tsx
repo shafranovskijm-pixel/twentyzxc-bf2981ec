@@ -106,6 +106,7 @@ const Admin = () => {
   const [contractsInitialClientName, setContractsInitialClientName] = useState("");
   const [contractsInitialSearch, setContractsInitialSearch] = useState("");
   const [contractsAutoOpenNew, setContractsAutoOpenNew] = useState(false);
+  const [contractsRenewSourceId, setContractsRenewSourceId] = useState("");
   const queryClient = useQueryClient();
   const [profileSubTab, setProfileSubTab] = useState("appearance");
   /** Theme animation and atmospheric decor only run on the appearance settings screen. */
@@ -1134,6 +1135,7 @@ const Admin = () => {
                   if (section === "contracts") {
                     setContractsInitialClientName(params?.clientName || "");
                     setContractsAutoOpenNew(true);
+                    setContractsRenewSourceId(params?.renewContractId || "");
                   } else if (section === "proposals") {
                     setProposalsInitialClientId(params?.clientId || "");
                     setProposalsInitialClientName(params?.clientName || "");
@@ -1169,7 +1171,12 @@ const Admin = () => {
                 initialClientName={contractsInitialClientName}
                 initialSearch={contractsInitialSearch}
                 autoOpenNew={contractsAutoOpenNew}
-                onConsumed={() => { setContractsInitialClientName(""); setContractsAutoOpenNew(false); }}
+                renewalSourceId={contractsRenewSourceId}
+                onConsumed={() => {
+                  setContractsInitialClientName("");
+                  setContractsAutoOpenNew(false);
+                  setContractsRenewSourceId("");
+                }}
               />}
               {activeSection === "notifications" && <NotificationsTab
                 onOpenContracts={(name) => {
@@ -1179,6 +1186,7 @@ const Admin = () => {
                 onNewContract={(name) => {
                   setContractsInitialClientName(name);
                   setContractsAutoOpenNew(true);
+                  setContractsRenewSourceId("");
                   handleSectionChange("contracts");
                 }}
               />}
