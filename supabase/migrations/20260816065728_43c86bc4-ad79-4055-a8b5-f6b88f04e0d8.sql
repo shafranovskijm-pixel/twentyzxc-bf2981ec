@@ -1,0 +1,1 @@
+ALTER TABLE public.clients ADD COLUMN IF NOT EXISTS no_deadline boolean NOT NULL DEFAULT false;
