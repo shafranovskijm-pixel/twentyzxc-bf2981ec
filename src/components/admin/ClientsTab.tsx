@@ -884,6 +884,12 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         clientName={quickDoc.clientName}
         docType={quickDoc.docType}
       />
+      <ClientsMergeDialog
+        open={showMerge}
+        onOpenChange={setShowMerge}
+        clients={clients as any}
+        onMerged={() => queryClient.invalidateQueries({ queryKey: ["admin-clients"] })}
+      />
     </div>
   );
 };
