@@ -1,11 +1,10 @@
 import { Helmet } from "react-helmet-async";
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import WebDevSection from "@/components/WebDevSection";
-import CasesSection from "@/components/CasesSection";
-import ContactSection from "@/components/ContactSection";
+import LandingHero from "@/components/landing/LandingHero";
+import LandingServices from "@/components/landing/LandingServices";
+import LandingCases from "@/components/landing/LandingCases";
+import LandingContact from "@/components/landing/LandingContact";
 import Footer from "@/components/Footer";
-import { InteractiveParticles, GeometricShapes, TropicalGlows, SectionDivider } from "@/components/decorations";
 
 const DEFAULT_SEO_TITLE =
   "24ZXC — Под ключ. Сайты, реклама, веб-приложения";
@@ -51,21 +50,13 @@ const Index = () => {
           url: "https://24zxc.ru/",
         })}</script>
       </Helmet>
-      <div className="tropical-vibe min-h-screen bg-background relative">
-        {/* Background decorations */}
-        <InteractiveParticles count={50} />
-        <TropicalGlows />
-        <GeometricShapes />
-
+      <div className="landing-light min-h-screen relative">
         <Header />
         <main className="relative z-10">
-          <HeroSection />
-          <SectionDivider variant="palm" />
-          <WebDevSection />
-          <SectionDivider variant="palm" />
-          <CasesSection />
-          <SectionDivider variant="simple" />
-          <ContactSection />
+          <LandingHero />
+          <LandingServices />
+          <LandingCases />
+          <LandingContact />
         </main>
         <Footer />
       </div>
