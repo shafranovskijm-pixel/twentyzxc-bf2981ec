@@ -114,6 +114,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [importing, setImporting] = useState(false);
   const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string>; selectedNames: Set<string> } | null>(null);
   const [showMerge, setShowMerge] = useState(false);
+  const [mergeSourceId, setMergeSourceId] = useState<string | null>(null);
 
   const handleImportFromContracts = async () => {
     setImporting(true);
@@ -460,6 +461,42 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     }
   };
 
+  const openMergeForCurrentClient = async () => {
+    if (!editingId) return;
+    let sourceId = editingId;
+    if (isDirty) {
+      const savedId = await saveClient();
+      if (!savedId) return;
+      sourceId = savedId;
+    }
+    setMergeSourceId(sourceId);
+    setShowMerge(true);
+  };
+
+  const handleClientsMerged = (primaryId: string) => {
+    const reopenMergedClient = !!mergeSourceId;
+    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+    queryClient.invalidateQueries({ queryKey: ["notif-contracts"] });
+    queryClient.invalidateQueries({ queryKey: ["notif-tab-contracts"] });
+    queryClient.invalidateQueries({ queryKey: ["client-history-contracts"] });
+    queryClient.invalidateQueries({ queryKey: ["client-history-docs"] });
+
+    if (!reopenMergedClient) return;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", primaryId)
+        .maybeSingle();
+      if (error || !data) {
+        forceClose();
+        toast.info("Клиенты объединены. Откройте основную карточку из списка.");
+        return;
+      }
+      startEdit(data as Client);
+    })();
+  };
+
   const updateServiceType = async (clientId: string, value: string) => {
     const { error } = await supabase.from("clients").update({ service_type: value }).eq("id", clientId);
     if (error) { toast.error("Ошибка"); return; }
@@ -512,7 +549,10 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
           size="sm"
           className="gap-1.5"
           disabled={clients.length === 0}
-          onClick={() => setShowMerge(true)}
+          onClick={() => {
+            setMergeSourceId(null);
+            setShowMerge(true);
+          }}
         >
           <Copy className="w-4 h-4" />
           <span className="hidden sm:inline">Дубликаты</span>
@@ -646,6 +686,20 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              {editingId && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={saving}
+                  onClick={() => void openMergeForCurrentClient()}
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
+                  Найти дубль
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -905,15 +959,13 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
       />
       <ClientsMergeDialog
         open={showMerge}
-        onOpenChange={setShowMerge}
-        clients={clients as any}
-        onMerged={() => {
-          queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
-          queryClient.invalidateQueries({ queryKey: ["notif-contracts"] });
-          queryClient.invalidateQueries({ queryKey: ["notif-tab-contracts"] });
-          queryClient.invalidateQueries({ queryKey: ["client-history-contracts"] });
-          queryClient.invalidateQueries({ queryKey: ["client-history-docs"] });
+        onOpenChange={(open) => {
+          setShowMerge(open);
+          if (!open) setMergeSourceId(null);
         }}
+        clients={clients as any}
+        sourceClientId={mergeSourceId}
+        onMerged={handleClientsMerged}
       />
     </div>
   );
