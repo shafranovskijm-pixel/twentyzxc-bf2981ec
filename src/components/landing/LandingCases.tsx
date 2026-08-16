@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { LANDING_CASES } from "./landing-data";
 
 const LandingCases = () => (
@@ -12,12 +13,12 @@ const LandingCases = () => (
             Реальные проекты и метрики
           </h2>
         </div>
-        <a
-          href="/portfolio"
+        <Link
+          to="/portfolio"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
         >
           Все проекты <ArrowUpRight className="w-4 h-4" />
-        </a>
+        </Link>
       </div>
 
       <div className="border border-border rounded-md overflow-hidden bg-card">

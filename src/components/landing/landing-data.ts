@@ -1,5 +1,14 @@
 import type { LucideIcon } from "lucide-react";
-import { Code2, Layers, ShoppingBag, AppWindow, GraduationCap, FileCheck, Megaphone, BadgeCheck } from "lucide-react";
+import {
+  AppWindow,
+  BadgeCheck,
+  Code2,
+  FileCheck,
+  GraduationCap,
+  Layers,
+  Megaphone,
+  ShoppingBag,
+} from "lucide-react";
 
 export interface LandingService {
   title: string;
@@ -10,17 +19,65 @@ export interface LandingService {
 }
 
 export const WEB_SERVICES: LandingService[] = [
-  { title: "Лендинги", price: "от 15 000 ₽", description: "Продающие страницы с высокой конверсией", href: "/services/landing", icon: Code2 },
-  { title: "Корпоративные сайты", price: "от 50 000 ₽", description: "Многостраничные решения для бизнеса", href: "/services/corporate", icon: Layers },
-  { title: "Интернет-магазины", price: "от 100 000 ₽", description: "E-commerce платформы любой сложности", href: "/services/ecommerce", icon: ShoppingBag },
-  { title: "Веб-приложения", price: "индивидуально", description: "SPA, PWA и сложные системы", href: "/services/webapp", icon: AppWindow },
+  {
+    title: "Лендинг",
+    price: "от 15 000 ₽",
+    description: "Одна ясная страница для запуска услуги или рекламы.",
+    href: "/services/landing",
+    icon: Code2,
+  },
+  {
+    title: "Корпоративный сайт",
+    price: "от 50 000 ₽",
+    description: "Структура, услуги, кейсы, формы и базовая SEO-подготовка.",
+    href: "/services/corporate",
+    icon: Layers,
+  },
+  {
+    title: "Интернет-магазин",
+    price: "от 100 000 ₽",
+    description: "Каталог, корзина, оплата и управление товарами.",
+    href: "/services/ecommerce",
+    icon: ShoppingBag,
+  },
+  {
+    title: "Яндекс Директ",
+    price: "от 20 000 ₽",
+    description: "Подготовка кампании, аналитика и понятные отчёты.",
+    href: "/#contact",
+    icon: Megaphone,
+  },
+  {
+    title: "Веб-приложение",
+    price: "по смете",
+    description: "CRM, личные кабинеты и автоматизация процессов.",
+    href: "/services/webapp",
+    icon: AppWindow,
+  },
 ];
 
 export const EDU_SERVICES: LandingService[] = [
-  { title: "ФИС ФРДО", price: "сопровождение", description: "Ведение реестра документов об образовании", href: "/frdo", icon: FileCheck },
-  { title: "Лицензирование", price: "под ключ", description: "Образовательная лицензия без отказов", href: "/licensing", icon: BadgeCheck },
-  { title: "НМО Портал", price: "35 000 ₽", description: "Регистрация и размещение программ", href: "/services/nmo", icon: GraduationCap },
-  { title: "Реклама", price: "от 20 000 ₽", description: "Яндекс Директ: настройка и ведение", href: "/#advertising", icon: Megaphone },
+  {
+    title: "ФИС ФРДО",
+    price: "24 000 ₽/год",
+    description: "Выгрузки, проверка данных и сопровождение без простоев.",
+    href: "/frdo",
+    icon: FileCheck,
+  },
+  {
+    title: "Лицензирование",
+    price: "от 50 000 ₽",
+    description: "Документы и сопровождение от анализа до результата.",
+    href: "/licensing",
+    icon: BadgeCheck,
+  },
+  {
+    title: "НМО Портал",
+    price: "35 000 ₽",
+    description: "Регистрация организации и размещение программ под ключ.",
+    href: "/services/nmo",
+    icon: GraduationCap,
+  },
 ];
 
 export interface LandingCase {
@@ -48,37 +105,47 @@ export const LANDING_CASES: LandingCase[] = [
   {
     title: "SpinRide",
     subtitle: "Велосипеды и самокаты",
-    metric: "×2",
-    metricLabel: "месяца до окупаемости",
+    metric: "2 мес.",
+    metricLabel: "до окупаемости",
     tags: ["E-commerce", "Яндекс Директ", "800+ SKU"],
-    result: "Окупаемость рекламы за 2 месяца, поддержка 5 000 ₽/мес.",
+    result: "Окупаемость рекламы за два месяца и поддержка проекта.",
     url: "/projects/spinride",
+  },
+  {
+    title: "УЦ «Статус»",
+    subtitle: "Образование • Под ключ",
+    metric: "65 тыс.",
+    metricLabel: "₽ в год",
+    tags: ["LMS", "ФРДО", "Лицензирование"],
+    result: "Платформа и сопровождение учебного центра в одном договоре.",
+    url: "/projects/status",
   },
   {
     title: "Анна Чмулева",
     subtitle: "Риелтор • Личный бренд",
     metric: "24/7",
-    metricLabel: "автоблог + CRM",
+    metricLabel: "сайт и CRM",
     tags: ["Сайт", "ИИ-помощник", "CRM"],
-    result: "Блог пишется автоматически, рост входящих заявок.",
+    result: "Автоматизированы публикации и обработка входящих обращений.",
     url: "/projects/chmuleva",
   },
+];
+
+export const LANDING_FAQS = [
   {
-    title: "Flowrish",
-    subtitle: "Цветочный магазин",
-    metric: "7",
-    metricLabel: "сезонных тем",
-    tags: ["E-commerce", "Админка", "Авто-темы"],
-    result: "Продажи 24/7, витрина обновляется без участия владельца.",
-    url: "/projects/flowrish",
+    question: "Можно ли узнать точную цену до начала работ?",
+    answer: "Да. После короткого брифа мы фиксируем состав работ, этапы, сроки и стоимость в договоре.",
   },
   {
-    title: "УЦ «Статус»",
-    subtitle: "Образование • Под ключ",
-    metric: "65k",
-    metricLabel: "₽/год за сопровождение",
-    tags: ["LMS", "ФРДО", "Лицензирование"],
-    result: "Запуск без простоев, фиксированная цена 65 000 ₽/год.",
-    url: "/projects/status",
+    question: "Можно заказать только одну услугу?",
+    answer: "Да. Можно начать с сайта, рекламы, ФИС ФРДО или отдельной автоматизации и расширить проект позже.",
+  },
+  {
+    question: "Работаете с организациями из других регионов?",
+    answer: "Да. Работаем дистанционно по всей России, документы и этапы согласовываем онлайн.",
+  },
+  {
+    question: "Что потребуется от меня для старта?",
+    answer: "Цель проекта, контактное лицо и доступные материалы. Если материалов нет, поможем собрать структуру и приоритеты.",
   },
 ];
