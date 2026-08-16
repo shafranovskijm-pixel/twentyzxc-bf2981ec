@@ -73,7 +73,8 @@ const LandingContact = () => {
       <div className="container px-4 py-16 md:py-24">
         <div className="grid lg:grid-cols-[320px_1fr] gap-10 lg:gap-16">
           <div>
-            <p className="text-xs tracking-[0.28em] uppercase text-muted-foreground mb-4">Контакты</p>
+            <p className="landing-eyebrow text-xs tracking-[0.28em] uppercase mb-3">Контакты</p>
+            <span className="landing-accent-rule mb-4" />
             <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight mb-4">
               Обсудим ваш проект
             </h2>
@@ -95,10 +96,10 @@ const LandingContact = () => {
             </ul>
           </div>
 
-          <div className="border border-border rounded-md bg-card p-6 md:p-8">
+          <div className="landing-card-accent border rounded-md bg-card p-6 md:p-8">
             {isSubmitted ? (
               <div className="flex flex-col items-center justify-center text-center py-12">
-                <CheckCircle className="w-10 h-10 mb-4 text-foreground/70" />
+                <CheckCircle className="landing-eyebrow w-10 h-10 mb-4" />
                 <h3 className="text-lg font-medium mb-1">Спасибо за заявку!</h3>
                 <p className="text-sm text-muted-foreground">Мы свяжемся с вами в ближайшее время</p>
               </div>
@@ -128,7 +129,7 @@ const LandingContact = () => {
                   {errors.message && <p className="text-sm text-destructive">{errors.message}</p>}
                 </div>
 
-                <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+                <Button type="submit" size="lg" className="landing-gold-btn w-full sm:w-auto hover:opacity-90" disabled={isSubmitting}>
                   {isSubmitting ? (<><Loader2 className="w-4 h-4 animate-spin" /> Отправка...</>) : (<><Send className="w-4 h-4" /> Отправить заявку</>)}
                 </Button>
               </form>
