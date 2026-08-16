@@ -9,8 +9,6 @@ import { HelmetProvider } from "react-helmet-async";
 import { ScrollToHash } from "@/hooks/use-scroll-to-hash";
 import { InventoryProvider } from "@/contexts/InventoryContext";
 import { AchievementsProvider } from "@/contexts/AchievementsContext";
-import { InventoryBar } from "@/components/game/InventoryBar";
-import { FlyingKey } from "@/components/game/FlyingKey";
 import Index from "./pages/Index";
 
 // Lazy-load every non-home route so the initial JS bundle is small enough
@@ -59,8 +57,6 @@ const App = () => (
           <InventoryProvider>
             <Toaster />
             <Sonner />
-            <FlyingKey />
-            <InventoryBar />
             <BrowserRouter>
               <ScrollToHash />
               <Suspense fallback={<RouteFallback />}>

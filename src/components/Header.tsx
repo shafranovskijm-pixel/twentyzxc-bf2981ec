@@ -1,169 +1,96 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X, ChevronDown } from "lucide-react";
-import { useAchievements } from "@/contexts/AchievementsContext";
+import { ArrowRight, Menu, X } from "lucide-react";
 
-const navLinks = [
-  { 
-    label: "Образовательным организациям",
-    dropdown: [
-      { href: "/frdo", label: "ФИС ФРДО" },
-      { href: "/licensing", label: "Лицензирование" },
-      { href: "/services/nmo", label: "НМО Портал" },
-    ]
-  },
-  { href: "/templates", label: "Шаблоны" },
-  { href: "/playground", label: "Конструктор сайтов" },
-  { href: "/portfolio", label: "Портфолио" },
-  { href: "/about", label: "О нас" },
-  { href: "/#contact", label: "Контакты" },
+const NAV_LINKS = [
+  { href: "/#services", label: "Услуги и цены" },
+  { href: "/#cases", label: "Кейсы" },
+  { href: "/#syntagma", label: "Синтагма" },
+  { href: "/frdo", label: "Образованию" },
 ];
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const { incrementLogoClicks } = useAchievements();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header 
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled 
-          ? "bg-background/90 backdrop-blur-xl border-b border-border py-4" 
-          : "bg-transparent py-6"
-      }`}
-    >
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="container px-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="text-2xl font-display font-bold gradient-gold-text" onClick={incrementLogoClicks}>
-            24ZXC
+        <div className="flex h-16 items-center justify-between gap-5">
+          <Link
+            to="/"
+            className="inline-flex items-baseline gap-2 text-xl font-display font-semibold tracking-tight text-foreground"
+            aria-label="24ZXC — на главную"
+            onClick={() => setIsOpen(false)}
+          >
+            <span>24<span className="landing-eyebrow">ZXC</span></span>
+            <span className="hidden text-[11px] font-sans font-normal tracking-normal text-muted-foreground sm:inline">
+              цифровые решения
+            </span>
           </Link>
 
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              'dropdown' in link ? (
-                <div 
-                  key={link.label} 
-                  className="relative"
-                  ref={dropdownRef}
-                >
-                  <button
-                    onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 relative line-reveal"
-                  >
-                    {link.label}
-                    <ChevronDown className={`w-4 h-4 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
-                  </button>
-                  
-                  {openDropdown === link.label && (
-                    <div className="absolute top-full left-0 mt-2 py-2 min-w-[200px] bg-background border border-border rounded-md shadow-lg z-50 animate-fade-in">
-                      {link.dropdown.map((item) => (
-                        <Link
-                          key={item.href}
-                          to={item.href}
-                          className="block px-4 py-2 text-sm text-muted-foreground hover:text-primary transition-colors relative line-reveal"
-                          onClick={() => setOpenDropdown(null)}
-                        >
-                          {item.label}
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Link 
-                  key={link.href}
-                  to={link.href}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors relative line-reveal"
-                >
-                  {link.label}
-                </Link>
-              )
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Основная навигация">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                to={link.href}
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </Link>
             ))}
           </nav>
 
-          {/* Mobile menu button */}
-          <button 
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
-            aria-expanded={isMobileMenuOpen}
+          <div className="hidden items-center gap-3 lg:flex">
+            <a
+              href="tel:+79147213424"
+              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              +7 914 721-34-24
+            </a>
+            <Link
+              to="/#contact"
+              className="landing-gold-btn inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
+            >
+              Получить расчёт
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border text-foreground lg:hidden"
+            aria-label={isOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
+            onClick={() => setIsOpen((value) => !value)}
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        {/* Mobile menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden pt-8 pb-6 animate-fade-in">
-            <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                'dropdown' in link ? (
-                  <div key={link.label}>
-                    <button
-                      onClick={() => setOpenDropdown(openDropdown === link.label ? null : link.label)}
-                      className="w-full text-left text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border flex items-center justify-between"
-                    >
-                      {link.label}
-                      <ChevronDown className={`w-5 h-5 transition-transform ${openDropdown === link.label ? 'rotate-180' : ''}`} />
-                    </button>
-                    {openDropdown === link.label && (
-                      <div className="pl-4 bg-secondary/30">
-                        {link.dropdown.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            className="block text-base py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
-                            onClick={() => {
-                              setOpenDropdown(null);
-                              setIsMobileMenuOpen(false);
-                            }}
-                          >
-                            {item.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link 
-                    key={link.href}
-                    to={link.href}
-                    className="text-lg py-3 text-muted-foreground hover:text-primary transition-colors border-b border-border"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                )
+        {isOpen && (
+          <nav id="mobile-navigation" className="border-t border-border py-3 lg:hidden" aria-label="Мобильная навигация">
+            <div className="flex flex-col">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className="border-b border-border py-3 text-base text-foreground last:border-b-0"
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </Link>
               ))}
-            </nav>
-          </div>
+              <Link
+                to="/#contact"
+                className="landing-gold-btn mt-3 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold"
+                onClick={() => setIsOpen(false)}
+              >
+                Получить расчёт
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </nav>
         )}
       </div>
     </header>

@@ -114,8 +114,8 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', sans-serif;
-    font-weight: 300;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-weight: 400;
   }
 
   ::selection {
@@ -564,6 +564,19 @@
   font-weight: 400;
 }
 
+.landing-light .font-display {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.landing-light section[id] {
+  scroll-margin-top: 5rem;
+}
+
+.landing-light :is(a, button, input, textarea, select, summary):focus-visible {
+  outline: 2px solid hsl(var(--gold));
+  outline-offset: 3px;
+}
+
 .landing-light .gradient-gold-text,
 .landing-light .gold-glow-text {
   background: none;
@@ -617,13 +630,21 @@
   border-color: hsl(var(--gold));
 }
 
-/* На минималистичном лендинге убираем тяжёлый декор общего футера */
-.landing-light footer > .absolute,
-.landing-light footer > img[aria-hidden="true"] {
-  display: none !important;
+.landing-light footer {
+  background-color: hsl(var(--secondary) / 0.35);
+  border-top-color: hsl(var(--border));
 }
 
-.landing-light footer {
-  background-color: hsl(var(--secondary) / 0.4);
-  border-top-color: hsl(var(--border));
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

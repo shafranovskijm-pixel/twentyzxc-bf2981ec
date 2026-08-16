@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Знак Синтагмы</title>
+  <path d="M16 31c13-3 24 1 32 10v25c-8-8-19-12-32-9V31Zm64 0c-13-3-24 1-32 10v25c8-8 19-12 32-9V31Z" fill="#171A22"/>
+  <path d="m31 68-10 6 20 12 12-7m12-11 10 6-20 12-8-5" fill="none" stroke="#55CDB1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m36 21 8 8 17-18" fill="none" stroke="#55CDB1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
