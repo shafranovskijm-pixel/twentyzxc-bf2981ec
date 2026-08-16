@@ -79,6 +79,75 @@ export function findDuplicateGroups<T extends MergeableClient>(clients: T[]): T[
     .map((group) => [...group].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")));
 }
 
+const normalizeDigits = (value: unknown): string => String(value || "").replace(/\D/g, "");
+const normalizeText = (value: unknown): string => String(value || "").trim().toLowerCase();
+
+/**
+ * Find existing clients that can be manually merged with the opened card.
+ * With an empty query only likely duplicates are returned; a query searches all
+ * other clients by organisation, INN, contact, phone and email.
+ */
+export function findClientMergeCandidates<T extends MergeableClient>(
+  clients: T[],
+  sourceClientId: string,
+  query: string,
+): T[] {
+  const source = clients.find((client) => client.id === sourceClientId);
+  if (!source) return [];
+
+  const sourceInn = normalizeDigits(source.inn);
+  const sourcePhone = normalizeDigits(source.phone);
+  const sourceEmail = normalizeText(source.email);
+  const sourceName = normalizeClientKey(source.name);
+  const sourceCompactName = sourceName.replace(/\s/g, "");
+  const queryText = normalizeText(query);
+  const queryName = normalizeClientKey(query);
+  const queryDigits = normalizeDigits(query);
+
+  const score = (candidate: T): number => {
+    const candidateInn = normalizeDigits(candidate.inn);
+    const candidatePhone = normalizeDigits(candidate.phone);
+    const candidateEmail = normalizeText(candidate.email);
+    const candidateName = normalizeClientKey(candidate.name);
+    const candidateCompactName = candidateName.replace(/\s/g, "");
+    let value = 0;
+
+    if (sourceInn && sourceInn === candidateInn) value += 100;
+    if (sourceName && sourceName === candidateName) value += 80;
+    else if (sourceCompactName && sourceCompactName === candidateCompactName) value += 70;
+    if (sourceEmail && sourceEmail === candidateEmail) value += 60;
+    if (sourcePhone.length >= 7 && sourcePhone === candidatePhone) value += 50;
+
+    return value;
+  };
+
+  const matchesQuery = (candidate: T): boolean => {
+    if (!queryText) return score(candidate) > 0;
+
+    const textValues = [
+      candidate.name,
+      candidate.inn,
+      candidate.contact_person,
+      candidate.phone,
+      candidate.email,
+    ].map(normalizeText);
+    const candidateName = normalizeClientKey(candidate.name);
+    const candidateDigits = [candidate.inn, candidate.phone].map(normalizeDigits);
+
+    return textValues.some((value) => value.includes(queryText))
+      || (!!queryName && candidateName.includes(queryName))
+      || (queryDigits.length >= 4 && candidateDigits.some((value) => value.includes(queryDigits)));
+  };
+
+  return clients
+    .filter((candidate) => candidate.id !== sourceClientId && matchesQuery(candidate))
+    .sort((left, right) => {
+      const scoreDifference = score(right) - score(left);
+      if (scoreDifference) return scoreDifference;
+      return left.name.localeCompare(right.name, "ru");
+    });
+}
+
 /** Build the update payload for the primary record, filling gaps from duplicates. No data is lost. */
 export function buildMergePayload<T extends MergeableClient>(primary: T, duplicates: T[]): Record<string, any> {
   const payload: Record<string, any> = {};

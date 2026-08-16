@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findDuplicateGroups, normalizeClientKey } from "@/lib/client-merge";
+import {
+  findClientMergeCandidates,
+  findDuplicateGroups,
+  normalizeClientKey,
+} from "@/lib/client-merge";
 
 describe("normalizeClientKey", () => {
   it("matches organisation names with different quotes, case and punctuation", () => {
@@ -37,5 +41,52 @@ describe("findDuplicateGroups", () => {
     ];
 
     expect(findDuplicateGroups(clients)).toEqual([]);
+  });
+});
+
+describe("findClientMergeCandidates", () => {
+  const clients = [
+    {
+      id: "opened",
+      name: "АНООДПО «СТО «Патриот»",
+      inn: null,
+      phone: "7 914 339-80-50",
+      email: "patriot.patriot.13@inbox.ru",
+    },
+    {
+      id: "existing",
+      name: "АНОО ДПО СТО Патриот",
+      inn: "2536174080",
+      phone: "+7 914 339-80-50",
+      email: null,
+    },
+    {
+      id: "other",
+      name: "ООО Техносервис",
+      inn: "6382090879",
+      phone: "+7 927 611-19-55",
+      email: "office@tech.ru",
+    },
+  ];
+
+  it("suggests a likely duplicate for the opened client", () => {
+    expect(findClientMergeCandidates(clients, "opened", "").map((client) => client.id))
+      .toEqual(["existing"]);
+  });
+
+  it("searches every other client by name, INN, phone and email", () => {
+    expect(findClientMergeCandidates(clients, "opened", "техносервис").map((client) => client.id))
+      .toEqual(["other"]);
+    expect(findClientMergeCandidates(clients, "opened", "638209").map((client) => client.id))
+      .toEqual(["other"]);
+    expect(findClientMergeCandidates(clients, "opened", "611-19-55").map((client) => client.id))
+      .toEqual(["other"]);
+    expect(findClientMergeCandidates(clients, "opened", "office@tech.ru").map((client) => client.id))
+      .toEqual(["other"]);
+  });
+
+  it("never offers the opened client as its own duplicate", () => {
+    expect(findClientMergeCandidates(clients, "opened", "патриот").map((client) => client.id))
+      .toEqual(["existing"]);
   });
 });
