@@ -6,7 +6,8 @@ const LandingCases = () => (
     <div className="container px-4 py-16 md:py-24">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs tracking-[0.28em] uppercase text-muted-foreground mb-4">Кейсы</p>
+          <p className="landing-eyebrow text-xs tracking-[0.28em] uppercase mb-3">Кейсы</p>
+          <span className="landing-accent-rule mb-4" />
           <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight">
             Реальные проекты и метрики
           </h2>
@@ -28,7 +29,7 @@ const LandingCases = () => (
             className="group grid md:grid-cols-[130px_1fr_auto] gap-4 md:gap-8 items-start p-6 border-b border-border last:border-b-0 hover:bg-secondary/60 transition-colors"
           >
             <div>
-              <div className="text-2xl font-display font-semibold tracking-tight">{c.metric}</div>
+              <div className="landing-eyebrow text-2xl font-display font-semibold tracking-tight">{c.metric}</div>
               <div className="text-xs text-muted-foreground">{c.metricLabel}</div>
             </div>
             <div className="min-w-0">
@@ -39,7 +40,7 @@ const LandingCases = () => (
               <p className="mt-1 text-sm text-muted-foreground">{c.result}</p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {c.tags.map((t) => (
-                  <span key={t} className="text-[11px] px-2 py-0.5 rounded border border-border text-muted-foreground">
+                  <span key={t} className="landing-gold-chip text-[11px] px-2 py-0.5 rounded">
                     {t}
                   </span>
                 ))}

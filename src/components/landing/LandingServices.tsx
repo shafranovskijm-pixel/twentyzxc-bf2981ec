@@ -7,9 +7,9 @@ const ServiceRow = ({ service }: { service: LandingService }) => {
   return (
     <Link
       to={service.href}
-      className="group flex items-start gap-4 p-6 border border-border rounded-md bg-card hover:border-foreground/30 transition-colors"
+      className="landing-card-accent group flex items-start gap-4 p-6 border rounded-md bg-card transition-colors"
     >
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary text-foreground/70">
+      <span className="landing-gold-chip landing-eyebrow mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
         <Icon className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1">
@@ -19,7 +19,7 @@ const ServiceRow = ({ service }: { service: LandingService }) => {
         </span>
         <span className="mt-1 block text-sm text-muted-foreground">{service.description}</span>
       </span>
-      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
+      <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:[color:hsl(var(--gold))] transition-colors" />
     </Link>
   );
 };
@@ -29,7 +29,8 @@ const LandingServices = () => (
     <div className="container px-4 py-16 md:py-24">
       <div className="grid lg:grid-cols-[280px_1fr] gap-10 lg:gap-16">
         <div>
-          <p className="text-xs tracking-[0.28em] uppercase text-muted-foreground mb-4">Услуги</p>
+          <p className="landing-eyebrow text-xs tracking-[0.28em] uppercase mb-3">Услуги</p>
+          <span className="landing-accent-rule mb-4" />
           <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight">
             Разработка и сопровождение
           </h2>
