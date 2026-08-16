@@ -585,6 +585,21 @@
   text-shadow: none;
 }
 
+/* Legacy premium cards were designed for the old dark site. Keep the class
+   usable on public pages, but render it with the current light-theme tokens so
+   headings, prices, descriptions and outline buttons always have contrast. */
+.landing-light .luxury-card {
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border-color: hsl(var(--border));
+  box-shadow: 0 10px 30px hsl(220 12% 13% / 0.07);
+}
+
+.landing-light .luxury-card:hover {
+  border-color: hsl(var(--gold) / 0.65);
+  box-shadow: 0 16px 38px hsl(220 12% 13% / 0.1);
+}
+
 /* Тонкая «документная» сетка-разделитель */
 .landing-rule {
   height: 1px;
