@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,15 +26,14 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
 import { generatePdfBase64 } from "@/lib/document-pdf";
 import {
-  compareContractsByPaidUntilAscending,
-  compareContractsByPaidUntilDescending,
-  compareContractsByPaidUntilUpcoming,
-  DEFAULT_PAID_UNTIL_SORT_MODE,
+  compareContractsBySort,
+  DEFAULT_CONTRACT_SORT,
   getPaidUntilDaysLeft,
-  getNextPaidUntilSortMode,
+  getNextContractSort,
   matchesContractValidity,
+  type ContractSortField,
+  type ContractSortState,
   type ContractValidityFilter,
-  type PaidUntilSortMode,
 } from "@/lib/contracts-validity";
 
 interface Contract {
@@ -54,6 +53,54 @@ interface Contract {
   is_one_time: boolean;
   created_at: string;
 }
+
+interface SortableTableHeadProps {
+  field: ContractSortField;
+  label: string;
+  sort: ContractSortState;
+  onSort: (field: ContractSortField) => void;
+}
+
+const SortableTableHead = ({ field, label, sort, onSort }: SortableTableHeadProps) => {
+  const active = sort.field === field;
+  const directionLabel = !active
+    ? "Сортировать"
+    : sort.direction === "upcoming"
+      ? "Ближайшие окончания"
+      : sort.direction === "asc"
+        ? "По возрастанию"
+        : "По убыванию";
+
+  return (
+    <TableHead>
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex flex-col items-start gap-0.5 whitespace-nowrap text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={`${label}: ${directionLabel}. Нажмите для изменения порядка`}
+        title={`${label}: ${directionLabel}`}
+      >
+        <span className="inline-flex items-center gap-1.5">
+          {label}
+          {!active ? (
+            <ArrowUpDown className="h-3.5 w-3.5 opacity-45" />
+          ) : sort.direction === "upcoming" ? (
+            <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
+          ) : sort.direction === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowDown className="h-3.5 w-3.5" />
+          )}
+        </span>
+        {active && (
+          <span className={`text-[10px] font-medium ${sort.direction === "upcoming" ? "text-orange-600" : "text-muted-foreground"}`}>
+            {directionLabel}
+          </span>
+        )}
+      </button>
+    </TableHead>
+  );
+};
 
 interface PaidUntilQuickEditProps {
   contract: Pick<Contract, "id" | "paid_until" | "is_one_time">;
@@ -189,7 +236,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
   const [validityFilter, setValidityFilter] = useState<ContractValidityFilter>("all");
-  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortMode>(DEFAULT_PAID_UNTIL_SORT_MODE);
+  const [contractSort, setContractSort] = useState<ContractSortState>(DEFAULT_CONTRACT_SORT);
   const [inn, setInn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -845,9 +892,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       c.responsible?.toLowerCase().includes(s) ||
       email?.includes(s);
   }).sort((first, second) => {
-    if (paidUntilSort === "asc") return compareContractsByPaidUntilAscending(first, second);
-    if (paidUntilSort === "desc") return compareContractsByPaidUntilDescending(first, second);
-    return compareContractsByPaidUntilUpcoming(first, second);
+    return compareContractsBySort(first, second, contractSort);
   });
 
   const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
@@ -900,8 +945,8 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
   const handleTab = (v: string) => { setTab(v); setCurrentPage(1); };
   const handleValidityFilter = (v: ContractValidityFilter) => { setValidityFilter(v); setCurrentPage(1); };
-  const togglePaidUntilSort = () => {
-    setPaidUntilSort(getNextPaidUntilSortMode);
+  const handleContractSort = (field: ContractSortField) => {
+    setContractSort((current) => getNextContractSort(current, field));
     setCurrentPage(1);
   };
   const handlePageSize = (v: number) => { setPageSize(v); setCurrentPage(1); };
@@ -1008,54 +1053,14 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Организация</TableHead>
-                    <TableHead>№ договора</TableHead>
-                    <TableHead>Дата</TableHead>
-                    <TableHead>Оплата</TableHead>
-                    <TableHead>
-                      <button
-                        type="button"
-                        onClick={togglePaidUntilSort}
-                        className="inline-flex flex-col items-start gap-0.5 whitespace-nowrap text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        aria-label={
-                          paidUntilSort === "upcoming"
-                            ? "Оплачено до: сначала ближайшие окончания. Нажмите для ранних дат"
-                            : paidUntilSort === "asc"
-                            ? "Оплачено до: сначала ранние даты. Нажмите для поздних дат"
-                            : paidUntilSort === "desc"
-                              ? "Оплачено до: сначала поздние даты. Нажмите для ближайших окончаний"
-                              : "Показать сначала договоры, которые скоро закончатся"
-                        }
-                        title={
-                          paidUntilSort === "upcoming"
-                            ? "Сначала ближайшие окончания"
-                            : paidUntilSort === "asc"
-                              ? "От ранних дат к поздним"
-                              : "От поздних дат к ранним"
-                        }
-                      >
-                        <span className="inline-flex items-center gap-1.5">
-                          Оплачено до
-                          {paidUntilSort === "upcoming" ? (
-                            <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
-                          ) : paidUntilSort === "asc" ? (
-                            <ArrowUp className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowDown className="h-3.5 w-3.5" />
-                          )}
-                        </span>
-                        <span className={`text-[10px] font-medium ${paidUntilSort === "upcoming" ? "text-orange-600" : "text-muted-foreground"}`}>
-                          {paidUntilSort === "upcoming"
-                            ? "Ближайшие окончания"
-                            : paidUntilSort === "asc"
-                              ? "Ранние → поздние"
-                              : "Поздние → ранние"}
-                        </span>
-                      </button>
-                    </TableHead>
-                    <TableHead>Сумма</TableHead>
-                    <TableHead>Тип</TableHead>
-                    <TableHead>Ответственный</TableHead>
+                    <SortableTableHead field="client_name" label="Организация" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="contract_number" label="№ договора" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="contract_date" label="Дата" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="payment_status" label="Оплата" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="paid_until" label="Оплачено до" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="amount" label="Сумма" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="contract_type" label="Тип" sort={contractSort} onSort={handleContractSort} />
+                    <SortableTableHead field="responsible" label="Ответственный" sort={contractSort} onSort={handleContractSort} />
                     <TableHead className="w-[80px] text-right sticky right-0 bg-background">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
