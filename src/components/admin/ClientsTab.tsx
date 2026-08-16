@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
 import QuickDocumentDialog from "./QuickDocumentDialog";
 import ClientsMergeDialog from "./ClientsMergeDialog";
+import { findDuplicateGroups, normalizeClientKey } from "@/lib/client-merge";
 
 interface Client {
   id: string;
@@ -125,12 +126,12 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         .from("clients")
         .select("name");
 
-      const existingNames = new Set((existingClients || []).map(c => c.name.toLowerCase().trim()));
+      const existingNames = new Set((existingClients || []).map((client) => normalizeClientKey(client.name)));
       const newNamesMap = new Map<string, string>();
       
       (contracts || []).forEach(c => {
-        const key = c.client_name.toLowerCase().trim();
-        if (!existingNames.has(key) && !newNamesMap.has(key)) {
+        const key = normalizeClientKey(c.client_name);
+        if (key && !existingNames.has(key) && !newNamesMap.has(key)) {
           newNamesMap.set(key, c.contract_type || "");
         }
       });
@@ -145,7 +146,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
       const contractTypes: Record<string, string> = {};
       // Get original casing from contracts
       (contracts || []).forEach(c => {
-        const key = c.client_name.toLowerCase().trim();
+        const key = normalizeClientKey(c.client_name);
         if (newNamesMap.has(key) && !contractTypes[c.client_name]) {
           names.push(c.client_name);
           contractTypes[c.client_name] = c.contract_type || "";
@@ -250,6 +251,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     retry: 2,
     staleTime: 5 * 60 * 1000,
   });
+  const duplicateGroupCount = useMemo(() => findDuplicateGroups(clients).length, [clients]);
 
   const resetForm = () => {
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
@@ -300,7 +302,11 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   useEffect(() => {
     if (!initialClientName || isLoading) return;
     const target = initialClientName.toLowerCase().trim();
-    const found = (clients as Client[]).find((c) => c.name.toLowerCase().trim() === target);
+    const normalizedTarget = normalizeClientKey(initialClientName);
+    const found = (clients as Client[]).find((c) => c.name.toLowerCase().trim() === target)
+      || (normalizedTarget
+        ? (clients as Client[]).find((c) => normalizeClientKey(c.name) === normalizedTarget)
+        : undefined);
     if (found) {
       startEdit(found);
     } else {
@@ -500,6 +506,22 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[150px]" />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={clients.length === 0}
+          onClick={() => setShowMerge(true)}
+        >
+          <Copy className="w-4 h-4" />
+          <span className="hidden sm:inline">Дубликаты</span>
+          {duplicateGroupCount > 0 && (
+            <span className="min-w-5 rounded-full bg-primary/15 px-1.5 text-xs text-primary">
+              {duplicateGroupCount}
+            </span>
+          )}
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5" aria-label="Действия со списком клиентов" title="Действия со списком">
@@ -513,9 +535,6 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => syncAllClients()} disabled={syncingAll || clients.length === 0}>
               <RefreshCw className="w-4 h-4 mr-2" /> Синхронизировать все реквизиты
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => setShowMerge(true)} disabled={clients.length === 0}>
-              <Copy className="w-4 h-4 mr-2" /> Объединить дубликаты
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -888,7 +907,13 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         open={showMerge}
         onOpenChange={setShowMerge}
         clients={clients as any}
-        onMerged={() => queryClient.invalidateQueries({ queryKey: ["admin-clients"] })}
+        onMerged={() => {
+          queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
+          queryClient.invalidateQueries({ queryKey: ["notif-contracts"] });
+          queryClient.invalidateQueries({ queryKey: ["notif-tab-contracts"] });
+          queryClient.invalidateQueries({ queryKey: ["client-history-contracts"] });
+          queryClient.invalidateQueries({ queryKey: ["client-history-docs"] });
+        }}
       />
     </div>
   );
