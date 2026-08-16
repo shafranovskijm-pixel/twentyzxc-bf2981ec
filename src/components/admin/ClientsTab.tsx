@@ -853,7 +853,9 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                             : "—"}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {(c as any).service_deadline ? (() => {
+                          {(c as any).no_deadline ? (
+                            <span className="text-muted-foreground">Без срока</span>
+                          ) : (c as any).service_deadline ? (() => {
                             const dl = new Date((c as any).service_deadline);
                             const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                             const color = diff < 0 ? "text-destructive" : diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
