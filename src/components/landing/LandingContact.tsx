@@ -43,7 +43,13 @@ const LandingContact = () => {
     }
 
     setIsSubmitting(true);
-    const res = await sendToTelegram({ type: "contact", ...result.data });
+    const res = await sendToTelegram({
+      type: "contact",
+      name: result.data.name,
+      email: result.data.email,
+      phone: result.data.phone,
+      message: result.data.message,
+    });
     setIsSubmitting(false);
 
     if (res.success) {
