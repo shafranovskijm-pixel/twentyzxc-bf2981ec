@@ -12,6 +12,8 @@ export interface ContractValidityFields {
   is_one_time?: boolean | null;
 }
 
+export type PaidUntilSortMode = "none" | "upcoming" | "asc" | "desc";
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const startOfLocalDay = (value: Date) => {
@@ -79,6 +81,42 @@ export const compareContractsByPaidUntilDescending = (
   if (firstTimestamp === null) return 1;
   if (secondTimestamp === null) return -1;
   return secondTimestamp - firstTimestamp;
+};
+
+/**
+ * Keeps every contract in the list while bringing the next renewals to the top.
+ * Active terms are ordered from the nearest date, followed by recently expired
+ * terms, then contracts without a date and one-time contracts.
+ */
+export const compareContractsByPaidUntilUpcoming = (
+  first: ContractValidityFields,
+  second: ContractValidityFields,
+  now = new Date(),
+) => {
+  const firstDays = first.is_one_time ? null : getPaidUntilDaysLeft(first.paid_until, now);
+  const secondDays = second.is_one_time ? null : getPaidUntilDaysLeft(second.paid_until, now);
+
+  if (firstDays === null && secondDays === null) return 0;
+  if (firstDays === null) return 1;
+  if (secondDays === null) return -1;
+
+  const firstIsUpcoming = firstDays >= 0;
+  const secondIsUpcoming = secondDays >= 0;
+
+  if (firstIsUpcoming && !secondIsUpcoming) return -1;
+  if (!firstIsUpcoming && secondIsUpcoming) return 1;
+
+  if (firstIsUpcoming) return firstDays - secondDays;
+
+  // For overdue terms, show the most recently expired ones first.
+  return secondDays - firstDays;
+};
+
+export const getNextPaidUntilSortMode = (current: PaidUntilSortMode): PaidUntilSortMode => {
+  if (current === "none") return "upcoming";
+  if (current === "upcoming") return "asc";
+  if (current === "asc") return "desc";
+  return "none";
 };
 
 export const matchesContractValidity = (
