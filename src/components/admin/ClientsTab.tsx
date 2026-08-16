@@ -1353,9 +1353,9 @@ const useClientInteractions = (clientId: string) =>
 // ============================================================
 // Quick facts header strip
 // ============================================================
-const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson, clientId, clientName }: {
+const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, noDeadline, contactPerson, clientId, clientName }: {
   phone: string; email: string; telegram: string; inn: string;
-  paymentDate: string; serviceDeadline: string; contactPerson: string;
+  paymentDate: string; serviceDeadline: string; noDeadline?: boolean; contactPerson: string;
   clientId?: string; clientName?: string;
 }) => {
   const copy = (v: string, label: string) => {
@@ -1363,11 +1363,17 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
     navigator.clipboard.writeText(v).then(() => toast.success(`${label} скопирован`));
   };
   const [callOpen, setCallOpen] = useState(false);
-  const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || contactPerson;
+  const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || noDeadline || contactPerson;
   if (!hasAny) return null;
 
   let deadlineNode: React.ReactNode = null;
-  if (serviceDeadline) {
+  if (noDeadline) {
+    deadlineNode = (
+      <span className="inline-flex items-center gap-1 text-muted-foreground" title="Срок оказания услуг не ограничен">
+        ⏳ без срока
+      </span>
+    );
+  } else if (serviceDeadline) {
     const dl = new Date(serviceDeadline);
     const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     const cls = diff < 0 || diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
@@ -1454,6 +1460,7 @@ interface ClientCardSectionsProps {
   frdoPasswordPo: string; setFrdoPasswordPo: (v: string) => void;
   paymentDate: string; setPaymentDate: (v: string) => void;
   serviceDeadline: string; setServiceDeadline: (v: string) => void;
+  noDeadline: boolean; setNoDeadline: (v: boolean) => void;
   inn: string; setInn: (v: string) => void;
   kpp: string; setKpp: (v: string) => void;
   ogrn: string; setOgrn: (v: string) => void;
@@ -1603,8 +1610,24 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
               </div>
               <div className="space-y-2">
                 <Label>Срок оказания услуг (до)</Label>
-                <Input type="date" value={p.serviceDeadline} onChange={(e) => p.setServiceDeadline(e.target.value)} />
-                {p.serviceDeadline && (() => {
+                <Input
+                  type="date"
+                  value={p.noDeadline ? "" : p.serviceDeadline}
+                  disabled={p.noDeadline}
+                  onChange={(e) => p.setServiceDeadline(e.target.value)}
+                />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={p.noDeadline}
+                    onCheckedChange={(v) => {
+                      const on = v === true;
+                      p.setNoDeadline(on);
+                      if (on) p.setServiceDeadline("");
+                    }}
+                  />
+                  Нет срока (бессрочно)
+                </label>
+                {!p.noDeadline && p.serviceDeadline && (() => {
                   const diff = Math.round((new Date(p.serviceDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                   if (diff < 0) return <p className="text-xs text-destructive">Срок истёк {Math.abs(diff)} дн. назад</p>;
                   if (diff <= 30) return <p className="text-xs text-destructive">Осталось {diff} дн.</p>;
