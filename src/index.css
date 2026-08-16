@@ -631,7 +631,7 @@
 }
 
 .landing-light footer {
-  background-color: hsl(var(--secondary) / 0.35);
+  background-color: hsl(var(--background));
   border-top-color: hsl(var(--border));
 }
 

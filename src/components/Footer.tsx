@@ -10,7 +10,7 @@ const Footer = () => (
             24<span className="landing-eyebrow">ZXC</span>
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Сайты, Яндекс Директ и цифровые процессы для бизнеса и образовательных организаций.
+            Сайты, CRM, мобильные приложения и Яндекс Директ для бизнеса и образовательных организаций.
           </p>
         </div>
 

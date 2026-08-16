@@ -8,6 +8,7 @@ import {
   Layers,
   Megaphone,
   ShoppingBag,
+  Smartphone,
 } from "lucide-react";
 
 export interface LandingService {
@@ -54,6 +55,13 @@ export const WEB_SERVICES: LandingService[] = [
     href: "/services/webapp",
     icon: AppWindow,
   },
+  {
+    title: "Мобильное приложение",
+    price: "по смете",
+    description: "Приложения для смартфонов: личный кабинет, обучение, уведомления и работа с данными.",
+    href: "/services/webapp",
+    icon: Smartphone,
+  },
 ];
 
 export const EDU_SERVICES: LandingService[] = [
@@ -83,8 +91,9 @@ export const EDU_SERVICES: LandingService[] = [
 export interface LandingCase {
   title: string;
   subtitle: string;
-  metric: string;
-  metricLabel: string;
+  label: string;
+  challenge: string;
+  solution: string;
   tags: string[];
   result: string;
   url: string;
@@ -93,41 +102,37 @@ export interface LandingCase {
 
 export const LANDING_CASES: LandingCase[] = [
   {
-    title: "Синтагма",
-    subtitle: "Учебный центр • LMS",
-    metric: "−80%",
-    metricLabel: "ручной работы",
-    tags: ["LMS", "ФРДО", "Облако"],
-    result: "1000+ слушателей в месяц, отчётность в один клик.",
-    url: "https://синтагма.рф",
+    title: "ALISTA",
+    subtitle: "Импорт автомобилей из Японии, Кореи и Китая",
+    label: "Сайт + CRM",
+    challenge: "Объединить публичный каталог автомобилей и работу менеджеров — от первого обращения до выдачи машины.",
+    solution: "Сайт с каталогом и калькулятором, формы заявок и CRM для обработки обращений, расчётов, документов и статусов сделки.",
+    tags: ["Каталог", "Калькулятор", "CRM", "Заявки"],
+    result: "Клиент видит понятный путь покупки, а команда ведёт каждую заявку в одном рабочем контуре.",
+    url: "https://alistaru.ru/",
     external: true,
   },
   {
-    title: "SpinRide",
-    subtitle: "Велосипеды и самокаты",
-    metric: "2 мес.",
-    metricLabel: "до окупаемости",
-    tags: ["E-commerce", "Яндекс Директ", "800+ SKU"],
-    result: "Окупаемость рекламы за два месяца и поддержка проекта.",
-    url: "/projects/spinride",
+    title: "Samson Car",
+    subtitle: "CRM для автосервиса",
+    label: "CRM для СТО",
+    challenge: "Ускорить приём автомобиля: быстро выбрать точную модификацию, рассчитать работы и сохранить заказ.",
+    solution: "CRM с подбором год → марка → модель → кузов, базой услуг, расчётом стоимости и карточкой клиента и автомобиля.",
+    tags: ["CRM", "Автобаза", "Расчёт работ", "Клиенты"],
+    result: "Мастер-приёмщик оформляет расчёт в одном окне, а история клиента и автомобиля остаётся в системе.",
+    url: "https://samson-car.ru/",
+    external: true,
   },
   {
-    title: "УЦ «Статус»",
-    subtitle: "Образование • Под ключ",
-    metric: "65 тыс.",
-    metricLabel: "₽ в год",
-    tags: ["LMS", "ФРДО", "Лицензирование"],
-    result: "Платформа и сопровождение учебного центра в одном договоре.",
-    url: "/projects/status",
-  },
-  {
-    title: "Анна Чмулева",
-    subtitle: "Риелтор • Личный бренд",
-    metric: "24/7",
-    metricLabel: "сайт и CRM",
-    tags: ["Сайт", "ИИ-помощник", "CRM"],
-    result: "Автоматизированы публикации и обработка входящих обращений.",
-    url: "/projects/chmuleva",
+    title: "Синтагма",
+    subtitle: "Цифровая платформа учебного центра",
+    label: "EdTech-продукт",
+    challenge: "Собрать обучение, слушателей, документы и обязательную отчётность в одной понятной системе.",
+    solution: "Разработали LMS и рабочий кабинет учебного центра; сейчас дополняем продукт мобильным приложением для слушателей.",
+    tags: ["LMS", "Документы", "ФРДО", "Mobile"],
+    result: "Сотрудники и слушатели работают в едином процессе — от заявки и курса до итоговых документов.",
+    url: "https://синтагма.рф",
+    external: true,
   },
 ];
 

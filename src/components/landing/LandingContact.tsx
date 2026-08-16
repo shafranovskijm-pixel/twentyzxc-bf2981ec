@@ -159,6 +159,7 @@ const LandingContact = () => {
                     <option>Сайт под ключ</option>
                     <option>Яндекс Директ</option>
                     <option>Веб-приложение / CRM</option>
+                    <option>Мобильное приложение</option>
                     <option>ФИС ФРДО</option>
                     <option>Лицензирование</option>
                     <option>НМО Портал</option>
