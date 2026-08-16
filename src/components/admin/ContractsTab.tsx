@@ -1010,7 +1010,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               defaultOpen={!!editingId}
               onInnDetected={(detected) => { if (!inn) setInn(detected); }}
             />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
               <div className="space-y-2">
@@ -1020,7 +1020,23 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                   <p className="text-[11px] text-muted-foreground">Авто: {(() => { const d = new Date(contractDate); d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString("ru-RU"); })()}</p>
                 )}
               </div>
-              <div className="space-y-2"><Label>Тип договора</Label><Input value={contractType} onChange={(e) => setContractType(e.target.value)} placeholder="фрдо, разработка..." /></div>
+            </div>
+            <div className="space-y-2">
+              <Label>Тип договора</Label>
+              <Input
+                value={contractType}
+                onChange={(e) => setContractType(e.target.value)}
+                placeholder="фрдо, разработка..."
+                list="contract-type-options"
+              />
+              <datalist id="contract-type-options">
+                <option value="фрдо" />
+                <option value="разработка" />
+                <option value="лицензирование" />
+                <option value="НМО" />
+                <option value="реклама" />
+                <option value="сопровождение" />
+              </datalist>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="is-one-time" checked={isOneTime} onCheckedChange={(v) => { setIsOneTime(!!v); if (v) setPaidUntil(""); }} />
