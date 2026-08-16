@@ -720,7 +720,16 @@ const Admin = () => {
               {sectionTitles[activeSection] || activeSection}
             </h1>
             <div className="flex items-center gap-1">
-              <NotificationsPanel onNavigate={setActiveSection} />
+              <NotificationsPanel
+                onNavigate={(section, clientName) => {
+                  if (clientName) {
+                    setClientsInitialName(clientName);
+                    handleSectionChange("clients");
+                    return;
+                  }
+                  handleSectionChange(section);
+                }}
+              />
               <Button
                 variant="ghost"
                 size="icon"

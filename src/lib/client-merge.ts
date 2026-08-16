@@ -10,7 +10,8 @@ export type MergeableClient = {
 /** Normalize an organisation name for duplicate detection. */
 export function normalizeClientKey(value: string | null | undefined): string {
   return (value || "")
-    .replace(/[«»"'`.,]/g, " ")
+    .replace(/ё/gi, "е")
+    .replace(/[«»"'`.,()–—-]/g, " ")
     .replace(/\b(ооо|оао|зао|ао|ип|нко|ану|ано|учреждение)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
@@ -27,17 +28,55 @@ export const MERGE_FIELDS = [
 
 /** Group clients that look like the same organisation (same INN, or same normalized name). */
 export function findDuplicateGroups<T extends MergeableClient>(clients: T[]): T[][] {
-  const byKey = new Map<string, T[]>();
-  for (const c of clients) {
-    const inn = (c.inn || "").replace(/\D/g, "");
-    const key = inn ? `inn:${inn}` : `name:${normalizeClientKey(c.name)}`;
-    if (key === "name:") continue;
-    const list = byKey.get(key);
-    if (list) list.push(c); else byKey.set(key, [c]);
-  }
-  return [...byKey.values()]
-    .filter((g) => g.length > 1)
-    .map((g) => [...g].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")));
+  const parent = clients.map((_, index) => index);
+  const find = (index: number): number => {
+    while (parent[index] !== index) {
+      parent[index] = parent[parent[index]];
+      index = parent[index];
+    }
+    return index;
+  };
+  const union = (left: number, right: number) => {
+    const leftRoot = find(left);
+    const rightRoot = find(right);
+    if (leftRoot !== rightRoot) parent[rightRoot] = leftRoot;
+  };
+  const unionAll = (indices: number[]) => {
+    for (let index = 1; index < indices.length; index += 1) union(indices[0], indices[index]);
+  };
+
+  const byInn = new Map<string, number[]>();
+  const byName = new Map<string, number[]>();
+  clients.forEach((client, index) => {
+    const inn = (client.inn || "").replace(/\D/g, "");
+    const name = normalizeClientKey(client.name);
+    if (inn) byInn.set(inn, [...(byInn.get(inn) || []), index]);
+    if (name) byName.set(name, [...(byName.get(name) || []), index]);
+  });
+
+  // A matching INN is definitive even when organisation names were entered differently.
+  byInn.forEach(unionAll);
+
+  // A matching name is safe when records have no conflicting INNs. This also catches
+  // the common case where one duplicate has requisites and the other does not.
+  byName.forEach((indices) => {
+    const distinctInns = new Set(
+      indices
+        .map((index) => (clients[index].inn || "").replace(/\D/g, ""))
+        .filter(Boolean),
+    );
+    if (distinctInns.size <= 1) unionAll(indices);
+  });
+
+  const groups = new Map<number, T[]>();
+  clients.forEach((client, index) => {
+    const root = find(index);
+    groups.set(root, [...(groups.get(root) || []), client]);
+  });
+
+  return [...groups.values()]
+    .filter((group) => group.length > 1)
+    .map((group) => [...group].sort((a, b) => (a.created_at || "").localeCompare(b.created_at || "")));
 }
 
 /** Build the update payload for the primary record, filling gaps from duplicates. No data is lost. */
