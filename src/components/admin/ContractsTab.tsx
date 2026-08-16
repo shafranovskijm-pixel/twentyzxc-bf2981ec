@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,6 +27,7 @@ import { generateContractHtml, type DocumentData, type CompanyRequisites, type C
 import { generatePdfBase64 } from "@/lib/document-pdf";
 import {
   compareContractsByPaidUntilAscending,
+  compareContractsByPaidUntilDescending,
   getPaidUntilDaysLeft,
   matchesContractValidity,
   type ContractValidityFilter,
@@ -49,6 +50,8 @@ interface Contract {
   is_one_time: boolean;
   created_at: string;
 }
+
+type PaidUntilSortDirection = "none" | "asc" | "desc";
 
 interface PaidUntilQuickEditProps {
   contract: Pick<Contract, "id" | "paid_until" | "is_one_time">;
@@ -184,6 +187,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
   const [validityFilter, setValidityFilter] = useState<ContractValidityFilter>("all");
+  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortDirection>("none");
   const [inn, setInn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -838,11 +842,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       c.contract_type?.toLowerCase().includes(s) ||
       c.responsible?.toLowerCase().includes(s) ||
       email?.includes(s);
-  }).sort((first, second) => (
-    validityFilter === "all"
-      ? 0
-      : compareContractsByPaidUntilAscending(first, second)
-  ));
+  }).sort((first, second) => {
+    if (paidUntilSort === "asc") return compareContractsByPaidUntilAscending(first, second);
+    if (paidUntilSort === "desc") return compareContractsByPaidUntilDescending(first, second);
+    return validityFilter === "all" ? 0 : compareContractsByPaidUntilAscending(first, second);
+  });
 
   const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
   const archiveCount = contracts.filter((c) => (c as any).is_archived).length;
@@ -894,6 +898,10 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const handleSearch = (v: string) => { setSearch(v); setCurrentPage(1); };
   const handleTab = (v: string) => { setTab(v); setCurrentPage(1); };
   const handleValidityFilter = (v: ContractValidityFilter) => { setValidityFilter(v); setCurrentPage(1); };
+  const togglePaidUntilSort = () => {
+    setPaidUntilSort((current) => current === "none" ? "asc" : current === "asc" ? "desc" : "none");
+    setCurrentPage(1);
+  };
   const handlePageSize = (v: number) => { setPageSize(v); setCurrentPage(1); };
 
   const paginatedItems = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -1002,7 +1010,29 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                     <TableHead>№ договора</TableHead>
                     <TableHead>Дата</TableHead>
                     <TableHead>Оплата</TableHead>
-                    <TableHead>Оплачено до</TableHead>
+                    <TableHead>
+                      <button
+                        type="button"
+                        onClick={togglePaidUntilSort}
+                        className="inline-flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={
+                          paidUntilSort === "asc"
+                            ? "Оплачено до: сначала ранние даты. Нажмите для поздних дат"
+                            : paidUntilSort === "desc"
+                              ? "Оплачено до: сначала поздние даты. Нажмите для сброса"
+                              : "Сортировать по дате окончания оплаты"
+                        }
+                      >
+                        Оплачено до
+                        {paidUntilSort === "asc" ? (
+                          <ArrowUp className="h-3.5 w-3.5" />
+                        ) : paidUntilSort === "desc" ? (
+                          <ArrowDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead>Сумма</TableHead>
                     <TableHead>Тип</TableHead>
                     <TableHead>Ответственный</TableHead>
@@ -1123,7 +1153,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input placeholder="Поиск по названию, номеру, email..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
         <Select value={validityFilter} onValueChange={(value) => handleValidityFilter(value as ContractValidityFilter)}>
-          <SelectTrigger className="w-full sm:w-[260px]" aria-label="Фильтр по сроку действия">
+          <SelectTrigger className="w-full sm:w-[220px]" aria-label="Фильтр по сроку действия">
             <span className="flex min-w-0 items-center gap-2">
               <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
               <SelectValue placeholder="Все сроки" />
@@ -1131,7 +1161,6 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Все сроки</SelectItem>
-            <SelectItem value="expiring-first">Истекают: раньше → позже</SelectItem>
             <SelectItem value="expired">Просрочены</SelectItem>
             <SelectItem value="within-30">До 30 дней</SelectItem>
             <SelectItem value="within-90">31–90 дней</SelectItem>

@@ -1,6 +1,5 @@
 export type ContractValidityFilter =
   | "all"
-  | "expiring-first"
   | "expired"
   | "within-30"
   | "within-90"
@@ -69,6 +68,19 @@ export const compareContractsByPaidUntilAscending = (
   return firstTimestamp - secondTimestamp;
 };
 
+export const compareContractsByPaidUntilDescending = (
+  first: ContractValidityFields,
+  second: ContractValidityFields,
+) => {
+  const firstTimestamp = getPaidUntilTimestamp(first);
+  const secondTimestamp = getPaidUntilTimestamp(second);
+
+  if (firstTimestamp === null && secondTimestamp === null) return 0;
+  if (firstTimestamp === null) return 1;
+  if (secondTimestamp === null) return -1;
+  return secondTimestamp - firstTimestamp;
+};
+
 export const matchesContractValidity = (
   contract: ContractValidityFields,
   filter: ContractValidityFilter,
@@ -80,7 +92,6 @@ export const matchesContractValidity = (
   if (contract.is_one_time) return false;
 
   const daysLeft = getPaidUntilDaysLeft(contract.paid_until, now);
-  if (filter === "expiring-first") return daysLeft !== null;
   if (daysLeft === null) return false;
 
   if (filter === "expired") return daysLeft < 0;
