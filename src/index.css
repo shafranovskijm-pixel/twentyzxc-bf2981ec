@@ -578,6 +578,45 @@
   background: hsl(var(--border));
 }
 
+/* Фирменные акценты как в счетах/договорах: чернильный #15171e + золото #d4be37 */
+.landing-light {
+  --gold: 49 59% 52%;
+  --gold-light: 48 79% 81%;
+  --gold-soft: 50 55% 96%;
+  --gold-border: 48 44% 89%;
+}
+
+.landing-eyebrow {
+  color: hsl(var(--gold));
+}
+
+.landing-accent-rule {
+  display: block;
+  width: 44px;
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--gold));
+}
+
+.landing-gold-btn {
+  background: linear-gradient(90deg, hsl(var(--gold)), hsl(var(--gold-light)));
+  color: hsl(var(--foreground));
+}
+
+.landing-gold-chip {
+  background: hsl(var(--gold-soft));
+  border: 1px solid hsl(var(--gold-border));
+  color: hsl(var(--foreground));
+}
+
+.landing-card-accent {
+  border-color: hsl(var(--gold-border));
+}
+
+.landing-card-accent:hover {
+  border-color: hsl(var(--gold));
+}
+
 /* На минималистичном лендинге убираем тяжёлый декор общего футера */
 .landing-light footer > .absolute,
 .landing-light footer > img[aria-hidden="true"] {
