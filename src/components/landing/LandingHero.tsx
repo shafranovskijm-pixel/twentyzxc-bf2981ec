@@ -14,16 +14,17 @@ const LandingHero = () => {
     <section className="relative border-b border-border bg-background">
       <div className="container px-4 pt-36 pb-16 md:pt-44 md:pb-24">
         <div className="max-w-4xl">
-          <p className="text-xs tracking-[0.28em] uppercase text-muted-foreground mb-8">
+          <p className="landing-eyebrow text-xs tracking-[0.28em] uppercase mb-3">
             Сайты · Реклама · Веб-приложения · Образование
           </p>
+          <span className="landing-accent-rule mb-8" />
 
           <h1
             className="text-4xl md:text-6xl lg:text-7xl font-display font-semibold leading-[1.05] tracking-tight mb-8 cursor-pointer"
             onClick={() => navigate("/admin")}
             title="24ZXC"
           >
-            24ZXC — цифровые решения
+            24<span className="landing-eyebrow">ZXC</span> — цифровые решения
             <span className="block text-muted-foreground">под ключ</span>
           </h1>
 
@@ -35,14 +36,14 @@ const LandingHero = () => {
           <div className="flex flex-wrap gap-3">
             <Link
               to="/#contact"
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+              className="landing-gold-btn inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold rounded-md hover:opacity-90 transition-opacity"
             >
               Обсудить проект
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/portfolio"
-              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-md border border-border text-foreground hover:bg-secondary transition-colors"
+              className="landing-card-accent inline-flex items-center gap-2 px-6 py-3 text-sm font-medium rounded-md border text-foreground hover:bg-secondary transition-colors"
             >
               Портфолио
             </Link>
@@ -52,7 +53,7 @@ const LandingHero = () => {
         <dl className="mt-16 grid grid-cols-1 sm:grid-cols-3 border-t border-border">
           {STATS.map((s) => (
             <div key={s.label} className="py-6 sm:py-8 sm:pr-8 border-b sm:border-b-0 sm:border-r last:border-r-0 border-border">
-              <dt className="text-3xl md:text-4xl font-display font-semibold tracking-tight">{s.value}</dt>
+              <dt className="landing-eyebrow text-3xl md:text-4xl font-display font-semibold tracking-tight">{s.value}</dt>
               <dd className="mt-1 text-sm text-muted-foreground">{s.label}</dd>
             </div>
           ))}
