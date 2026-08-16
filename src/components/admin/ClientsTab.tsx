@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, X, RefreshCw, FileText, ClipboardList, History, Phone, Mail, MessageSquare, StickyNote, Send, Search, Download, CheckSquare, Eye } from "lucide-react";
-import { KeyRound, Building2, User, Copy, MoreHorizontal, ChevronDown, FileSignature, CalendarPlus } from "lucide-react";
+import { KeyRound, Building2, User, Copy, MoreHorizontal, ChevronDown, FileSignature, CalendarPlus, CalendarClock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { matchClientProposals } from "@/lib/client-workspace-utils";
@@ -25,6 +25,13 @@ import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/
 import QuickDocumentDialog from "./QuickDocumentDialog";
 import ClientsMergeDialog from "./ClientsMergeDialog";
 import { findDuplicateGroups, normalizeClientKey } from "@/lib/client-merge";
+import {
+  compareClientsByServiceDeadline,
+  getNextClientServiceDeadlineSort,
+  matchesClientServiceDeadline,
+  type ClientServiceDeadlineFilter,
+  type ClientServiceDeadlineSort,
+} from "@/lib/client-service-deadline";
 
 interface Client {
   id: string;
@@ -54,6 +61,20 @@ const SERVICE_OPTIONS = [
   { value: "ФРДО", label: "ФРДО", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
   { value: "САЙТ", label: "САЙТ", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
   { value: "ПРОЧЕЕ", label: "ПРОЧЕЕ", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+];
+
+const SERVICE_DEADLINE_FILTER_OPTIONS: Array<{
+  value: ClientServiceDeadlineFilter;
+  label: string;
+}> = [
+  { value: "all", label: "Все сроки" },
+  { value: "expired", label: "Уже истекли" },
+  { value: "within_30", label: "Заканчиваются до 30 дней" },
+  { value: "days_31_60", label: "Заканчиваются через 31–60 дней" },
+  { value: "days_61_90", label: "Заканчиваются через 61–90 дней" },
+  { value: "after_90", label: "Более 90 дней" },
+  { value: "no_deadline", label: "Без срока" },
+  { value: "missing", label: "Срок не указан" },
 ];
 
 async function fetchDadata(params: { inn?: string; query?: string }) {
@@ -106,6 +127,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [directorName, setDirectorName] = useState("");
   const [directorPost, setDirectorPost] = useState("");
   const [search, setSearch] = useState("");
+  const [deadlineFilter, setDeadlineFilter] = useState<ClientServiceDeadlineFilter>("all");
+  const [deadlineSort, setDeadlineSort] = useState<ClientServiceDeadlineSort>("none");
   const [saving, setSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -510,15 +533,36 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     toast.success("Клиент удалён");
   };
 
-  const filtered = clients.filter((c) => {
-    if (!search.trim()) return true;
-    const s = search.toLowerCase();
-    return c.name.toLowerCase().includes(s) ||
-      c.contact_person?.toLowerCase().includes(s) ||
-      c.phone?.toLowerCase().includes(s) ||
-      c.email?.toLowerCase().includes(s) ||
-      c.inn?.toLowerCase().includes(s);
-  });
+  const filtered = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const now = new Date();
+
+    return clients
+      .filter((client) => {
+        const matchesSearch = !normalizedSearch ||
+          client.name.toLowerCase().includes(normalizedSearch) ||
+          client.contact_person?.toLowerCase().includes(normalizedSearch) ||
+          client.phone?.toLowerCase().includes(normalizedSearch) ||
+          client.email?.toLowerCase().includes(normalizedSearch) ||
+          client.inn?.toLowerCase().includes(normalizedSearch);
+
+        return matchesSearch && matchesClientServiceDeadline(client, deadlineFilter, now);
+      })
+      .sort((first, second) => compareClientsByServiceDeadline(first, second, deadlineSort));
+  }, [clients, deadlineFilter, deadlineSort, search]);
+
+  const handleDeadlineFilter = (value: ClientServiceDeadlineFilter) => {
+    setDeadlineFilter(value);
+    if (!["all", "no_deadline", "missing"].includes(value)) {
+      setDeadlineSort("asc");
+    }
+    setCurrentPage(1);
+  };
+
+  const toggleDeadlineSort = () => {
+    setDeadlineSort(getNextClientServiceDeadlineSort);
+    setCurrentPage(1);
+  };
 
   const getServiceBadge = (type: string | null) => {
     const opt = SERVICE_OPTIONS.find(o => o.value === type);
@@ -543,6 +587,19 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Input placeholder="Поиск клиентов..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} className="flex-1 min-w-[150px]" />
+        <Select value={deadlineFilter} onValueChange={(value) => handleDeadlineFilter(value as ClientServiceDeadlineFilter)}>
+          <SelectTrigger className="h-9 w-full sm:w-[245px]" aria-label="Фильтр клиентов по сроку услуг">
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <SelectValue placeholder="Все сроки" />
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            {SERVICE_DEADLINE_FILTER_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="outline"
@@ -845,7 +902,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
             </div>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {search ? "Ничего не найдено" : "Нет клиентов"}
+              {search || deadlineFilter !== "all" ? "По выбранным условиям клиентов нет" : "Нет клиентов"}
             </p>
           ) : (
             <>
@@ -869,6 +926,13 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                       {c.contact_person && <span>{c.contact_person}</span>}
                       {c.phone && <span>{c.phone}</span>}
                       {c.payment_date && <span>Оплата: {new Date(c.payment_date).toLocaleDateString("ru-RU")}</span>}
+                      {c.no_deadline ? (
+                        <span>Срок услуг: без срока</span>
+                      ) : c.service_deadline ? (
+                        <span>Срок услуг: {new Date(c.service_deadline).toLocaleDateString("ru-RU")}</span>
+                      ) : (
+                        <span>Срок услуг не указан</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -884,7 +948,24 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                       <TableHead>Контактное лицо</TableHead>
                       <TableHead>Телефон</TableHead>
                       <TableHead>Оплата</TableHead>
-                      <TableHead>Срок услуг</TableHead>
+                      <TableHead aria-sort={deadlineSort === "none" ? "none" : deadlineSort === "asc" ? "ascending" : "descending"}>
+                        <button
+                          type="button"
+                          onClick={toggleDeadlineSort}
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          title={deadlineSort === "none" ? "Сортировать по сроку услуг" : deadlineSort === "asc" ? "Сначала ближайшие сроки" : "Сначала поздние сроки"}
+                          aria-label={deadlineSort === "none" ? "Срок услуг: без сортировки" : deadlineSort === "asc" ? "Срок услуг: сначала ближайшие" : "Срок услуг: сначала поздние"}
+                        >
+                          Срок услуг
+                          {deadlineSort === "none" ? (
+                            <ArrowUpDown className="h-3.5 w-3.5 opacity-50" />
+                          ) : deadlineSort === "asc" ? (
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
