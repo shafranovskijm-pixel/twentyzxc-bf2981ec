@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   compareContractsByPaidUntilAscending,
   compareContractsByPaidUntilDescending,
+  compareContractsByPaidUntilUpcoming,
   getPaidUntilDaysLeft,
+  getNextPaidUntilSortMode,
   matchesContractValidity,
   type ContractValidityFilter,
 } from "@/lib/contracts-validity";
@@ -81,5 +83,40 @@ describe("compareContractsByPaidUntilAscending", () => {
       "september",
       "no-term",
     ]);
+  });
+});
+
+describe("compareContractsByPaidUntilUpcoming", () => {
+  it("shows the nearest active terms first without hiding any contracts", () => {
+    const contracts = [
+      { id: "no-term", paid_until: null },
+      { id: "expired-long-ago", paid_until: "2025-08-16" },
+      { id: "october", paid_until: "2026-10-01" },
+      { id: "expired-yesterday", paid_until: "2026-08-15" },
+      { id: "september", paid_until: "2026-09-01" },
+      { id: "one-time", paid_until: null, is_one_time: true },
+    ];
+
+    const sorted = [...contracts].sort((first, second) =>
+      compareContractsByPaidUntilUpcoming(first, second, NOW),
+    );
+
+    expect(sorted.map((contract) => contract.id)).toEqual([
+      "september",
+      "october",
+      "expired-yesterday",
+      "expired-long-ago",
+      "no-term",
+      "one-time",
+    ]);
+  });
+});
+
+describe("getNextPaidUntilSortMode", () => {
+  it("cycles through upcoming, chronological, reverse and reset modes", () => {
+    expect(getNextPaidUntilSortMode("none")).toBe("upcoming");
+    expect(getNextPaidUntilSortMode("upcoming")).toBe("asc");
+    expect(getNextPaidUntilSortMode("asc")).toBe("desc");
+    expect(getNextPaidUntilSortMode("desc")).toBe("none");
   });
 });

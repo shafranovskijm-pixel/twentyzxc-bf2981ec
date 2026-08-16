@@ -28,9 +28,12 @@ import { generatePdfBase64 } from "@/lib/document-pdf";
 import {
   compareContractsByPaidUntilAscending,
   compareContractsByPaidUntilDescending,
+  compareContractsByPaidUntilUpcoming,
   getPaidUntilDaysLeft,
+  getNextPaidUntilSortMode,
   matchesContractValidity,
   type ContractValidityFilter,
+  type PaidUntilSortMode,
 } from "@/lib/contracts-validity";
 
 interface Contract {
@@ -50,8 +53,6 @@ interface Contract {
   is_one_time: boolean;
   created_at: string;
 }
-
-type PaidUntilSortDirection = "none" | "asc" | "desc";
 
 interface PaidUntilQuickEditProps {
   contract: Pick<Contract, "id" | "paid_until" | "is_one_time">;
@@ -187,7 +188,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
   const [validityFilter, setValidityFilter] = useState<ContractValidityFilter>("all");
-  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortDirection>("none");
+  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortMode>("none");
   const [inn, setInn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -843,6 +844,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       c.responsible?.toLowerCase().includes(s) ||
       email?.includes(s);
   }).sort((first, second) => {
+    if (paidUntilSort === "upcoming") return compareContractsByPaidUntilUpcoming(first, second);
     if (paidUntilSort === "asc") return compareContractsByPaidUntilAscending(first, second);
     if (paidUntilSort === "desc") return compareContractsByPaidUntilDescending(first, second);
     return validityFilter === "all" ? 0 : compareContractsByPaidUntilAscending(first, second);
@@ -899,7 +901,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const handleTab = (v: string) => { setTab(v); setCurrentPage(1); };
   const handleValidityFilter = (v: ContractValidityFilter) => { setValidityFilter(v); setCurrentPage(1); };
   const togglePaidUntilSort = () => {
-    setPaidUntilSort((current) => current === "none" ? "asc" : current === "asc" ? "desc" : "none");
+    setPaidUntilSort(getNextPaidUntilSortMode);
     setCurrentPage(1);
   };
   const handlePageSize = (v: number) => { setPageSize(v); setCurrentPage(1); };
@@ -1016,15 +1018,28 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                         onClick={togglePaidUntilSort}
                         className="inline-flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         aria-label={
-                          paidUntilSort === "asc"
+                          paidUntilSort === "upcoming"
+                            ? "Оплачено до: сначала ближайшие окончания. Нажмите для ранних дат"
+                            : paidUntilSort === "asc"
                             ? "Оплачено до: сначала ранние даты. Нажмите для поздних дат"
                             : paidUntilSort === "desc"
                               ? "Оплачено до: сначала поздние даты. Нажмите для сброса"
-                              : "Сортировать по дате окончания оплаты"
+                              : "Показать сначала договоры, которые скоро закончатся"
+                        }
+                        title={
+                          paidUntilSort === "upcoming"
+                            ? "Сначала ближайшие окончания"
+                            : paidUntilSort === "asc"
+                              ? "От ранних дат к поздним"
+                              : paidUntilSort === "desc"
+                                ? "От поздних дат к ранним"
+                                : "Без сортировки по сроку"
                         }
                       >
                         Оплачено до
-                        {paidUntilSort === "asc" ? (
+                        {paidUntilSort === "upcoming" ? (
+                          <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
+                        ) : paidUntilSort === "asc" ? (
                           <ArrowUp className="h-3.5 w-3.5" />
                         ) : paidUntilSort === "desc" ? (
                           <ArrowDown className="h-3.5 w-3.5" />
