@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
 import QuickDocumentDialog from "./QuickDocumentDialog";
+import ClientsMergeDialog from "./ClientsMergeDialog";
 
 interface Client {
   id: string;
@@ -38,6 +39,7 @@ interface Client {
   frdo_password_po: string | null;
   payment_date: string | null;
   service_deadline: string | null;
+  no_deadline?: boolean | null;
   inn: string | null;
   kpp: string | null;
   ogrn: string | null;
@@ -95,6 +97,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [frdoPasswordPo, setFrdoPasswordPo] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
   const [serviceDeadline, setServiceDeadline] = useState("");
+  const [noDeadline, setNoDeadline] = useState(false);
   const [inn, setInn] = useState("");
   const [kpp, setKpp] = useState("");
   const [ogrn, setOgrn] = useState("");
@@ -109,6 +112,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [syncingAll, setSyncingAll] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string>; selectedNames: Set<string> } | null>(null);
+  const [showMerge, setShowMerge] = useState(false);
 
   const handleImportFromContracts = async () => {
     setImporting(true);
@@ -251,6 +255,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
     setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setFrdoPasswordPo(""); setPaymentDate("");
     setServiceDeadline("");
+    setNoDeadline(false);
     setInn(""); setKpp(""); setOgrn(""); setLegalAddress(""); setDirectorName(""); setDirectorPost("");
     setEditingId(null);
   };
@@ -262,6 +267,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || ""); setFrdoPasswordPo((c as any).frdo_password_po || "");
     setPaymentDate(c.payment_date || "");
     setServiceDeadline((c as any).service_deadline || "");
+    setNoDeadline(!!(c as any).no_deadline);
     setInn(c.inn || ""); setKpp(c.kpp || ""); setOgrn(c.ogrn || "");
     setLegalAddress(c.legal_address || ""); setDirectorName(c.director_name || "");
     setDirectorPost(c.director_post || "");
@@ -273,7 +279,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     name, contactPerson, phone, email, telegram, notes, serviceType,
     frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline,
     inn, kpp, ogrn, legalAddress, directorName, directorPost,
-  }), [name, contactPerson, phone, email, telegram, notes, serviceType, frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline, inn, kpp, ogrn, legalAddress, directorName, directorPost]);
+    noDeadline,
+  }), [name, contactPerson, phone, email, telegram, notes, serviceType, frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline, noDeadline, inn, kpp, ogrn, legalAddress, directorName, directorPost]);
   const isDirty = showForm && formValues !== snapshot;
 
   // Take a snapshot whenever the sheet opens with a different record.
@@ -415,7 +422,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         frdo_password: frdoPassword.trim() || null,
         frdo_password_po: frdoPasswordPo.trim() || null,
         payment_date: paymentDate || null,
-        service_deadline: serviceDeadline || null,
+        service_deadline: noDeadline ? null : (serviceDeadline || null),
+        no_deadline: noDeadline,
         inn: inn.trim() || null,
         kpp: kpp.trim() || null,
         ogrn: ogrn.trim() || null,
@@ -506,6 +514,9 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
             <DropdownMenuItem onSelect={() => syncAllClients()} disabled={syncingAll || clients.length === 0}>
               <RefreshCw className="w-4 h-4 mr-2" /> Синхронизировать все реквизиты
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setShowMerge(true)} disabled={clients.length === 0}>
+              <Copy className="w-4 h-4 mr-2" /> Объединить дубликаты
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button onClick={openNewClient} size="sm" className="gap-1.5">
@@ -585,6 +596,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                 inn={inn}
                 paymentDate={paymentDate}
                 serviceDeadline={serviceDeadline}
+                noDeadline={noDeadline}
                 contactPerson={contactPerson}
                 clientId={editingId}
                 clientName={name}
@@ -674,6 +686,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               frdoPasswordPo={frdoPasswordPo} setFrdoPasswordPo={setFrdoPasswordPo}
               paymentDate={paymentDate} setPaymentDate={setPaymentDate}
               serviceDeadline={serviceDeadline} setServiceDeadline={setServiceDeadline}
+              noDeadline={noDeadline} setNoDeadline={setNoDeadline}
               inn={inn} setInn={setInn}
               kpp={kpp} setKpp={setKpp}
               ogrn={ogrn} setOgrn={setOgrn}
