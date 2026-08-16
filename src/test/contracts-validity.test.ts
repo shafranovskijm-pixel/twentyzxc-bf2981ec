@@ -3,6 +3,7 @@ import {
   compareContractsByPaidUntilAscending,
   compareContractsByPaidUntilDescending,
   compareContractsByPaidUntilUpcoming,
+  DEFAULT_PAID_UNTIL_SORT_MODE,
   getPaidUntilDaysLeft,
   getNextPaidUntilSortMode,
   matchesContractValidity,
@@ -113,10 +114,10 @@ describe("compareContractsByPaidUntilUpcoming", () => {
 });
 
 describe("getNextPaidUntilSortMode", () => {
-  it("cycles through upcoming, chronological, reverse and reset modes", () => {
-    expect(getNextPaidUntilSortMode("none")).toBe("upcoming");
+  it("uses nearest endings by default and never returns to an unsorted list", () => {
+    expect(DEFAULT_PAID_UNTIL_SORT_MODE).toBe("upcoming");
     expect(getNextPaidUntilSortMode("upcoming")).toBe("asc");
     expect(getNextPaidUntilSortMode("asc")).toBe("desc");
-    expect(getNextPaidUntilSortMode("desc")).toBe("none");
+    expect(getNextPaidUntilSortMode("desc")).toBe("upcoming");
   });
 });

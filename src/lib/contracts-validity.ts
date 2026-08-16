@@ -12,7 +12,9 @@ export interface ContractValidityFields {
   is_one_time?: boolean | null;
 }
 
-export type PaidUntilSortMode = "none" | "upcoming" | "asc" | "desc";
+export type PaidUntilSortMode = "upcoming" | "asc" | "desc";
+
+export const DEFAULT_PAID_UNTIL_SORT_MODE: PaidUntilSortMode = "upcoming";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -113,10 +115,9 @@ export const compareContractsByPaidUntilUpcoming = (
 };
 
 export const getNextPaidUntilSortMode = (current: PaidUntilSortMode): PaidUntilSortMode => {
-  if (current === "none") return "upcoming";
   if (current === "upcoming") return "asc";
   if (current === "asc") return "desc";
-  return "none";
+  return "upcoming";
 };
 
 export const matchesContractValidity = (

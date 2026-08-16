@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText, CalendarClock, ArrowUp, ArrowDown } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +29,7 @@ import {
   compareContractsByPaidUntilAscending,
   compareContractsByPaidUntilDescending,
   compareContractsByPaidUntilUpcoming,
+  DEFAULT_PAID_UNTIL_SORT_MODE,
   getPaidUntilDaysLeft,
   getNextPaidUntilSortMode,
   matchesContractValidity,
@@ -188,7 +189,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [uploading, setUploading] = useState(false);
   const [tab, setTab] = useState("active");
   const [validityFilter, setValidityFilter] = useState<ContractValidityFilter>("all");
-  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortMode>("none");
+  const [paidUntilSort, setPaidUntilSort] = useState<PaidUntilSortMode>(DEFAULT_PAID_UNTIL_SORT_MODE);
   const [inn, setInn] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -844,10 +845,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       c.responsible?.toLowerCase().includes(s) ||
       email?.includes(s);
   }).sort((first, second) => {
-    if (paidUntilSort === "upcoming") return compareContractsByPaidUntilUpcoming(first, second);
     if (paidUntilSort === "asc") return compareContractsByPaidUntilAscending(first, second);
     if (paidUntilSort === "desc") return compareContractsByPaidUntilDescending(first, second);
-    return validityFilter === "all" ? 0 : compareContractsByPaidUntilAscending(first, second);
+    return compareContractsByPaidUntilUpcoming(first, second);
   });
 
   const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
@@ -1016,14 +1016,14 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                       <button
                         type="button"
                         onClick={togglePaidUntilSort}
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex flex-col items-start gap-0.5 whitespace-nowrap text-left transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         aria-label={
                           paidUntilSort === "upcoming"
                             ? "Оплачено до: сначала ближайшие окончания. Нажмите для ранних дат"
                             : paidUntilSort === "asc"
                             ? "Оплачено до: сначала ранние даты. Нажмите для поздних дат"
                             : paidUntilSort === "desc"
-                              ? "Оплачено до: сначала поздние даты. Нажмите для сброса"
+                              ? "Оплачено до: сначала поздние даты. Нажмите для ближайших окончаний"
                               : "Показать сначала договоры, которые скоро закончатся"
                         }
                         title={
@@ -1031,21 +1031,26 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                             ? "Сначала ближайшие окончания"
                             : paidUntilSort === "asc"
                               ? "От ранних дат к поздним"
-                              : paidUntilSort === "desc"
-                                ? "От поздних дат к ранним"
-                                : "Без сортировки по сроку"
+                              : "От поздних дат к ранним"
                         }
                       >
-                        Оплачено до
-                        {paidUntilSort === "upcoming" ? (
-                          <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
-                        ) : paidUntilSort === "asc" ? (
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        ) : paidUntilSort === "desc" ? (
-                          <ArrowDown className="h-3.5 w-3.5" />
-                        ) : (
-                          <ArrowUpDown className="h-3.5 w-3.5 opacity-60" />
-                        )}
+                        <span className="inline-flex items-center gap-1.5">
+                          Оплачено до
+                          {paidUntilSort === "upcoming" ? (
+                            <CalendarClock className="h-3.5 w-3.5 text-orange-500" />
+                          ) : paidUntilSort === "asc" ? (
+                            <ArrowUp className="h-3.5 w-3.5" />
+                          ) : (
+                            <ArrowDown className="h-3.5 w-3.5" />
+                          )}
+                        </span>
+                        <span className={`text-[10px] font-medium ${paidUntilSort === "upcoming" ? "text-orange-600" : "text-muted-foreground"}`}>
+                          {paidUntilSort === "upcoming"
+                            ? "Ближайшие окончания"
+                            : paidUntilSort === "asc"
+                              ? "Ранние → поздние"
+                              : "Поздние → ранние"}
+                        </span>
                       </button>
                     </TableHead>
                     <TableHead>Сумма</TableHead>
