@@ -91,6 +91,7 @@ export type Database = {
           kpp: string | null
           legal_address: string | null
           name: string
+          no_deadline: boolean
           notes: string | null
           ogrn: string | null
           payment_date: string | null
@@ -114,6 +115,7 @@ export type Database = {
           kpp?: string | null
           legal_address?: string | null
           name: string
+          no_deadline?: boolean
           notes?: string | null
           ogrn?: string | null
           payment_date?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           kpp?: string | null
           legal_address?: string | null
           name?: string
+          no_deadline?: boolean
           notes?: string | null
           ogrn?: string | null
           payment_date?: string | null

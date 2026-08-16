@@ -23,6 +23,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
 import QuickDocumentDialog from "./QuickDocumentDialog";
+import ClientsMergeDialog from "./ClientsMergeDialog";
 
 interface Client {
   id: string;
@@ -38,6 +39,7 @@ interface Client {
   frdo_password_po: string | null;
   payment_date: string | null;
   service_deadline: string | null;
+  no_deadline?: boolean | null;
   inn: string | null;
   kpp: string | null;
   ogrn: string | null;
@@ -95,6 +97,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [frdoPasswordPo, setFrdoPasswordPo] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
   const [serviceDeadline, setServiceDeadline] = useState("");
+  const [noDeadline, setNoDeadline] = useState(false);
   const [inn, setInn] = useState("");
   const [kpp, setKpp] = useState("");
   const [ogrn, setOgrn] = useState("");
@@ -109,6 +112,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
   const [syncingAll, setSyncingAll] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importConfirm, setImportConfirm] = useState<{ names: string[]; contractTypes: Record<string, string>; selectedNames: Set<string> } | null>(null);
+  const [showMerge, setShowMerge] = useState(false);
 
   const handleImportFromContracts = async () => {
     setImporting(true);
@@ -251,6 +255,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setName(""); setContactPerson(""); setPhone(""); setEmail(""); setTelegram(""); setNotes("");
     setServiceType(""); setFrdoLogin(""); setFrdoPassword(""); setFrdoPasswordPo(""); setPaymentDate("");
     setServiceDeadline("");
+    setNoDeadline(false);
     setInn(""); setKpp(""); setOgrn(""); setLegalAddress(""); setDirectorName(""); setDirectorPost("");
     setEditingId(null);
   };
@@ -262,6 +267,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     setFrdoLogin(c.frdo_login || ""); setFrdoPassword(c.frdo_password || ""); setFrdoPasswordPo((c as any).frdo_password_po || "");
     setPaymentDate(c.payment_date || "");
     setServiceDeadline((c as any).service_deadline || "");
+    setNoDeadline(!!(c as any).no_deadline);
     setInn(c.inn || ""); setKpp(c.kpp || ""); setOgrn(c.ogrn || "");
     setLegalAddress(c.legal_address || ""); setDirectorName(c.director_name || "");
     setDirectorPost(c.director_post || "");
@@ -273,7 +279,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
     name, contactPerson, phone, email, telegram, notes, serviceType,
     frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline,
     inn, kpp, ogrn, legalAddress, directorName, directorPost,
-  }), [name, contactPerson, phone, email, telegram, notes, serviceType, frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline, inn, kpp, ogrn, legalAddress, directorName, directorPost]);
+    noDeadline,
+  }), [name, contactPerson, phone, email, telegram, notes, serviceType, frdoLogin, frdoPassword, frdoPasswordPo, paymentDate, serviceDeadline, noDeadline, inn, kpp, ogrn, legalAddress, directorName, directorPost]);
   const isDirty = showForm && formValues !== snapshot;
 
   // Take a snapshot whenever the sheet opens with a different record.
@@ -415,7 +422,8 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         frdo_password: frdoPassword.trim() || null,
         frdo_password_po: frdoPasswordPo.trim() || null,
         payment_date: paymentDate || null,
-        service_deadline: serviceDeadline || null,
+        service_deadline: noDeadline ? null : (serviceDeadline || null),
+        no_deadline: noDeadline,
         inn: inn.trim() || null,
         kpp: kpp.trim() || null,
         ogrn: ogrn.trim() || null,
@@ -506,6 +514,9 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
             <DropdownMenuItem onSelect={() => syncAllClients()} disabled={syncingAll || clients.length === 0}>
               <RefreshCw className="w-4 h-4 mr-2" /> Синхронизировать все реквизиты
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setShowMerge(true)} disabled={clients.length === 0}>
+              <Copy className="w-4 h-4 mr-2" /> Объединить дубликаты
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button onClick={openNewClient} size="sm" className="gap-1.5">
@@ -585,6 +596,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                 inn={inn}
                 paymentDate={paymentDate}
                 serviceDeadline={serviceDeadline}
+                noDeadline={noDeadline}
                 contactPerson={contactPerson}
                 clientId={editingId}
                 clientName={name}
@@ -674,6 +686,7 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               frdoPasswordPo={frdoPasswordPo} setFrdoPasswordPo={setFrdoPasswordPo}
               paymentDate={paymentDate} setPaymentDate={setPaymentDate}
               serviceDeadline={serviceDeadline} setServiceDeadline={setServiceDeadline}
+              noDeadline={noDeadline} setNoDeadline={setNoDeadline}
               inn={inn} setInn={setInn}
               kpp={kpp} setKpp={setKpp}
               ogrn={ogrn} setOgrn={setOgrn}
@@ -840,7 +853,9 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
                             : "—"}
                         </TableCell>
                         <TableCell className="text-xs">
-                          {(c as any).service_deadline ? (() => {
+                          {(c as any).no_deadline ? (
+                            <span className="text-muted-foreground">Без срока</span>
+                          ) : (c as any).service_deadline ? (() => {
                             const dl = new Date((c as any).service_deadline);
                             const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                             const color = diff < 0 ? "text-destructive" : diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
@@ -868,6 +883,12 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
         onOpenChange={(v) => setQuickDoc((q) => ({ ...q, open: v }))}
         clientName={quickDoc.clientName}
         docType={quickDoc.docType}
+      />
+      <ClientsMergeDialog
+        open={showMerge}
+        onOpenChange={setShowMerge}
+        clients={clients as any}
+        onMerged={() => queryClient.invalidateQueries({ queryKey: ["admin-clients"] })}
       />
     </div>
   );
@@ -1340,9 +1361,9 @@ const useClientInteractions = (clientId: string) =>
 // ============================================================
 // Quick facts header strip
 // ============================================================
-const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, contactPerson, clientId, clientName }: {
+const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDeadline, noDeadline, contactPerson, clientId, clientName }: {
   phone: string; email: string; telegram: string; inn: string;
-  paymentDate: string; serviceDeadline: string; contactPerson: string;
+  paymentDate: string; serviceDeadline: string; noDeadline?: boolean; contactPerson: string;
   clientId?: string; clientName?: string;
 }) => {
   const copy = (v: string, label: string) => {
@@ -1350,11 +1371,17 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
     navigator.clipboard.writeText(v).then(() => toast.success(`${label} скопирован`));
   };
   const [callOpen, setCallOpen] = useState(false);
-  const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || contactPerson;
+  const hasAny = phone || email || telegram || inn || paymentDate || serviceDeadline || noDeadline || contactPerson;
   if (!hasAny) return null;
 
   let deadlineNode: React.ReactNode = null;
-  if (serviceDeadline) {
+  if (noDeadline) {
+    deadlineNode = (
+      <span className="inline-flex items-center gap-1 text-muted-foreground" title="Срок оказания услуг не ограничен">
+        ⏳ без срока
+      </span>
+    );
+  } else if (serviceDeadline) {
     const dl = new Date(serviceDeadline);
     const diff = Math.round((dl.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     const cls = diff < 0 || diff <= 30 ? "text-destructive" : diff <= 90 ? "text-amber-400" : "text-muted-foreground";
@@ -1441,6 +1468,7 @@ interface ClientCardSectionsProps {
   frdoPasswordPo: string; setFrdoPasswordPo: (v: string) => void;
   paymentDate: string; setPaymentDate: (v: string) => void;
   serviceDeadline: string; setServiceDeadline: (v: string) => void;
+  noDeadline: boolean; setNoDeadline: (v: boolean) => void;
   inn: string; setInn: (v: string) => void;
   kpp: string; setKpp: (v: string) => void;
   ogrn: string; setOgrn: (v: string) => void;
@@ -1590,8 +1618,24 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
               </div>
               <div className="space-y-2">
                 <Label>Срок оказания услуг (до)</Label>
-                <Input type="date" value={p.serviceDeadline} onChange={(e) => p.setServiceDeadline(e.target.value)} />
-                {p.serviceDeadline && (() => {
+                <Input
+                  type="date"
+                  value={p.noDeadline ? "" : p.serviceDeadline}
+                  disabled={p.noDeadline}
+                  onChange={(e) => p.setServiceDeadline(e.target.value)}
+                />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                  <Checkbox
+                    checked={p.noDeadline}
+                    onCheckedChange={(v) => {
+                      const on = v === true;
+                      p.setNoDeadline(on);
+                      if (on) p.setServiceDeadline("");
+                    }}
+                  />
+                  Нет срока (бессрочно)
+                </label>
+                {!p.noDeadline && p.serviceDeadline && (() => {
                   const diff = Math.round((new Date(p.serviceDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
                   if (diff < 0) return <p className="text-xs text-destructive">Срок истёк {Math.abs(diff)} дн. назад</p>;
                   if (diff <= 30) return <p className="text-xs text-destructive">Осталось {diff} дн.</p>;
