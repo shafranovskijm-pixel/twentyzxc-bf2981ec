@@ -577,3 +577,14 @@
   height: 1px;
   background: hsl(var(--border));
 }
+
+/* На минималистичном лендинге убираем тяжёлый декор общего футера */
+.landing-light footer > .absolute,
+.landing-light footer > img[aria-hidden="true"] {
+  display: none !important;
+}
+
+.landing-light footer {
+  background-color: hsl(var(--secondary) / 0.4);
+  border-top-color: hsl(var(--border));
+}
