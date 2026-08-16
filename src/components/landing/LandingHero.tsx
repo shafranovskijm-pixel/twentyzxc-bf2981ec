@@ -29,17 +29,17 @@ const LandingHero = () => (
 
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              to="/#contact"
+              to="/admin"
               className="landing-gold-btn inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
             >
-              Получить расчёт
+              Открыть CRM
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              to="/#services"
+              to="/#contact"
               className="landing-card-accent inline-flex items-center gap-2 rounded-md border px-6 py-3 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
             >
-              Услуги и цены
+              Получить расчёт
             </Link>
           </div>
 

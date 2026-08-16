@@ -62,9 +62,21 @@ const getInitialTheme = (): AdminTheme | null => {
 };
 
 const Admin = () => {
-  const { user, isAdmin, isLoading: authLoading, signIn, signOut } = useAdminAuth();
+  const {
+    user,
+    isAdmin,
+    isLoading: authLoading,
+    signIn,
+    signOut,
+    requestPasswordReset,
+    updatePassword,
+  } = useAdminAuth();
   const { settings, isLoading: settingsLoading, isError: settingsError, updateMultiple } = useSiteSettings();
   const [showLogin, setShowLogin] = useState(false);
+  const isPasswordResetFlow = (() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("reset-password") === "1" || window.location.hash.includes("type=recovery");
+  })();
   const ADMIN_START_SECTION_KEY = "admin-start-section";
   const [activeSection, setActiveSection] = useState<string>(() => {
     try {
@@ -485,12 +497,18 @@ const Admin = () => {
     return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin || isPasswordResetFlow) {
     return (
       <>
         <Helmet><title>Админ-панель | 24ZXC</title><meta name="robots" content="noindex, nofollow" /></Helmet>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <AdminLoginDialog onLogin={signIn} open={showLogin} onOpenChange={setShowLogin} />
+          <AdminLoginDialog
+            onLogin={signIn}
+            onRequestPasswordReset={requestPasswordReset}
+            onUpdatePassword={updatePassword}
+            open={showLogin}
+            onOpenChange={setShowLogin}
+          />
           {!showLogin && <Button onClick={() => setShowLogin(true)}>Войти как администратор</Button>}
         </div>
       </>

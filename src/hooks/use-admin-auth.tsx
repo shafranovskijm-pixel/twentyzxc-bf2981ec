@@ -10,6 +10,17 @@ interface AdminCache {
   timestamp: number;
 }
 
+export type AdminSignInFailureReason =
+  | "invalid_credentials"
+  | "not_admin"
+  | "role_check_failed"
+  | "unknown";
+
+export interface AdminSignInResult {
+  error: Error | null;
+  reason?: AdminSignInFailureReason;
+}
+
 function readCache(): AdminCache | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -35,7 +46,7 @@ export const useAdminAuth = () => {
   const [isAdmin, setIsAdmin] = useState(cached?.isAdmin ?? false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const checkAdminRole = useCallback(async (userId: string): Promise<boolean> => {
+  const checkAdminRole = useCallback(async (userId: string): Promise<boolean | null> => {
     try {
       const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
         setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 5000)
@@ -48,12 +59,12 @@ export const useAdminAuth = () => {
       const result = await Promise.race([query, timeout]);
       if (result.error) {
         console.error("checkAdminRole error:", result.error);
-        return false;
+        return null;
       }
       return !!result.data;
     } catch (e) {
       console.error("checkAdminRole exception:", e);
-      return false;
+      return null;
     }
   }, []);
 
@@ -95,8 +106,8 @@ export const useAdminAuth = () => {
       // No cache — must verify
       const admin = await checkAdminRole(session.user.id);
       if (!mounted) return;
-      setIsAdmin(admin);
-      if (admin) writeCache(session.user.id, true);
+      setIsAdmin(admin === true);
+      if (admin === true) writeCache(session.user.id, true);
       setIsLoading(false);
     });
 
@@ -130,8 +141,8 @@ export const useAdminAuth = () => {
           }
           const admin = await checkAdminRole(session.user.id);
           if (!mounted) return;
-          setIsAdmin(admin);
-          if (admin) writeCache(session.user.id, true);
+          setIsAdmin(admin === true);
+          if (admin === true) writeCache(session.user.id, true);
           setIsLoading(false);
         }
       }
@@ -143,15 +154,70 @@ export const useAdminAuth = () => {
     };
   }, [checkAdminRole]);
 
-  const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error && data.user) {
-      setUser(data.user);
-      const admin = await checkAdminRole(data.user.id);
-      setIsAdmin(admin);
-      if (admin) writeCache(data.user.id, true);
-      setIsLoading(false);
+  const signIn = async (email: string, password: string): Promise<AdminSignInResult> => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password,
+    });
+
+    if (error) {
+      const isInvalidCredentials =
+        error.code === "invalid_credentials" ||
+        /invalid login credentials/i.test(error.message);
+      return {
+        error,
+        reason: isInvalidCredentials ? "invalid_credentials" : "unknown",
+      };
     }
+
+    if (!data.user) {
+      return { error: new Error("Пользователь не получен"), reason: "unknown" };
+    }
+
+    setUser(data.user);
+    const admin = await checkAdminRole(data.user.id);
+
+    if (admin === null) {
+      setIsAdmin(false);
+      setIsLoading(false);
+      return {
+        error: new Error("Не удалось проверить права администратора"),
+        reason: "role_check_failed",
+      };
+    }
+
+    if (!admin) {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAdmin(false);
+      clearCache();
+      setIsLoading(false);
+      return {
+        error: new Error("У пользователя нет прав администратора"),
+        reason: "not_admin",
+      };
+    }
+
+    setIsAdmin(true);
+    writeCache(data.user.id, true);
+    setIsLoading(false);
+    return { error: null };
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return { error: new Error("Укажите email") };
+    }
+
+    const redirectTo = `${window.location.origin}/admin?reset-password=1`;
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, { redirectTo });
+    return { error };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
     return { error };
   };
 
@@ -162,5 +228,13 @@ export const useAdminAuth = () => {
     clearCache();
   };
 
-  return { user, isAdmin, isLoading, signIn, signOut };
+  return {
+    user,
+    isAdmin,
+    isLoading,
+    signIn,
+    signOut,
+    requestPasswordReset,
+    updatePassword,
+  };
 };
