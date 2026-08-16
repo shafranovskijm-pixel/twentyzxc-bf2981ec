@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, Save, Loader2, Trash2, Pencil, X, Download, Archive, ArchiveRestore, AlertTriangle, Search, RefreshCw, MoreVertical, FileCheck, FileText } from "lucide-react";
 import { Send } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import TablePagination from "./TablePagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import OrgRequisitesBlock from "./contracts/OrgRequisitesBlock";
@@ -41,6 +42,110 @@ interface Contract {
   is_one_time: boolean;
   created_at: string;
 }
+
+interface PaidUntilQuickEditProps {
+  contract: Pick<Contract, "id" | "paid_until" | "is_one_time">;
+  mobile?: boolean;
+  isExpired: boolean;
+  isSoon: boolean;
+  onSave: (paidUntil: string | null) => Promise<unknown>;
+}
+
+const PaidUntilQuickEdit = ({
+  contract,
+  mobile = false,
+  isExpired,
+  isSoon,
+  onSave,
+}: PaidUntilQuickEditProps) => {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(contract.paid_until || "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) setDraft(contract.paid_until || "");
+  }, [contract.paid_until, open]);
+
+  const save = async (next: string | null) => {
+    if (next === (contract.paid_until || null) && !(next && contract.is_one_time)) {
+      setOpen(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(next);
+      setOpen(false);
+    } catch {
+      // The mutation displays a user-facing error and keeps the editor open.
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={`group inline-flex min-h-8 items-center gap-1.5 rounded-md px-2 py-1 text-left transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+            isExpired
+              ? "text-red-500 font-semibold"
+              : isSoon
+                ? "text-yellow-500 font-semibold"
+                : "text-foreground"
+          }`}
+          aria-label="Изменить срок оплаты"
+        >
+          {(isExpired || isSoon) && <AlertTriangle className="h-3.5 w-3.5 shrink-0" />}
+          {mobile && <span className="font-normal text-muted-foreground">Оплачено до:</span>}
+          {contract.is_one_time ? (
+            <span className="font-medium">Единоразово</span>
+          ) : contract.paid_until ? (
+            <span>{new Date(contract.paid_until).toLocaleDateString("ru-RU")}</span>
+          ) : (
+            <span className="font-normal text-muted-foreground">Нет срока</span>
+          )}
+          <Pencil className="h-3.5 w-3.5 shrink-0 opacity-50 transition-opacity group-hover:opacity-100" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 space-y-3">
+        <div>
+          <p className="text-sm font-semibold">Оплачено до</p>
+          <p className="text-xs text-muted-foreground">Измените дату или уберите срок.</p>
+        </div>
+        <Input
+          type="date"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          disabled={saving}
+          aria-label="Новая дата окончания оплаты"
+        />
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            className="flex-1"
+            disabled={!draft || saving}
+            onClick={() => save(draft)}
+          >
+            {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+            Сохранить
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={saving}
+            onClick={() => save(null)}
+          >
+            <X className="mr-1.5 h-3.5 w-3.5" />
+            Нет срока
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 interface ContractsTabProps {
   onOpenClient?: (name: string) => void;
@@ -633,6 +738,40 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
   });
 
+  const updatePaidUntil = useMutation({
+    mutationFn: async ({ id, paidUntil }: { id: string; paidUntil: string | null }) => {
+      const patch: Record<string, unknown> = { paid_until: paidUntil };
+      if (paidUntil) patch.is_one_time = false;
+      const { error } = await supabase.from("contracts").update(patch as any).eq("id", id);
+      if (error) throw error;
+      return { id, paidUntil };
+    },
+    onMutate: async ({ id, paidUntil }) => {
+      await queryClient.cancelQueries({ queryKey: ["admin-contracts"] });
+      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
+      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
+        old?.map((contract) =>
+          contract.id === id
+            ? {
+                ...contract,
+                paid_until: paidUntil,
+                is_one_time: paidUntil ? false : contract.is_one_time,
+              }
+            : contract
+        ) ?? []
+      );
+      return { prev };
+    },
+    onSuccess: ({ paidUntil }) => {
+      toast.success(paidUntil ? "Срок оплаты обновлён" : "Срок оплаты убран");
+    },
+    onError: (_error, _variables, context) => {
+      if (context?.prev) queryClient.setQueryData(["admin-contracts"], context.prev);
+      toast.error("Не удалось изменить срок оплаты");
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
+  });
+
   const downloadFile = async (filePath: string) => {
     const { data, error } = await supabase.storage.from("contracts").download(filePath);
     if (error || !data) return toast.error("Ошибка скачивания");
@@ -790,12 +929,15 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                       </span>
                     ) : null; })()}
                   </div>
-                  {c.paid_until && (
-                    <div className={`text-xs flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : "text-muted-foreground"}`}>
-                      {(isPaidUntilExpired(c.paid_until) || isPaidUntilSoon(c.paid_until)) && <AlertTriangle className="w-3 h-3" />}
-                      Оплачено до: {new Date(c.paid_until).toLocaleDateString("ru-RU")}
-                    </div>
-                  )}
+                  <div className="text-xs">
+                    <PaidUntilQuickEdit
+                      contract={c}
+                      mobile
+                      isExpired={isPaidUntilExpired(c.paid_until)}
+                      isSoon={isPaidUntilSoon(c.paid_until)}
+                      onSave={(next) => updatePaidUntil.mutateAsync({ id: c.id, paidUntil: next })}
+                    />
+                  </div>
                   <div className="flex gap-1 pt-1">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -877,15 +1019,12 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                         >{c.payment_status || "—"}</Badge>
                       </TableCell>
                       <TableCell>
-                        {c.is_one_time ? (
-                          <Badge variant="outline" className="text-xs">Единоразово</Badge>
-                        ) : c.paid_until ? (
-                          <span className={`flex items-center gap-1 ${isPaidUntilExpired(c.paid_until) ? "text-red-500 font-semibold" : isPaidUntilSoon(c.paid_until) ? "text-yellow-500 font-semibold" : ""}`}>
-                            {isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
-                            {isPaidUntilSoon(c.paid_until) && !isPaidUntilExpired(c.paid_until) && <AlertTriangle className="w-4 h-4" />}
-                            {new Date(c.paid_until).toLocaleDateString("ru-RU")}
-                          </span>
-                        ) : "—"}
+                        <PaidUntilQuickEdit
+                          contract={c}
+                          isExpired={isPaidUntilExpired(c.paid_until)}
+                          isSoon={isPaidUntilSoon(c.paid_until)}
+                          onSave={(next) => updatePaidUntil.mutateAsync({ id: c.id, paidUntil: next })}
+                        />
                       </TableCell>
                       <TableCell>{formatAmount(c.amount)}</TableCell>
                       <TableCell>

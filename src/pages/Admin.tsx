@@ -50,12 +50,15 @@ interface Promotion {
   sort_order: number;
 }
 
+const DEFAULT_ADMIN_THEME_ID = "sunset";
+
 const getInitialTheme = (): AdminTheme | null => {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === "default") return null;
     if (saved) return adminThemes.find(t => t.id === saved) || null;
   } catch {}
-  return null;
+  return adminThemes.find(t => t.id === DEFAULT_ADMIN_THEME_ID) || null;
 };
 
 const Admin = () => {
@@ -272,7 +275,8 @@ const Admin = () => {
       setBannerUrl("");
       localStorage.removeItem("admin-banner-url");
     } else {
-      localStorage.removeItem(THEME_STORAGE_KEY);
+      // Keep an explicit marker so “По умолчанию” remains selected after reload.
+      localStorage.setItem(THEME_STORAGE_KEY, "default");
     }
     toast.success(theme ? `Тема «${theme.label}» установлена` : "Тема сброшена");
   };

@@ -93,7 +93,7 @@ function SortableNavButton({
   item: (typeof defaultMenuItems)[0];
   isActive: boolean;
   onClick: () => void;
-  /** Always-expanded variant (mobile sheet). Otherwise labels appear from xl up. */
+  /** Always-expanded variant (mobile sheet). Otherwise labels appear from lg up. */
   expanded: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
@@ -108,7 +108,7 @@ function SortableNavButton({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn("group/item relative", expanded ? "w-full" : "xl:w-full")}
+      className={cn("group/item relative", expanded ? "w-full" : "lg:w-full")}
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -121,18 +121,18 @@ function SortableNavButton({
               "h-10 rounded-lg flex items-center transition-colors duration-200 text-sm",
               expanded
                 ? "w-full justify-start gap-3 pl-3 pr-8 text-left"
-                : "w-10 justify-center xl:w-full xl:justify-start xl:gap-3 xl:pl-3 xl:pr-8 xl:text-left",
+                : "w-10 justify-center lg:w-full lg:justify-start lg:gap-3 lg:pl-3 lg:pr-8 lg:text-left",
               isActive
                 ? "bg-primary/15 text-primary font-medium"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
             )}
           >
-            <Icon className={cn("shrink-0", expanded ? "h-4 w-4" : "h-5 w-5 xl:h-4 xl:w-4")} />
-            <span className={cn("truncate", expanded ? "inline" : "hidden xl:inline")}>{item.label}</span>
+            <Icon className={cn("shrink-0", expanded ? "h-4 w-4" : "h-5 w-5 lg:h-4 lg:w-4")} />
+            <span className={cn("truncate", expanded ? "inline" : "hidden lg:inline")}>{item.label}</span>
           </button>
         </TooltipTrigger>
         {!expanded && (
-          <TooltipContent side="right" sideOffset={8} className="xl:hidden">
+          <TooltipContent side="right" sideOffset={8} className="lg:hidden">
             {item.label}
           </TooltipContent>
         )}
@@ -143,10 +143,10 @@ function SortableNavButton({
         aria-label={`Переместить «${item.label}»`}
         className={cn(
           "absolute top-1/2 -translate-y-1/2 cursor-grab opacity-0 group-hover/item:opacity-40 transition-opacity",
-          expanded ? "right-1 p-1" : "-left-1 p-0.5 xl:left-auto xl:right-1 xl:p-1"
+          expanded ? "right-1 p-1" : "-left-1 p-0.5 lg:left-auto lg:right-1 lg:p-1"
         )}
       >
-        <GripVertical className={cn(expanded ? "h-3.5 w-3.5" : "h-3 w-3 xl:h-3.5 xl:w-3.5")} />
+        <GripVertical className={cn(expanded ? "h-3.5 w-3.5" : "h-3 w-3 lg:h-3.5 lg:w-3.5")} />
       </span>
     </div>
   );
@@ -197,7 +197,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
     <TooltipProvider delayDuration={200}>
       <aside className={cn(
         "shrink-0 border-r flex flex-col py-4 gap-1 z-30 transition-colors duration-500",
-        expanded ? "w-72 px-3 items-stretch" : "w-16 items-center xl:w-60 xl:px-3 xl:items-stretch",
+        expanded ? "w-72 px-3 items-stretch" : "w-16 items-center lg:w-60 lg:px-3 lg:items-stretch",
         inSheet ? "h-full" : "sticky top-0 h-screen",
         themeClass || "border-border bg-card",
         className
@@ -208,10 +208,10 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
           title="На главную"
           className={cn(
             "mb-4 select-none hover:opacity-80 transition-opacity text-primary font-bold tracking-widest",
-            expanded ? "px-3 text-sm" : "text-xs self-center xl:self-start xl:px-3 xl:text-sm"
+            expanded ? "px-3 text-sm" : "text-xs self-center lg:self-start lg:px-3 lg:text-sm"
           )}
         >
-          24<span className={cn("text-foreground", expanded ? "" : "hidden xl:inline")}>ZXC CRM</span>
+          24<span className={cn("text-foreground", expanded ? "" : "hidden lg:inline")}>ZXC CRM</span>
         </a>
 
         {/* Primary nav */}
@@ -219,7 +219,7 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
           <SortableContext items={visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
             <nav className={cn(
               "flex flex-col gap-1 flex-1 overflow-y-auto",
-              expanded ? "items-stretch" : "items-center justify-center xl:items-stretch xl:justify-start"
+              expanded ? "items-stretch" : "items-center justify-center lg:items-stretch lg:justify-start"
             )}>
               {visibleItems.map((item) => (
                 <SortableNavButton
@@ -243,11 +243,11 @@ const AdminSidebar = ({ activeSection, onSectionChange, onSignOut, themeClass, i
               aria-label="Выйти"
               className={cn(
                 "h-10 rounded-lg flex items-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 mt-auto",
-                expanded ? "w-full gap-3 pl-3 text-sm" : "w-10 justify-center self-center xl:w-full xl:gap-3 xl:pl-3 xl:justify-start xl:self-stretch xl:text-sm"
+                expanded ? "w-full gap-3 pl-3 text-sm" : "w-10 justify-center self-center lg:w-full lg:gap-3 lg:pl-3 lg:justify-start lg:self-stretch lg:text-sm"
               )}
             >
               <LogOut className="h-4 w-4 shrink-0" />
-              <span className={cn(expanded ? "" : "hidden xl:inline")}>Выйти</span>
+              <span className={cn(expanded ? "" : "hidden lg:inline")}>Выйти</span>
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>
