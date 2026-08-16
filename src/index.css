@@ -525,3 +525,55 @@
   font-weight: 600;
   box-shadow: inset 0 1px 0 hsl(var(--syntagma-accent) / 0.1), 0 4px 16px hsl(0 0% 0% / 0.3);
 }
+
+/* ============================================================
+   Landing — минималистичная светлая тема (в стиле документов:
+   счетов, договоров и актов). Токены переопределяются локально,
+   поэтому остальной сайт (админка, playground) остаётся тёмным.
+   ============================================================ */
+.landing-light {
+  color-scheme: light;
+
+  --background: 0 0% 100%;
+  --foreground: 220 12% 13%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 220 12% 13%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 220 12% 13%;
+
+  --primary: 220 12% 14%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 16% 96%;
+  --secondary-foreground: 220 12% 20%;
+
+  --muted: 220 16% 96%;
+  --muted-foreground: 220 9% 46%;
+
+  --accent: 220 16% 94%;
+  --accent-foreground: 220 12% 16%;
+
+  --border: 220 13% 90%;
+  --input: 220 13% 88%;
+  --ring: 220 9% 40%;
+
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-weight: 400;
+}
+
+.landing-light .gradient-gold-text,
+.landing-light .gold-glow-text {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: hsl(var(--foreground));
+  text-shadow: none;
+}
+
+/* Тонкая «документная» сетка-разделитель */
+.landing-rule {
+  height: 1px;
+  background: hsl(var(--border));
+}
