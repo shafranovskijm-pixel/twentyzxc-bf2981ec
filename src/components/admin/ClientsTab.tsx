@@ -32,6 +32,7 @@ import {
   type ClientServiceDeadlineFilter,
   type ClientServiceDeadlineSort,
 } from "@/lib/client-service-deadline";
+import { isFrdoContractType } from "@/lib/contract-renewal";
 
 interface Client {
   id: string;
@@ -827,6 +828,11 @@ const ClientsTab = ({ onNavigate, initialClientName, onConsumed }: ClientsTabPro
               fillFromContract={fillFromContract}
               syncRequisites={syncRequisites}
               onOpenQuickDocument={(docType) => setQuickDoc({ open: true, docType, clientName: name })}
+              onRenewContract={(contractId) => onNavigate?.("contracts", {
+                clientName: name,
+                autoOpenNew: true,
+                renewContractId: contractId,
+              })}
               onOpenProposal={openProposal}
               onCreateProposal={createProposal}
             />
@@ -1065,6 +1071,7 @@ interface ClientsTabProps {
     clientId?: string;
     proposalId?: string;
     autoOpenNew?: boolean;
+    renewContractId?: string;
   }) => void;
   initialClientName?: string;
   onConsumed?: () => void;
@@ -1078,7 +1085,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path, paid_until")
         .eq("client_name", clientName)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -1443,7 +1450,7 @@ const useClientContracts = (clientName: string) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path")
+        .select("id, contract_number, contract_date, amount, payment_status, contract_type, file_path, paid_until")
         .eq("client_name", clientName)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -1637,6 +1644,7 @@ interface ClientCardSectionsProps {
   fillFromContract: () => void;
   syncRequisites: (byInn?: boolean) => void;
   onOpenQuickDocument: (docType: "contract" | "invoice" | "act") => void;
+  onRenewContract?: (contractId: string) => void;
   onOpenProposal?: (proposalId: string) => void;
   onCreateProposal?: () => void;
 }
@@ -1669,7 +1677,11 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Договоры <span className="text-muted-foreground">({contracts.length})</span></span>
           </AccordionTrigger>
           <AccordionContent>
-            <ContractsSection clientName={p.clientName} onOpenContract={() => p.onOpenQuickDocument("contract")} />
+            <ContractsSection
+              clientName={p.clientName}
+              onOpenContract={() => p.onOpenQuickDocument("contract")}
+              onRenewContract={(contractId) => p.onRenewContract?.(contractId)}
+            />
           </AccordionContent>
         </AccordionItem>
       )}
@@ -1865,7 +1877,15 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
 // ============================================================
 // Section renderers (data reused via React Query cache)
 // ============================================================
-const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; onOpenContract: () => void }) => {
+const ContractsSection = ({
+  clientName,
+  onOpenContract,
+  onRenewContract,
+}: {
+  clientName: string;
+  onOpenContract: () => void;
+  onRenewContract: (contractId: string) => void;
+}) => {
   const queryClient = useQueryClient();
   const { data: contracts = [], isLoading } = useClientContracts(clientName);
   const fmt = (d: string | null) => d ? new Date(d).toLocaleDateString("ru-RU") : "—";
@@ -1933,6 +1953,7 @@ const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; 
             <span className="text-muted-foreground text-xs">{fmt(c.contract_date)}</span>
             {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
             {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
+            {c.paid_until && <span className="text-xs text-muted-foreground">до {fmt(c.paid_until)}</span>}
           </div>
           <button
             onClick={async (e) => {
@@ -1947,6 +1968,22 @@ const ContractsSection = ({ clientName, onOpenContract }: { clientName: string; 
           >
             {c.payment_status || "не оплачено"}
           </button>
+          {isFrdoContractType(c.contract_type) && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 px-2 text-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRenewContract(c.id);
+              }}
+              disabled={!c.paid_until && !c.contract_date}
+              title={c.paid_until || c.contract_date ? "Создать договор на следующий период" : "Сначала укажите срок текущего договора"}
+            >
+              <CalendarPlus className="h-3.5 w-3.5" />
+              Продлить
+            </Button>
+          )}
           {c.file_path && (
             <Button
               variant="ghost"

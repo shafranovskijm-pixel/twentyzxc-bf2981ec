@@ -35,6 +35,7 @@ import {
   type ContractSortState,
   type ContractValidityFilter,
 } from "@/lib/contracts-validity";
+import { getContractRenewalPeriod } from "@/lib/contract-renewal";
 
 interface Contract {
   id: string;
@@ -211,10 +212,11 @@ interface ContractsTabProps {
   initialClientName?: string;
   initialSearch?: string;
   autoOpenNew?: boolean;
+  renewalSourceId?: string;
   onConsumed?: () => void;
 }
 
-const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, onConsumed }: ContractsTabProps = {}) => {
+const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, renewalSourceId, onConsumed }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
@@ -230,6 +232,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [notes, setNotes] = useState("");
   const [paidUntil, setPaidUntil] = useState("");
   const [isOneTime, setIsOneTime] = useState(false);
+  const [renewalSourceNumber, setRenewalSourceNumber] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -356,9 +359,36 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     if (!autoOpenNew) return;
     if (isLoading) return; // wait for contracts list to compute next number
     resetForm();
-    if (initialClientName) setClientName(initialClientName);
+    const renewalSource = renewalSourceId
+      ? contracts.find((contract) => contract.id === renewalSourceId)
+      : null;
+
+    if (renewalSourceId && !renewalSource) {
+      toast.error("Исходный договор для продления не найден");
+      onConsumed?.();
+      return;
+    }
+
+    if (renewalSource) {
+      const renewalPeriod = getContractRenewalPeriod(renewalSource);
+      if (!renewalPeriod) {
+        toast.error("У текущего договора не указан корректный срок окончания");
+        onConsumed?.();
+        return;
+      }
+      setClientName(renewalSource.client_name);
+      setContractDate(renewalPeriod.startDate);
+      setPaidUntil(renewalPeriod.endDate);
+      setAmount(renewalSource.amount?.toString() || "");
+      setAmountExtra(renewalSource.amount_extra?.toString() || "");
+      setContractType(renewalSource.contract_type || "ФРДО");
+      setResponsible(renewalSource.responsible || "");
+      setRenewalSourceNumber(renewalSource.contract_number || "без номера");
+    } else {
+      if (initialClientName) setClientName(initialClientName);
+      setContractDate(new Date().toISOString().split("T")[0]);
+    }
     setContractNumber(getNextContractNumber());
-    setContractDate(new Date().toISOString().split("T")[0]);
     setShowForm(true);
     onConsumed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -368,6 +398,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     setClientName(""); setContractNumber(""); setContractDate(""); setPaymentStatus("не оплачено");
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
     setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false); setIsOneTime(false);
+    setRenewalSourceNumber("");
   };
 
   // Email lookup by client name for search
@@ -1203,11 +1234,22 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{editingId ? "Редактировать договор" : "Новый договор"}</CardTitle>
+              <CardTitle className="text-lg">
+                {editingId ? "Редактировать договор" : renewalSourceNumber ? "Продление договора ФРДО" : "Новый договор"}
+              </CardTitle>
               <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {renewalSourceNumber && (
+              <div className="flex items-start gap-2 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-sm">
+                <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div>
+                  <p className="font-medium">Продление договора №{renewalSourceNumber}</p>
+                  <p className="text-xs text-muted-foreground">Создаётся новый договор; исходный договор останется без изменений.</p>
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 items-end">
               <div className="space-y-2 flex-1">
                 <Label>Поиск по ИНН / названию</Label>
@@ -1236,10 +1278,10 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               onInnDetected={(detected) => { if (!inn) setInn(detected); }}
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div className="space-y-2"><Label>Дата</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
+              <div className="space-y-2"><Label>{renewalSourceNumber ? "Период услуг: от" : "Дата"}</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
               <div className="space-y-2">
-                <Label>Оплачено до</Label>
+                <Label>{renewalSourceNumber ? "Период услуг: до" : "Оплачено до"}</Label>
                 <Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} disabled={isOneTime} className={isOneTime ? "opacity-50" : ""} />
                 {!isOneTime && contractDate && !paidUntil && (
                   <p className="text-[11px] text-muted-foreground">Авто: {(() => { const d = new Date(contractDate); d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString("ru-RU"); })()}</p>
@@ -1276,7 +1318,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
             <div className="space-y-2"><Label>Файл договора (PDF/Word)</Label><Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
             <Button onClick={saveContract} disabled={saving || uploading} className="w-full">
               {(saving || uploading) ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-              {editingId ? "Обновить" : "Добавить"}
+              {editingId ? "Обновить" : renewalSourceNumber ? "Создать продление" : "Добавить"}
             </Button>
           </CardContent>
         </Card>
