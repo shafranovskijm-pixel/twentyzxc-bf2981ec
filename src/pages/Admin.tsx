@@ -127,6 +127,29 @@ const Admin = () => {
     });
   };
 
+  /** Ordered list of sections currently visible in the sidebar. */
+  const firstVisibleSection = (hidden: string[]) => {
+    let ordered = sidebarMenuItems;
+    try {
+      const saved = JSON.parse(localStorage.getItem(SIDEBAR_ORDER_STORAGE_KEY) || "null");
+      if (Array.isArray(saved)) {
+        const sorted = saved.map((id: string) => sidebarMenuItems.find(m => m.id === id)).filter(Boolean) as typeof sidebarMenuItems;
+        ordered = [...sorted, ...sidebarMenuItems.filter(m => !saved.includes(m.id))];
+      }
+    } catch {}
+    return ordered.find(m => !hidden.includes(m.id))?.id || "proposals";
+  };
+
+  // Never land on a section that is hidden from the menu (e.g. saved start section
+  // that was later hidden) — fall back to the first visible sidebar item.
+  useEffect(() => {
+    if (activeSection === "profile") return;
+    if (!hiddenSections.includes(activeSection)) return;
+    const next = firstVisibleSection(hiddenSections);
+    setActiveSection(next);
+    try { localStorage.setItem(ADMIN_START_SECTION_KEY, next); } catch {}
+  }, [hiddenSections, activeSection]);
+
   // Load persisted UI settings from Supabase once the user is known.
   useEffect(() => {
     if (!user?.id) return;
