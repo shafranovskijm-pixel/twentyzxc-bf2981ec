@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { LANDING_FAQS } from "./landing-data";
 
 const LandingFaq = () => (
-  <section className="border-b border-border bg-secondary/35">
+  <section className="border-b border-border bg-background">
     <div className="container px-4 py-16 md:py-20">
       <div className="grid gap-10 lg:grid-cols-[280px_1fr] lg:gap-16">
         <div>

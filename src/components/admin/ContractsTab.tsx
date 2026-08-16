@@ -26,6 +26,7 @@ import { useSiteSettings } from "@/hooks/use-site-settings";
 import { generateContractHtml, type DocumentData, type CompanyRequisites, type ClientRequisites } from "@/lib/document-templates";
 import { generatePdfBase64 } from "@/lib/document-pdf";
 import {
+  compareContractsByPaidUntilAscending,
   getPaidUntilDaysLeft,
   matchesContractValidity,
   type ContractValidityFilter,
@@ -837,7 +838,11 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       c.contract_type?.toLowerCase().includes(s) ||
       c.responsible?.toLowerCase().includes(s) ||
       email?.includes(s);
-  });
+  }).sort((first, second) => (
+    validityFilter === "all"
+      ? 0
+      : compareContractsByPaidUntilAscending(first, second)
+  ));
 
   const activeCount = contracts.filter((c) => !(c as any).is_archived).length;
   const archiveCount = contracts.filter((c) => (c as any).is_archived).length;
@@ -1118,7 +1123,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Input placeholder="Поиск по названию, номеру, email..." value={search} onChange={(e) => handleSearch(e.target.value)} className="flex-1" />
         <Select value={validityFilter} onValueChange={(value) => handleValidityFilter(value as ContractValidityFilter)}>
-          <SelectTrigger className="w-full sm:w-[220px]" aria-label="Фильтр по сроку действия">
+          <SelectTrigger className="w-full sm:w-[260px]" aria-label="Фильтр по сроку действия">
             <span className="flex min-w-0 items-center gap-2">
               <CalendarClock className="h-4 w-4 shrink-0 text-muted-foreground" />
               <SelectValue placeholder="Все сроки" />
@@ -1126,6 +1131,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Все сроки</SelectItem>
+            <SelectItem value="expiring-first">Истекают: раньше → позже</SelectItem>
             <SelectItem value="expired">Просрочены</SelectItem>
             <SelectItem value="within-30">До 30 дней</SelectItem>
             <SelectItem value="within-90">31–90 дней</SelectItem>

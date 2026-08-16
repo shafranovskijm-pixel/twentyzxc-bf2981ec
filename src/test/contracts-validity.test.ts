@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  compareContractsByPaidUntilAscending,
   getPaidUntilDaysLeft,
   matchesContractValidity,
   type ContractValidityFilter,
@@ -42,5 +43,32 @@ describe("matchesContractValidity", () => {
     expect(matches(null, "one-time", true)).toBe(true);
     expect(matches(null, "no-term", true)).toBe(false);
     expect(matches(null, "within-30", true)).toBe(false);
+  });
+
+  it("includes only contracts with a real end date in the chronological view", () => {
+    expect(matches("2026-08-15", "expiring-first")).toBe(true);
+    expect(matches("2027-08-15", "expiring-first")).toBe(true);
+    expect(matches(null, "expiring-first")).toBe(false);
+    expect(matches("2026-08-15", "expiring-first", true)).toBe(false);
+  });
+});
+
+describe("compareContractsByPaidUntilAscending", () => {
+  it("places earlier dates first and contracts without a term last", () => {
+    const contracts = [
+      { id: "no-term", paid_until: null },
+      { id: "later", paid_until: "2027-09-01" },
+      { id: "earlier", paid_until: "2026-08-01" },
+      { id: "one-time", paid_until: "2025-01-01", is_one_time: true },
+    ];
+
+    const sorted = [...contracts].sort(compareContractsByPaidUntilAscending);
+
+    expect(sorted.map((contract) => contract.id)).toEqual([
+      "earlier",
+      "later",
+      "no-term",
+      "one-time",
+    ]);
   });
 });

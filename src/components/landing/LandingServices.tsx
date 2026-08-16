@@ -26,7 +26,7 @@ const ServiceCard = ({ service }: { service: LandingService }) => {
 const ServiceGroup = ({ title, services }: { title: string; services: LandingService[] }) => (
   <div>
     <h3 className="mb-4 text-sm font-medium text-muted-foreground">{title}</h3>
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {services.map((service) => <ServiceCard key={service.title} service={service} />)}
     </div>
   </div>

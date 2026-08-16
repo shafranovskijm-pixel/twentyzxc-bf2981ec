@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Outlet, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToHash } from "@/hooks/use-scroll-to-hash";
 import { InventoryProvider } from "@/contexts/InventoryContext";
@@ -49,6 +49,12 @@ const RouteFallback = () => (
   <div className="min-h-screen w-full bg-background" aria-hidden="true" />
 );
 
+const PublicSiteTheme = () => (
+  <div className="landing-light min-h-screen bg-background text-foreground">
+    <Outlet />
+  </div>
+);
+
 const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
@@ -61,34 +67,36 @@ const App = () => (
               <ScrollToHash />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/frdo" element={<Frdo />} />
-                  <Route path="/licensing" element={<Licensing />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/policy" element={<Policy />} />
-                  <Route path="/templates" element={<Templates />} />
-                  <Route path="/templates/:id" element={<TemplateDetail />} />
+                  <Route element={<PublicSiteTheme />}>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/portfolio" element={<Portfolio />} />
+                    <Route path="/frdo" element={<Frdo />} />
+                    <Route path="/licensing" element={<Licensing />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/policy" element={<Policy />} />
+                    <Route path="/templates" element={<Templates />} />
+                    <Route path="/templates/:id" element={<TemplateDetail />} />
+                    <Route path="/services/landing" element={<Landing />} />
+                    <Route path="/services/corporate" element={<Corporate />} />
+                    <Route path="/services/ecommerce" element={<Ecommerce />} />
+                    <Route path="/services/webapp" element={<WebApp />} />
+                    <Route path="/services/nmo" element={<Nmo />} />
+                    <Route path="/projects/flowrish" element={<Flowrish />} />
+                    <Route path="/projects/chmuleva" element={<Chmuleva />} />
+                    <Route path="/projects/lanmei" element={<Lanmei />} />
+                    <Route path="/projects/lady-frost" element={<LadyFrost />} />
+                    <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
+                    <Route path="/projects/status" element={<Status />} />
+                    <Route path="/projects/spinride" element={<SpinRide />} />
+                    <Route path="/reviews" element={<Reviews />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
                   <Route path="/templates/:id/preview" element={<TemplatePreview />} />
-                  <Route path="/services/landing" element={<Landing />} />
-                  <Route path="/services/corporate" element={<Corporate />} />
-                  <Route path="/services/ecommerce" element={<Ecommerce />} />
-                  <Route path="/services/webapp" element={<WebApp />} />
-                  <Route path="/services/nmo" element={<Nmo />} />
-                  <Route path="/projects/flowrish" element={<Flowrish />} />
-                  <Route path="/projects/chmuleva" element={<Chmuleva />} />
-                  <Route path="/projects/lanmei" element={<Lanmei />} />
-                  <Route path="/projects/lady-frost" element={<LadyFrost />} />
-                  <Route path="/projects/pr-nutrition" element={<PrNutrition />} />
-                  <Route path="/projects/status" element={<Status />} />
-                  <Route path="/projects/spinride" element={<SpinRide />} />
-                  <Route path="/reviews" element={<Reviews />} />
                   <Route path="/playground" element={<Playground />} />
                   <Route path="/p/:slug" element={<PlaygroundView />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/org" element={<OrgPanel />} />
                   <Route path="/shop/:slug" element={<OrgLanding />} />
-                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
             </BrowserRouter>

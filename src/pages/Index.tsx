@@ -7,11 +7,11 @@ import LandingFaq from "@/components/landing/LandingFaq";
 import LandingHero from "@/components/landing/LandingHero";
 import LandingServices from "@/components/landing/LandingServices";
 import LandingSyntagma from "@/components/landing/LandingSyntagma";
-import { LANDING_FAQS } from "@/components/landing/landing-data";
+import { LANDING_CASES, LANDING_FAQS } from "@/components/landing/landing-data";
 
 const SEO_TITLE = "Создание сайтов, Яндекс Директ и ФИС ФРДО — 24ZXC";
 const SEO_DESCRIPTION =
-  "24ZXC создаёт сайты и веб-приложения, настраивает Яндекс Директ и сопровождает образовательные организации: ФИС ФРДО, лицензирование и НМО.";
+  "24ZXC создаёт сайты, CRM и мобильные приложения, настраивает Яндекс Директ и сопровождает образовательные организации: ФИС ФРДО, лицензирование и НМО.";
 
 const ORGANIZATION_SCHEMA = {
   "@context": "https://schema.org",
@@ -85,6 +85,23 @@ const FAQ_SCHEMA = {
   })),
 };
 
+const CASES_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Кейсы 24ZXC",
+  itemListElement: LANDING_CASES.map((item, index) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    item: {
+      "@type": "CreativeWork",
+      name: `${item.title} — ${item.subtitle}`,
+      description: `${item.challenge} ${item.solution} Результат: ${item.result}`,
+      url: item.url,
+      creator: { "@id": "https://24zxc.ru/#organization" },
+    },
+  })),
+};
+
 const Index = () => (
   <>
     <Helmet>
@@ -102,6 +119,7 @@ const Index = () => (
       <meta name="twitter:card" content="summary_large_image" />
       <script type="application/ld+json">{JSON.stringify(ORGANIZATION_SCHEMA)}</script>
       <script type="application/ld+json">{JSON.stringify(SERVICES_SCHEMA)}</script>
+      <script type="application/ld+json">{JSON.stringify(CASES_SCHEMA)}</script>
       <script type="application/ld+json">{JSON.stringify(FAQ_SCHEMA)}</script>
     </Helmet>
 
