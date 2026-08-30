@@ -6,7 +6,16 @@
  * where fonts.googleapis.com can be slow or unreachable and freeze the page.
  */
 
-const METRIKA_ID = 101339397;
+export const PRIMARY_METRIKA_ID = 101339397;
+export const SINTAGMA_METRIKA_ID = 105216554;
+
+function shouldInitSintagmaCounter() {
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.get("utm_source") === "24sintagma" ||
+    params.get("utm_landing")?.startsWith("24sintagma") === true
+  );
+}
 
 // Google Fonts intentionally NOT loaded on the home page anymore. The site
 // uses safe system-font stacks defined in index.css. Loading them — even
@@ -15,8 +24,6 @@ const METRIKA_ID = 101339397;
 
 function injectYandexMetrika() {
   const w = window as any;
-  if (w.__metrikaLoaded) return;
-  w.__metrikaLoaded = true;
 
   // Queue-based stub so any ym() calls before script loads are buffered.
   w.ym =
@@ -26,22 +33,31 @@ function injectYandexMetrika() {
     };
   w.ym.l = Number(new Date());
 
-  const s = document.createElement("script");
-  s.async = true;
-  s.defer = true;
-  s.src = "https://mc.yandex.ru/metrika/tag.js";
-  s.onload = () => {
-    try {
-      w.ym(METRIKA_ID, "init", {
+  // Queue counter initialisation before any possible reachGoal call. Waiting
+  // for script.onload can lose a fast form submission, or put reachGoal ahead
+  // of init in the queue.
+  if (!w.__metrikaCountersInitialized) {
+    const counterIds = [PRIMARY_METRIKA_ID];
+    if (shouldInitSintagmaCounter()) counterIds.push(SINTAGMA_METRIKA_ID);
+
+    for (const counterId of counterIds) {
+      w.ym(counterId, "init", {
         webvisor: true,
         clickmap: true,
         accurateTrackBounce: true,
         trackLinks: true,
       });
-    } catch {
-      /* ignore */
     }
-  };
+    w.__metrikaCountersInitialized = true;
+  }
+
+  if (w.__metrikaLoaded) return;
+  w.__metrikaLoaded = true;
+
+  const s = document.createElement("script");
+  s.async = true;
+  s.defer = true;
+  s.src = "https://mc.yandex.ru/metrika/tag.js";
   // If Metrika is blocked or unreachable, don't break anything.
   s.onerror = () => {
     /* swallow */
@@ -70,5 +86,21 @@ export function bootLazyThirdParty() {
     start();
   } else {
     window.addEventListener("load", start, { once: true });
+  }
+}
+
+export function trackMetrikaGoal(
+  counterId: number,
+  goal: string,
+  params: Record<string, string | boolean>,
+) {
+  if (typeof window === "undefined") return;
+  const w = window as any;
+
+  try {
+    if (typeof w.ym !== "function") injectYandexMetrika();
+    w.ym(counterId, "reachGoal", goal, params);
+  } catch {
+    // Analytics must never break a successfully sent lead.
   }
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CheckCircle, Clock, Loader2, Mail, Phone, Send } from "lucide-react";
 import { Link } from "react-router-dom";
 import { z } from "zod";
@@ -8,6 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { sendToTelegram } from "@/lib/telegram";
+import {
+  buildGoalParams,
+  getLandingAttribution,
+  getServicePresetFromSearch,
+  isSintagmaAttribution,
+} from "@/lib/landing-attribution";
+import {
+  PRIMARY_METRIKA_ID,
+  SINTAGMA_METRIKA_ID,
+  trackMetrikaGoal,
+} from "@/lib/lazy-third-party";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1, "Введите ваше имя").max(100, "Имя слишком длинное"),
@@ -18,18 +29,26 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-const INITIAL_FORM: ContactFormData = {
-  name: "",
-  contact: "",
-  service: "Сайт под ключ",
-  message: "",
-};
+function createInitialForm(search = window.location.search): ContactFormData {
+  return {
+    name: "",
+    contact: "",
+    service: getServicePresetFromSearch(search) ?? "Сайт под ключ",
+    message: "",
+  };
+}
 
 const LandingContact = () => {
   const { toast } = useToast();
+  const attribution = useMemo(
+    () => getLandingAttribution(window.location.search),
+    [],
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [formData, setFormData] = useState<ContactFormData>(INITIAL_FORM);
+  const [formData, setFormData] = useState<ContactFormData>(() =>
+    createInitialForm(),
+  );
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
 
   const setField = (field: keyof ContactFormData, value: string) => {
@@ -59,12 +78,37 @@ const LandingContact = () => {
       email: contactIsEmail ? result.data.contact : "",
       phone: contactIsEmail ? "" : result.data.contact,
       message: result.data.message,
+      attribution: {
+        utm_source: attribution.utm_source,
+        utm_medium: attribution.utm_medium,
+        utm_campaign: attribution.utm_campaign,
+        utm_content: attribution.utm_content,
+        utm_landing: attribution.utm_landing,
+      },
     });
     setIsSubmitting(false);
 
     if (response.success) {
+      // The live function may briefly be an older compatible version during
+      // deployment. Show success for an accepted request, but count a
+      // conversion only when the server explicitly confirms persistence.
+      if (response.saved) {
+        const goalParams = buildGoalParams(result.data.service, attribution);
+        trackMetrikaGoal(
+          PRIMARY_METRIKA_ID,
+          "lead_submit_success",
+          goalParams,
+        );
+        if (isSintagmaAttribution(attribution)) {
+          trackMetrikaGoal(
+            SINTAGMA_METRIKA_ID,
+            "demo_request_success",
+            goalParams,
+          );
+        }
+      }
       setIsSubmitted(true);
-      setFormData(INITIAL_FORM);
+      setFormData(createInitialForm());
       toast({ title: "Заявка отправлена", description: "Свяжемся с вами в ближайшее время." });
     } else {
       toast({
@@ -157,6 +201,7 @@ const LandingContact = () => {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option>Сайт под ключ</option>
+                    <option>Сайт + Яндекс Директ</option>
                     <option>Яндекс Директ</option>
                     <option>Веб-приложение / CRM</option>
                     <option>Мобильное приложение</option>
