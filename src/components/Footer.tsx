@@ -20,6 +20,8 @@ const Footer = () => (
             <li><Link to="/services/landing" className="hover:text-foreground">Лендинги</Link></li>
             <li><Link to="/services/corporate" className="hover:text-foreground">Корпоративные сайты</Link></li>
             <li><Link to="/services/webapp" className="hover:text-foreground">Веб-приложения</Link></li>
+            <li><Link to="/zakupki" className="hover:text-foreground">Решения для закупок</Link></li>
+            <li><Link to="/zakupki/monitoring" className="hover:text-foreground">Тендерный радар</Link></li>
             <li><Link to="/#services" className="hover:text-foreground">Яндекс Директ</Link></li>
           </ul>
         </div>

@@ -28,6 +28,8 @@ const Corporate = lazyWithRetry(() => import("./pages/services/Corporate"));
 const Ecommerce = lazyWithRetry(() => import("./pages/services/Ecommerce"));
 const WebApp = lazyWithRetry(() => import("./pages/services/WebApp"));
 const Nmo = lazyWithRetry(() => import("./pages/services/Nmo"));
+const Procurement = lazyWithRetry(() => import("./pages/Procurement"));
+const ProcurementMonitoring = lazyWithRetry(() => import("./pages/ProcurementMonitoring"));
 const Flowrish = lazyWithRetry(() => import("./pages/projects/Flowrish"));
 const Chmuleva = lazyWithRetry(() => import("./pages/projects/Chmuleva"));
 const Lanmei = lazyWithRetry(() => import("./pages/projects/Lanmei"));
@@ -81,6 +83,8 @@ const App = () => (
                     <Route path="/services/ecommerce" element={<Ecommerce />} />
                     <Route path="/services/webapp" element={<WebApp />} />
                     <Route path="/services/nmo" element={<Nmo />} />
+                    <Route path="/zakupki" element={<Procurement />} />
+                    <Route path="/zakupki/monitoring" element={<ProcurementMonitoring />} />
                     <Route path="/projects/flowrish" element={<Flowrish />} />
                     <Route path="/projects/chmuleva" element={<Chmuleva />} />
                     <Route path="/projects/lanmei" element={<Lanmei />} />

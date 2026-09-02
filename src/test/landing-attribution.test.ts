@@ -22,6 +22,12 @@ describe("landing attribution", () => {
     );
   });
 
+  it("selects the procurement request service", () => {
+    expect(getServicePresetFromSearch("?key=procurement")).toBe(
+      "Закупка / коммерческое предложение",
+    );
+  });
+
   it("keeps only supported attribution fields", () => {
     const attribution = getLandingAttribution(
       "?yclid=y-1&utm_source=24sintagma&utm_campaign=frdo&unknown=x",

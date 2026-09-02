@@ -7,6 +7,7 @@ const SERVICE_PRESETS: Record<string, string> = {
   license: "Лицензирование",
   nmo: "НМО Портал",
   sintagma: "Синтагма",
+  procurement: "Закупка / коммерческое предложение",
 };
 
 const ATTRIBUTION_KEYS = [

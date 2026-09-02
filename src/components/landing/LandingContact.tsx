@@ -29,16 +29,28 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-function createInitialForm(search = window.location.search): ContactFormData {
+function createInitialForm(defaultService: string, search = window.location.search): ContactFormData {
   return {
     name: "",
     contact: "",
-    service: getServicePresetFromSearch(search) ?? "Сайт под ключ",
+    service: getServicePresetFromSearch(search) ?? defaultService,
     message: "",
   };
 }
 
-const LandingContact = () => {
+type LandingContactProps = {
+  initialService?: string;
+  eyebrow?: string;
+  title?: string;
+  description?: string;
+};
+
+const LandingContact = ({
+  initialService = "Сайт под ключ",
+  eyebrow = "Следующий шаг",
+  title = "Получите план и расчёт",
+  description = "Оставьте один контакт. Уточним задачу и предложим состав работ, срок и стоимость.",
+}: LandingContactProps) => {
   const { toast } = useToast();
   const attribution = useMemo(
     () => getLandingAttribution(window.location.search),
@@ -47,7 +59,7 @@ const LandingContact = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState<ContactFormData>(() =>
-    createInitialForm(),
+    createInitialForm(initialService),
   );
   const [errors, setErrors] = useState<Partial<Record<keyof ContactFormData, string>>>({});
 
@@ -108,7 +120,7 @@ const LandingContact = () => {
         }
       }
       setIsSubmitted(true);
-      setFormData(createInitialForm());
+      setFormData(createInitialForm(initialService));
       toast({ title: "Заявка отправлена", description: "Свяжемся с вами в ближайшее время." });
     } else {
       toast({
@@ -124,13 +136,13 @@ const LandingContact = () => {
       <div className="container px-4 py-16 md:py-20">
         <div className="grid gap-10 lg:grid-cols-[320px_1fr] lg:gap-16">
           <div>
-            <p className="landing-eyebrow mb-3 text-xs uppercase tracking-[0.24em]">Следующий шаг</p>
+            <p className="landing-eyebrow mb-3 text-xs uppercase tracking-[0.24em]">{eyebrow}</p>
             <span className="landing-accent-rule mb-4" />
             <h2 className="text-3xl font-display font-semibold tracking-tight md:text-4xl">
-              Получите план и расчёт
+              {title}
             </h2>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-              Оставьте один контакт. Уточним задачу и предложим состав работ, срок и стоимость.
+              {description}
             </p>
 
             <ul className="mt-8 space-y-3 text-sm text-muted-foreground">
@@ -201,6 +213,8 @@ const LandingContact = () => {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option>Сайт под ключ</option>
+                    <option>Закупка / коммерческое предложение</option>
+                    <option>Сайт образовательной организации</option>
                     <option>Сайт + Яндекс Директ</option>
                     <option>Яндекс Директ</option>
                     <option>Веб-приложение / CRM</option>
@@ -209,6 +223,7 @@ const LandingContact = () => {
                     <option>Лицензирование</option>
                     <option>НМО Портал</option>
                     <option>Синтагма</option>
+                    <option>Учебные программы и материалы</option>
                     <option>Нужна консультация</option>
                   </select>
                 </div>

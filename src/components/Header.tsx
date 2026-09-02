@@ -6,6 +6,7 @@ const NAV_LINKS = [
   { href: "/#services", label: "Услуги и цены" },
   { href: "/#cases", label: "Кейсы" },
   { href: "/#syntagma", label: "Синтагма" },
+  { href: "/zakupki", label: "Закупкам" },
   { href: "/frdo", label: "Образованию" },
 ];
 
