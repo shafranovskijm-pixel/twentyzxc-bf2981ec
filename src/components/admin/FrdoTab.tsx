@@ -15,6 +15,7 @@ const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object
 const FRDO_DOCUMENTS = [
   { id: "instruktsiya", label: "Инструкция", path: `${STORAGE_BASE}/frdo/instruktsiya.docx` },
   { id: "prikaz", label: "Приказ ФРДО №1", path: `${STORAGE_BASE}/frdo/Prikaz_FRDO_1.docx` },
+  { id: "prikaz-pdf", label: "Приказ ФРДО (PDF, с подписью и печатью)", path: `${STORAGE_BASE}/frdo/Prikaz_FRDO_podpisan.pdf` },
   { id: "terms", label: "Пользовательское соглашение (Terms of Use)", path: `${STORAGE_BASE}/frdo/terms-of-use.pdf` },
   { id: "dpo-template", label: "ДПО — шаблон-образец", path: `${STORAGE_BASE}/frdo/DPO-shablon-obrazets.xlsx` },
   { id: "dpo-dated", label: "ДПО — 06.11.2023", path: `${STORAGE_BASE}/frdo/DPO-06.11.2023.xlsx` },
@@ -80,7 +81,7 @@ const FrdoTab = () => {
 
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
     const docs = FRDO_DOCUMENTS.filter((d) => selectedDocs.includes(d.id));
-    const hasPrikaz = selectedDocs.includes("prikaz");
+    const hasPrikaz = selectedDocs.includes("prikaz") || selectedDocs.includes("prikaz-pdf");
     const hasTerms = selectedDocs.includes("terms");
     const isSinglePrikaz = selectedDocs.length === 1 && hasPrikaz;
 
@@ -158,7 +159,7 @@ const FrdoTab = () => {
     const doc = FRDO_DOCUMENTS.find((d) => d.id === docId);
     if (!doc) return;
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
-    const isPrikaz = doc.id === "prikaz";
+    const isPrikaz = doc.id === "prikaz" || doc.id === "prikaz-pdf";
     const isTerms = doc.id === "terms";
 
     let bodyText = "";
