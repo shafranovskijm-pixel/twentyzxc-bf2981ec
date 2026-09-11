@@ -1613,6 +1613,33 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
 };
 
 // ============================================================
+// Copy helper for client requisites
+// ============================================================
+async function copyToClipboard(text: string, label: string) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} скопировано`);
+  } catch {
+    toast.error("Не удалось скопировать");
+  }
+}
+
+const CopyFieldButton = ({ value, label }: { value: string; label: string }) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    className="h-6 w-6 p-0 opacity-40 hover:opacity-100 hover:bg-muted"
+    onClick={() => copyToClipboard(value, label)}
+    disabled={!value}
+    title={`Копировать ${label}`}
+  >
+    <Copy className="w-3.5 h-3.5" />
+  </Button>
+);
+
+// ============================================================
 // Main accordion structure inside the client card
 // ============================================================
 const SECTIONS_KEY = "client-card-sections";
