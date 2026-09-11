@@ -9,13 +9,14 @@ import { FileCheck, Send, Loader2, CheckSquare, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import prikazPdfAsset from "@/assets/frdo/Prikaz_FRDO_podpisan.pdf.asset.json";
 
 const STORAGE_BASE = "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets";
 
 const FRDO_DOCUMENTS = [
   { id: "instruktsiya", label: "Инструкция", path: `${STORAGE_BASE}/frdo/instruktsiya.docx` },
   { id: "prikaz", label: "Приказ ФРДО №1", path: `${STORAGE_BASE}/frdo/Prikaz_FRDO_1.docx` },
-  { id: "prikaz-pdf", label: "Приказ ФРДО (PDF, с подписью и печатью)", path: `${STORAGE_BASE}/frdo/Prikaz_FRDO_podpisan.pdf` },
+  { id: "prikaz-pdf", label: "Приказ ФРДО (PDF, с подписью и печатью)", path: prikazPdfAsset.url },
   { id: "terms", label: "Пользовательское соглашение (Terms of Use)", path: `${STORAGE_BASE}/frdo/terms-of-use.pdf` },
   { id: "dpo-template", label: "ДПО — шаблон-образец", path: `${STORAGE_BASE}/frdo/DPO-shablon-obrazets.xlsx` },
   { id: "dpo-dated", label: "ДПО — 06.11.2023", path: `${STORAGE_BASE}/frdo/DPO-06.11.2023.xlsx` },
