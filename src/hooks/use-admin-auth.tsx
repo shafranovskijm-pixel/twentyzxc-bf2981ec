@@ -47,25 +47,35 @@ export const useAdminAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkAdminRole = useCallback(async (userId: string): Promise<boolean | null> => {
-    try {
-      const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
-        setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 5000)
-      );
-      const query = supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin" as const,
-      }).then((res) => res);
+    const attempt = async (): Promise<boolean | null> => {
+      try {
+        const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+          setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 15000)
+        );
+        const query = supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: "admin" as const,
+        }).then((res) => res);
 
-      const result = await Promise.race([query, timeout]);
-      if (result.error) {
-        console.error("checkAdminRole error:", result.error);
+        const result = await Promise.race([query, timeout]);
+        if (result.error) {
+          console.error("checkAdminRole error:", result.error);
+          return null;
+        }
+        return !!result.data;
+      } catch (e) {
+        console.error("checkAdminRole exception:", e);
         return null;
       }
-      return !!result.data;
-    } catch (e) {
-      console.error("checkAdminRole exception:", e);
-      return null;
+    };
+
+    // Retry twice — the backend can be briefly unavailable (cold start / pooler).
+    for (let i = 0; i < 3; i++) {
+      const res = await attempt();
+      if (res !== null) return res;
+      if (i < 2) await new Promise((r) => setTimeout(r, 1500));
     }
+    return null;
   }, []);
 
   useEffect(() => {
