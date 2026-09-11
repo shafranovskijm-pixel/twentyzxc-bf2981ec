@@ -81,7 +81,7 @@ const FrdoTab = () => {
 
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
     const docs = FRDO_DOCUMENTS.filter((d) => selectedDocs.includes(d.id));
-    const hasPrikaz = selectedDocs.includes("prikaz");
+    const hasPrikaz = selectedDocs.includes("prikaz") || selectedDocs.includes("prikaz-pdf");
     const hasTerms = selectedDocs.includes("terms");
     const isSinglePrikaz = selectedDocs.length === 1 && hasPrikaz;
 
@@ -159,7 +159,7 @@ const FrdoTab = () => {
     const doc = FRDO_DOCUMENTS.find((d) => d.id === docId);
     if (!doc) return;
     const clientName = clients.find((c) => c.id === selectedClientId)?.name || "Клиент";
-    const isPrikaz = doc.id === "prikaz";
+    const isPrikaz = doc.id === "prikaz" || doc.id === "prikaz-pdf";
     const isTerms = doc.id === "terms";
 
     let bodyText = "";
