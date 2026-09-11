@@ -1613,6 +1613,33 @@ const ClientQuickFacts = ({ phone, email, telegram, inn, paymentDate, serviceDea
 };
 
 // ============================================================
+// Copy helper for client requisites
+// ============================================================
+async function copyToClipboard(text: string, label: string) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} скопировано`);
+  } catch {
+    toast.error("Не удалось скопировать");
+  }
+}
+
+const CopyFieldButton = ({ value, label }: { value: string; label: string }) => (
+  <Button
+    type="button"
+    variant="ghost"
+    size="sm"
+    className="h-6 w-6 p-0 opacity-40 hover:opacity-100 hover:bg-muted"
+    onClick={() => copyToClipboard(value, label)}
+    disabled={!value}
+    title={`Копировать ${label}`}
+  >
+    <Copy className="w-3.5 h-3.5" />
+  </Button>
+);
+
+// ============================================================
 // Main accordion structure inside the client card
 // ============================================================
 const SECTIONS_KEY = "client-card-sections";
@@ -1835,14 +1862,53 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
               </Button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2"><Label>ИНН</Label><div className="flex gap-2"><Input value={p.inn} onChange={(e) => p.setInn(e.target.value)} placeholder="1234567890" /><Button variant="outline" size="sm" onClick={() => p.syncRequisites(true)} disabled={p.syncing} className="shrink-0" title="Обновить по ИНН">{p.syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button></div></div>
-              <div className="space-y-2"><Label>КПП</Label><Input value={p.kpp} onChange={(e) => p.setKpp(e.target.value)} placeholder="123456789" /></div>
-              <div className="space-y-2"><Label>ОГРН</Label><Input value={p.ogrn} onChange={(e) => p.setOgrn(e.target.value)} placeholder="1234567890123" /></div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>ИНН</Label>
+                  <CopyFieldButton value={p.inn} label="ИНН" />
+                </div>
+                <div className="flex gap-2">
+                  <Input value={p.inn} onChange={(e) => p.setInn(e.target.value)} placeholder="1234567890" />
+                  <Button variant="outline" size="sm" onClick={() => p.syncRequisites(true)} disabled={p.syncing} className="shrink-0" title="Обновить по ИНН">{p.syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}</Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>КПП</Label>
+                  <CopyFieldButton value={p.kpp} label="КПП" />
+                </div>
+                <Input value={p.kpp} onChange={(e) => p.setKpp(e.target.value)} placeholder="123456789" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>ОГРН</Label>
+                  <CopyFieldButton value={p.ogrn} label="ОГРН" />
+                </div>
+                <Input value={p.ogrn} onChange={(e) => p.setOgrn(e.target.value)} placeholder="1234567890123" />
+              </div>
             </div>
-            <div className="space-y-2"><Label>Юридический адрес</Label><Input value={p.legalAddress} onChange={(e) => p.setLegalAddress(e.target.value)} placeholder="г. Москва, ул. ..." /></div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Юридический адрес</Label>
+                <CopyFieldButton value={p.legalAddress} label="Юридический адрес" />
+              </div>
+              <Input value={p.legalAddress} onChange={(e) => p.setLegalAddress(e.target.value)} placeholder="г. Москва, ул. ..." />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>ФИО руководителя</Label><Input value={p.directorName} onChange={(e) => p.setDirectorName(e.target.value)} placeholder="Иванов Иван Иванович" /></div>
-              <div className="space-y-2"><Label>Должность руководителя</Label><Input value={p.directorPost} onChange={(e) => p.setDirectorPost(e.target.value)} placeholder="Директор" /></div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>ФИО руководителя</Label>
+                  <CopyFieldButton value={p.directorName} label="ФИО руководителя" />
+                </div>
+                <Input value={p.directorName} onChange={(e) => p.setDirectorName(e.target.value)} placeholder="Иванов Иван Иванович" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Должность руководителя</Label>
+                  <CopyFieldButton value={p.directorPost} label="Должность руководителя" />
+                </div>
+                <Input value={p.directorPost} onChange={(e) => p.setDirectorPost(e.target.value)} placeholder="Директор" />
+              </div>
             </div>
           </div>
         </AccordionContent>
