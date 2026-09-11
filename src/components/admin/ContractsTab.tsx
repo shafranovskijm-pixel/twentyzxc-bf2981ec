@@ -214,9 +214,10 @@ interface ContractsTabProps {
   autoOpenNew?: boolean;
   renewalSourceId?: string;
   onConsumed?: () => void;
+  onOpenConstructor?: () => void;
 }
 
-const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, renewalSourceId, onConsumed }: ContractsTabProps = {}) => {
+const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, renewalSourceId, onConsumed, onOpenConstructor }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
   const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
@@ -1225,7 +1226,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
             <SelectItem value="one-time">Единоразовые</SelectItem>
           </SelectContent>
         </Select>
-        <Button className="sm:shrink-0" onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
+        <Button className="sm:shrink-0" onClick={() => { if (onOpenConstructor) { onOpenConstructor(); return; } resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); }}>
           <Plus className="w-4 h-4 mr-2" />Добавить
         </Button>
       </div>
