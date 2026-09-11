@@ -1171,6 +1171,10 @@ const Admin = () => {
                 initialClientName={contractsInitialClientName}
                 initialSearch={contractsInitialSearch}
                 autoOpenNew={contractsAutoOpenNew}
+                onOpenConstructor={() => {
+                  setDocInitialDocType("contract");
+                  handleSectionChange("documents");
+                }}
                 renewalSourceId={contractsRenewSourceId}
                 onConsumed={() => {
                   setContractsInitialClientName("");
