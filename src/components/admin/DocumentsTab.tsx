@@ -134,10 +134,8 @@ const extractRuPeriod = (deadline?: string | null) => {
 };
 
 const toIsoDate = (value?: string | null) => {
-  const m = value?.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/) || value?.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-  if (!m) return null;
-  const [y, mo, d] = m[0].includes(".") || m[0].includes("/") ? [m[3], m[2], m[1]] : [m[1], m[2], m[3]];
-  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  const parsed = parseDateParts(value);
+  return parsed ? `${parsed.year}-${String(parsed.month).padStart(2, "0")}-${String(parsed.day).padStart(2, "0")}` : null;
 };
 
 const extractServicePeriod = (deadline: string, fallbackStart: string, parsedEnd: string | null) => {
@@ -995,6 +993,13 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       }
     }
 
+    const dates = deadline.match(/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[./-]\d{1,2}[./-]\d{4}/g) || [];
+    if (dates.length) parsedServiceDeadline = toIsoDate(dates[dates.length - 1]);
+    const servicePeriod = extractServicePeriod(deadline, docDate, parsedServiceDeadline);
+    if (servicePeriod.service_start && servicePeriod.service_end && servicePeriod.service_end < servicePeriod.service_start) {
+      throw new Error("Окончание услуг не может быть раньше начала");
+    }
+
     // Step 2: Auto-create contract record (or update paid_until on existing)
     if (docType === "contract" && !linkedContractId) {
       console.log("[DOC] Step 2: Auto-creating contract...");
@@ -1539,6 +1544,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       void fillClientFromName(doc.client_name);
     }
 
+    if (doc.doc_type === "contract" && doc.contract_id) {
+      void supabase.from("contracts").select("contract_date,service_start,service_end,service_no_deadline")
+        .eq("id", doc.contract_id).single().then(({ data, error }) => {
+          if (error || !data) return;
+          if (data.contract_date) setDocDate(data.contract_date);
+          if (data.service_no_deadline) setDeadline("Без срока");
+          else if (data.service_end) setDeadline(`${data.service_start ? formatRuDateNumeric(data.service_start) + " по " : "по "}${formatRuDateNumeric(data.service_end)}`);
+        });
+    }
     toast.info("Документ загружен в редактор");
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [fillClientFromName]);

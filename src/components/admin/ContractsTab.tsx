@@ -770,7 +770,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       } catch {
         queryClient.setQueryData(["admin-contracts"], prev);
         toast.error("Ошибка сохранения — изменения откачены");
-      }
+      } finally { setSaving(false); }
     } else {
       // New contract — check session first, then insert
       try {
