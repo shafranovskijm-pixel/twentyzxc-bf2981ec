@@ -1432,6 +1432,16 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               {docsContract?.client_name}
               {docsContract?.contract_number ? ` · №${docsContract.contract_number}` : ""}
             </div>
+            {docsContract && (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => { const c = docsContract; setDocsOpen(false); startEdit(c); }}>
+                  <CalendarClock className="w-4 h-4 mr-2" />Изменить даты и сроки
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => startRenewal(docsContract)}>
+                  <RefreshCw className="w-4 h-4 mr-2" />Продлить
+                </Button>
+              </div>
+            )}
 
             {docsLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
