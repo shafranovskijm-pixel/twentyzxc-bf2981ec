@@ -35,6 +35,7 @@ import {
   type ContractSortState,
   type ContractValidityFilter,
 } from "@/lib/contracts-validity";
+import { ensureClient } from "@/lib/ensure-client";
 import { getContractRenewalPeriod } from "@/lib/contract-renewal";
 
 interface Contract {
@@ -50,6 +51,9 @@ interface Contract {
   file_path: string | null;
   notes: string | null;
   paid_until: string | null;
+  service_start: string | null;
+  service_end: string | null;
+  service_no_deadline: boolean;
   is_archived: boolean;
   is_one_time: boolean;
   created_at: string;
@@ -232,6 +236,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const [responsible, setResponsible] = useState("");
   const [notes, setNotes] = useState("");
   const [paidUntil, setPaidUntil] = useState("");
+  const [serviceStart, setServiceStart] = useState("");
+  const [serviceEnd, setServiceEnd] = useState("");
+  const [serviceNoDeadline, setServiceNoDeadline] = useState(false);
   const [isOneTime, setIsOneTime] = useState(false);
   const [renewalSourceNumber, setRenewalSourceNumber] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -379,7 +386,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       }
       setClientName(renewalSource.client_name);
       setContractDate(renewalPeriod.startDate);
-      setPaidUntil(renewalPeriod.endDate);
+      setServiceStart(renewalPeriod.startDate); setServiceEnd(renewalPeriod.endDate);
       setAmount(renewalSource.amount?.toString() || "");
       setAmountExtra(renewalSource.amount_extra?.toString() || "");
       setContractType(renewalSource.contract_type || "ФРДО");
@@ -400,6 +407,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     setAmount(""); setAmountExtra(""); setContractType(""); setResponsible(""); setNotes("");
     setPaidUntil(""); setInn(""); setFile(null); setEditingId(null); setShowForm(false); setIsOneTime(false);
     setRenewalSourceNumber("");
+    setServiceStart(""); setServiceEnd(""); setServiceNoDeadline(false);
   };
 
   // Email lookup by client name for search
@@ -456,6 +464,22 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     setContractType(c.contract_type || ""); setResponsible(c.responsible || "");
     setNotes(c.notes || ""); setPaidUntil(c.paid_until || ""); setFile(null); setShowForm(true);
     setIsOneTime(c.is_one_time ?? false);
+    setServiceStart(c.service_start || ""); setServiceEnd(c.service_end || "");
+    setServiceNoDeadline(c.service_no_deadline ?? false);
+    setRenewalSourceNumber(""); setInn("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const startRenewal = (c: Contract) => {
+    resetForm();
+    const period = getContractRenewalPeriod(c);
+    setClientName(c.client_name); setContractNumber(getNextContractNumber());
+    setContractDate(new Date().toISOString().slice(0, 10));
+    setServiceStart(period?.startDate || ""); setServiceEnd(period?.endDate || "");
+    setContractType(c.contract_type || ""); setAmount(c.amount?.toString() || "");
+    setResponsible(c.responsible || ""); setRenewalSourceNumber(c.contract_number || "без номера");
+    setShowForm(true); setDocsOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const isPaid = (status: string | null) => (status || "").toLowerCase().trim() === "оплачено";
@@ -700,18 +724,19 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
   const saveContract = async () => {
     if (!clientName.trim()) return toast.error("Укажите организацию");
     setSaving(true);
-    // Auto-calculate paid_until from contract_date + 1 year if not one-time and no manual value
-    let computedPaidUntil = paidUntil || null;
-    if (!isOneTime && contractDate && !paidUntil) {
-      const d = new Date(contractDate);
-      d.setFullYear(d.getFullYear() + 1);
-      computedPaidUntil = d.toISOString().split("T")[0];
+    if (!serviceNoDeadline && serviceStart && serviceEnd && serviceEnd < serviceStart) {
+      setSaving(false); return toast.error("Окончание услуг не может быть раньше начала");
     }
-    if (isOneTime) {
-      computedPaidUntil = null;
+    let savedClient;
+    try {
+      savedClient = await ensureClient({ name: clientName, inn: /^\d{10}(\d{2})?$/.test(inn) ? inn : undefined });
+      for (const key of ["admin-clients", "doc-clients", "planner-clients"]) void queryClient.invalidateQueries({ queryKey: [key] });
+    } catch {
+      setSaving(false); return toast.error("Не удалось сохранить клиента. Договор не сохранён — повторите попытку.");
     }
+    const computedPaidUntil = isOneTime ? null : paidUntil || null;
     const payload: Record<string, unknown> = {
-      client_name: clientName.trim(),
+      client_name: savedClient.name,
       contract_number: contractNumber.trim() || null,
       contract_date: contractDate || null,
       payment_status: paymentStatus || null,
@@ -721,6 +746,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       responsible: responsible.trim() || null,
       notes: notes.trim() || null,
       paid_until: computedPaidUntil,
+      service_start: serviceStart || null,
+      service_end: serviceNoDeadline ? null : serviceEnd || null,
+      service_no_deadline: serviceNoDeadline,
       is_one_time: isOneTime,
     };
 
@@ -730,19 +758,19 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
         old?.map((c) => c.id === editingId ? { ...c, ...payload } as Contract : c) ?? []
       );
-      resetForm();
-      setSaving(false);
-      toast.success("Договор обновлён");
+
 
       try {
         if (file) { const fp = await uploadFile(editingId); if (fp) payload.file_path = fp; }
         const { error } = await supabase.from("contracts").update(payload as any).eq("id", editingId);
         if (error) throw error;
+        resetForm(); toast.success("Договор обновлён");
+        queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
       } catch {
         queryClient.setQueryData(["admin-contracts"], prev);
         toast.error("Ошибка сохранения — изменения откачены");
-      }
+      } finally { setSaving(false); }
     } else {
       // New contract — check session first, then insert
       try {
@@ -1048,8 +1076,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => startEdit(c)}>
-                          <Pencil className="w-4 h-4 mr-2" /> Редактировать
+                          <Pencil className="w-4 h-4 mr-2" /> Изменить даты и сроки
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => startRenewal(c)}><RefreshCw className="w-4 h-4 mr-2" />Продлить</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openDocs(c)}>
                           <FileText className="w-4 h-4 mr-2" /> Договор и счёт
                         </DropdownMenuItem>
@@ -1153,9 +1182,10 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => startEdit(c)}>
-                              <Pencil className="w-4 h-4 mr-2" /> Редактировать
+                              <Pencil className="w-4 h-4 mr-2" /> Изменить даты и сроки
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openDocs(c)}>
+                            <DropdownMenuItem onClick={() => startRenewal(c)}><RefreshCw className="w-4 h-4 mr-2" />Продлить</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDocs(c)}>
                               <FileText className="w-4 h-4 mr-2" /> Договор и счёт
                             </DropdownMenuItem>
                             {c.file_path && (
@@ -1195,7 +1225,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               onPageSizeChange={handlePageSize}
             />
             <div className="flex justify-center py-4 border-t">
-              <Button variant="outline" onClick={() => { resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+              <Button variant="outline" onClick={() => { if (onOpenConstructor) { onOpenConstructor(); return; } resetForm(); setContractNumber(getNextContractNumber()); setShowForm(true); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
                 <Plus className="w-4 h-4 mr-2" />Добавить договор
               </Button>
             </div>
@@ -1236,7 +1266,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                {editingId ? "Редактировать договор" : renewalSourceNumber ? "Продление договора ФРДО" : "Новый договор"}
+                {editingId ? "Редактировать договор" : renewalSourceNumber ? "Продление договора" : "Новый договор"}
               </CardTitle>
               <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
             </div>
@@ -1279,16 +1309,18 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               onInnDetected={(detected) => { if (!inn) setInn(detected); }}
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div className="space-y-2"><Label>{renewalSourceNumber ? "Период услуг: от" : "Дата"}</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Дата договора</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
               <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
               <div className="space-y-2">
-                <Label>{renewalSourceNumber ? "Период услуг: до" : "Оплачено до"}</Label>
+                <Label>Оплачено до</Label>
                 <Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} disabled={isOneTime} className={isOneTime ? "opacity-50" : ""} />
-                {!isOneTime && contractDate && !paidUntil && (
-                  <p className="text-[11px] text-muted-foreground">Авто: {(() => { const d = new Date(contractDate); d.setFullYear(d.getFullYear() + 1); return d.toLocaleDateString("ru-RU"); })()}</p>
-                )}
               </div>
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2"><Label htmlFor="service-start">Начало оказания услуг</Label><Input id="service-start" type="date" value={serviceStart} onChange={e => setServiceStart(e.target.value)} /></div>
+              <div className="space-y-2"><Label htmlFor="service-end">Окончание оказания услуг</Label><Input id="service-end" type="date" value={serviceEnd} disabled={serviceNoDeadline} onChange={e => setServiceEnd(e.target.value)} /></div>
+            </div>
+            <div className="flex items-center gap-2"><Checkbox id="service-no-deadline" checked={serviceNoDeadline} onCheckedChange={v => setServiceNoDeadline(v === true)} /><Label htmlFor="service-no-deadline">Без срока</Label></div>
             <div className="space-y-2">
               <Label>Тип договора</Label>
               <Input
@@ -1400,6 +1432,16 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               {docsContract?.client_name}
               {docsContract?.contract_number ? ` · №${docsContract.contract_number}` : ""}
             </div>
+            {docsContract && (
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => { const c = docsContract; setDocsOpen(false); startEdit(c); }}>
+                  <CalendarClock className="w-4 h-4 mr-2" />Изменить даты и сроки
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => startRenewal(docsContract)}>
+                  <RefreshCw className="w-4 h-4 mr-2" />Продлить
+                </Button>
+              </div>
+            )}
 
             {docsLoading ? (
               <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
@@ -1469,7 +1511,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Закрыть</Button>
             {previewDocId && (
               <Button variant="outline" onClick={() => { editDoc(previewDocId); setPreviewOpen(false); }}>
-                <Pencil className="w-4 h-4 mr-1.5" /> Редактировать
+                <Pencil className="w-4 h-4 mr-1.5" /> Изменить даты и сроки
               </Button>
             )}
             <Button variant="outline" onClick={downloadPreviewPdf} disabled={previewDownloading || !previewHtml}>

@@ -207,6 +207,9 @@ export type Database = {
           paid_until: string | null
           payment_status: string | null
           responsible: string | null
+          service_end: string | null
+          service_no_deadline: boolean
+          service_start: string | null
           updated_at: string
         }
         Insert: {
@@ -226,6 +229,9 @@ export type Database = {
           paid_until?: string | null
           payment_status?: string | null
           responsible?: string | null
+          service_end?: string | null
+          service_no_deadline?: boolean
+          service_start?: string | null
           updated_at?: string
         }
         Update: {
@@ -245,6 +251,9 @@ export type Database = {
           paid_until?: string | null
           payment_status?: string | null
           responsible?: string | null
+          service_end?: string | null
+          service_no_deadline?: boolean
+          service_start?: string | null
           updated_at?: string
         }
         Relationships: []

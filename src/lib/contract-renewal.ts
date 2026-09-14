@@ -1,6 +1,8 @@
 export interface RenewableContractPeriod {
   contract_date?: string | null;
   paid_until?: string | null;
+  service_end?: string | null;
+  service_no_deadline?: boolean;
 }
 
 export interface ContractRenewalPeriod {
@@ -53,7 +55,8 @@ const addYearsClamped = (value: Date, years: number) => {
 export const getContractRenewalPeriod = (
   contract: RenewableContractPeriod,
 ): ContractRenewalPeriod | null => {
-  let previousEnd = parseDateOnly(contract.paid_until);
+  if (contract.service_no_deadline) return null;
+  let previousEnd = parseDateOnly(contract.service_end) || parseDateOnly(contract.paid_until);
   if (!previousEnd) {
     const previousStart = parseDateOnly(contract.contract_date);
     if (!previousStart) return null;
