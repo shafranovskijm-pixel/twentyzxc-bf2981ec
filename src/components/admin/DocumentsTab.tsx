@@ -133,6 +133,20 @@ const extractRuPeriod = (deadline?: string | null) => {
   return from && to ? { from, to } : null;
 };
 
+const toIsoDate = (value?: string | null) => {
+  const m = value?.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/) || value?.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!m) return null;
+  const [y, mo, d] = m[0].includes(".") || m[0].includes("/") ? [m[3], m[2], m[1]] : [m[1], m[2], m[3]];
+  return `${y}-${mo.padStart(2, "0")}-${d.padStart(2, "0")}`;
+};
+
+const extractServicePeriod = (deadline: string, fallbackStart: string, parsedEnd: string | null) => {
+  const noDeadline = /бессроч|без срока/i.test(deadline);
+  const dates = deadline.match(/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[./-]\d{1,2}[./-]\d{4}/g) || [];
+  const start = (dates.length > 1 ? toIsoDate(dates[0]) : null) || fallbackStart || null;
+  return { service_start: start, service_end: noDeadline ? null : parsedEnd, service_no_deadline: noDeadline };
+};
+
 const syncFrdoServicesWithDeadline = (items: ServiceItem[], deadline?: string | null): ServiceItem[] => {
   const period = extractRuPeriod(deadline);
   if (!period) return items;
@@ -533,15 +547,15 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           //    (matches what the user sees in the client card).
           const { data: lastContracts } = await supabase
             .from("contracts")
-            .select("contract_date, paid_until, contract_type")
+            .select("contract_date, paid_until, service_start, service_end, contract_type")
             .eq("client_name", initialClientName)
             .order("contract_date", { ascending: false })
             .limit(1);
           const lc = lastContracts?.[0];
           let contractDeadline: string | undefined;
           if (lc?.contract_date) {
-            const from = formatRuDateNumeric(lc.contract_date);
-            let to = formatRuDateNumeric(lc.paid_until);
+            const from = formatRuDateNumeric(lc.service_start || lc.contract_date);
+            let to = formatRuDateNumeric(lc.service_end || lc.paid_until);
             if (!to && from) {
               to = addYearsToRuDate(from, 1);
             }
@@ -993,9 +1007,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         amount: total || null,
         contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
         payment_status: "не оплачено",
-        service_start: extractRuPeriod(deadline)?.from || docDate,
-        service_end: /бессроч|без срока/i.test(deadline) ? null : parsedServiceDeadline,
-        service_no_deadline: /бессроч|без срока/i.test(deadline),
+        ...extractServicePeriod(deadline, docDate, parsedServiceDeadline),
       }).select("id").single();
       if (contractError) {
         throw contractError;
@@ -1010,7 +1022,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       // Sync paid_until on already linked contract
       const { error: updErr } = await supabase
         .from("contracts")
-        .update({ contract_date: docDate, service_start: extractRuPeriod(deadline)?.from || docDate, service_end: /бессроч|без срока/i.test(deadline) ? null : parsedServiceDeadline, service_no_deadline: /бессроч|без срока/i.test(deadline) })
+        .update({ contract_date: docDate, ...extractServicePeriod(deadline, docDate, parsedServiceDeadline) })
         .eq("id", linkedContractId);
       if (updErr) throw updErr;
       else {
