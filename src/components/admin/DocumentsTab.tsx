@@ -541,6 +541,37 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
           fillServicesFromContract(latest.id, latest);
         }
       }
+      // For invoice: use the latest contract as the source of the service
+      // template. Some older client cards do not have service_type filled in,
+      // while their contract correctly identifies FRDO/NMO and stores the
+      // exact service wording used in the original document.
+      if (initialDocType === "invoice") {
+        (async () => {
+          const { data: latestContracts } = await supabase
+            .from("contracts")
+            .select("id, contract_number, contract_date, amount, contract_type, service_start, service_end, paid_until")
+            .eq("client_name", initialClientName)
+            .order("contract_date", { ascending: false })
+            .order("created_at", { ascending: false })
+            .limit(1);
+          const latest = latestContracts?.[0];
+          if (!latest) return;
+
+          const contractType = String(latest.contract_type || "").toLowerCase();
+          if (contractType.includes("фрдо")) {
+            setContractSubType("frdo");
+            const from = formatRuDateNumeric(latest.service_start || latest.contract_date);
+            const to = formatRuDateNumeric(latest.service_end || latest.paid_until);
+            if (from && to) setDeadline(`${from} по ${to}`);
+          } else if (contractType.includes("нмо")) {
+            setContractSubType("nmo");
+          } else if (contractType.includes("сайт")) {
+            setContractSubType("site");
+          }
+
+          await fillServicesFromContract(latest.id, latest);
+        })();
+      }
       // For new contract: pull "Период оказания услуг" (deadline) from the
       // most recent generated contract document for this client.
       if (initialDocType === "contract") {
