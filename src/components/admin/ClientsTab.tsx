@@ -2014,9 +2014,33 @@ const ContractsSection = ({
           className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-muted/30 text-sm cursor-pointer transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           title="Открыть договор с предпросмотром"
         >
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
-            <span className="font-mono text-xs">№{c.contract_number || "—"}</span>
-            <span className="text-muted-foreground text-xs">{fmt(c.contract_date)}</span>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span
+              role="button"
+              tabIndex={0}
+              className="font-mono text-xs rounded px-1 -mx-1 hover:bg-muted cursor-copy"
+              title="Копировать номер договора"
+              onClick={(e) => { e.stopPropagation(); copyToClipboard(c.contract_number || "", "Номер договора"); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); copyToClipboard(c.contract_number || "", "Номер договора"); } }}
+            >
+              №{c.contract_number || "—"}
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              className="text-muted-foreground text-xs rounded px-1 -mx-1 hover:bg-muted cursor-copy"
+              title="Копировать дату договора"
+              onClick={(e) => { e.stopPropagation(); copyToClipboard(fmt(c.contract_date), "Дата договора"); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); copyToClipboard(fmt(c.contract_date), "Дата договора"); } }}
+            >
+              {fmt(c.contract_date)}
+            </span>
+            <span onClick={(e) => e.stopPropagation()}>
+              <CopyFieldButton
+                value={`Договор №${c.contract_number || "—"} от ${fmt(c.contract_date)}`}
+                label="Основание"
+              />
+            </span>
             {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
             {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
             {c.paid_until && <span className="text-xs text-muted-foreground">до {fmt(c.paid_until)}</span>}
