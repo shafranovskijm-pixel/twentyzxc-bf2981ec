@@ -1,3 +1,4 @@
+import { useEffect, useId, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   ArrowLeft,
@@ -10,10 +11,15 @@ import {
   SearchCheck,
   ShieldAlert,
   TrendingUp,
+  RefreshCw,
+  Search,
+  LockKeyhole,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useAdminAuth } from "@/hooks/use-admin-auth";
+import { useProcurementControl, type ProcurementControl, type ProcurementInstruction, type ProcurementReference } from "@/hooks/use-procurement-control";
 import {
   currentCandidates,
   deferredCandidates,
@@ -39,7 +45,79 @@ const platformStyles: Record<string, string> = {
   blocked: "border-rose-200 bg-rose-50 text-rose-800",
 };
 
-const ProcurementMonitoring = () => (
+const statusLabels: Record<RadarStatus, string> = { waiting: "Ожидание ответа", clarify: "Уточнение", conditional: "Условное участие", strategy: "Проработка", partner: "Нужен партнёр", stop: "Не участвуем" };
+const decisions = { work: "В работу", hold: "Отложить", watch: "Наблюдать" } as const;
+const inputStyle = "w-full rounded-md border border-border bg-white px-3 py-2 text-sm disabled:opacity-60";
+const buttonStyle = "inline-flex items-center justify-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50";
+
+export function snapshotAgeDays(label: string, now = new Date()): number | null {
+  const months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  const match = label.match(/(\d{1,2})\s+([а-я]+)\s+(\d{4})/i);
+  if (!match || !months.includes(match[2].toLowerCase())) return null;
+  const day = Date.UTC(Number(match[3]), months.indexOf(match[2].toLowerCase()), Number(match[1]));
+  const today = Date.parse(`${now.toLocaleDateString("sv-SE", { timeZone: "Asia/Vladivostok" })}T00:00:00Z`);
+  return Number.isFinite(today) ? Math.max(0, Math.floor((today - day) / 86_400_000)) : null;
+}
+
+function InstructionEditor({ tender, existing, disabled, conflict, onSave }: {
+  tender: ProcurementReference; existing?: ProcurementControl; disabled: boolean; conflict: boolean;
+  onSave: (tender: ProcurementReference, input: ProcurementInstruction, expected?: ProcurementControl) => Promise<ProcurementControl>;
+}) {
+  const id = useId();
+  const initial = (value?: ProcurementControl): ProcurementInstruction => ({ decision: value?.decision ?? "watch", priority: value?.priority ?? "normal", note: value?.note ?? "" });
+  const [draft, setDraft] = useState<ProcurementInstruction>(() => initial(existing));
+  const [baseline, setBaseline] = useState(existing);
+  const [dirty, setDirty] = useState(false);
+  const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
+  useEffect(() => { if (!dirty) { setDraft(initial(existing)); setBaseline(existing); } }, [existing, dirty]);
+  const changedElsewhere = dirty && (existing?.id !== baseline?.id || existing?.updatedAt !== baseline?.updatedAt);
+  const update = (patch: Partial<ProcurementInstruction>) => { setDraft((previous) => ({ ...previous, ...patch })); setDirty(true); setNotice(null); };
+  return <details className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+    <summary className="cursor-pointer text-sm font-semibold"><LockKeyhole className="mr-1 inline h-4 w-4" /> Поручение в CRM{existing ? ` · ${decisions[existing.decision]}` : " · не создано"}</summary>
+    <form className="mt-3 space-y-3" onSubmit={async (event) => {
+      event.preventDefault(); setNotice(null);
+      try {
+        const saved = await onSave(tender, draft, baseline);
+        setDraft(initial(saved)); setBaseline(saved); setDirty(false);
+        setNotice({ error: false, text: "Поручение сохранено в CRM. Это действие не отправляло заявку на площадку." });
+      } catch (error) { setNotice({ error: true, text: error instanceof Error ? error.message : "Сохранение не подтверждено." }); }
+    }}>
+      <p className="text-xs leading-relaxed text-muted-foreground">Поручение сохранится в CRM. Оно не отправляет заявку и не запускает агента автоматически: после сохранения напишите в задаче «продолжай». Заметки доступны только администраторам.</p>
+      {conflict && <p role="alert" className="text-sm text-rose-700">По этому номеру несколько поручений. Проверьте дубликаты в планере CRM.</p>}
+      {changedElsewhere && <p role="alert" className="text-sm text-amber-800">В CRM появилась другая версия. Ваш черновик сохранён на экране. Сверьте данные перед сохранением.</p>}
+      <fieldset disabled={disabled || conflict} className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="text-xs font-medium" htmlFor={`${id}-decision`}>Решение<select id={`${id}-decision`} className={`${inputStyle} mt-1`} value={draft.decision} onChange={(event) => update({ decision: event.target.value as ProcurementInstruction["decision"] })}>{Object.entries(decisions).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <label className="text-xs font-medium" htmlFor={`${id}-priority`}>Приоритет<select id={`${id}-priority`} className={`${inputStyle} mt-1`} value={draft.priority} onChange={(event) => update({ priority: event.target.value as ProcurementInstruction["priority"] })}><option value="normal">Обычный</option><option value="high">Высокий</option></select></label>
+        </div>
+        <label className="block text-xs font-medium" htmlFor={`${id}-note`}>Комментарий<textarea id={`${id}-note`} className={`${inputStyle} mt-1 min-h-24`} maxLength={4000} value={draft.note} onChange={(event) => update({ note: event.target.value })} placeholder="Что проверить, подготовить или уточнить" /></label>
+        <button type="submit" className={buttonStyle} disabled={changedElsewhere}>Сохранить поручение</button>
+        {changedElsewhere && <button type="button" className={`${buttonStyle} ml-2`} onClick={() => { setDraft(initial(existing)); setBaseline(existing); setDirty(false); setNotice(null); }}>Загрузить версию CRM</button>}
+      </fieldset>
+      {dirty && <p className="text-xs text-amber-800">На экране есть несохранённые изменения.</p>}
+      {existing && <p className="text-xs text-muted-foreground">Ответ CRM: {new Date(existing.updatedAt).toLocaleString("ru-RU")} · задача {existing.id.slice(0, 8)}</p>}
+      {notice && <p role={notice.error ? "alert" : "status"} className={`text-sm ${notice.error ? "text-rose-700" : "text-emerald-800"}`}>{notice.text}</p>}
+    </form>
+  </details>;
+}
+
+const ProcurementMonitoring = () => {
+  const { user, isAdmin, isLoading: authLoading } = useAdminAuth();
+  const canManage = Boolean(user && isAdmin && !authLoading);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<RadarStatus | "all" | "deferred">("all");
+  const numbers = useMemo(() => [...currentCandidates, ...deferredCandidates].map((item) => item.number), []);
+  const control = useProcurementControl({ enabled: canManage, userId: user?.id, numbers });
+  const term = search.trim().toLocaleLowerCase("ru-RU");
+  const matchesSearch = (item: ProcurementReference) => `${item.number} ${item.title}`.toLocaleLowerCase("ru-RU").includes(term);
+  const current = currentCandidates.filter((item) => matchesSearch(item) && (status === "all" || status === item.status));
+  const deferred = deferredCandidates.filter((item) => matchesSearch(item) && ["all", "deferred", "stop"].includes(status));
+  const availableStatuses = [...new Set(currentCandidates.map((item) => item.status))];
+  const age = snapshotAgeDays(monitoringUpdatedAt);
+  const renderEditor = (item: ProcurementReference) => canManage ? <InstructionEditor key={`instruction-${item.number}`} tender={item} existing={control.controls[item.number]}
+    disabled={control.isLoading || control.isRefreshing || control.isSaving || Boolean(control.error)} conflict={control.conflicts.includes(item.number)}
+    onSave={(tender, input, expected) => control.save({ tender, input, expected })} /> : null;
+  return (
   <>
     <Helmet>
       <title>Тендерный радар — текущие закупки и площадки | 24ZXC</title>
@@ -56,83 +134,79 @@ const ProcurementMonitoring = () => (
       <Header />
       <main>
         <section className="border-b border-border bg-white">
-          <div className="container px-4 py-12 md:py-16">
+          <div className="container px-4 py-6 md:py-8">
             <Link to="/zakupki" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Назад к услугам
             </Link>
-            <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
               <div className="max-w-4xl">
                 <p className="landing-eyebrow flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em]"><Radar className="h-4 w-4" /> Рабочий реестр 24ZXC</p>
-                <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight md:text-6xl">Тендерный радар без скрытых отказов</h1>
-                <p className="mt-5 max-w-3xl text-lg leading-relaxed text-muted-foreground">Показываем найденные процедуры, ограничения площадок и причины, по которым закупку готовим, уточняем или откладываем до усиления поставщика.</p>
+                <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">Закупки и следующие действия</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">Текущие процедуры, доступность площадок и возможности, к которым готовимся.</p>
               </div>
               <div className="rounded-lg border border-[#e8dfab] bg-[#fbf8e9] px-5 py-4 text-sm">
-                <div className="flex items-center gap-2 font-semibold"><CalendarClock className="h-4 w-4" /> Проверено</div>
+                <div className="flex items-center gap-2 font-semibold"><CalendarClock className="h-4 w-4" /> Проверка источников</div>
                 <p className="mt-1 text-muted-foreground">{monitoringUpdatedAt}</p>
+                <button type="button" className={`${buttonStyle} mt-2`} onClick={() => window.location.reload()}><RefreshCw className="h-4 w-4" /> Обновить страницу</button>
               </div>
             </div>
 
-            <nav className="mt-9 flex flex-wrap gap-2 text-sm" aria-label="Разделы тендерного радара">
+            <p role="note" className={`mt-3 rounded-md border p-3 text-xs leading-relaxed ${age !== null && age > 0 ? "border-amber-300 bg-amber-50 text-amber-950" : "border-border bg-slate-50"}`}>{age !== null && age > 0 ? `Снимку ${age} дн. Сроки и доступность могли измениться. ` : "Сроки и доступность могут измениться после проверки. "}Обновление реестра — после проверки источников, без фонового автопоиска. Кнопка загружает опубликованную версию страницы, а не проверяет площадки заново.</p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_230px]">
+              <label className="relative"><span className="sr-only">Поиск по названию или номеру закупки</span><Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><input className={`${inputStyle} pl-9`} type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Название или номер закупки" /></label>
+              <label><span className="sr-only">Статус закупки</span><select className={inputStyle} value={status} onChange={(event) => setStatus(event.target.value as typeof status)}><option value="all">Все статусы</option>{availableStatuses.map((value) => <option key={value} value={value}>{statusLabels[value]}</option>)}<option value="deferred">Отложенные закупки</option></select></label>
+            </div>
+            <nav className="mt-4 flex flex-wrap gap-2 text-sm" aria-label="Разделы тендерного радара">
               <a href="#current" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">Текущие закупки</a>
               <a href="#platforms" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">Площадки</a>
               <a href="#plans" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">Планы октября–ноября</a>
-              <a href="#deferred" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">Пока не участвуем</a>
+              <a href="#deferred" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">Архив и потенциал</a>
               <a href="#growth" className="rounded-full border border-border bg-white px-4 py-2 font-medium hover:border-[#d4be37]">План роста</a>
             </nav>
 
-            <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border lg:grid-cols-4">
               {[
-                { icon: SearchCheck, value: String(currentCandidates.length), label: "текущих кандидатов" },
+                { icon: SearchCheck, value: String(currentCandidates.length), label: "кандидатов в реестре" },
                 { icon: Eye, value: String(platformAccess.length), label: "площадок и источников" },
-                { icon: CircleDot, value: "0", label: "безусловно зелёных" },
-                { icon: TrendingUp, value: String(growthRoadmap.length), label: "направлений роста" },
+                { icon: CircleDot, value: String(platformAccess.filter((item) => item.state !== "open").length), label: "источников с ограничениями" },
+                { icon: TrendingUp, value: String(deferredCandidates.length), label: "в архиве и потенциале" },
               ].map((item) => (
-                <div key={item.label} className="bg-white p-5">
-                  <item.icon className="h-5 w-5 text-[#9b8816]" />
-                  <p className="mt-4 text-3xl font-semibold">{item.value}</p>
+                <div key={item.label} className="bg-white px-4 py-3">
+                  <p className="text-2xl font-semibold">{item.value}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{item.label}</p>
                 </div>
               ))}
             </div>
+            {canManage ? <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm"><span className="inline-flex items-center gap-1 font-medium"><LockKeyhole className="h-4 w-4" /> Администратор</span><span className="text-xs text-muted-foreground">Поручения — задачи CRM. {control.isLoading ? "Загружаем…" : control.error ? "Данные не получены." : `Загружено: ${Object.keys(control.controls).length}.`}</span><button type="button" className={buttonStyle} disabled={control.isRefreshing || control.isSaving} onClick={() => { void control.refetch(); }}><RefreshCw className={`h-4 w-4 ${control.isRefreshing ? "animate-spin" : ""}`} /> Обновить поручения</button><Link to="/admin" className="text-xs underline">Открыть CRM</Link></div>
+              : <p className="mt-3 text-xs text-muted-foreground">Публичный реестр открыт для просмотра. <Link to="/admin" className="underline">Войти в CRM</Link> для приватных поручений.</p>}
+            {canManage && control.error && <p role="alert" className="mt-3 text-sm text-rose-700">{control.error.message}</p>}
           </div>
         </section>
 
-        <section className="border-b border-border bg-[#15171e] text-white">
-          <div className="container grid gap-4 px-4 py-6 text-sm md:grid-cols-2 xl:grid-cols-4">
-            {[
-              ["Готовим", "Документы прочитаны, требования и экономика подтверждены."],
-              ["Уточняем", "Есть совпадение, но не хватает документов или ответа."],
-              ["Партнёр", "Сами не закрываем обязательное требование или объём."],
-              ["Не участвуем", "Есть жёсткий допуск, который сейчас отсутствует."],
-            ].map(([title, text]) => (
-              <div key={title} className="border-l border-white/20 pl-4"><p className="font-semibold text-[#eadc82]">{title}</p><p className="mt-1 leading-relaxed text-white/60">{text}</p></div>
-            ))}
-          </div>
-        </section>
-
-        <section id="current" className="container scroll-mt-20 px-4 py-16 md:py-20">
+        <section id="current" className="container scroll-mt-20 px-4 py-8">
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-700">Текущие</p><h2 className="mt-2 font-display text-3xl font-semibold md:text-5xl">Кандидаты на сегодня</h2></div>
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground">Статус — рабочая квалификация, а не подтверждение подачи или допуска. Перед любым действием повторно сверяем официальные документы.</p>
+            <div><h2 className="font-display text-2xl font-semibold">Текущие закупки</h2><p className="mt-1 text-xs text-muted-foreground">Показано {current.length} из {currentCandidates.length}</p></div>
+            <p className="max-w-md text-xs leading-relaxed text-muted-foreground">Статус — результат проверки. Поручение «В работу» не подтверждает подачу, допуск или победу.</p>
           </div>
 
-          <div className="mt-9 grid gap-5 xl:grid-cols-2">
-            {currentCandidates.map((item) => (
-              <article key={item.number} className="flex flex-col rounded-xl border border-border bg-white p-6 shadow-[0_16px_40px_rgba(21,23,30,.05)] md:p-7">
+          {current.length === 0 && <p className="mt-4 rounded-md border border-dashed p-4 text-sm text-muted-foreground">В текущем разделе нет закупок по выбранному фильтру. Проверьте отложенные или измените поиск.</p>}
+          <div className="mt-4 grid gap-4 xl:grid-cols-2">
+            {current.map((item) => (
+              <article key={item.number} className="flex flex-col rounded-xl border border-border bg-white p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className={`rounded-full border px-3 py-1 text-xs font-bold ${candidateStyles[item.status]}`}>● {item.statusLabel}</span>
                   <span className="text-sm text-muted-foreground">{item.platform}</span>
                 </div>
-                <p className="mt-6 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">№ {item.number}</p>
-                <h3 className="mt-2 font-display text-2xl font-semibold leading-tight">{item.title}</h3>
-                <div className="mt-5 flex flex-wrap gap-x-7 gap-y-2 border-b border-border pb-5"><strong className="text-xl">{item.price}</strong><span className="text-sm text-muted-foreground">до {item.deadline}</span></div>
-
-                <dl className="mt-5 flex-1 space-y-4 text-sm leading-relaxed">
-                  <div><dt className="font-semibold text-foreground">Что подтверждено</dt><dd className="mt-1 text-muted-foreground">{item.confirmed}</dd></div>
-                  <div><dt className="font-semibold text-foreground">Почему не подаём прямо сейчас</dt><dd className="mt-1 text-muted-foreground">{item.blocker}</dd></div>
-                  <div><dt className="font-semibold text-foreground">Следующий шаг</dt><dd className="mt-1 text-muted-foreground">{item.nextStep}</dd></div>
-                </dl>
-                <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold">Открыть источник <ArrowUpRight className="h-4 w-4" /></a>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">№ {item.number}</p>
+                <h3 className="mt-2 font-display text-xl font-semibold leading-tight">{item.title}</h3>
+                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 border-b border-border pb-3"><strong>{item.price}</strong><span className="text-sm text-muted-foreground">Срок: {item.deadline}</span></div>
+                <p className="mt-3 text-sm leading-relaxed"><strong>Следующий шаг:</strong> {item.nextStep}</p>
+                <details className="mt-3 text-sm leading-relaxed"><summary className="cursor-pointer font-medium">Подтверждения и ограничения</summary><dl className="mt-3 space-y-3">
+                  <div><dt className="font-semibold">Что подтверждено</dt><dd className="text-muted-foreground">{item.confirmed}</dd></div>
+                  <div><dt className="font-semibold">Что ещё требуется</dt><dd className="text-muted-foreground">{item.blocker}</dd></div>
+                </dl></details>
+                <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">Открыть источник <ArrowUpRight className="h-4 w-4" /></a>
+                {renderEditor(item)}
               </article>
             ))}
           </div>
@@ -144,7 +218,7 @@ const ProcurementMonitoring = () => (
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8c7a13]">Планы закупок</p>
                 <h2 className="mt-3 font-display text-3xl font-semibold">Октябрь и ноябрь 2026</h2>
-                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">В проверенной официальной выборке подходящих конкурентных строк пока нет. Это не означает, что новые извещения не появятся после изменения планов.</p>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">Плановая строка не равна открытому приёму заявок. Ниже — найденная выборка и результат её проверки.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 {futurePlans.map((plan) => (
@@ -194,16 +268,17 @@ const ProcurementMonitoring = () => (
 
         <section id="deferred" className="container scroll-mt-20 px-4 py-16 md:py-20">
           <div className="max-w-4xl">
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-700">Пока не участвуем</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-700">Архив и потенциал</p>
             <h2 className="mt-3 font-display text-3xl font-semibold md:text-5xl">Не прячем упущенные возможности — показываем, что откроет доступ</h2>
-            <p className="mt-5 text-lg leading-relaxed text-muted-foreground">Красный статус не всегда означает «никогда». Он фиксирует конкретное обязательное условие, которого сейчас нет.</p>
+            <p className="mt-5 text-lg leading-relaxed text-muted-foreground">Здесь завершённые и отложенные закупки: результат, причина и следующий шаг. Архивная оценка не заменяет проверку условий новой процедуры.</p>
           </div>
 
-          <div className="mt-9 overflow-hidden rounded-xl border border-border bg-white">
-            {deferredCandidates.map((item, index) => (
+          <p className="mt-4 text-sm text-muted-foreground">Показано {deferred.length} из {deferredCandidates.length}{deferred.length === 0 ? " — нет отложенных закупок по выбранному фильтру." : ""}</p>
+          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-white">
+            {deferred.map((item, index) => (
               <article key={item.number} className={`grid gap-5 p-6 md:grid-cols-[1fr_1fr] md:p-7 ${index ? "border-t border-border" : ""}`}>
                 <div>
-                  <div className="flex flex-wrap items-center gap-3"><span className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-bold text-rose-800">Не участвуем сейчас</span><span className="text-xs text-muted-foreground">№ {item.number}</span></div>
+                  <div className="flex flex-wrap items-center gap-3"><span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-bold text-slate-800">{item.statusLabel ?? "Архив / отложено"}</span><span className="text-xs text-muted-foreground">№ {item.number}</span></div>
                   <h3 className="mt-4 font-display text-xl font-semibold">{item.title}</h3>
                   <p className="mt-2 font-semibold">{item.price}</p>
                 </div>
@@ -211,6 +286,7 @@ const ProcurementMonitoring = () => (
                   <p><strong>Причина:</strong> <span className="text-muted-foreground">{item.reason}</span></p>
                   <p className="mt-3"><strong>Как открыть доступ:</strong> <span className="text-muted-foreground">{item.unlock}</span></p>
                   <a href={item.href} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 font-semibold">Источник <ArrowUpRight className="h-3.5 w-3.5" /></a>
+                  {renderEditor(item)}
                 </div>
               </article>
             ))}
@@ -254,5 +330,6 @@ const ProcurementMonitoring = () => (
     </div>
   </>
 );
+};
 
 export default ProcurementMonitoring;
