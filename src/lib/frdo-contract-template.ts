@@ -1,11 +1,11 @@
-import type { DocumentData } from "./document-templates";
+import type { DocumentData } from "./document-templates.ts";
 
 function formatMoney(n: number): string {
   return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function totalSum(services: { qty: number; price: number }[]): number {
-  return services.reduce((s, i) => s + i.qty * i.price, 0);
+function totalSum(services: DocumentData["services"]): number {
+  return services.reduce((s, i) => s + (i.computedLineTotal ?? i.qty * i.price), 0);
 }
 
 function isFeminineName(fullName: string): boolean {
@@ -205,7 +205,7 @@ const baseStyles = `
 
 export function generateFrdoContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
-  const total = totalSum(services);
+  const total = data.computedGrossTotal ?? totalSum(services);
 
   // Determine period from deadline field (e.g. "05.03.2026 по 05.03.2027")
   const periodText = data.deadline || "12 месяцев с момента подписания договора";
@@ -335,9 +335,9 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         <p>р/с ${c.company_bank_account}</p>
         <div class="signature-line">
           / ${c.company_director_name} /
-          <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+          <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
         </div>
-        <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+        <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
       </div>
       <div class="signature-block">
         <p><strong>Заказчик:</strong></p>
@@ -380,7 +380,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
               <td class="num">услуга</td>
               <td class="num">${s.qty}</td>
               <td class="money">${formatMoney(s.price)}</td>
-              <td class="money">${formatMoney(s.qty * s.price)}</td>
+              <td class="money">${formatMoney(s.computedLineTotal ?? s.qty * s.price)}</td>
             </tr>
           `).join("")}
         </tbody>
@@ -397,10 +397,10 @@ export function generateFrdoContractHtml(data: DocumentData): string {
           <p><strong>УЦ:</strong></p>
           <div class="signature-line">
             / ${c.company_director_name} /
-            <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+            <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
           </div>
           <p style="margin-top:5px;">М.П.</p>
-          <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+          <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
@@ -471,10 +471,10 @@ export function generateFrdoContractHtml(data: DocumentData): string {
           <p><strong>УЦ:</strong></p>
           <div class="signature-line">
             / ${c.company_director_name} /
-            <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+            <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
           </div>
           <p style="margin-top:5px;">М.П.</p>
-          <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+          <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>

@@ -28,6 +28,7 @@ import {
 } from "@/lib/document-templates";
 import { generateFrdoContractHtml } from "@/lib/frdo-contract-template";
 import { generateNmoContractHtml } from "@/lib/nmo-contract-template";
+import { calculateDocumentMoney, documentStoredAmount, type DocumentMoney } from "@/lib/document-money";
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
 import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
@@ -806,7 +807,18 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
     setServices(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s));
   };
 
-  const total = services.reduce((s, i) => s + i.qty * i.price, 0);
+  const editorMoney = useMemo(() => {
+    try {
+      return calculateDocumentMoney(
+        services.filter(s => s.name.trim()),
+        docType === "invoice" || docType === "contract" ? { kind: "amount", value: discountAmount } : undefined,
+      );
+    } catch {
+      // An incomplete numeric input must not crash the editor or become a saved amount.
+      return null;
+    }
+  }, [services, discountAmount, docType]);
+  const total = editorMoney?.grossAmount ?? 0;
 
   const formatDate = (iso: string) => {
     return formatRuDateLong(iso);
@@ -868,20 +880,34 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       setServices(effectiveServices);
     }
 
+    const documentServices = effectiveServices.filter(s => s.name.trim());
+    let generatedMoney: DocumentMoney | undefined;
+    if (effectiveType !== "reconciliation") {
+      try {
+        generatedMoney = calculateDocumentMoney(documentServices,
+          effectiveType === "invoice" || effectiveType === "contract" ? { kind: "amount", value: discountAmount } : undefined);
+      } catch (error) {
+        return toast.error(error instanceof Error ? error.message : "Проверьте количество, цены и скидку");
+      }
+    }
+
     const docData: DocumentData = {
       type: effectiveType,
       number: effectiveNumber,
       date: formatDate(docDate),
       company,
       client,
-      services: effectiveServices.filter(s => s.name.trim()),
+      services: documentServices.map((service, index) => ({
+        ...service, computedLineTotal: generatedMoney ? generatedMoney.lineTotalsMinor[index] / 100 : undefined,
+      })),
+      computedGrossTotal: generatedMoney?.grossAmount,
       subject,
       deadline,
       paymentTerms,
       contractNumber: linkedContract?.contract_number || "",
       contractDate: linkedContract?.contract_date ? formatDate(linkedContract.contract_date) : "",
       appendixRef: (linkedContract as any)?.appendix_ref || undefined,
-      discountAmount: discountAmount > 0 ? discountAmount : undefined,
+      discountAmount: generatedMoney?.discountAmount || undefined,
       discountDeadline: discountDeadline ? formatDate(discountDeadline) : undefined,
     };
 
@@ -953,15 +979,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
   // Save document to DB with upsert logic (called on send)
   const saveDocumentToDB = async (html: string, invoiceHtml: string | null) => {
-    const savedClient = await persistClient();
     let targetContractId = linkedContractId || null;
     const servicesForSave = contractSubType === "frdo"
       ? syncFrdoServicesWithDeadline(services, deadline)
       : services;
     const filteredServices = docType === "reconciliation"
       ? (reconRows as any[])
-      : servicesForSave.filter(s => s.name.trim());
+      : servicesForSave.filter(s => s.name.trim()).map(({ name, qty, price }) => ({ name, qty, price }));
     const reconTotal = reconRows.reduce((s, r) => s + (Number(r.debit) || 0) - (Number(r.credit) || 0), 0);
+    const savedMoney = docType === "reconciliation" ? null : calculateDocumentMoney(filteredServices,
+      docType === "invoice" || docType === "contract" ? { kind: "amount", value: discountAmount } : undefined);
+    const savedClient = await persistClient();
 
     // Step 1: Upsert main document (check by doc_type + doc_number)
     console.log("[DOC] Step 1: Upsert document...");
@@ -979,12 +1007,17 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       client_name: savedClient.name,
       client_inn: clientInn || null,
       contract_id: targetContractId,
-      total_amount: docType === "reconciliation" ? Math.abs(reconTotal) : total,
+      total_amount: docType === "reconciliation" ? Math.abs(reconTotal) : documentStoredAmount(docType, savedMoney!),
       services: JSON.stringify(filteredServices),
       html_content: html,
       metadata: JSON.stringify({
         contractSubType, subject, deadline, paymentTerms,
         discountAmount, discountDeadline,
+        ...(savedMoney ? {
+          grossAmount: savedMoney.grossAmount, netAmount: savedMoney.totalAmount,
+          grossMinor: savedMoney.grossMinor, discountMinor: savedMoney.discountMinor, netMinor: savedMoney.netMinor,
+          lineTotalsMinor: savedMoney.lineTotalsMinor, rounding: "half-up-per-line",
+        } : {}),
         clientKpp: clientKpp, clientOgrn: clientOgrn, clientAddress: clientAddress,
         clientDirectorName, clientDirectorPost,
         periodFrom: docType === "reconciliation" ? periodFrom : undefined,
@@ -1048,7 +1081,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
         client_name: savedClient.name,
         contract_number: contractNumber,
         contract_date: docDate,
-        amount: total || null,
+        amount: savedMoney!.grossAmount || null,
         contract_type: CONTRACT_TYPE_LABELS[contractSubType] || null,
         payment_status: "не оплачено",
         ...extractServicePeriod(deadline, docDate, parsedServiceDeadline),
@@ -1127,9 +1160,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             client_name: clientName,
             client_inn: clientInn || null,
             contract_id: targetContractId,
-            total_amount: total,
+            total_amount: documentStoredAmount("invoice", savedMoney!),
             services: JSON.stringify(filteredServices),
             html_content: invoiceHtml,
+            metadata: docPayload.metadata,
           };
 
           if (existingInvoice) {
@@ -1921,7 +1955,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
                   <div className="space-y-1">
                     <Label className="sm:hidden">Кол-во</Label>
                     {i === 0 && <Label className="hidden sm:block">Кол-во</Label>}
-                    <Input type="number" min={1} value={s.qty} onChange={e => updateService(i, "qty", parseInt(e.target.value) || 1)} />
+                    <Input type="number" min={0.001} step={0.001} value={s.qty} onChange={e => updateService(i, "qty", parseFloat(e.target.value) || 1)} />
                   </div>
                   <div className="space-y-1">
                     <Label className="sm:hidden">Цена, ₽</Label>
@@ -1936,7 +1970,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
             ))}
           </div>
           <div className="mt-4 text-right font-semibold text-lg">
-            Итого: {total.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽
+            Итого: {editorMoney ? total.toLocaleString("ru-RU", { minimumFractionDigits: 2 }) : "—"} ₽
           </div>
 
           {(docType === "invoice" || docType === "contract") && (
@@ -1954,7 +1988,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
               </div>
               {discountAmount > 0 && (
                 <div className="text-right text-sm text-muted-foreground">
-                  Сумма со скидкой: <span className="font-semibold text-foreground">{(total - discountAmount).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽</span>
+                  Сумма со скидкой: <span className="font-semibold text-foreground">{editorMoney ? editorMoney.totalAmount.toLocaleString("ru-RU", { minimumFractionDigits: 2 }) : "—"} ₽</span>
                   {discountDeadline && <span> (при оплате до {formatDate(discountDeadline)})</span>}
                 </div>
               )}

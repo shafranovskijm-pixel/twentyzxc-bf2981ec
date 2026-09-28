@@ -1,0 +1,630 @@
+{
+  "version": 1,
+  "sdk_version": "0.23.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://veedztdijmscebgadzyx.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "24zxc-crm-documents",
+      "version": "0.1.0",
+      "title": "24ZXC — клиенты и документы"
+    },
+    "tools": [
+      {
+        "name": "crm_suggest_document_number",
+        "title": "Следующий номер документа",
+        "description": "Предлагает следующий NNN/YYYY по всем клиентам CRM отдельно для договоров, счетов и актов на год даты документа. Для договора учитывает также карточки договоров. Это чтение, номер не резервируется. Если создание вернуло CRM_DOCUMENT_NUMBER_CONFLICT или CRM_CONTRACT_NUMBER_CONFLICT, перечитайте кандидата и повторите неудавшуюся операцию с новым номером. Не меняйте номер после успешного сохранения.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "contract",
+                "invoice",
+                "act"
+              ]
+            },
+            "date": {
+              "type": "string",
+              "description": "Дата документа YYYY-MM-DD"
+            }
+          },
+          "required": [
+            "type",
+            "date"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_search_clients",
+        "title": "Найти клиента 24ZXC",
+        "description": "Ищет клиентов CRM по названию, точному ИНН или email. При нескольких совпадениях уточните клиента. Пароли и служебные заметки не возвращаются.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            },
+            "field": {
+              "type": "string",
+              "enum": [
+                "name",
+                "inn",
+                "email"
+              ],
+              "default": "name"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_list_contracts",
+        "title": "Договоры клиента",
+        "description": "Находит договоры точно выбранного клиента для создания связанного счёта или акта. При совпадающих названиях клиентов отказывается угадывать связь.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_list_documents",
+        "title": "Документы клиента",
+        "description": "Показывает документы, привязанные к точному ID клиента. Старые записи без client_id не включаются; пустой список не означает отсутствие старых документов.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "contract",
+                "invoice",
+                "act"
+              ]
+            }
+          },
+          "required": [
+            "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_get_document",
+        "title": "Прочитать документ",
+        "description": "Читает конкретный документ и текущую версию перед изменением. includeHtml возвращает исходный HTML; это не PDF и не свидетельство отправки.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "documentId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "includeHtml": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "documentId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_preview_document",
+        "title": "Предпросмотр договора, счёта или акта",
+        "description": "Проверяет реквизиты, даты, услуги и скидку, рассчитывает сумму, формирует HTML на существующем шаблоне. Ничего не сохраняет и не отправляет. Недостающие условия уточните у пользователя.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "document": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "contract",
+                    "invoice",
+                    "act"
+                  ]
+                },
+                "clientId": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "date": {
+                  "type": "string",
+                  "description": "Дата документа YYYY-MM-DD, не период услуг."
+                },
+                "number": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "description": "Номер из crm_suggest_document_number либо явно заданный пользователем. Не придумывайте номер."
+                },
+                "template": {
+                  "type": "string",
+                  "enum": [
+                    "standard",
+                    "frdo",
+                    "nmo"
+                  ],
+                  "description": "standard — существующий шаблон «Сайт», используется по умолчанию; frdo — ФРДО; nmo — НМО. Выбирайте по запрошенной услуге."
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      },
+                      "qty": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "price": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "qty",
+                      "price"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 100
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "deadline": {
+                  "type": "string",
+                  "description": "Период или срок услуг договора, как согласовал пользователь."
+                },
+                "paymentTerms": {
+                  "type": "string"
+                },
+                "contractId": {
+                  "$ref": "#/properties/document/properties/clientId"
+                },
+                "discount": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "amount",
+                        "percent"
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "deadline": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                "servicePeriod": {
+                  "type": "object",
+                  "properties": {
+                    "start": {
+                      "type": "string"
+                    },
+                    "end": {
+                      "type": "string"
+                    },
+                    "noDeadline": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "noDeadline"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Явные даты периода услуг договора YYYY-MM-DD; отдельно от даты договора и даты оплаты. Должны соответствовать тексту deadline."
+                }
+              },
+              "required": [
+                "type",
+                "clientId",
+                "date",
+                "number",
+                "services"
+              ],
+              "additionalProperties": false
+            },
+            "includeHtml": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "required": [
+            "document"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_create_document",
+        "title": "Создать документ в CRM",
+        "description": "Создаёт договор, счёт или акт и первую версию HTML. Договор также создаёт связанную запись CRM. Акт требует явного договора. Повторяйте тот же requestId только для повтора этой же операции. PDF и отправка пока не подключены.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "document": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "contract",
+                    "invoice",
+                    "act"
+                  ]
+                },
+                "clientId": {
+                  "$ref": "#/properties/requestId"
+                },
+                "date": {
+                  "type": "string",
+                  "description": "Дата документа YYYY-MM-DD, не период услуг."
+                },
+                "number": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100,
+                  "description": "Номер из crm_suggest_document_number либо явно заданный пользователем. Не придумывайте номер."
+                },
+                "template": {
+                  "type": "string",
+                  "enum": [
+                    "standard",
+                    "frdo",
+                    "nmo"
+                  ],
+                  "description": "standard — существующий шаблон «Сайт», используется по умолчанию; frdo — ФРДО; nmo — НМО. Выбирайте по запрошенной услуге."
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      },
+                      "qty": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "price": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "qty",
+                      "price"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 100
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "deadline": {
+                  "type": "string",
+                  "description": "Период или срок услуг договора, как согласовал пользователь."
+                },
+                "paymentTerms": {
+                  "type": "string"
+                },
+                "contractId": {
+                  "$ref": "#/properties/requestId"
+                },
+                "discount": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "amount",
+                        "percent"
+                      ]
+                    },
+                    "value": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "deadline": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "value"
+                  ],
+                  "additionalProperties": false
+                },
+                "servicePeriod": {
+                  "type": "object",
+                  "properties": {
+                    "start": {
+                      "type": "string"
+                    },
+                    "end": {
+                      "type": "string"
+                    },
+                    "noDeadline": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "noDeadline"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Явные даты периода услуг договора YYYY-MM-DD; отдельно от даты договора и даты оплаты. Должны соответствовать тексту deadline."
+                }
+              },
+              "required": [
+                "type",
+                "clientId",
+                "date",
+                "number",
+                "services"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "requestId",
+            "document"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_revise_document",
+        "title": "Изменить дату, стоимость или скидку",
+        "description": "Создаёт новую версию документа, созданного API. Сохраняет старую версию и реквизиты. Передайте актуальный expectedRevision; конфликт требует перечитать документ. services заменяет весь список услуг. discount:null убирает скидку. Повторная отправка пока не подключена.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "documentId": {
+              "$ref": "#/properties/requestId"
+            },
+            "expectedRevision": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "changes": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string"
+                },
+                "services": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 1000
+                      },
+                      "qty": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "price": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "qty",
+                      "price"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1,
+                  "maxItems": 100
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "deadline": {
+                  "type": "string"
+                },
+                "paymentTerms": {
+                  "type": "string"
+                },
+                "servicePeriod": {
+                  "type": "object",
+                  "properties": {
+                    "start": {
+                      "type": "string"
+                    },
+                    "end": {
+                      "type": "string"
+                    },
+                    "noDeadline": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "noDeadline"
+                  ],
+                  "additionalProperties": false
+                },
+                "discount": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "amount",
+                            "percent"
+                          ]
+                        },
+                        "value": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "deadline": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "value"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "requestId",
+            "documentId",
+            "expectedRevision",
+            "changes"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

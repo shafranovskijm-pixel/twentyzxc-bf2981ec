@@ -1,5 +1,9 @@
 project_id = "veedztdijmscebgadzyx"
 
+# The MCP SDK verifies OAuth tokens; handlers also enforce admin role and RLS.
+[functions.mcp]
+verify_jwt = false
+
 [functions.generate-template-images]
 verify_jwt = false
 

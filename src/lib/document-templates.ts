@@ -30,6 +30,8 @@ export interface ServiceItem {
   name: string;
   qty: number;
   price: number;
+  /** Rounded row amount from the shared document calculator. */
+  computedLineTotal?: number;
 }
 
 export interface DocumentData {
@@ -39,6 +41,9 @@ export interface DocumentData {
   company: CompanyRequisites;
   client: ClientRequisites;
   services: ServiceItem[];
+  /** Explicit server origin and shared integer-money result; old callers may omit them. */
+  assetOrigin?: string;
+  computedGrossTotal?: number;
   // contract-specific
   subject?: string;
   deadline?: string;
@@ -58,7 +63,7 @@ function formatMoney(n: number): string {
 }
 
 function totalSum(services: ServiceItem[]): number {
-  return services.reduce((s, i) => s + i.qty * i.price, 0);
+  return services.reduce((s, i) => s + (i.computedLineTotal ?? i.qty * i.price), 0);
 }
 
 function isFeminineName(fullName: string): boolean {
@@ -279,8 +284,8 @@ const brandStrip = `
   </div>
 `;
 
-function servicesTableHtml(services: ServiceItem[]): string {
-  const total = totalSum(services);
+function servicesTableHtml(services: ServiceItem[], computedGrossTotal?: number): string {
+  const total = computedGrossTotal ?? totalSum(services);
   return `
     <table class="services-table">
       <thead>
@@ -301,7 +306,7 @@ function servicesTableHtml(services: ServiceItem[]): string {
             <td class="money">${s.qty}</td>
             <td class="money">шт.</td>
             <td class="money">${formatMoney(s.price)}</td>
-            <td class="money">${formatMoney(s.qty * s.price)}</td>
+            <td class="money">${formatMoney(s.computedLineTotal ?? s.qty * s.price)}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -325,7 +330,7 @@ function servicesTableHtml(services: ServiceItem[]): string {
 
 export function generateContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
-  const total = totalSum(services);
+  const total = data.computedGrossTotal ?? totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Договор №${num}</title>${baseStyles}</head><body>
     ${brandStrip}
     <div class="kicker">Contract</div>
@@ -348,7 +353,7 @@ export function generateContractHtml(data: DocumentData): string {
     <div class="section">
       <h2>1. ПРЕДМЕТ ДОГОВОРА</h2>
       <p>1.1. Исполнитель обязуется оказать Заказчику следующие услуги${data.subject ? `: ${data.subject}` : ""}:</p>
-      ${servicesTableHtml(services)}
+      ${servicesTableHtml(services, data.computedGrossTotal)}
       <p style="margin-top:10px;">1.2. Общая стоимость услуг по настоящему Договору составляет <strong>${formatMoney(total)} руб.</strong></p>
       ${data.discountAmount && data.discountDeadline ? `<p style="margin-top:10px;font-size:11pt;"><strong>При оплате до ${data.discountDeadline} сумма составляет ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : data.discountAmount ? `<p style="margin-top:10px;font-size:11pt;"><strong>Сумма со скидкой: ${formatMoney(total - data.discountAmount)} руб.</strong> (скидка ${formatMoney(data.discountAmount)} руб.)</p>` : ''}
     </div>
@@ -407,9 +412,9 @@ export function generateContractHtml(data: DocumentData): string {
           <p>БИК ${c.company_bank_bik} к/с ${c.company_bank_corr}</p>
           <div class="signature-line">
             ${c.company_director_post} __________ / ${c.company_director_name} /
-            <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+            <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
           </div>
-          <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+          <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
@@ -425,7 +430,7 @@ export function generateContractHtml(data: DocumentData): string {
 
 export function generateInvoiceHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
-  const total = totalSum(services);
+  const total = data.computedGrossTotal ?? totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт №${num}</title>${baseStyles}
   <style>
     body.invoice-mode { padding: 12mm 12mm 8mm; font-size: 9pt; line-height: 1.3; }
@@ -483,7 +488,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
       <p><strong>Поставщик:</strong> ${c.company_name}, ИНН ${c.company_inn}${c.company_kpp ? `, КПП ${c.company_kpp}` : ""}, ${c.company_legal_address}, тел.: ${c.company_phone}</p>
       <p><strong>Покупатель:</strong> ${cl.name}, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, ${cl.address}</p>
     </div>
-    ${servicesTableHtml(services)}
+    ${servicesTableHtml(services, data.computedGrossTotal)}
     ${data.discountAmount ? `
       <div class="totals-box"><div class="inner">
         <div class="row grand"><span>К оплате со скидкой</span><span>${formatMoney(total - data.discountAmount)} ₽</span></div>
@@ -496,9 +501,9 @@ export function generateInvoiceHtml(data: DocumentData): string {
         <p>${c.company_short_name || c.company_name}</p>
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
-          <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+          <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
         </div>
-        <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+        <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
       </div>
     </div>
     </div>
@@ -507,7 +512,7 @@ export function generateInvoiceHtml(data: DocumentData): string {
 
 export function generateActHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
-  const total = totalSum(services);
+  const total = data.computedGrossTotal ?? totalSum(services);
   const actStyles = `
     <style>
       body.act-mode { padding: 12mm 12mm 8mm; font-size: 9.2pt; line-height: 1.25; }
@@ -539,7 +544,7 @@ export function generateActHtml(data: DocumentData): string {
       <p>${clientIntroPhrase(cl, "Заказчик", true)}, с другой стороны,</p>
       <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
     </div>
-    ${servicesTableHtml(services).replace('class="services-table"', 'class="services-table act-items-table"')}
+    ${servicesTableHtml(services, data.computedGrossTotal).replace('class="services-table"', 'class="services-table act-items-table"')}
     <div class="section act-acceptance-text" style="margin-top:6px;">
       <p>Общая стоимость выполненных работ (оказанных услуг) составляет <strong>${formatMoney(total)} руб.</strong></p>
       <p style="margin-top:4px;">Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
@@ -555,9 +560,9 @@ export function generateActHtml(data: DocumentData): string {
         <p>БИК ${c.company_bank_bik} к/с ${c.company_bank_corr}</p>
         <div class="signature-line">
           ${c.company_director_post} __________ / ${c.company_director_name} /
-          <img class="signature-img" src="${window.location.origin}/images/signature.png" />
+          <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
         </div>
-        <img class="stamp-img" src="${window.location.origin}/images/stamp.png" />
+        <img class="stamp-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/stamp.png" />
       </div>
       <div class="signature-block act-signature-card">
         <p><strong>Заказчик:</strong></p>

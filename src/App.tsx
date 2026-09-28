@@ -41,6 +41,7 @@ const Reviews = lazyWithRetry(() => import("./pages/Reviews"));
 const Playground = lazyWithRetry(() => import("./pages/Playground"));
 const PlaygroundView = lazyWithRetry(() => import("./pages/PlaygroundView"));
 const Admin = lazyWithRetry(() => import("./pages/Admin"));
+const OAuthConsent = lazyWithRetry(() => import("./pages/OAuthConsent"));
 const OrgPanel = lazyWithRetry(() => import("./pages/OrgPanel"));
 const OrgLanding = lazyWithRetry(() => import("./pages/OrgLanding"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
@@ -99,6 +100,7 @@ const App = () => (
                   <Route path="/playground" element={<Playground />} />
                   <Route path="/p/:slug" element={<PlaygroundView />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/oauth/consent" element={<OAuthConsent />} />
                   <Route path="/org" element={<OrgPanel />} />
                   <Route path="/shop/:slug" element={<OrgLanding />} />
                 </Routes>
