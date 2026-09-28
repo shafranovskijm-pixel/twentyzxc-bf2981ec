@@ -1,10 +1,43 @@
-# ChatGPT / MCP: first document implementation
+# ChatGPT / MCP: CRM document integration
 
-Status: local implementation, not deployed or connected to a live ChatGPT account.
+Status on 2026-09-28: the backend, migration and frontend are published; the
+personal ChatGPT connection is not yet established. No successful end-to-end
+OAuth sign-in or document creation from ChatGPT is claimed.
+
 The Lovable Git settings were inspected on 2026-09-28: project
 `c2afa16d-2c40-4a1e-9579-ec1baa3f79f0` connects to
 `shafranovskijm-pixel/twentyzxc-bf2981ec`, branch `main`.
 The implementation base is `f537cbbfcafaa7594057e4eeef4c4d14f32e8237`.
+The latest recorded main revision is `6f36d11`, including removal of the duplicate
+migration source after the production migration was applied.
+
+## Published state and connection status
+
+- Lovable reported **Your website updated** for the published project.
+- The public MCP endpoint is
+  `https://veedztdijmscebgadzyx.supabase.co/functions/v1/mcp`.
+  An unauthenticated request returns HTTP 401 with an OAuth discovery challenge;
+  its protected-resource metadata returns HTTP 200.
+- Supabase OAuth authorization-server metadata returns HTTP 200 and advertises
+  dynamic client registration. The configured Auth Site URL is
+  `https://twentyzxc.lovable.app`, with authorization path `/oauth/consent`.
+- The public `24zxc.ru` frontend already serves the `/oauth/consent` route and its
+  current OAuthConsent bundle. Its pre-publication check matched that bundle's
+  SHA-256 to the local build. This establishes frontend publication, not successful
+  OAuth authorization.
+- Migration version `20260928054127` is applied in the live database.
+- Creating the personal MCP connection in ChatGPT currently returns
+  `custom apps not allowed in this context`; the Security settings view also
+  failed to load during setup. The cause is not established. Connection setup is
+  still being investigated; this is not evidence that the user's plan cannot
+  support the integration.
+
+The consent page uses the existing CRM sign-in and verifies the user and admin
+role on the server before reading the authorization request and before submitting
+a decision. A new grant requires an explicit approve/deny click. If Supabase
+returns an already-approved request, the page offers continuation using only the
+server-returned HTTPS callback; it does not send a second approval or denial.
+Repeated sign-in events for the same account do not discard that callback.
 
 ## Implemented boundary
 
@@ -12,8 +45,8 @@ The implementation base is `f537cbbfcafaa7594057e4eeef4c4d14f32e8237`.
 contracts, list linked documents, read a document, preview, create, and revise. The existing
 Lovable MCP SDK builds a Supabase Edge Function and OAuth manifest. No OpenAI API
 key or model invocation is used by this server: the conversational client calls
-its tools. OAuth configuration and an actual ChatGPT connection remain deployment
-work; local tests do not establish their availability.
+its tools. OAuth configuration and public endpoint discovery are now live; the
+authenticated ChatGPT connection remains unfinished.
 
 All handlers use the verified caller's JWT and require the CRM admin role. They
 do not use a service-role key. Client projections deliberately omit passwords,
@@ -85,8 +118,8 @@ date/amount/period change is detected before overwriting it.
   lacks its own admin check in this source snapshot and may return async 202 before
   SMTP completes. It must be integrated with authorization, immutable attachments
   and delivery evidence before a new send/resend tool is exposed.
-- No migration, backend function, published frontend, OAuth setting or client
-  message has been changed by this local work. A live end-to-end test is pending.
+- No client message has been sent by this integration. A successful OAuth sign-in
+  and a document command from the connected ChatGPT plugin remain to be verified.
 
 ## Verification
 
@@ -94,8 +127,22 @@ date/amount/period change is detected before overwriting it.
 `npm run test:crm` runs the focused document/domain/authorization tests in Node.
 `npm run test:crm:sql` executes the selected real schema migrations, new migration,
 RLS checks and transactional assertions in PGlite (PostgreSQL WASM).
-`npx tsc --noEmit -p tsconfig.app.json` checks application types; `npm run build`
+`npx tsc --noEmit -p tsconfig.app.json` checks application types;
+`npx tsc --noEmit -p tsconfig.node.json` checks build-tool types; `npm run build`
 builds the frontend and MCP entry.
+
+Recorded local results: the full application suite passed 158 tests before the
+last two consent regression tests were added. The subsequent focused consent run
+passed all 22 tests, including those two new cases. These are overlapping runs,
+not a claim of 180 distinct tests or a rerun of the full suite after the last
+change. Both application and Node TypeScript configurations passed.
+
+The live SQL smoke test passed creation, same-request replay, revision, date and
+price changes, invoice discounts and RLS assertions inside a rolled-back
+transaction. After rollback the observed counts were 105 clients, 158 contracts
+and 150 generated documents, with zero smoke-test rows, zero revision-history
+rows and zero API-request ledger rows. No test document was left in production.
+This validates the deployed database boundary, not an authenticated MCP call.
 
 On Windows, the Vite configuration loads the plugin through
 `scripts/mcp-sdk-windows.mjs`. SDK 0.23.0 otherwise misclassifies a drive path as
@@ -114,9 +161,12 @@ supabase/tests/mcp_runtime.test.ts`: this tests actual Deno startup and HTTP 401
 with OAuth discovery before any network/database access, without starting a
 listening server. It is runtime evidence, not an authenticated live-site test.
 
-PGlite does not test deployed Supabase infrastructure or multi-session contention.
-Mocked query tests test projections and routing, not live data. No SMTP, client
-email, original file download or deployed OAuth behavior is claimed.
+PGlite does not test deployed Supabase infrastructure or multi-session contention;
+the separate live SQL smoke test covers the deployed database assertions above.
+Mocked query tests test projections and routing, not live data. Public OAuth
+metadata and an unauthenticated MCP challenge are verified, but token issuance,
+refresh and authenticated ChatGPT tool execution are not. No SMTP delivery,
+client email or original file download is claimed.
 
 Official interface references:
 - https://developers.openai.com/plugins/quickstart
