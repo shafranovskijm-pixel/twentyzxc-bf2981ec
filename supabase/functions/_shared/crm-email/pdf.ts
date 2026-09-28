@@ -2,7 +2,7 @@
 import pdfMakeModule from "npm:pdfmake@0.3.11";
 import fontModule from "npm:pdfmake@0.3.11/build/vfs_fonts.js";
 import { DOMParser } from "npm:linkedom@0.18.12";
-import { buildPdfDefinition } from "../../../../src/lib/pdf/definition.ts";
+import { buildPdfDefinition } from "./pdf-layout/definition.ts";
 
 const MAX_HTML_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 1024 * 1024;
