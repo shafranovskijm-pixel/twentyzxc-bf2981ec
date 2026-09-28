@@ -1,5 +1,5 @@
-import type { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
+import type { Plugin } from "vite";
 
 export const PATCHED_SDK_VERSION: string;
 export function patchWindowsResolver(source: string, format: string): string;
-export function loadMcpPlugin(projectRoot: string): Promise<typeof mcpPlugin>;
+export function loadMcpPlugin(projectRoot: string): Promise<(options?: Record<string, unknown>) => Plugin>;
