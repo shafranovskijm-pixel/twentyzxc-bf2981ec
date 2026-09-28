@@ -12,10 +12,63 @@
   "mcp": {
     "server": {
       "name": "24zxc-crm-documents",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "title": "24ZXC — клиенты и документы"
     },
     "tools": [
+      {
+        "name": "crm_find_renewal_candidates",
+        "title": "Показать варианты продления договоров",
+        "description": "На запрос о клиентах с истекающим сроком, в том числе ФИС ФРДО, сначала показывает варианты по сохранённым договорам: клиент, срок и его источник, прежняя сумма, email и недостающие условия. Ничего не создаёт и не отправляет. Если «скоро» не уточнено, использует ближайшие 30 дней и явно показывает окно; его можно изменить. paid_until не означает окончание договора. Предложите выбрать клиентов, новый период и цену; после подготовки покажите документы и спросите, отправлять ли их. Не выдавайте прежнюю сумму за согласованную новую цену.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "asOf": {
+              "type": "string",
+              "description": "Текущая дата пользователя YYYY-MM-DD для расчёта окна"
+            },
+            "service": {
+              "type": "string",
+              "enum": [
+                "frdo",
+                "all"
+              ]
+            },
+            "daysAhead": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 366
+            },
+            "expiredDaysBack": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 366
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 10000
+            }
+          },
+          "required": [
+            "asOf"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
       {
         "name": "crm_suggest_document_number",
         "title": "Следующий номер документа",
@@ -296,6 +349,64 @@
                   ],
                   "additionalProperties": false
                 },
+                "invoiceBasis": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "const": "sintagma"
+                    },
+                    "sourceKind": {
+                      "type": "string",
+                      "const": "subscription_invoice"
+                    },
+                    "sourceId": {
+                      "$ref": "#/properties/document/properties/clientId"
+                    },
+                    "organizationId": {
+                      "$ref": "#/properties/document/properties/clientId"
+                    },
+                    "number": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "currency": {
+                      "type": "string",
+                      "const": "RUB"
+                    },
+                    "payerName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "payerInn": {
+                      "type": "string",
+                      "pattern": "^\\d{10}(\\d{2})?$"
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "sourceKind",
+                    "sourceId",
+                    "organizationId",
+                    "number",
+                    "date",
+                    "amount",
+                    "currency",
+                    "payerName",
+                    "payerInn"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Для акта к счёту СИНТАГМЫ вместо contractId: точный снимок существующего subscription_invoice из get_sintagma_invoice_export. Не придумывайте ID или реквизиты. Плательщик и полная сумма должны соответствовать клиенту и акту."
+                },
                 "servicePeriod": {
                   "type": "object",
                   "properties": {
@@ -341,7 +452,7 @@
       {
         "name": "crm_create_document",
         "title": "Создать документ в CRM",
-        "description": "Создаёт договор, счёт или акт и первую версию HTML. Договор также создаёт связанную запись CRM. Акт требует явного договора. Повторяйте тот же requestId только для повтора этой же операции. Для PDF и письма используйте crm_prepare_document_email и crm_send_document_email.",
+        "description": "Сохраняет договор, счёт или акт в карточке выбранного клиента 24ZXC и первую версию HTML. Договор также создаёт связанную запись CRM. Акт требует либо contractId, либо invoiceBasis существующего счёта СИНТАГМЫ; фиктивный договор не нужен. При ошибке реквизитов сообщите конкретное недостающее поле, не подменяйте сохранение отдельным файлом или Gmail. Повторяйте тот же requestId только для повтора этой же операции. После сохранения покажите документ; подготовка PDF и письма выполняется отдельно, отправка — после подтверждения пользователя.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -453,6 +564,64 @@
                     "value"
                   ],
                   "additionalProperties": false
+                },
+                "invoiceBasis": {
+                  "type": "object",
+                  "properties": {
+                    "source": {
+                      "type": "string",
+                      "const": "sintagma"
+                    },
+                    "sourceKind": {
+                      "type": "string",
+                      "const": "subscription_invoice"
+                    },
+                    "sourceId": {
+                      "$ref": "#/properties/requestId"
+                    },
+                    "organizationId": {
+                      "$ref": "#/properties/requestId"
+                    },
+                    "number": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "date": {
+                      "type": "string"
+                    },
+                    "amount": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "currency": {
+                      "type": "string",
+                      "const": "RUB"
+                    },
+                    "payerName": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "payerInn": {
+                      "type": "string",
+                      "pattern": "^\\d{10}(\\d{2})?$"
+                    }
+                  },
+                  "required": [
+                    "source",
+                    "sourceKind",
+                    "sourceId",
+                    "organizationId",
+                    "number",
+                    "date",
+                    "amount",
+                    "currency",
+                    "payerName",
+                    "payerInn"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Для акта к счёту СИНТАГМЫ вместо contractId: точный снимок существующего subscription_invoice из get_sintagma_invoice_export. Не придумывайте ID или реквизиты. Плательщик и полная сумма должны соответствовать клиенту и акту."
                 },
                 "servicePeriod": {
                   "type": "object",
@@ -741,7 +910,7 @@
       {
         "name": "crm_send_document_email",
         "title": "Отправить документы клиенту",
-        "description": "Отправляет подготовленное письмо с зафиксированными PDF по явной команде пользователя отправить этому клиенту эти документы. Перед вызовом проверьте получателя, тему, текст и версии из подготовки. expectedRecipient должен точно совпадать с подготовленным адресом. Один deliveryId может отправиться только один раз; повтор вызова возвращает состояние. smtp_accepted означает принятие SMTP-сервером, не подтверждает получение клиентом. При sending/unknown не создавайте новый ID и не повторяйте письмо автоматически; проверьте журнал. Для намеренной повторной отправки после правки создайте новое письмо по команде пользователя.",
+        "description": "Отправляет подготовленное письмо с зафиксированными PDF только ПОСЛЕ отдельного ответа пользователя на вопрос об отправке показанного комплекта. Сначала покажите получателя, тему, текст, документы, суммы и версии из подготовки и спросите «Отправить?». Запрос «выставить/создать/подготовить» не разрешает отправку. expectedRecipient должен точно совпадать с подготовленным адресом. Один deliveryId отправляется только один раз; повтор возвращает состояние. smtp_accepted означает принятие SMTP-сервером, не подтверждает получение клиентом. При sending/unknown не создавайте новый ID и не повторяйте письмо автоматически. Для повторной отправки новой версии снова покажите комплект и получите подтверждение.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
