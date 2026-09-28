@@ -258,6 +258,78 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_document_api_requests: {
+        Row: {
+          actor_id: string
+          backend_pid: number
+          created_at: string
+          document_id: string
+          operation_hash: string
+          request: Json
+          request_id: string
+          result: Json | null
+          target_revision: number
+          transaction_id: number
+        }
+        Insert: {
+          actor_id: string
+          backend_pid?: number
+          created_at?: string
+          document_id: string
+          operation_hash: string
+          request: Json
+          request_id: string
+          result?: Json | null
+          target_revision: number
+          transaction_id?: number
+        }
+        Update: {
+          actor_id?: string
+          backend_pid?: number
+          created_at?: string
+          document_id?: string
+          operation_hash?: string
+          request?: Json
+          request_id?: string
+          result?: Json | null
+          target_revision?: number
+          transaction_id?: number
+        }
+        Relationships: []
+      }
+      crm_document_revisions: {
+        Row: {
+          captured_at: string
+          captured_by: string | null
+          document_id: string
+          input: Json | null
+          request_id: string | null
+          revision: number
+          snapshot: Json
+          source: string
+        }
+        Insert: {
+          captured_at?: string
+          captured_by?: string | null
+          document_id: string
+          input?: Json | null
+          request_id?: string | null
+          revision: number
+          snapshot: Json
+          source: string
+        }
+        Update: {
+          captured_at?: string
+          captured_by?: string | null
+          document_id?: string
+          input?: Json | null
+          request_id?: string | null
+          revision?: number
+          snapshot?: Json
+          source?: string
+        }
+        Relationships: []
+      }
       email_campaign_queue: {
         Row: {
           attempts: number
@@ -316,6 +388,7 @@ export type Database = {
       }
       generated_documents: {
         Row: {
+          client_id: string | null
           client_inn: string | null
           client_name: string
           contract_id: string | null
@@ -326,10 +399,13 @@ export type Database = {
           html_content: string
           id: string
           metadata: Json | null
+          revision: number
           services: Json
           total_amount: number | null
+          updated_at: string
         }
         Insert: {
+          client_id?: string | null
           client_inn?: string | null
           client_name: string
           contract_id?: string | null
@@ -340,10 +416,13 @@ export type Database = {
           html_content: string
           id?: string
           metadata?: Json | null
+          revision?: number
           services?: Json
           total_amount?: number | null
+          updated_at?: string
         }
         Update: {
+          client_id?: string | null
           client_inn?: string | null
           client_name?: string
           contract_id?: string | null
@@ -354,10 +433,19 @@ export type Database = {
           html_content?: string
           id?: string
           metadata?: Json | null
+          revision?: number
           services?: Json
           total_amount?: number | null
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "generated_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "generated_documents_contract_id_fkey"
             columns: ["contract_id"]
@@ -1798,6 +1886,20 @@ export type Database = {
       }
     }
     Functions: {
+      crm_save_document: {
+        Args: {
+          p_document_id: string
+          p_expected_revision: number
+          p_input: Json
+          p_payload: Json
+          p_request_id: string
+        }
+        Returns: Json
+      }
+      crm_suggest_document_number: {
+        Args: { p_doc_date: string; p_doc_type: string }
+        Returns: Json
+      }
       get_active_listings: {
         Args: never
         Returns: {
