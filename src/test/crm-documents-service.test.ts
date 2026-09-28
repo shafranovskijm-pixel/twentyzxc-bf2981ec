@@ -45,7 +45,7 @@ describe("CRM authorization and protocol boundary", () => {
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
   it("advertises only implemented operations, and marks writes as writes", () => {
-    expect(crmTools.map(tool => tool.name)).toHaveLength(12);
+    expect(crmTools.map(tool => tool.name)).toHaveLength(13);
     expect(crmTools.some(tool => /import/.test(tool.name))).toBe(false);
     for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|save_client|prepare_document_email|send_document_email/.test(tool.name));
     expect(crmTools.find(tool => tool.name === "crm_send_document_email")?.annotations?.openWorldHint).toBe(true);
@@ -132,6 +132,41 @@ describe("CRM queries and document persistence", () => {
     await expect(new CrmDocumentsService(fake.db).create(requestId, input)).rejects.toMatchObject({ code: "COMPANY_REQUISITES_MISSING" });
     expect(fake.rpc).not.toHaveBeenCalled();
   });
+  it("saves an act for a configured sole proprietor without inventing a director", async () => {
+    const proprietor = { ...company, company_name: "ИП Иванов Иван Иванович", company_short_name: "ИП Иванов И. И.", company_director_name: "", company_director_post: "" };
+    const fake = mockDb([null, client, Object.entries(proprietor).map(([key, value]) => ({ key, value })), [{ id: clientId }], { id: contractId, contract_number: "TEST-CONTRACT", contract_date: "2026-01-01", is_archived: false }]);
+    const result = await new CrmDocumentsService(fake.db).create(requestId, { ...input, type: "act", contractId });
+    expect(result).toMatchObject({ status: "saved", sent: false });
+    expect(fake.rpc.mock.calls[0][1].p_payload.metadata.companySnapshot).toMatchObject({ company_name: proprietor.company_name, company_director_name: "Иванов Иван Иванович", company_director_post: "ИП" });
+    expect(fake.rpc.mock.calls[0][1].p_payload.metadata.companySourceSnapshot).toEqual(proprietor);
+    expect(fake.rpc.mock.calls[0][1].p_payload.html_content).toContain("ИП __________ / Иванов Иван Иванович /");
+    expect(proprietor.company_director_name).toBe("");
+  });
+  it("does not manufacture missing director details for an organization", async () => {
+    const incompleteCompany = { ...company, company_name: "ООО Тест", company_director_name: "", company_director_post: "" };
+    const fake = mockDb([null, client, Object.entries(incompleteCompany).map(([key, value]) => ({ key, value }))]);
+    await expect(new CrmDocumentsService(fake.db).create(requestId, input)).rejects.toMatchObject({ code: "COMPANY_REQUISITES_MISSING" });
+    expect(fake.rpc).not.toHaveBeenCalled();
+  });
+  it("saves an invoice-based act with actual client identity and no invented representative or contract", async () => {
+    const invoiceClient = { ...client, legal_address: null, director_name: null, director_post: null };
+    const invoiceBasis = { source: "sintagma", sourceKind: "subscription_invoice", sourceId: documentId, organizationId: contractId, number: "TEST-INVOICE", date: "2026-09-01", amount: 3000, currency: "RUB", payerName: client.name, payerInn: client.inn };
+    const fake = mockDb([null, invoiceClient, Object.entries(company).map(([key, value]) => ({ key, value }))]);
+    const result = await new CrmDocumentsService(fake.db).create(requestId, { ...input, type: "act", invoiceBasis });
+    expect(result).toMatchObject({ status: "saved", sent: false });
+    expect(fake.from).toHaveBeenCalledTimes(3);
+    const saved = fake.rpc.mock.calls[0][1];
+    expect(saved.p_input.invoiceBasis).toEqual(invoiceBasis);
+    expect(saved.p_payload.contract_id).toBe(null);
+    expect(saved.p_payload.html_content).toContain("TEST-INVOICE");
+    expect(saved.p_payload.html_content).not.toMatch(/на основании Устава|в лице директора|К Договору/);
+  });
+  it("does not save an invoice-based act while the actual client INN is missing", async () => {
+    const invoiceBasis = { source: "sintagma", sourceKind: "subscription_invoice", sourceId: documentId, organizationId: contractId, number: "TEST-INVOICE", date: "2026-09-01", amount: 3000, currency: "RUB", payerName: client.name, payerInn: client.inn };
+    const fake = mockDb([null, { ...client, inn: null }, Object.entries(company).map(([key, value]) => ({ key, value }))]);
+    await expect(new CrmDocumentsService(fake.db).create(requestId, { ...input, type: "act", invoiceBasis })).rejects.toMatchObject({ code: "CLIENT_REQUISITES_MISSING", message: "В карточке клиента не заполнены: ИНН. Используйте подтверждённые реквизиты клиента." });
+    expect(fake.rpc).not.toHaveBeenCalled();
+  });
   it("refuses to reinterpret unstructured legacy HTML as a structured source", async () => {
     const fake = mockDb([{ source: "legacy", input: null, snapshot: {} }]);
     await expect(new CrmDocumentsService(fake.db).revise(requestId, documentId, 1, { date: "2026-10-01" })).rejects.toMatchObject({ code: "LEGACY_REQUIRES_ADOPTION" });
@@ -139,12 +174,14 @@ describe("CRM queries and document persistence", () => {
   });
   it("date revision preserves issuer/client snapshots and the previous contract link", async () => {
     const rawClient = { name: client.name, inn: client.inn, kpp: "", ogrn: "", address: client.legal_address, director_name: client.director_name, director_post: client.director_post };
-    const rendered = renderDocument(input, { client: rawClient, company, assetOrigin: "https://24zxc.ru" });
+    const sourceCompany = { ...company, company_director_name: "", company_director_post: "" };
+    const rendered = renderDocument(input, { client: rawClient, company, companySourceSnapshot: sourceCompany, assetOrigin: "https://24zxc.ru" });
     const fake = mockDb([{ source: "api", input, snapshot: { metadata: rendered.metadata, contract_id: contractId } }]);
     await new CrmDocumentsService(fake.db).revise(requestId, documentId, 1, { date: "2026-10-01" });
     expect(fake.from).toHaveBeenCalledTimes(1); // No fresh site_settings can silently replace the issuer.
     const payload = fake.rpc.mock.calls[0][1];
     expect(payload).toMatchObject({ p_document_id: documentId, p_expected_revision: 1, p_payload: { doc_date: "2026-10-01", contract_id: contractId, metadata: { companySnapshot: company } } });
+    expect(payload.p_payload.metadata.companySourceSnapshot).toEqual(sourceCompany);
   });
   it("keeps database conflicts explicit but redacts unexpected SQL errors", async () => {
     const fake = mockDb([null, client, Object.entries(company).map(([key, value]) => ({ key, value }))]);

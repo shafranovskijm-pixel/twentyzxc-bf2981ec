@@ -22,6 +22,20 @@ export interface ServicePeriod {
   noDeadline: boolean;
 }
 
+/** Explicit snapshot read from get_sintagma_invoice_export, not a server-side verification. */
+export interface InvoiceBasis {
+  source: "sintagma";
+  sourceKind: "subscription_invoice";
+  sourceId: string;
+  organizationId: string;
+  number: string;
+  date: string;
+  amount: number;
+  currency: "RUB";
+  payerName: string;
+  payerInn: string;
+}
+
 export interface DocumentInput {
   type: DocumentType;
   clientId: string;
@@ -34,6 +48,8 @@ export interface DocumentInput {
   deadline?: string;
   paymentTerms?: string;
   contractId?: string;
+  /** An act may refer to this exact exported invoice instead of inventing a contract. */
+  invoiceBasis?: InvoiceBasis;
   discount?: Discount;
   /** Structured CRM dates, supplied explicitly and independent of contractual wording. */
   servicePeriod?: ServicePeriod;
@@ -163,7 +179,7 @@ export function calculateTotals(services: DocumentService[], discount?: Discount
 
 export function validateDocumentInput(input: unknown): DocumentInput {
   const raw = record(input, "document");
-  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "discount", "servicePeriod"], "document");
+  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod"], "document");
   if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
     invalid("type", "ожидается contract, invoice или act");
   }
@@ -188,8 +204,34 @@ export function validateDocumentInput(input: unknown): DocumentInput {
     if (raw[key] !== undefined || raw.type === "contract") result[key] = text(raw[key], key, 5000);
   }
   if (result.deadline && /^\d{4}-\d{2}-\d{2}$/.test(result.deadline)) validateIsoDate(result.deadline, "deadline");
-  if (raw.contractId !== undefined || raw.type === "act") result.contractId = uuid(raw.contractId, "contractId");
+  if (raw.contractId !== undefined) result.contractId = uuid(raw.contractId, "contractId");
   if (raw.type === "contract" && result.contractId) invalid("contractId", "договор не может ссылаться на другой договор в этой операции");
+  if (raw.invoiceBasis !== undefined) {
+    if (raw.type !== "act") invalid("invoiceBasis", "основание счёта задаётся только для акта");
+    if (result.contractId) invalid("invoiceBasis", "задайте одно основание: contractId или invoiceBasis");
+    const basis = record(raw.invoiceBasis, "invoiceBasis");
+    knownKeys(basis, ["source", "sourceKind", "sourceId", "organizationId", "number", "date", "amount", "currency", "payerName", "payerInn"], "invoiceBasis");
+    if (basis.source !== "sintagma" || basis.sourceKind !== "subscription_invoice") {
+      invalid("invoiceBasis.sourceKind", "поддерживается экспорт subscription_invoice из СИНТАГМЫ");
+    }
+    if (basis.currency !== "RUB") invalid("invoiceBasis.currency", "поддерживается RUB");
+    const payerInn = text(basis.payerInn, "invoiceBasis.payerInn", 12);
+    if (!/^(?:\d{10}|\d{12})$/.test(payerInn)) invalid("invoiceBasis.payerInn", "ожидается ИНН из исходного счёта (10 или 12 цифр)");
+    const number = text(basis.number, "invoiceBasis.number", 100);
+    if (/[\r\n\t]/.test(number)) invalid("invoiceBasis.number", "ожидается номер в одной строке");
+    result.invoiceBasis = {
+      source: "sintagma", sourceKind: "subscription_invoice",
+      sourceId: uuid(basis.sourceId, "invoiceBasis.sourceId"),
+      organizationId: uuid(basis.organizationId, "invoiceBasis.organizationId"),
+      number, date: validateIsoDate(basis.date, "invoiceBasis.date"),
+      amount: decimal(basis.amount, "invoiceBasis.amount", 2, DOCUMENT_LIMITS.grossMinor / 100, true),
+      currency: "RUB", payerName: text(basis.payerName, "invoiceBasis.payerName", 1000), payerInn,
+    };
+    if (result.date < result.invoiceBasis.date) invalid("date", "дата акта не может быть раньше исходного счёта");
+  }
+  if (raw.type === "act" && !result.contractId && !result.invoiceBasis) {
+    invalid("contractId", "для акта требуется contractId либо точный invoiceBasis из экспорта счёта");
+  }
   if (raw.discount !== undefined) {
     if (raw.type !== "invoice") invalid("discount", "скидка поддерживается только для счёта");
     result.discount = validateDiscount(raw.discount);
@@ -211,6 +253,9 @@ export function validateDocumentInput(input: unknown): DocumentInput {
     }
     result.servicePeriod = checkedPeriod;
   }
-  calculateTotals(result.services, result.discount);
+  const totals = calculateTotals(result.services, result.discount);
+  if (result.invoiceBasis && totals.netMinor !== Math.round(result.invoiceBasis.amount * 100)) {
+    invalid("invoiceBasis.amount", "акт должен быть на полную сумму исходного счёта");
+  }
   return result;
 }

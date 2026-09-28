@@ -4,6 +4,7 @@ import { validateDocumentInput, validateIsoDate, DocumentValidationError, type D
 import { renderDocument } from "../../../supabase/functions/_shared/crm-documents/render";
 import type { ClientRequisites, CompanyRequisites } from "../document-templates";
 import { publicDelivery, type Delivery } from "../../../supabase/functions/_shared/crm-email/delivery";
+import { normalizeCompanyRequisites } from "./company-requisites";
 
 // Explicit fields: clients also contains passwords, which must never reach MCP.
 export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person";
@@ -150,17 +151,23 @@ export class CrmDocumentsService {
     };
     const { data: settings, error } = await this.db.from("site_settings").select("key,value").in("key", COMPANY_KEYS);
     dbError(error);
-    const company = Object.fromEntries(COMPANY_KEYS.map(key => [key, ""])) as unknown as CompanyRequisites;
+    const configuredCompany = Object.fromEntries(COMPANY_KEYS.map(key => [key, ""])) as unknown as CompanyRequisites;
     for (const setting of settings || []) {
-      if (typeof setting.value === "string") (company as unknown as Record<string, string>)[setting.key] = setting.value;
+      if (typeof setting.value === "string") (configuredCompany as unknown as Record<string, string>)[setting.key] = setting.value;
     }
+    const company = normalizeCompanyRequisites(configuredCompany);
     const required = input.type === "invoice"
       ? ["company_name", "company_inn", "company_bank_account", "company_bank_bik", "company_bank_name", "company_bank_corr", "company_director_name", "company_director_post"]
       : ["company_name", "company_inn", "company_legal_address", "company_director_name", "company_director_post"];
     const missing = required.filter(key => !(company as unknown as Record<string, string>)[key]?.trim());
     if (missing.length) throw new CrmError("COMPANY_REQUISITES_MISSING", `В настройках исполнителя отсутствуют: ${missing.join(", ")}.`);
-    if (!client.name || !client.inn || (input.type !== "invoice" && (!client.address || !client.director_name || !client.director_post))) {
-      throw new CrmError("CLIENT_REQUISITES_MISSING", "В карточке клиента не заполнены реквизиты для выбранного документа.");
+    const needsClientRepresentative = input.type !== "invoice" && !(input.type === "act" && input.invoiceBasis);
+    const clientFieldNames = { name: "название", inn: "ИНН", address: "адрес", director_name: "ФИО руководителя", director_post: "должность руководителя" };
+    const clientFields: (keyof typeof clientFieldNames)[] = needsClientRepresentative
+      ? ["name", "inn", "address", "director_name", "director_post"] : ["name", "inn"];
+    const missingClient = clientFields.filter(key => !client[key]?.trim());
+    if (missingClient.length) {
+      throw new CrmError("CLIENT_REQUISITES_MISSING", `В карточке клиента не заполнены: ${missingClient.map(key => clientFieldNames[key]).join(", ")}. Используйте подтверждённые реквизиты клиента.`);
     }
     let linkedContract: { id: string; number: string; date: string } | undefined;
     if (input.contractId) {
@@ -173,7 +180,7 @@ export class CrmDocumentsService {
       if (!contract || contract.is_archived || !contract.contract_number || !contract.contract_date) throw new CrmError("INVALID_CONTRACT_LINK", "Выберите действующую запись договора этого клиента с номером и датой.");
       linkedContract = { id: contract.id, number: contract.contract_number, date: contract.contract_date };
     }
-    return { client, company, linkedContract, assetOrigin: this.assetOrigin };
+    return { client, company, companySourceSnapshot: configuredCompany, linkedContract, assetOrigin: this.assetOrigin };
   }
 
   async preview(raw: unknown, includeHtml = false) {
@@ -222,6 +229,7 @@ export class CrmDocumentsService {
     const context = {
       client: metadata.clientSnapshot as ClientRequisites,
       company: metadata.companySnapshot as CompanyRequisites,
+      companySourceSnapshot: metadata.companySourceSnapshot as CompanyRequisites | undefined,
       linkedContract: metadata.linkedContractSnapshot as { id: string; number: string; date: string } | undefined,
       assetOrigin: this.assetOrigin,
     };

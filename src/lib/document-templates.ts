@@ -51,6 +51,9 @@ export interface DocumentData {
   // act-specific
   contractNumber?: string;
   contractDate?: string;
+  /** Invoice-based acts preserve the invoice reference and do not invent a contract or signatory. */
+  invoiceNumber?: string;
+  invoiceDate?: string;
   // invoice discount
   discountAmount?: number;
   // appendices (TZ link)
@@ -539,15 +542,16 @@ export function generateActHtml(data: DocumentData): string {
       <span>${date}</span>
     </div>
     ${data.contractNumber ? `<p class="section">К Договору №${data.contractNumber}${data.contractDate ? ` от ${data.contractDate}` : ""}</p>` : ""}
+    ${data.invoiceNumber ? `<p class="section">К счёту №${data.invoiceNumber}${data.invoiceDate ? ` от ${data.invoiceDate}` : ""}</p>` : ""}
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
-      <p>${clientIntroPhrase(cl, "Заказчик", true)}, с другой стороны,</p>
-      <p>составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):</p>
+      <p>${data.invoiceNumber ? `<strong>${cl.name}</strong>, ИНН ${cl.inn}, именуемое в дальнейшем «Заказчик»` : clientIntroPhrase(cl, "Заказчик", true)}, с другой стороны,</p>
+      <p>${data.invoiceNumber ? "Перечень работ (услуг) по указанному счёту:" : "составили настоящий Акт о том, что Исполнитель выполнил, а Заказчик принял следующие работы (услуги):"}</p>
     </div>
     ${servicesTableHtml(services, data.computedGrossTotal).replace('class="services-table"', 'class="services-table act-items-table"')}
     <div class="section act-acceptance-text" style="margin-top:6px;">
       <p>Общая стоимость выполненных работ (оказанных услуг) составляет <strong>${formatMoney(total)} руб.</strong></p>
-      <p style="margin-top:4px;">Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет.</p>
+      <p style="margin-top:4px;">${data.invoiceNumber ? "Приёмка указанных работ (услуг) подтверждается подписью Заказчика." : "Вышеперечисленные работы (услуги) выполнены полностью и в срок. Заказчик претензий по объёму, качеству и срокам оказания услуг не имеет."}</p>
     </div>
     <div class="signatures act-signatures">
       <div class="signature-block act-signature-card" data-no-break="true">
@@ -569,7 +573,7 @@ export function generateActHtml(data: DocumentData): string {
         <p>${cl.name}</p>
         <p>ИНН ${cl.inn}${isIndividualEntrepreneur(cl) ? (cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : "") : (cl.kpp ? ` КПП ${cl.kpp}` : "") + (cl.ogrn ? ` ОГРН ${cl.ogrn}` : "")}</p>
         ${cl.address ? `<p>${cl.address}</p>` : ""}
-        <div class="signature-line">${isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор")} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
+        <div class="signature-line">${data.invoiceNumber ? `${cl.director_post || "Уполномоченный представитель"} __________ / ${cl.director_name || "________________"} /` : `${isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор")} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /`}</div>
       </div>
     </div>
   </body></html>`;

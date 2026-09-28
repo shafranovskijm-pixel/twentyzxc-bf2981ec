@@ -28,6 +28,8 @@ export interface LinkedContractSnapshot {
 export interface RenderContext {
   client: ClientRequisites;
   company: CompanyRequisites;
+  /** Exact configured values before deriving an ИП signature from its legal name. */
+  companySourceSnapshot?: CompanyRequisites;
   linkedContract?: LinkedContractSnapshot;
   /** Supplied by trusted server configuration, never from the document request. */
   assetOrigin: string;
@@ -101,6 +103,11 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
   const totals = calculateTotals(checked.services, checked.discount);
   const client = copyRequisites(context.client, CLIENT_FIELDS, "client");
   const company = copyRequisites(context.company, COMPANY_FIELDS, "company");
+  const companySourceSnapshot = context.companySourceSnapshot
+    ? copyRequisites(context.companySourceSnapshot, COMPANY_FIELDS, "companySourceSnapshot") : undefined;
+  if (checked.invoiceBasis && checked.invoiceBasis.payerInn !== client.inn.trim()) {
+    throw new DocumentValidationError([{ field: "invoiceBasis.payerInn", message: "ИНН плательщика исходного счёта не совпадает с ИНН клиента CRM" }]);
+  }
   let linkedContract: LinkedContractSnapshot | undefined;
   if (checked.contractId) {
     if (!context.linkedContract || context.linkedContract.id.toLowerCase() !== checked.contractId) {
@@ -135,6 +142,8 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     paymentTerms: checked.paymentTerms ? escapeHtml(checked.paymentTerms) : undefined,
     contractNumber: linkedContract ? escapeHtml(linkedContract.number) : undefined,
     contractDate: linkedContract ? formatDocumentDate(linkedContract.date) : undefined,
+    invoiceNumber: checked.invoiceBasis ? escapeHtml(checked.invoiceBasis.number) : undefined,
+    invoiceDate: checked.invoiceBasis ? formatDocumentDate(checked.invoiceBasis.date) : undefined,
     discountAmount: totals.discountAmount,
     discountDeadline: checked.discount?.deadline ? formatDocumentDate(checked.discount.deadline) : undefined,
   };
@@ -176,7 +185,12 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     netMinor: totals.netMinor,
     lineTotalsMinor: totals.lineTotalsMinor,
   };
+  if (companySourceSnapshot) metadata.companySourceSnapshot = cloneJson(companySourceSnapshot);
   if (linkedContract) metadata.linkedContractSnapshot = cloneJson(linkedContract);
+  if (checked.invoiceBasis) {
+    metadata.invoiceBasisSnapshot = cloneJson(checked.invoiceBasis);
+    metadata.invoiceBasisProvenance = "explicit-source-export";
+  }
   if (checked.servicePeriod) metadata.servicePeriod = cloneJson(checked.servicePeriod);
   return { html, services: checked.services, totalAmount: totals.totalAmount, metadata };
 }

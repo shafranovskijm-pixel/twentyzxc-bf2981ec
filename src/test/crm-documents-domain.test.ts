@@ -4,6 +4,7 @@ import {
   DocumentValidationError,
   validateDocumentInput,
   type DocumentInput,
+  type InvoiceBasis,
 } from "../../supabase/functions/_shared/crm-documents/domain.ts";
 import {
   formatDocumentDate,
@@ -13,6 +14,13 @@ import {
 
 const CLIENT_ID = "aaaaaaaa-1111-4111-8111-111111111111";
 const CONTRACT_ID = "bbbbbbbb-2222-4222-8222-222222222222";
+const invoiceBasis: InvoiceBasis = {
+  source: "sintagma", sourceKind: "subscription_invoice",
+  sourceId: "cccccccc-3333-4333-8333-333333333333",
+  organizationId: "dddddddd-4444-4444-8444-444444444444",
+  number: "СЧ-ТЕСТ/2026", date: "2026-09-23", amount: 100, currency: "RUB",
+  payerName: 'ООО "Тестовый заказчик"', payerInn: "0000000000",
+};
 
 function invoice(patch: Partial<DocumentInput> = {}): DocumentInput {
   return {
@@ -149,6 +157,25 @@ describe("document input validation", () => {
     }
     expect(() => validateDocumentInput({ ...invoice(), servicePeriod })).toThrow(/только для договора/);
   });
+
+  it("accepts an exact invoice basis for an act without fabricating a contract", () => {
+    const result = validateDocumentInput(invoice({ type: "act", invoiceBasis }));
+    expect(result.invoiceBasis).toEqual(invoiceBasis);
+    expect(result.contractId).toBeUndefined();
+    expect(() => validateDocumentInput(invoice({ type: "act", invoiceBasis, contractId: CONTRACT_ID }))).toThrow(/одно основание/);
+    expect(() => validateDocumentInput(invoice({ invoiceBasis }))).toThrow(/только для акта/);
+  });
+
+  it.each([
+    { source: "manual" }, { sourceKind: "company_document" }, { sourceId: "unknown" },
+    { organizationId: "unknown" }, { number: "" }, { number: "two\nlines" },
+    { date: "2026-02-30" }, { date: "2026-09-29" }, { amount: 0 }, { amount: 99 },
+    { amount: 101 }, { amount: 100.001 }, { currency: "USD" }, { payerInn: "123" },
+    { payerName: "" }, { extra: "untrusted" },
+  ])("rejects conflicting or incomplete invoice basis: %j", (patch) => {
+    expect(() => validateDocumentInput({ ...invoice({ type: "act" }), invoiceBasis: { ...invoiceBasis, ...patch } }))
+      .toThrow(DocumentValidationError);
+  });
 });
 
 describe("server document renderer", () => {
@@ -231,5 +258,31 @@ describe("server document renderer", () => {
     expect(() => renderDocument(invoice({ type: "act", contractId: CONTRACT_ID }), context())).toThrow(/подтверждённые реквизиты/);
     expect(() => renderDocument(invoice(), { ...context(), assetOrigin: 'javascript:alert("x")' })).toThrow(/HTTPS origin/);
     expect(() => renderDocument(invoice(), { ...context(), assetOrigin: 'https://24zxc.ru/path' })).toThrow(/HTTPS origin/);
+  });
+
+  it("renders invoice acts with exact source provenance and no invented client signatory or acceptance", () => {
+    const ctx = context();
+    ctx.client.director_name = "";
+    ctx.client.director_post = "";
+    ctx.client.address = "";
+    const rendered = renderDocument(invoice({ type: "act", invoiceBasis }), ctx);
+    expect(rendered.html).toContain("К счёту №СЧ-ТЕСТ/2026 от 23.09.2026");
+    expect(rendered.html).not.toContain("К Договору");
+    expect(rendered.html).not.toContain("на основании Устава");
+    expect(rendered.html).not.toContain("Заказчик принял");
+    expect(rendered.html).not.toContain("претензий по объёму");
+    expect(rendered.html).toContain("Уполномоченный представитель __________ / ________________ /");
+    expect(rendered.metadata.invoiceBasisSnapshot).toEqual(invoiceBasis);
+    expect(rendered.metadata.invoiceBasisProvenance).toBe("explicit-source-export");
+    expect(() => renderDocument(invoice({ type: "act", invoiceBasis: { ...invoiceBasis, payerInn: "1111111111" } }), ctx))
+      .toThrow(/ИНН плательщика/);
+  });
+
+  it("escapes source invoice strings while retaining the original snapshot", () => {
+    const basis = { ...invoiceBasis, number: "<script>invoice</script>" };
+    const rendered = renderDocument(invoice({ type: "act", invoiceBasis: basis }), context());
+    expect(rendered.html).not.toContain("<script>");
+    expect(rendered.html).toContain("&lt;script&gt;invoice&lt;/script&gt;");
+    expect(rendered.metadata.invoiceBasisSnapshot).toEqual(basis);
   });
 });
