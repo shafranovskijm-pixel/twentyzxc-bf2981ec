@@ -14,6 +14,7 @@ const NotFound = () => {
       <Helmet>
         <title>Страница не найдена | 24ZXC</title>
         <meta name="description" content="Запрашиваемая страница не найдена. Вернитесь на главную страницу 24ZXC." />
+        <meta name="robots" content="noindex, follow" />
       </Helmet>
       <div className="flex min-h-screen items-center justify-center bg-muted">
       <div className="text-center">

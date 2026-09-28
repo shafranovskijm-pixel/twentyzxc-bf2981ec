@@ -4,9 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Создание сайтов, Яндекс Директ и ФИС ФРДО — 24ZXC</title>
-    <meta name="description" content="24ZXC создаёт сайты и веб-приложения, настраивает Яндекс Директ и сопровождает образовательные организации: ФИС ФРДО, лицензирование и НМО." />
+    <!-- Preserve metadata before JavaScript loads; Helmet adopts these tags on mount. -->
+    <meta data-rh="true" name="description" content="24ZXC создаёт сайты и веб-приложения, настраивает Яндекс Директ и сопровождает образовательные организации: ФИС ФРДО, лицензирование и НМО." />
     <meta name="author" content="24ZXC" />
-    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta data-rh="true" name="robots" content="index, follow, max-image-preview:large" />
     <meta name="theme-color" content="#ffffff" />
 
     <meta property="og:title" content="Создание сайтов, Яндекс Директ и ФИС ФРДО — 24ZXC" />
@@ -23,7 +24,7 @@
 
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
-    <link rel="canonical" href="https://24zxc.ru/" />
+    <!-- The shared SPA shell has no canonical: each route declares its own via Helmet. -->
     <!-- No external font CDNs at boot. System fonts are used as a fast fallback.
          Web fonts (Google/Yandex) are loaded lazily from main.tsx after first paint
          so the page never blocks on fonts.googleapis.com (which can hang in

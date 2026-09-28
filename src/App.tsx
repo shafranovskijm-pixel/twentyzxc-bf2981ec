@@ -10,6 +10,7 @@ import { ScrollToHash } from "@/hooks/use-scroll-to-hash";
 import { InventoryProvider } from "@/contexts/InventoryContext";
 import { AchievementsProvider } from "@/contexts/AchievementsContext";
 import Index from "./pages/Index";
+import PublicPageMetadata from "./components/PublicPageMetadata";
 
 // Lazy-load every non-home route so the initial JS bundle is small enough
 // to start fast even on slow / region-throttled connections (Yandex Browser
@@ -54,7 +55,10 @@ const RouteFallback = () => (
 
 const PublicSiteTheme = () => (
   <div className="landing-light min-h-screen bg-background text-foreground">
-    <Outlet />
+    <PublicPageMetadata />
+    <Suspense fallback={<RouteFallback />}>
+      <Outlet />
+    </Suspense>
   </div>
 );
 
