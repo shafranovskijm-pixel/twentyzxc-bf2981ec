@@ -3,6 +3,11 @@
 The CRM MCP source now supports 13 tools. This document describes behavior;
 deployment evidence is recorded separately and is not implied by this file.
 
+Lovable applied the invoice-act SQL as migration
+`20260928173203_d76379a3-d7b9-4234-b5d2-3d3aac03d008.sql`.
+Its normalized SQL matches the originally prepared `20260929020000` file.
+Only the applied migration is retained to avoid replaying a duplicate.
+
 ## Invoice-based acts
 
 An act accepts exactly one basis: a CRM `contractId`, or `invoiceBasis` for an

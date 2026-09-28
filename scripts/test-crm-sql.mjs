@@ -54,8 +54,8 @@ try {
   await db.exec(appendixStatement);
   await db.exec("GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;");
   await db.exec(await migration("20260928054127_91324a2c-bb9e-472c-8726-d33c2468bd32.sql"));
+  await db.exec(await migration("20260928173203_d76379a3-d7b9-4234-b5d2-3d3aac03d008.sql"));
   await db.exec(await migration("20260929010000_crm_email_delivery.sql"));
-  await db.exec(await migration("20260929020000_crm_invoice_acts.sql"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_document_api.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_email_delivery.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_invoice_acts.sql"), "utf8"));
