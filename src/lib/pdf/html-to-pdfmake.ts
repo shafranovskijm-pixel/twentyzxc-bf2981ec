@@ -1,4 +1,4 @@
-import { COLORS, STYLES } from "./theme";
+import { COLORS, STYLES } from "./theme.ts";
 
 // Best-effort HTML → pdfmake content walker specialised for the 24ZXC
 // contract / invoice / act / development-contract / FRDO / NMO templates.
@@ -50,12 +50,12 @@ function inlineNodes(nodes: NodeListOf<ChildNode> | Node[]): PmNode[] {
   const out: PmNode[] = [];
   const arr = Array.from(nodes as any as Node[]);
   for (const n of arr) {
-    if (n.nodeType === Node.TEXT_NODE) {
+    if (n.nodeType === 3 /* TEXT_NODE */) {
       const t = n.textContent || "";
       if (t) out.push({ text: t });
       continue;
     }
-    if (n.nodeType !== Node.ELEMENT_NODE) continue;
+    if (n.nodeType !== 1 /* ELEMENT_NODE */) continue;
     const el = n as Element;
     const tag = el.tagName.toLowerCase();
     if (tag === "br") {
@@ -332,7 +332,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
     // 1) Header text lines (party name, INN, address, bank…)
     const headerLines: PmNode[] = [];
     let signatureLineEl: Element | null = null;
-    Array.from(block.children).forEach((child) => {
+    for (const child of Array.from(block.children)) {
       const tag = child.tagName.toLowerCase();
       if (tag === "p") {
         const parts = inlineNodes(child.childNodes).filter((p) => !p._image);
@@ -347,7 +347,7 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
       } else if (child.classList.contains("signature-line") && !signatureLineEl) {
         signatureLineEl = child;
       }
-    });
+    }
 
     // 2) Signature stage — fixed-height footer that holds line + signature + stamp
     //    side-by-side so the stamp never pushes the card taller.

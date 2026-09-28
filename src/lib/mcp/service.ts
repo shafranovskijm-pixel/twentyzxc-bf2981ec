@@ -3,6 +3,7 @@ import type { ToolContext } from "@lovable.dev/mcp-js";
 import { validateDocumentInput, validateIsoDate, DocumentValidationError, type DocumentInput } from "../../../supabase/functions/_shared/crm-documents/domain";
 import { renderDocument } from "../../../supabase/functions/_shared/crm-documents/render";
 import type { ClientRequisites, CompanyRequisites } from "../document-templates";
+import { publicDelivery, type Delivery } from "../../../supabase/functions/_shared/crm-email/delivery";
 
 // Explicit fields: clients also contains passwords, which must never reach MCP.
 export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person";
@@ -42,6 +43,45 @@ export async function requireAdmin(db: SupabaseClient, userId: string | undefine
 /** One instance per call, using only the verified user's token and existing RLS. */
 export class CrmDocumentsService {
   constructor(private db: SupabaseClient, private assetOrigin = "https://24zxc.ru") {}
+
+  async saveClientEmail(requestId: string, clientId: string, email: string, expectedEmail: string | null) {
+    const { data, error } = await this.db.rpc("crm_save_client_email", {
+      p_request_id: requestId, p_client_id: clientId, p_email: email, p_expected_email: expectedEmail,
+    });
+    dbError(error);
+    return data;
+  }
+
+  private async emailOperation(input: Record<string, unknown>) {
+    const { data, error } = await this.db.functions.invoke("crm-document-email", { body: input });
+    if (error) {
+      let code: string | undefined;
+      if (error.context instanceof Response) {
+        try { code = (await error.context.json()).code; } catch { /* no raw transport errors */ }
+      }
+      throw new CrmError(code?.match(/^CRM_[A-Z_]+$/)?.[0] || "EMAIL_OPERATION_UNCONFIRMED",
+        "Операция не подтверждена. Для отправки проверьте crm_get_email_delivery по deliveryId; не создавайте новую отправку для обхода ошибки.");
+    }
+    return data;
+  }
+
+  async prepareEmail(input: { requestId: string; clientId: string; documents: { documentId: string; revision: number }[]; recipient?: string; subject: string; body: string }) {
+    return this.emailOperation({ action: "prepare", ...input });
+  }
+
+  async sendEmail(deliveryId: string, expectedRecipient: string) {
+    return this.emailOperation({ action: "send", deliveryId, expectedRecipient });
+  }
+
+  async getEmailDelivery(deliveryId: string) {
+    const { data, error } = await this.db.from("crm_email_deliveries")
+      .select("id,actor_id,client_id,recipient,subject,body,state,message_id,documents,attachments,error,created_at,updated_at")
+      .eq("id", deliveryId).maybeSingle();
+    dbError(error);
+    if (!data) throw new CrmError("DELIVERY_NOT_FOUND", "Отправка не найдена.");
+    // Never return stored HTML, internal storage paths or raw SMTP responses.
+    return { ...publicDelivery(data as unknown as Delivery), createdAt: data.created_at, updatedAt: data.updated_at };
+  }
 
   async suggestDocumentNumber(type: "contract" | "invoice" | "act", date: string) {
     const { data, error } = await this.db.rpc("crm_suggest_document_number", {
@@ -92,7 +132,7 @@ export class CrmDocumentsService {
     return { document: { ...data, metadata: undefined, integration: {
       grossAmount: metadata.grossAmount ?? null, discountAmount: metadata.discountAmount ?? null,
       netAmount: metadata.netAmount ?? null, schemaVersion: metadata.schemaVersion ?? null,
-    } }, artifactStatus: "html_only", deliveryStatus: "not_requested" };
+    } }, artifactStatus: "saved_html", deliveryStatus: "query_by_delivery_id" };
   }
 
   private async client(id: string) {

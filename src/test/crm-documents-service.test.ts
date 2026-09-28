@@ -45,9 +45,10 @@ describe("CRM authorization and protocol boundary", () => {
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
   it("advertises only implemented operations, and marks writes as writes", () => {
-    expect(crmTools.map(tool => tool.name)).toHaveLength(8);
-    expect(crmTools.some(tool => /send|import|deliver/.test(tool.name))).toBe(false);
-    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise/.test(tool.name));
+    expect(crmTools.map(tool => tool.name)).toHaveLength(12);
+    expect(crmTools.some(tool => /import/.test(tool.name))).toBe(false);
+    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|save_client|prepare_document_email|send_document_email/.test(tool.name));
+    expect(crmTools.find(tool => tool.name === "crm_send_document_email")?.annotations?.openWorldHint).toBe(true);
   });
   it("protects the actual MCP HTTP route before any database access", async () => {
     const handler = createSupabaseHandler(mcp, { functionName: "mcp" });
@@ -61,6 +62,29 @@ describe("CRM authorization and protocol boundary", () => {
 });
 
 describe("CRM queries and document persistence", () => {
+  it("saves email through exact client ID with expected old value and stable request ID", async () => {
+    const fake = mockDb([]);
+    await new CrmDocumentsService(fake.db).saveClientEmail(requestId, clientId, "client@example.invalid", null);
+    expect(fake.rpc).toHaveBeenCalledExactlyOnceWith("crm_save_client_email", {
+      p_request_id: requestId, p_client_id: clientId, p_email: "client@example.invalid", p_expected_email: null,
+    });
+    expect(fake.from).not.toHaveBeenCalled();
+  });
+  it("keeps preparation and external sending separate and forwards the reviewed recipient", async () => {
+    const invoke = vi.fn().mockResolvedValue({ data: { state: "prepared" }, error: null });
+    const api = new CrmDocumentsService({ functions: { invoke } } as unknown as SupabaseClient);
+    const command = { requestId, clientId, documents: [{ documentId, revision: 2 }], subject: "Ваш счёт", body: "Добрый день, направляем счёт." };
+    await api.prepareEmail(command);
+    expect(invoke).toHaveBeenNthCalledWith(1, "crm-document-email", { body: { action: "prepare", ...command } });
+    await api.sendEmail(requestId, "client@example.invalid");
+    expect(invoke).toHaveBeenNthCalledWith(2, "crm-document-email", { body: { action: "send", deliveryId: requestId, expectedRecipient: "client@example.invalid" } });
+  });
+  it("does not turn an HTTP send failure into permission to resend", async () => {
+    const invoke = vi.fn().mockResolvedValue({ data: null, error: { context: new Response(JSON.stringify({ code: "CRM_RECIPIENT_CHANGED" })) } });
+    const api = new CrmDocumentsService({ functions: { invoke } } as unknown as SupabaseClient);
+    await expect(api.sendEmail(requestId, "client@example.invalid")).rejects.toMatchObject({ code: "CRM_RECIPIENT_CHANGED" });
+    expect(invoke).toHaveBeenCalledOnce();
+  });
   it("requests the global number candidate for the validated document date", async () => {
     const fake = mockDb([]);
     const candidate = { number: "043/2026", type: "invoice", date: "2026-09-28", reserved: false };

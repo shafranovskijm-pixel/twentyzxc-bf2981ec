@@ -19,6 +19,10 @@ verify_jwt = false
 [functions.send-document-email]
 verify_jwt = false
 
+# Handler verifies the caller JWT and administrator role before all operations.
+[functions.crm-document-email]
+verify_jwt = false
+
 [functions.sales-assistant]
 verify_jwt = false
 

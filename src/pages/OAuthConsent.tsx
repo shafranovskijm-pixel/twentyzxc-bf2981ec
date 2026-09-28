@@ -215,7 +215,7 @@ export default function OAuthConsent({ redirect = navigateToClient }: { redirect
           {details.redirect_url ? <p>Для этого запроса доступ уже подтверждён. Продолжите, чтобы вернуться в приложение.</p> : <>
             <p>Приложение <strong>{details.client.name || "Без названия"}</strong> запрашивает подключение.</p>
             {details.client.uri && <p className="break-all text-sm text-slate-600">Сайт приложения: {details.client.uri}</p>}
-            <div><h2 className="font-semibold">Управление CRM</h2><p className="mt-2">Помощник сможет искать клиентов, читать договоры и документы, создавать договоры, счета и акты, менять их даты, услуги, стоимость и скидки от вашего имени.</p></div>
+            <div><h2 className="font-semibold">Управление CRM</h2><p className="mt-2">Помощник сможет искать клиентов, читать договоры и документы, создавать договоры, счета и акты, менять их даты, услуги, стоимость и скидки от вашего имени. По вашим командам он сможет сохранять email в карточке клиента, готовить PDF и отправлять документы на указанный адрес. Результаты отправки сохраняются в CRM.</p></div>
             <div><h2 className="font-semibold">Запрошенные данные учётной записи</h2><ul className="mt-2 list-disc space-y-1 pl-5">{(details.scope ?? "").split(/\s+/).filter(Boolean).map((scope) => <li key={scope}>{scopeLabels[scope] ?? scope}</li>)}</ul></div>
           </>}
           <div className="flex flex-wrap gap-3"><Button onClick={() => decide(true)} disabled={busy}>{busy ? "Проверяем…" : details.redirect_url ? "Продолжить в приложении" : "Разрешить подключение"}</Button>{!details.redirect_url && <Button onClick={() => decide(false)} variant="outline" disabled={busy}>Отклонить</Button>}</div>
