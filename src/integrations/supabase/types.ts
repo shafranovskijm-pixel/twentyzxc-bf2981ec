@@ -258,6 +258,39 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_client_email_changes: {
+        Row: {
+          actor_id: string
+          client_id: string
+          created_at: string
+          email: string
+          previous_email: string | null
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Insert: {
+          actor_id: string
+          client_id: string
+          created_at?: string
+          email: string
+          previous_email?: string | null
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Update: {
+          actor_id?: string
+          client_id?: string
+          created_at?: string
+          email?: string
+          previous_email?: string | null
+          request?: Json
+          request_id?: string
+          result?: Json
+        }
+        Relationships: []
+      }
       crm_document_api_requests: {
         Row: {
           actor_id: string
@@ -327,6 +360,72 @@ export type Database = {
           revision?: number
           snapshot?: Json
           source?: string
+        }
+        Relationships: []
+      }
+      crm_email_deliveries: {
+        Row: {
+          actor_id: string
+          attachments: Json
+          body: string
+          client_id: string
+          created_at: string
+          documents: Json
+          error: string | null
+          finished_at: string | null
+          id: string
+          interaction_id: string | null
+          message_id: string
+          prepared_at: string | null
+          receipt: Json | null
+          recipient: string
+          request: Json
+          sending_at: string | null
+          state: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          actor_id: string
+          attachments?: Json
+          body: string
+          client_id: string
+          created_at?: string
+          documents: Json
+          error?: string | null
+          finished_at?: string | null
+          id: string
+          interaction_id?: string | null
+          message_id: string
+          prepared_at?: string | null
+          receipt?: Json | null
+          recipient: string
+          request: Json
+          sending_at?: string | null
+          state?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string
+          attachments?: Json
+          body?: string
+          client_id?: string
+          created_at?: string
+          documents?: Json
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          interaction_id?: string | null
+          message_id?: string
+          prepared_at?: string | null
+          receipt?: Json | null
+          recipient?: string
+          request?: Json
+          sending_at?: string | null
+          state?: string
+          subject?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1886,6 +1985,45 @@ export type Database = {
       }
     }
     Functions: {
+      crm_claim_document_email: {
+        Args: { p_actor_id: string; p_delivery_id: string }
+        Returns: Json
+      }
+      crm_email_address_valid: { Args: { p_email: string }; Returns: boolean }
+      crm_finalize_document_email: {
+        Args: { p_actor_id: string; p_attachments: Json; p_delivery_id: string }
+        Returns: Json
+      }
+      crm_finish_document_email: {
+        Args: {
+          p_actor_id: string
+          p_delivery_id: string
+          p_error: string
+          p_receipt: Json
+          p_state: string
+        }
+        Returns: Json
+      }
+      crm_prepare_document_email: {
+        Args: {
+          p_body: string
+          p_client_id: string
+          p_documents: Json
+          p_recipient: string
+          p_request_id: string
+          p_subject: string
+        }
+        Returns: Json
+      }
+      crm_save_client_email: {
+        Args: {
+          p_client_id: string
+          p_email: string
+          p_expected_email: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       crm_save_document: {
         Args: {
           p_document_id: string
