@@ -56,11 +56,16 @@ export default function OAuthConsent({ redirect = navigateToClient }: { redirect
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const actionRunning = useRef(false);
+  const accountId = useRef<string | null>(null);
 
   useEffect(() => {
     // Keep callbacks synchronous: Supabase auth callbacks share the auth lock.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "USER_UPDATED") {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextAccountId = session?.user.id ?? null;
+      // SIGNED_IN can repeat on tab focus. Re-reading an auto-approved request
+      // would fail because Auth has already consumed it and issued its callback.
+      if (event === "SIGNED_OUT" || ((event === "SIGNED_IN" || event === "USER_UPDATED") && nextAccountId !== accountId.current)) {
+        accountId.current = nextAccountId;
         setState({ kind: "loading" });
         setRefresh((value) => value + 1);
       }
@@ -82,9 +87,11 @@ export default function OAuthConsent({ redirect = navigateToClient }: { redirect
         if (!active) return;
         if (session.error) throw new Error("session");
         if (!session.data.session) {
+          accountId.current = null;
           setState({ kind: "login" });
           return;
         }
+        accountId.current = session.data.session.user.id;
         const admin = await currentAdmin();
         if (!active) return;
         if (!admin.allowed) {
@@ -104,6 +111,7 @@ export default function OAuthConsent({ redirect = navigateToClient }: { redirect
       } catch (error) {
         if (!active) return;
         if (error instanceof Error && error.message === "session") {
+          accountId.current = null;
           setState({ kind: "login" });
           setMessage("Сеанс входа не подтверждён. Войдите в CRM заново.");
         } else {
@@ -210,7 +218,7 @@ export default function OAuthConsent({ redirect = navigateToClient }: { redirect
             <div><h2 className="font-semibold">Управление CRM</h2><p className="mt-2">Помощник сможет искать клиентов, читать договоры и документы, создавать договоры, счета и акты, менять их даты, услуги, стоимость и скидки от вашего имени.</p></div>
             <div><h2 className="font-semibold">Запрошенные данные учётной записи</h2><ul className="mt-2 list-disc space-y-1 pl-5">{(details.scope ?? "").split(/\s+/).filter(Boolean).map((scope) => <li key={scope}>{scopeLabels[scope] ?? scope}</li>)}</ul></div>
           </>}
-          <div className="flex flex-wrap gap-3"><Button onClick={() => decide(true)} disabled={busy}>{busy ? "Проверяем…" : details.redirect_url ? "Продолжить в приложении" : "Разрешить подключение"}</Button><Button onClick={() => decide(false)} variant="outline" disabled={busy}>Отклонить</Button></div>
+          <div className="flex flex-wrap gap-3"><Button onClick={() => decide(true)} disabled={busy}>{busy ? "Проверяем…" : details.redirect_url ? "Продолжить в приложении" : "Разрешить подключение"}</Button>{!details.redirect_url && <Button onClick={() => decide(false)} variant="outline" disabled={busy}>Отклонить</Button>}</div>
           <Button onClick={changeAccount} variant="link" className="px-0" disabled={busy}>Войти другой учётной записью</Button>
         </>}
         {message && <p role="alert" className="text-sm text-red-700">{message}</p>}

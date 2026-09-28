@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { HelmetProvider } from "react-helmet-async";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -149,8 +149,34 @@ describe("CRM OAuth consent", () => {
     const redirect = mount();
     const continueButton = await screen.findByRole("button", { name: "Продолжить в приложении" });
     expect(redirect).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Отклонить" })).not.toBeInTheDocument();
+    expect(api.denyAuthorization).not.toHaveBeenCalled();
     fireEvent.click(continueButton);
     await waitFor(() => expect(redirect).toHaveBeenCalledWith(callback));
+    expect(api.approveAuthorization).not.toHaveBeenCalled();
+  });
+
+  it("preserves an already-issued callback when SIGNED_IN repeats for the same account", async () => {
+    api.getAuthorizationDetails.mockResolvedValueOnce({ data: { redirect_url: callback }, error: null })
+      .mockResolvedValue({ data: null, error: { message: "authorization request cannot be processed" } });
+    const redirect = mount();
+    await screen.findByRole("button", { name: "Продолжить в приложении" });
+    await act(async () => { api.onAuthStateChange.mock.calls[0][0]("SIGNED_IN", { user }); });
+    expect(api.getAuthorizationDetails).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: "Продолжить в приложении" }));
+    await waitFor(() => expect(redirect).toHaveBeenCalledWith(callback));
+  });
+
+  it("invalidates the current consent screen when the signed-in account changes", async () => {
+    mount();
+    await screen.findByRole("button", { name: "Разрешить подключение" });
+    const otherUser = { id: "other-admin", email: "other@example.test" };
+    api.getSession.mockResolvedValue({ data: { session: { user: otherUser } }, error: null });
+    api.getUser.mockResolvedValue({ data: { user: otherUser }, error: null });
+    api.getAuthorizationDetails.mockResolvedValue({ data: null, error: { message: "authorization belongs to different user" } });
+    await act(async () => { api.onAuthStateChange.mock.calls[0][0]("SIGNED_IN", { user: otherUser }); });
+    expect(await screen.findByRole("alert")).toHaveTextContent("Не удалось проверить");
+    expect(screen.queryByRole("button", { name: "Разрешить подключение" })).not.toBeInTheDocument();
     expect(api.approveAuthorization).not.toHaveBeenCalled();
   });
 
