@@ -1,6 +1,6 @@
 # CRM document persistence
 
-Migration: `supabase/migrations/20260928090000_crm_document_api.sql`.
+Migration: `supabase/migrations/20260928054127_91324a2c-bb9e-472c-8726-d33c2468bd32.sql`.
 Integration assertions: `supabase/tests/crm_document_api.sql`.
 
 This migration is prepared locally. Its presence in Git does not mean it has been

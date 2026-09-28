@@ -50,7 +50,7 @@ try {
   if (!appendixStatement) throw new Error("Expected contracts appendix migration statement was not found");
   await db.exec(appendixStatement);
   await db.exec("GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;");
-  await db.exec(await migration("20260928090000_crm_document_api.sql"));
+  await db.exec(await migration("20260928054127_91324a2c-bb9e-472c-8726-d33c2468bd32.sql"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_document_api.sql"), "utf8"));
   console.log("PASS: CRM migration executed and all SQL integration assertions passed in PGlite.");
   console.log("Not tested here: live Supabase Auth, deployed RLS, storage, multi-session concurrency, PDF, SMTP.");
