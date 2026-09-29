@@ -44,6 +44,56 @@ export type Database = {
         }
         Relationships: []
       }
+      client_files: {
+        Row: {
+          actor_id: string
+          client_id: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          request_id: string
+          sha256: string
+          source_file_id: string
+        }
+        Insert: {
+          actor_id: string
+          client_id: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          request_id: string
+          sha256: string
+          source_file_id: string
+        }
+        Update: {
+          actor_id?: string
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          request_id?: string
+          sha256?: string
+          source_file_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           client_id: string
@@ -2052,6 +2102,18 @@ export type Database = {
           p_recipient: string
           p_request_id: string
           p_subject: string
+        }
+        Returns: Json
+      }
+      crm_register_client_file: {
+        Args: {
+          p_client_id: string
+          p_description?: string
+          p_file_name: string
+          p_file_size: number
+          p_request_id: string
+          p_sha256: string
+          p_source_file_id: string
         }
         Returns: Json
       }
