@@ -44,6 +44,56 @@ export type Database = {
         }
         Relationships: []
       }
+      client_files: {
+        Row: {
+          actor_id: string
+          client_id: string
+          created_at: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          request_id: string
+          sha256: string
+          source_file_id: string
+        }
+        Insert: {
+          actor_id: string
+          client_id: string
+          created_at?: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          request_id: string
+          sha256: string
+          source_file_id: string
+        }
+        Update: {
+          actor_id?: string
+          client_id?: string
+          created_at?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          request_id?: string
+          sha256?: string
+          source_file_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_files_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_interactions: {
         Row: {
           client_id: string
@@ -80,6 +130,7 @@ export type Database = {
         Row: {
           contact_person: string | null
           created_at: string
+          crm_revision: number
           director_name: string | null
           director_post: string | null
           email: string | null
@@ -104,6 +155,7 @@ export type Database = {
         Insert: {
           contact_person?: string | null
           created_at?: string
+          crm_revision?: number
           director_name?: string | null
           director_post?: string | null
           email?: string | null
@@ -128,6 +180,7 @@ export type Database = {
         Update: {
           contact_person?: string | null
           created_at?: string
+          crm_revision?: number
           director_name?: string | null
           director_post?: string | null
           email?: string | null
@@ -255,6 +308,39 @@ export type Database = {
           service_no_deadline?: boolean
           service_start?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_client_commands: {
+        Row: {
+          actor_id: string
+          client_id: string
+          created_at: string
+          operation: string
+          previous_snapshot: Json | null
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Insert: {
+          actor_id: string
+          client_id: string
+          created_at?: string
+          operation: string
+          previous_snapshot?: Json | null
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Update: {
+          actor_id?: string
+          client_id?: string
+          created_at?: string
+          operation?: string
+          previous_snapshot?: Json | null
+          request?: Json
+          request_id?: string
+          result?: Json
         }
         Relationships: []
       }
@@ -1989,6 +2075,10 @@ export type Database = {
         Args: { p_actor_id: string; p_delivery_id: string }
         Returns: Json
       }
+      crm_client_card_json: {
+        Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
+        Returns: Json
+      }
       crm_email_address_valid: { Args: { p_email: string }; Returns: boolean }
       crm_finalize_document_email: {
         Args: { p_actor_id: string; p_attachments: Json; p_delivery_id: string }
@@ -2012,6 +2102,28 @@ export type Database = {
           p_recipient: string
           p_request_id: string
           p_subject: string
+        }
+        Returns: Json
+      }
+      crm_register_client_file: {
+        Args: {
+          p_client_id: string
+          p_description?: string
+          p_file_name: string
+          p_file_size: number
+          p_request_id: string
+          p_sha256: string
+          p_source_file_id: string
+        }
+        Returns: Json
+      }
+      crm_save_client: {
+        Args: {
+          p_allow_shared_email?: boolean
+          p_changes: Json
+          p_client_id: string
+          p_expected_revision: number
+          p_request_id: string
         }
         Returns: Json
       }
