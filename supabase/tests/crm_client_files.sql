@@ -16,13 +16,20 @@ $$;
 INSERT INTO public.user_roles(user_id,role) VALUES
 ('f1c00000-0000-4000-8000-000000000001','admin'),('f1c00000-0000-4000-8000-000000000002','admin');
 INSERT INTO public.clients(id,name) VALUES ('f1c00000-0000-4000-8000-000000000010','Synthetic original file test');
-INSERT INTO storage.objects(bucket_id,name) VALUES ('crm-client-files','f1c00000-0000-4000-8000-000000000010/f1c00000-0000-4000-8000-000000000020.pdf');
+INSERT INTO storage.objects(bucket_id,name,metadata) VALUES ('crm-client-files','f1c00000-0000-4000-8000-000000000010/f1c00000-0000-4000-8000-000000000020.pdf','{"mimetype":"application/pdf"}');
 SELECT set_config('request.jwt.claim.sub','f1c00000-0000-4000-8000-000000000001',true);
 SET LOCAL ROLE authenticated;
 DO $$
 DECLARE answer jsonb; replay jsonb;
   operation text := 'SELECT public.crm_register_client_file(''f1c00000-0000-4000-8000-000000000020'',''f1c00000-0000-4000-8000-000000000010'',''file-synthetic'',''Исходник.pdf'',250,repeat(''a'',64),NULL)';
+  upload_operation text := 'INSERT INTO storage.objects(bucket_id,name,metadata) VALUES(''crm-client-files'',''f1c00000-0000-4000-8000-000000000010/f1c00000-0000-4000-8000-000000000022.pdf'',''{"mimetype":"application/pdf"}'')';
 BEGIN
+  EXECUTE upload_operation;
+  PERFORM pg_temp.file_assert((SELECT count(*)=1 FROM storage.objects WHERE name='f1c00000-0000-4000-8000-000000000010/f1c00000-0000-4000-8000-000000000022.pdf'),'admin may upload PDF with exact path');
+  PERFORM pg_temp.file_expect_error(replace(upload_operation,'application/pdf','text/html'),'','42501');
+  PERFORM pg_temp.file_expect_error(replace(upload_operation,'{"mimetype":"application/pdf"}','{}'),'','42501');
+  PERFORM pg_temp.file_expect_error(replace(upload_operation,'.pdf','.html'),'','42501');
+  PERFORM pg_temp.file_expect_error(replace(upload_operation,'f1c00000-0000-4000-8000-000000000010/','other/'),'','42501');
   EXECUTE operation INTO answer;
   PERFORM pg_temp.file_assert(answer->>'replayed'='false' AND answer#>>'{file,client_id}'='f1c00000-0000-4000-8000-000000000010','registered exact client');
   PERFORM pg_temp.file_assert(NOT (answer->'file' ?| ARRAY['file_path','actor_id','source_file_id']),'result excludes internal values');
@@ -43,7 +50,7 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub','f1c00000-0000-4000-8000-000000000003',true);
   PERFORM pg_temp.file_expect_error(operation,'CRM_ADMIN_REQUIRED','42501');
   PERFORM pg_temp.file_assert((SELECT count(*)=0 FROM public.client_files),'non-admin cannot read attachments');
-  PERFORM pg_temp.file_expect_error('INSERT INTO storage.objects(bucket_id,name) VALUES(''crm-client-files'',''bad.pdf'')','','42501');
+  PERFORM pg_temp.file_expect_error(upload_operation,'','42501');
 END;
 $$;
 RESET ROLE;

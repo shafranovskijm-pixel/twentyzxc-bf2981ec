@@ -54,7 +54,12 @@ is never patched. A changed SDK fails the patch instead of silently dropping fil
 ## Release gates
 
 Apply client command, client file and document rename migrations in timestamp
-order. Regenerate/commit the MCP function and manifest, deploy function, publish
+order. Provision the private 10 MiB `crm-client-files` bucket with Lovable's Storage
+tool before the file migration: bucket SQL changes are blocked by that platform.
+If the tool cannot set allowed MIME types, the migration permits NULL there and
+enforces PDF MIME plus the exact UUID/UUID.pdf path in the admin INSERT policy;
+MCP additionally validates the actual bytes. A public/oversized bucket fails the
+prerequisite guard. Regenerate/commit the MCP function and manifest, deploy function, publish
 frontend, refresh ChatGPT tools. Keep the existing read-only auto-approval policy;
 writes ask for approval. Preparing documents is separate from sending and the
 recipient/document set must be shown before the separate send confirmation.

@@ -19,12 +19,28 @@ GRANT SELECT ON public.client_files TO authenticated;
 CREATE POLICY "Admins read original client files" ON public.client_files FOR SELECT TO authenticated
   USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
-INSERT INTO storage.buckets(id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('crm-client-files','crm-client-files',false,10485760,ARRAY['application/pdf']);
+-- Provision crm-client-files with the hosting Storage tool before this migration:
+-- private bucket, 10 MiB limit. The hosting tool may leave allowed_mime_types NULL;
+-- in that case the INSERT policy below enforces application/pdf and the exact path
+-- shape. The MCP service additionally checks original PDF bytes. Do not mutate
+-- storage.buckets through migrations; fail closed on missing/unsafe provisioning.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM storage.buckets WHERE id = 'crm-client-files' AND public = false
+      AND file_size_limit = 10485760
+      AND (allowed_mime_types IS NULL OR allowed_mime_types = ARRAY['application/pdf']::text[])
+  ) THEN
+    RAISE EXCEPTION 'CRM_CLIENT_FILE_BUCKET_NOT_CONFIGURED' USING ERRCODE = '55000';
+  END IF;
+END;
+$$;
 CREATE POLICY "Admins read original client PDFs" ON storage.objects FOR SELECT TO authenticated
   USING (bucket_id = 'crm-client-files' AND public.has_role(auth.uid(), 'admin'::public.app_role));
 CREATE POLICY "Admins upload original client PDFs" ON storage.objects FOR INSERT TO authenticated
-  WITH CHECK (bucket_id = 'crm-client-files' AND public.has_role(auth.uid(), 'admin'::public.app_role));
+  WITH CHECK (bucket_id = 'crm-client-files' AND public.has_role(auth.uid(), 'admin'::public.app_role)
+    AND metadata->>'mimetype' = 'application/pdf'
+    AND name ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.pdf$');
 -- No UPDATE/DELETE policy: imports never overwrite an original attachment.
 
 CREATE FUNCTION public.crm_register_client_file(p_request_id uuid, p_client_id uuid, p_source_file_id text,
