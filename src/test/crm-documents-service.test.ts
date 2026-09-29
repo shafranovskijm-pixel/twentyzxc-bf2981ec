@@ -45,9 +45,10 @@ describe("CRM authorization and protocol boundary", () => {
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
   it("advertises only implemented operations, and marks writes as writes", () => {
-    expect(crmTools.map(tool => tool.name)).toHaveLength(13);
-    expect(crmTools.some(tool => /import/.test(tool.name))).toBe(false);
-    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|save_client|prepare_document_email|send_document_email/.test(tool.name));
+    expect(crmTools.map(tool => tool.name)).toHaveLength(19);
+    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|prepare_document_email|send_document_email/.test(tool.name));
+    const fileTool = crmTools.find(tool => tool.name === "crm_import_client_pdf") as { _meta?: Record<string, unknown> };
+    expect(fileTool._meta?.["openai/fileParams"]).toEqual(["file"]);
     expect(crmTools.find(tool => tool.name === "crm_send_document_email")?.annotations?.openWorldHint).toBe(true);
   });
   it("protects the actual MCP HTTP route before any database access", async () => {

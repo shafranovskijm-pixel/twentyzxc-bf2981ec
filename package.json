@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:crm": "vitest run --config vitest.crm.config.ts",
-    "test:crm:sql": "node scripts/test-crm-sql.mjs"
+    "test:crm:sql": "node scripts/test-crm-sql.mjs",
+    "mcp:manifest": "node scripts/extract-crm-manifest.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

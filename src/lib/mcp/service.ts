@@ -7,7 +7,7 @@ import { publicDelivery, type Delivery } from "../../../supabase/functions/_shar
 import { normalizeCompanyRequisites } from "./company-requisites";
 
 // Explicit fields: clients also contains passwords, which must never reach MCP.
-export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person";
+export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person,crm_revision";
 export const DOCUMENT_FIELDS = "id,doc_type,doc_number,doc_date,client_id,client_name,client_inn,contract_id,total_amount,revision,updated_at";
 const CONTRACT_FIELDS = "id,client_name,contract_number,contract_date,amount,contract_type,is_archived,service_start,service_end,service_no_deadline";
 const COMPANY_KEYS = ["company_name", "company_short_name", "company_inn", "company_kpp", "company_ogrn", "company_legal_address", "company_actual_address", "company_bank_account", "company_bank_bik", "company_bank_corr", "company_bank_name", "company_director_name", "company_director_post", "company_phone", "company_email"];

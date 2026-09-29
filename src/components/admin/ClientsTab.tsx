@@ -15,6 +15,7 @@ import { KeyRound, Building2, User, Copy, MoreHorizontal, ChevronDown, FileSigna
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { matchClientProposals } from "@/lib/client-workspace-utils";
+import { loadClientCardDocuments } from "@/lib/client-document-query";
 import { formatMoneyRub, formatDateRu } from "@/lib/proposal-utils";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import TablePagination from "./TablePagination";
@@ -24,6 +25,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { generatePdfBlob, blobToBase64, downloadBlob, safePdfFilename } from "@/lib/document-pdf";
 import QuickDocumentDialog from "./QuickDocumentDialog";
 import ClientsMergeDialog from "./ClientsMergeDialog";
+import ClientFilesSection from "./ClientFilesSection";
 import { findDuplicateGroups, normalizeClientKey } from "@/lib/client-merge";
 import {
   compareClientsByServiceDeadline,
@@ -1094,20 +1096,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
     enabled: !!clientName,
   });
 
-  const { data: documents = [], isLoading: loadingDocs } = useQuery({
-    queryKey: ["client-history-docs", clientName],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("generated_documents")
-        .select("id, doc_type, doc_number, doc_date, total_amount, html_content")
-        .eq("client_name", clientName)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!clientName,
-  });
+  const { data: documents = [], isLoading: loadingDocs } = useClientDocuments(clientName, clientId);
 
   const { data: tasks = [], isLoading: loadingTasks } = useQuery({
     queryKey: ["client-history-tasks", clientId],
@@ -1459,20 +1448,11 @@ const useClientContracts = (clientName: string) =>
     enabled: !!clientName,
   });
 
-const useClientDocuments = (clientName: string) =>
+const useClientDocuments = (clientName: string, clientId?: string | null) =>
   useQuery({
-    queryKey: ["client-history-docs", clientName],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("generated_documents")
-        .select("id, doc_type, doc_number, doc_date, total_amount, html_content")
-        .eq("client_name", clientName)
-        .order("created_at", { ascending: false })
-        .limit(20);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clientName,
+    queryKey: ["client-history-docs", clientId, clientName],
+    queryFn: () => loadClientCardDocuments(supabase, clientId || "", clientName),
+    enabled: !!clientId,
   });
 
 const useClientTasks = (clientId: string) =>
@@ -1690,7 +1670,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
   }, [open]);
 
   const { data: contracts = [] } = useClientContracts(p.clientName);
-  const { data: documents = [] } = useClientDocuments(p.clientName);
+  const { data: documents = [] } = useClientDocuments(p.clientName, p.editingId);
   const { data: tasks = [] } = useClientTasks(p.editingId || "");
   const { data: interactions = [] } = useClientInteractions(p.editingId || "");
   const { data: proposals = [] } = useClientProposals(p.clientName, p.contactPerson);
@@ -1770,6 +1750,15 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
           <AccordionContent>
             <DocumentsSection clientName={p.clientName} clientId={p.editingId} onOpenQuickDocument={p.onOpenQuickDocument} />
           </AccordionContent>
+        </AccordionItem>
+      )}
+
+      {p.editingId && (
+        <AccordionItem value="client-files">
+          <AccordionTrigger className="text-sm">
+            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Оригиналы PDF</span>
+          </AccordionTrigger>
+          <AccordionContent><ClientFilesSection clientId={p.editingId} /></AccordionContent>
         </AccordionItem>
       )}
 
@@ -2134,7 +2123,7 @@ const ContractsSection = ({
 };
 
 const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clientName: string; clientId?: string; onOpenQuickDocument?: (docType: "contract" | "invoice" | "act") => void }) => {
-  const { data: documents = [] } = useClientDocuments(clientName);
+  const { data: documents = [] } = useClientDocuments(clientName, clientId);
   const queryClient = useQueryClient();
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [resendDoc, setResendDoc] = useState<any | null>(null);

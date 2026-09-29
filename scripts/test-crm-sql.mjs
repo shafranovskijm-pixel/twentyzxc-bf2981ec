@@ -56,9 +56,13 @@ try {
   await db.exec(await migration("20260928054127_91324a2c-bb9e-472c-8726-d33c2468bd32.sql"));
   await db.exec(await migration("20260928173203_d76379a3-d7b9-4234-b5d2-3d3aac03d008.sql"));
   await db.exec(await migration("20260929010000_crm_email_delivery.sql"));
+  await db.exec(await migration("20260930010000_crm_client_commands.sql"));
+  await db.exec(await migration("20260930030000_crm_document_client_rename.sql"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_document_api.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_email_delivery.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_invoice_acts.sql"), "utf8"));
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_commands.sql"), "utf8"));
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_rename_documents.sql"), "utf8"));
   console.log("PASS: CRM migration executed and all SQL integration assertions passed in PGlite.");
   console.log("Not tested here: live Supabase Auth, deployed RLS, storage, multi-session concurrency, PDF, SMTP.");
 } catch (error) {

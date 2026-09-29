@@ -12,7 +12,7 @@ function exactlyOnce(text, oldText, newText, label) {
   const oldCount = text.split(oldText).length - 1;
   const newCount = text.split(newText).length - 1;
   if (oldCount === 1 && newCount === 0) return text.replace(oldText, newText);
-  if (oldCount === 0 && newCount === 1) return text;
+  if (newCount === 1 && !text.replace(newText, "").includes(oldText)) return text;
   throw new Error(`MCP SDK ${PATCHED_SDK_VERSION}: unexpected ${label}; refusing a speculative patch`);
 }
 
@@ -27,19 +27,34 @@ export function patchWindowsResolver(source, format) {
   return patched;
 }
 
+/** SDK 0.23.0 drops MCP extension metadata. Keep native ChatGPT file inputs. */
+export function patchToolMetadata(source) {
+  return exactlyOnce(source, "annotations: tool.annotations", "_meta: tool._meta,\n\t\t\tannotations: tool.annotations", "tool metadata forwarding");
+}
+
+export function patchRuntimeResolver(source, format) {
+  const target = format === "esm"
+    ? 'new URL("./index.js", import.meta.url).pathname'
+    : 'node_path.join(__dirname, "index.js")';
+  // fileURLToPath is needed on Windows; avoid a platform-specific path in output.
+  const resolved = format === "esm" ? 'fileURLToPath(new URL("./index.js", import.meta.url))' : target;
+  let result = exactlyOnce(source, 'const p = args.path;', `const p = args.path;\n\t\t\t\tif (p === "@lovable.dev/mcp-js/stacks/supabase") return { path: ${resolved} };`, "private runtime resolver");
+  if (format === "esm") result = exactlyOnce(result, 'import { build } from "esbuild";', 'import { build } from "esbuild";\nimport { fileURLToPath } from "node:url";', "runtime URL import");
+  result = exactlyOnce(result, 'const versions = readProjectDependencyVersions(projectRoot);', 'const versions = { "@modelcontextprotocol/sdk": "1.28.0", "jose": "6.2.2", ...readProjectDependencyVersions(projectRoot) };', "pinned runtime dependencies");
+  return result;
+}
+
 function containedBy(parent, child) {
   const rel = relative(parent, child);
   return rel !== "" && !rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel);
 }
 
 /**
- * Load the normal plugin off Windows. On Windows copy the pinned SDK into this
- * repository before patching, even when node_modules itself is a shared junction.
+ * Copy the pinned SDK into this repository on all platforms. Native attachment
+ * metadata needs the same guarded correction on Lovable Linux and Windows.
  * The original dependency directory is never written to.
  */
 export async function loadMcpPlugin(projectRoot) {
-  if (process.platform !== "win32") return (await import("@lovable.dev/mcp-js/stacks/supabase/vite")).mcpPlugin;
-
   const root = realpathSync(projectRoot);
   const require = createRequire(resolve(root, "package.json"));
   const sdkRoot = dirname(dirname(require.resolve("@lovable.dev/mcp-js")));
@@ -53,7 +68,10 @@ export async function loadMcpPlugin(projectRoot) {
     ["dist/stacks/supabase/vite.js", "esm"],
     ["dist/stacks/supabase/vite.cjs", "cjs"],
   ];
-  const patched = inputs.map(([file, format]) => [file, patchWindowsResolver(readFileSync(resolve(sdkRoot, file), "utf8"), format)]);
+  const patched = inputs.map(([file, format]) => [file, patchRuntimeResolver(patchWindowsResolver(readFileSync(resolve(sdkRoot, file), "utf8"), format), format)]);
+  for (const file of ["dist/list-tools-ChLj1G6z.js", "dist/list-tools-DChR_9Q2.cjs", "dist/mcp-BiyuOOzg.js", "dist/mcp-C_SCcw5F.cjs"]) {
+    patched.push([file, patchToolMetadata(readFileSync(resolve(sdkRoot, file), "utf8"))]);
+  }
   const workDir = resolve(root, ".codex-temp");
   mkdirSync(workDir, { recursive: true });
   if (!containedBy(root, realpathSync(workDir))) throw new Error("MCP private SDK directory must stay inside this repository");
