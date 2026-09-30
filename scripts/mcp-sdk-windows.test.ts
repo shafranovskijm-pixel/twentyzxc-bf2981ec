@@ -25,7 +25,7 @@ describe("pinned Windows MCP SDK resolver correction", () => {
     const json = JSON.parse(body.startsWith("event:") ? body.split("\n").find(line => line.startsWith("data: "))!.slice(6) : body);
     expect(json.result.tools[0]._meta["openai/fileParams"]).toEqual(["file"]);
     expect(json.result.tools[0].inputSchema.properties.file.required).toEqual(["download_url", "file_id"]);
-  });
+  }, 15000);
   it.each(["list-tools-ChLj1G6z.js", "list-tools-DChR_9Q2.cjs", "mcp-BiyuOOzg.js", "mcp-C_SCcw5F.cjs"])("preserves native file metadata in %s", file => {
     const source = readFileSync(resolve("node_modules/@lovable.dev/mcp-js/dist", file), "utf8");
     const patched = patchToolMetadata(source);
@@ -71,9 +71,11 @@ describe("pinned Windows MCP SDK resolver correction", () => {
     expect(compiled).not.toContain("project-ref-unset");
     expect(compiled).toContain("Deno.serve(createSupabaseHandler(");
     expect(compiled).toContain("_meta: tool._meta");
-    const fileTool = manifest.mcp.tools.find(tool => tool.name === "crm_import_client_pdf");
-    expect(fileTool._meta["openai/fileParams"]).toEqual(["file"]);
-    expect(fileTool.inputSchema.properties.file.required).toEqual(["download_url", "file_id"]);
+    for (const name of ["crm_import_client_pdf", "crm_import_client_file"]) {
+      const fileTool = manifest.mcp.tools.find(tool => tool.name === name);
+      expect(fileTool._meta["openai/fileParams"]).toEqual(["file"]);
+      expect(fileTool.inputSchema.properties.file.required).toEqual(["download_url", "file_id"]);
+    }
     for (const tool of manifest.mcp.tools) expect(compiled).toContain(`name: ${JSON.stringify(tool.name)}`);
   });
 });

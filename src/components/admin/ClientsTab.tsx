@@ -1756,7 +1756,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
       {p.editingId && (
         <AccordionItem value="client-files">
           <AccordionTrigger className="text-sm">
-            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Оригиналы PDF</span>
+            <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Файлы клиента (PDF и Word)</span>
           </AccordionTrigger>
           <AccordionContent><ClientFilesSection clientId={p.editingId} /></AccordionContent>
         </AccordionItem>

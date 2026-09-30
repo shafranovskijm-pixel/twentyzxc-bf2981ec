@@ -62,6 +62,12 @@ describe("original PDF transfer boundary", () => {
 });
 
 describe("client PDF persistence and idempotency", () => {
+  it("normalizes UUID case to the same path used by PostgreSQL registration", async () => {
+    const fake = dbMock();
+    const id = "ABCDEF12-ABCD-4ABC-8ABC-ABCDEF123456";
+    await new CrmClientFilesService(fake.db, actorId, fetcher()).importPdf({ ...input, requestId: id });
+    expect(fake.storage.upload).toHaveBeenCalledWith(`${clientId}/${id.toLowerCase()}.pdf`, bytes, { contentType: "application/pdf", upsert: false });
+  });
   it("persists unchanged original bytes and registers stable client ID, without URLs or credentials", async () => {
     const fake = dbMock(); const network = fetcher();
     const result = await new CrmClientFilesService(fake.db, actorId, network).importPdf(input);

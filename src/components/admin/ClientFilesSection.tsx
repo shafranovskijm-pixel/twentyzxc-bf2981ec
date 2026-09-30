@@ -19,7 +19,7 @@ export default function ClientFilesSection({ clientId }: { clientId: string }) {
   });
   if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />;
   if (error) return <p className="text-sm text-destructive">Не удалось загрузить файлы клиента.</p>;
-  if (!files.length) return <p className="text-sm text-muted-foreground">Прикреплённых оригиналов PDF пока нет.</p>;
+  if (!files.length) return <p className="text-sm text-muted-foreground">Прикреплённых оригиналов PDF и Word пока нет.</p>;
   return <div className="space-y-2 pt-1">{files.map(file => <div key={file.id} className="flex items-center gap-2 rounded-md border p-3">
     <FileText className="h-4 w-4 shrink-0" />
     <div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{file.file_name}</p>
@@ -28,8 +28,8 @@ export default function ClientFilesSection({ clientId }: { clientId: string }) {
     </div>
     <Button variant="ghost" size="sm" className="shrink-0" onClick={async () => {
       const { data, error } = await supabase.storage.from("crm-client-files").createSignedUrl(file.file_path, 600);
-      if (error || !data?.signedUrl) { toast.error("Не удалось открыть оригинал PDF"); return; }
+      if (error || !data?.signedUrl) { toast.error("Не удалось открыть оригинал файла"); return; }
       window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-    }}><Eye className="mr-1 h-4 w-4" />Открыть PDF</Button>
+    }}><Eye className="mr-1 h-4 w-4" />{/\.pdf$/i.test(file.file_name) ? "Открыть PDF" : "Скачать Word"}</Button>
   </div>)}{files.length === 50 && <p className="text-xs text-muted-foreground">Показаны последние 50 файлов.</p>}</div>;
 }

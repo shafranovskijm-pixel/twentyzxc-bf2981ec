@@ -27,7 +27,7 @@ try {
     GRANT USAGE ON SCHEMA public,auth,storage TO authenticated,anon,service_role;
     GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;
   `);
-  const migration = await readFile(path.join(root, "supabase/migrations/20260930020000_crm_client_files.sql"), "utf8");
+  const migration = await readFile(path.join(root, "supabase/migrations/20260929154649_c9f204f2-e2d7-4ead-90fa-0c6d8fc56122.sql"), "utf8");
   // Bucket provisioning is a separate hosting operation. Test its prerequisite
   // guard against local infrastructure fixtures before applying the migration.
   for (const invalid of [null, [true, 10485760, ["application/pdf"]], [false, 20971520, ["application/pdf"]], [false, 10485760, ["application/pdf", "text/html"]]]) {
@@ -50,7 +50,24 @@ try {
   await db.exec("UPDATE storage.buckets SET allowed_mime_types=NULL WHERE id='crm-client-files'");
   await db.exec(migration);
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_files.sql"), "utf8"));
+  const wordMigration = await readFile(path.join(root, "supabase/migrations/20260930040000_crm_client_word_files.sql"), "utf8");
+  await db.exec("UPDATE storage.buckets SET allowed_mime_types=ARRAY['application/pdf'] WHERE id='crm-client-files'");
+  try {
+    await db.exec(`BEGIN;\n${wordMigration}\nCOMMIT;`);
+    throw new Error("Word migration accepted a bucket which blocks Word uploads");
+  } catch (error) {
+    await db.exec("ROLLBACK;");
+    if (error.code !== "55000" || !error.message.includes("CRM_CLIENT_FILE_BUCKET_NOT_CONFIGURED")) throw error;
+  }
+  await db.exec("UPDATE storage.buckets SET allowed_mime_types=ARRAY['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'] WHERE id='crm-client-files'");
+  await db.exec(`BEGIN;\n${wordMigration}\nROLLBACK;`);
+  await db.exec("UPDATE storage.buckets SET allowed_mime_types=NULL WHERE id='crm-client-files'");
+  await db.exec(wordMigration);
+  // Cached seven-argument PDF callers keep their original contract.
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_files.sql"), "utf8"));
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_word_files.sql"), "utf8"));
   console.log("PASS: separate Storage prerequisite guard including NULL MIME list, PDF-only/path-restricted admin upload, original client file migration, admin/privilege boundaries, missing file/client, immutable idempotent registration, safe results and cross-actor conflict.");
+  console.log("PASS: additive Word migration, PDF backward compatibility, DOC/DOCX canonical MIME and paths, Word replay/conflict, wrong MIME and unsupported extension rejection, admin-only immutable archive.");
   console.log("Not tested here: real Storage bytes, deployed auth, actual ChatGPT file transfer, concurrent sessions.");
 } catch (error) {
   console.error("Client files SQL test failed:", error.code || "", error.message);

@@ -1,8 +1,9 @@
-# Client cards and original PDFs through ChatGPT
+# Client cards and original PDF/Word files through ChatGPT
 
-Version 0.4.0 adds six tools to the existing 13 document/email tools:
+Version 0.5.0 adds seven tools to the existing 13 document/email tools:
 `crm_get_client`, `crm_create_client`, `crm_update_client`,
-`crm_import_client_pdf`, `crm_list_client_files`, `crm_get_client_file`.
+`crm_import_client_file`, `crm_import_client_pdf`, `crm_list_client_files`, `crm_get_client_file`.
+The PDF-only import remains for existing callers; new requests use the generic import.
 
 ## Conversation flow
 
@@ -36,10 +37,12 @@ https://developers.openai.com/plugins/reference#file-apis: `_meta.openai/filePar
 lists `file`, with required `download_url` and `file_id`; `mime_type` and `file_name`
 are declared optional. Download uses HTTPS `files.oaiusercontent.com` only, no
 redirects or arbitrary URL fetch. Another actual host must be verified before it
-can be supported. Maximum 10 MiB, PDF signature/end marker and SHA256 checked.
+can be supported. Maximum 10 MiB. PDF signature/end marker, Word OLE directory
+or DOCX archive structure/content types, and SHA256 are checked. DOCM, encrypted,
+malformed or disguised formats are rejected. Word content is never executed.
 
 Originals are stored in the private `crm-client-files` bucket, linked to exact
-`client_files.client_id`, displayed in the card's "Оригиналы PDF" section. Downloads
+`client_files.client_id`, displayed in the card's original files section. Downloads
 use 10-minute signed URLs. No overwrite or delete tool exists. Retries preserve
 original bytes. An uploaded file is not a generated contract, invoice or act and
 does not send mail or change contract dates. Check the actual document's customer
@@ -57,7 +60,9 @@ Apply client command, client file and document rename migrations in timestamp
 order. Provision the private 10 MiB `crm-client-files` bucket with Lovable's Storage
 tool before the file migration: bucket SQL changes are blocked by that platform.
 If the tool cannot set allowed MIME types, the migration permits NULL there and
-enforces PDF MIME plus the exact UUID/UUID.pdf path in the admin INSERT policy;
+enforces MIME plus exact UUID/UUID.extension paths in the admin INSERT policy.
+Apply the separate `20260930040000_crm_client_word_files.sql` migration after the
+three already-applied canonical client migrations to enable PDF, DOC and DOCX;
 MCP additionally validates the actual bytes. A public/oversized bucket fails the
 prerequisite guard. Regenerate/commit the MCP function and manifest, deploy function, publish
 frontend, refresh ChatGPT tools. Keep the existing read-only auto-approval policy;
