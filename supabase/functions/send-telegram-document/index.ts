@@ -117,7 +117,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Send telegram document error:", error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message || "Internal error" }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
