@@ -518,6 +518,115 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_service_template_commands: {
+        Row: {
+          actor_id: string
+          created_at: string
+          request: Json
+          request_id: string
+          result: Json
+          template_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          request: Json
+          request_id: string
+          result: Json
+          template_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          request?: Json
+          request_id?: string
+          result?: Json
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_service_template_commands_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_service_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_service_template_versions: {
+        Row: {
+          content: Json
+          created_at: string
+          created_by: string
+          description: string
+          is_archived: boolean
+          name: string
+          revision: number
+          template_id: string
+        }
+        Insert: {
+          content: Json
+          created_at?: string
+          created_by: string
+          description: string
+          is_archived: boolean
+          name: string
+          revision: number
+          template_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          created_by?: string
+          description?: string
+          is_archived?: boolean
+          name?: string
+          revision?: number
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_service_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "crm_service_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_service_templates: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          is_archived: boolean
+          name: string
+          revision: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string
+          id?: string
+          is_archived?: boolean
+          name: string
+          revision?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          is_archived?: boolean
+          name?: string
+          revision?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_campaign_queue: {
         Row: {
           attempts: number
@@ -2082,6 +2191,10 @@ export type Database = {
         Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
         Returns: Json
       }
+      crm_custom_contract_variables_valid: {
+        Args: { value: Json }
+        Returns: boolean
+      }
       crm_email_address_valid: { Args: { p_email: string }; Returns: boolean }
       crm_finalize_document_email: {
         Args: { p_actor_id: string; p_attachments: Json; p_delivery_id: string }
@@ -2148,6 +2261,22 @@ export type Database = {
           p_request_id: string
         }
         Returns: Json
+      }
+      crm_save_service_template: {
+        Args: {
+          p_content: Json
+          p_description: string
+          p_expected_revision: number
+          p_is_archived?: boolean
+          p_name: string
+          p_request_id: string
+          p_template_id: string
+        }
+        Returns: Json
+      }
+      crm_service_template_content_valid: {
+        Args: { value: Json }
+        Returns: boolean
       }
       crm_suggest_document_number: {
         Args: { p_doc_date: string; p_doc_type: string }
