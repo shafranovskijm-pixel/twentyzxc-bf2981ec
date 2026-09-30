@@ -972,6 +972,34 @@
                   ],
                   "additionalProperties": false,
                   "description": "Явные даты периода услуг договора YYYY-MM-DD; отдельно от даты договора и даты оплаты. Должны соответствовать тексту deadline."
+                },
+                "clientRepresentative": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "post": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "basis": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "description": "Подтверждённое основание полномочий после слов «на основании», например доверенности №... от ...; не угадывайте."
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "post",
+                    "basis"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Явный подписант договора standard/frdo из подтверждённого источника. Не меняет директора в карточке клиента. Укажите полностью имя, должность/роль и основание полномочий."
                 }
               },
               "required": [
@@ -1188,6 +1216,34 @@
                   ],
                   "additionalProperties": false,
                   "description": "Явные даты периода услуг договора YYYY-MM-DD; отдельно от даты договора и даты оплаты. Должны соответствовать тексту deadline."
+                },
+                "clientRepresentative": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "post": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "basis": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "description": "Подтверждённое основание полномочий после слов «на основании», например доверенности №... от ...; не угадывайте."
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "post",
+                    "basis"
+                  ],
+                  "additionalProperties": false,
+                  "description": "Явный подписант договора standard/frdo из подтверждённого источника. Не меняет директора в карточке клиента. Укажите полностью имя, должность/роль и основание полномочий."
                 }
               },
               "required": [
@@ -1292,6 +1348,33 @@
                   },
                   "required": [
                     "noDeadline"
+                  ],
+                  "additionalProperties": false
+                },
+                "clientRepresentative": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    "post": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 1000
+                    },
+                    "basis": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2000,
+                      "description": "Подтверждённое основание полномочий после слов «на основании», например доверенности №... от ...; не угадывайте."
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "post",
+                    "basis"
                   ],
                   "additionalProperties": false
                 },

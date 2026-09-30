@@ -205,6 +205,7 @@ const baseStyles = `
 
 export function generateFrdoContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
+  const representative = data.clientRepresentative;
   const total = data.computedGrossTotal ?? totalSum(services);
 
   // Determine period from deadline field (e.g. "05.03.2026 по 05.03.2027")
@@ -221,11 +222,11 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         const n = (cl.name || "").trim().toLowerCase();
         const ogrnDigits = (cl.ogrn || "").replace(/\D/g, "");
         const isIP = n.startsWith("ип ") || n.startsWith("индивидуальный предприниматель") || ogrnDigits.length === 15;
-        if (isIP) {
+        if (isIP && !representative) {
           const ogrn = cl.ogrn ? `ОГРНИП ${cl.ogrn}` : "ОГРНИП";
           return `<strong>${cl.name}</strong>, именуемый в дальнейшем Заказчик, ИНН ${cl.inn}, действующий на основании ${ogrn}`;
         }
-        return `<strong>${cl.name}</strong>, именуемое в дальнейшем Заказчик, в лице ${declinePost(cl.director_post || "Директор").toLowerCase()} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава`;
+        return `<strong>${cl.name}</strong>, именуемое в дальнейшем Заказчик, в лице ${representative ? `представителя ${declineFullName(representative.name)} (${representative.post}), ${getActingPhrase(representative.name)} на основании ${representative.basis}` : `${declinePost(cl.director_post || "Директор").toLowerCase()} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава`}`;
       })()}, с другой стороны, вместе именуемые стороны, заключили настоящий Договор о нижеследующем:</p>
     </div>
 
@@ -348,10 +349,10 @@ export function generateFrdoContractHtml(data: DocumentData): string {
           const isIP = (cl.name || "").trim().toLowerCase().startsWith("ип ") || ogrnDigits.length === 15;
           if (isIP) {
             return `<p>ИНН ${cl.inn}${cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : ""}</p>
-        <div class="signature-line">ИП __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>`;
+        <div class="signature-line">${representative?.post || "ИП"} __________ / ${representative?.name || cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>`;
           }
           return `<p>ИНН${cl.inn ? "/" : ""}${cl.inn}${cl.kpp ? ` КПП ${cl.kpp}` : ""}${cl.ogrn ? ` ОГРН ${cl.ogrn}` : ""}</p>
-        <div class="signature-line">${cl.director_post || "Директор"} __________ / ${cl.director_name} /</div>`;
+        <div class="signature-line">${representative?.post || cl.director_post || "Директор"} __________ / ${representative?.name || cl.director_name} /</div>`;
         })()}
         <p style="margin-top:5px;">М.П.</p>
       </div>
@@ -404,7 +405,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
-          <div class="signature-line">__________ / ${cl.director_name} /</div>
+          <div class="signature-line">__________ / ${representative?.name || cl.director_name} /</div>
           <p style="margin-top:5px;">М.П.</p>
         </div>
       </div>
@@ -478,7 +479,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         </div>
         <div class="signature-block">
           <p><strong>Заказчик:</strong></p>
-          <div class="signature-line">__________ / ${cl.director_name} /</div>
+          <div class="signature-line">__________ / ${representative?.name || cl.director_name} /</div>
           <p style="margin-top:5px;">М.П.</p>
         </div>
       </div>

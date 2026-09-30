@@ -98,6 +98,18 @@ describe("document monetary arithmetic", () => {
 });
 
 describe("document input validation", () => {
+  it("accepts only complete explicit contract representatives for supported templates", () => {
+    const contract = invoice({ type: "contract", template: "frdo", subject: "Услуга", deadline: "12 месяцев", paymentTerms: "авансом 100%" });
+    const representative = { name: "  Сидоров Сергей Александрович  ", post: "Сотрудник управляющей организации", basis: "доверенности № TEST от 03.02.2025" };
+    expect(validateDocumentInput({ ...contract, clientRepresentative: representative }).clientRepresentative)
+      .toEqual({ ...representative, name: representative.name.trim() });
+    for (const invalid of [null, {}, { ...representative, basis: " " }, { ...representative, post: undefined }, { ...representative, name: 1 }, { ...representative, extra: true }, { ...representative, basis: "x\u0000y" }]) {
+      expect(() => validateDocumentInput({ ...contract, clientRepresentative: invalid })).toThrow(DocumentValidationError);
+    }
+    for (const wrongType of [invoice(), invoice({ type: "act", contractId: CONTRACT_ID }), { ...contract, template: "nmo" }]) {
+      expect(() => validateDocumentInput({ ...wrongType, clientRepresentative: representative })).toThrow(/представитель поддерживается/);
+    }
+  });
   it.each(["2026-02-29", "2026-04-31", "2026-00-01", "2026-13-01", "0000-01-01", "2026-09-28T00:00:00Z", "28.09.2026"])("rejects invalid date %s", (date) => {
     expect(() => validateDocumentInput(invoice({ date }))).toThrow(DocumentValidationError);
   });
@@ -179,6 +191,37 @@ describe("document input validation", () => {
 });
 
 describe("server document renderer", () => {
+  it("retains the proprietor's OGRNIP when an authorized representative signs the FRDO contract", () => {
+    const ctx = context();
+    ctx.client = { ...ctx.client, name: "ИП Иванов Иван Иванович", inn: "000000000000", ogrn: "000000000000000" };
+    const representative = { name: "Сидоров Сергей Александрович", post: "Представитель", basis: "доверенности № TEST" };
+    const rendered = renderDocument(invoice({ type: "contract", template: "frdo", subject: "Услуга", deadline: "12 месяцев", paymentTerms: "авансом 100%", clientRepresentative: representative }), ctx);
+    expect(rendered.html).toContain("ИНН 000000000000 ОГРНИП 000000000000000");
+    expect(rendered.html).not.toContain(" ОГРН 000000000000000");
+    expect(rendered.html).toContain("Представитель __________ / Сидоров Сергей Александрович /");
+    expect(rendered.html).toContain("на основании доверенности № TEST");
+  });
+  it.each(["standard", "frdo"] as const)("renders the explicit representative and authority in %s without changing director snapshots", template => {
+    const ctx = context();
+    const representative = { name: "Сидоров Сергей Александрович", post: 'Сотрудник ООО "Управляющая компания"', basis: "доверенности № TEST от 03.02.2025" };
+    const contract = invoice({ type: "contract", template, subject: "Услуги", deadline: "12 месяцев", paymentTerms: "авансом 100%", clientRepresentative: representative });
+    const rendered = renderDocument(contract, ctx);
+    expect(rendered.html).toContain("в лице представителя Сидорова Сергея Александровича");
+    expect(rendered.html).toContain("на основании доверенности № TEST от 03.02.2025");
+    expect(rendered.html).not.toContain("на основании Устава");
+    expect(rendered.html).not.toContain(ctx.client.director_name);
+    expect(rendered.html.match(/\/ Сидоров Сергей Александрович \//g)).toHaveLength(template === "frdo" ? 3 : 1);
+    expect(rendered.metadata.clientSnapshot).toEqual(ctx.client);
+    expect(rendered.metadata.clientRepresentative).toEqual(representative);
+    expect(rendered.metadata.documentInput).toMatchObject({ clientRepresentative: representative });
+    const baseline = renderDocument({ ...contract, clientRepresentative: undefined }, ctx);
+    expect(baseline.html).toContain("на основании Устава");
+    const attack = '<img src=x onerror="bad()">';
+    const escaped = renderDocument({ ...contract, clientRepresentative: { name: attack, post: attack, basis: attack } }, ctx);
+    expect(escaped.html).not.toContain("<img src=x");
+    expect(escaped.html).toContain("&lt;img src=x onerror=&quot;bad()&quot;&gt;");
+    expect(escaped.metadata.clientRepresentative).toEqual({ name: attack, post: attack, basis: attack });
+  });
   const cases: [string, Partial<DocumentInput>][] = [
     ["invoice", {}],
     ["act", { type: "act", contractId: CONTRACT_ID }],

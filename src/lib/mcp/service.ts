@@ -164,7 +164,8 @@ export class CrmDocumentsService {
     const needsClientRepresentative = input.type !== "invoice" && !(input.type === "act" && input.invoiceBasis);
     const clientFieldNames = { name: "название", inn: "ИНН", address: "адрес", director_name: "ФИО руководителя", director_post: "должность руководителя" };
     const clientFields: (keyof typeof clientFieldNames)[] = needsClientRepresentative
-      ? ["name", "inn", "address", "director_name", "director_post"] : ["name", "inn"];
+      ? input.clientRepresentative ? ["name", "inn", "address"] : ["name", "inn", "address", "director_name", "director_post"]
+      : ["name", "inn"];
     const missingClient = clientFields.filter(key => !client[key]?.trim());
     if (missingClient.length) {
       throw new CrmError("CLIENT_REQUISITES_MISSING", `В карточке клиента не заполнены: ${missingClient.map(key => clientFieldNames[key]).join(", ")}. Используйте подтверждённые реквизиты клиента.`);
@@ -211,7 +212,7 @@ export class CrmDocumentsService {
   }
 
   async revise(requestId: string, documentId: string, expectedRevision: number, changes: Record<string, unknown>) {
-    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod"];
+    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative"];
     if (!Object.keys(changes).length || Object.keys(changes).some(key => !allowed.includes(key))) {
       throw new CrmError("INVALID_CHANGES", "Изменять тип, номер, клиента или связь документа через правку нельзя.");
     }

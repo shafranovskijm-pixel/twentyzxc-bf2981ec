@@ -35,11 +35,15 @@ ambiguous legacy links require manual reconciliation. Cards are not merged.
 The native ChatGPT file parameter schema follows
 https://developers.openai.com/plugins/reference#file-apis: `_meta.openai/fileParams`
 lists `file`, with required `download_url` and `file_id`; `mime_type` and `file_name`
-are declared optional. Download allows only HTTPS subdomains of `oaiusercontent.com`,
+are declared optional. Download allows HTTPS subdomains of `oaiusercontent.com`,
 the [OpenAI-documented file-host family](https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps).
 This includes the observed native transport host `sdmntprpolandcentral.oaiusercontent.com`.
-Matching uses the full `.oaiusercontent.com` DNS-label boundary; the bare apex,
-lookalike domains, arbitrary user hosts and Azure URLs are rejected. Redirects,
+The exact HTTPS hostname `oaisdmntprpolandcentral.blob.core.windows.net` is also
+allowed because ChatGPT supplied it for original attachments in a live tool call.
+This is one observed Azure storage account, not an Azure hostname wildcard.
+Matching uses the full `.oaiusercontent.com` DNS-label boundary or exact equality
+for that Azure account; the bare apex, lookalike domains, arbitrary user hosts,
+other Azure accounts and nested Azure hostnames are rejected. Redirects,
 credentials, non-default ports and URL fragments remain forbidden.
 Maximum 10 MiB. PDF signature/end marker, Word OLE directory
 or DOCX archive structure/content types, and SHA256 are checked. DOCM, encrypted,
@@ -57,6 +61,34 @@ private SDK copy now forwards `_meta` in HTTP and MCP listings on Windows/Linux.
 The build bundles that corrected runtime and preserves OAuth unchanged. Use
 `npm run mcp:manifest` instead of the upstream extraction CLI. Shared node_modules
 is never patched. A changed SDK fails the patch instead of silently dropping files.
+
+## Document-specific authorized representative
+
+For `standard` or `frdo` contracts, preview/create may include an explicit
+`document.clientRepresentative` from the original source, for example:
+
+```json
+{
+  "clientRepresentative": {
+    "name": "Иванов Иван Иванович",
+    "post": "Представитель заказчика",
+    "basis": "доверенности № TEST от 01.01.2026"
+  }
+}
+```
+
+This synthetic example is not a customer's authority. Supply all three verified
+values; `basis` follows the words «на основании». The document uses this signatory
+and authority instead of assuming a director acting under the charter. It leaves
+the client card and saved director snapshot unchanged. Client name, INN and address
+are still required. Invoices, acts and NMO contracts reject this override.
+Revisions preserve it unless a complete replacement is explicitly supplied.
+It is stored in the existing document input/metadata JSON; no migration is needed.
+
+The CRM viewer and PDF download use the saved HTML. The manual document editor
+does not expose this field: recreating the document through that form does not
+preserve the representative override. Use the chat revision tool for these
+contracts and verify the rendered document before sending.
 
 ## Release gates
 

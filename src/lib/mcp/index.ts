@@ -9,6 +9,11 @@ const uuid = z.string().uuid();
 const service = z.object({ name: z.string().min(1).max(1000), qty: z.number().positive(), price: z.number().nonnegative() }).strict();
 const discount = z.object({ kind: z.enum(["amount", "percent"]), value: z.number().nonnegative(), deadline: z.string().optional() }).strict();
 const servicePeriod = z.object({ start: z.string().optional(), end: z.string().optional(), noDeadline: z.boolean() }).strict();
+const clientRepresentative = z.object({
+  name: z.string().trim().min(1).max(500),
+  post: z.string().trim().min(1).max(1000),
+  basis: z.string().trim().min(1).max(2000).describe("Подтверждённое основание полномочий после слов «на основании», например доверенности №... от ...; не угадывайте."),
+}).strict();
 const invoiceBasis = z.object({
   source: z.literal("sintagma"), sourceKind: z.literal("subscription_invoice"),
   sourceId: uuid, organizationId: uuid, number: z.string().min(1).max(100),
@@ -25,6 +30,7 @@ const fields = {
   paymentTerms: z.string().optional(), contractId: uuid.optional(), discount: discount.optional(),
   invoiceBasis: invoiceBasis.optional().describe("Для акта к счёту СИНТАГМЫ вместо contractId: точный снимок существующего subscription_invoice из get_sintagma_invoice_export. Не придумывайте ID или реквизиты. Плательщик и полная сумма должны соответствовать клиенту и акту."),
   servicePeriod: servicePeriod.optional().describe("Явные даты периода услуг договора YYYY-MM-DD; отдельно от даты договора и даты оплаты. Должны соответствовать тексту deadline."),
+  clientRepresentative: clientRepresentative.optional().describe("Явный подписант договора standard/frdo из подтверждённого источника. Не меняет директора в карточке клиента. Укажите полностью имя, должность/роль и основание полномочий."),
 };
 const documentInput = z.object(fields).strict();
 const read = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -128,6 +134,7 @@ export const crmTools = [
       date: z.string().optional(), services: z.array(service).min(1).max(100).optional(),
       subject: z.string().optional(), deadline: z.string().optional(), paymentTerms: z.string().optional(),
       servicePeriod: servicePeriod.optional(),
+      clientRepresentative: clientRepresentative.optional(),
       discount: discount.nullable().optional(),
     }).strict().refine(value => Object.keys(value).length > 0, "Укажите изменение") }, annotations: write,
     handler: (input, ctx) => runCrmTool(ctx, api => api.revise(input.requestId, input.documentId, input.expectedRevision, input.changes)),

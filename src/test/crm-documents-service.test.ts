@@ -65,6 +65,43 @@ describe("CRM authorization and protocol boundary", () => {
 });
 
 describe("CRM queries and document persistence", () => {
+  const representative = { name: "Сидоров Сергей Александрович", post: "Сотрудник управляющей организации", basis: "доверенности № TEST от 03.02.2025" };
+  const representedContract = { ...input, type: "contract" as const, template: "frdo" as const, subject: "Услуги ФРДО", deadline: "12 месяцев", paymentTerms: "авансом 100%", clientRepresentative: representative };
+  it("previews and saves an authorized employee without inventing a client director", async () => {
+    const withoutDirector = { ...client, director_name: null, director_post: null };
+    const settings = Object.entries(company).map(([key, value]) => ({ key, value }));
+    const fake = mockDb([withoutDirector, settings, null, withoutDirector, settings]);
+    const api = new CrmDocumentsService(fake.db);
+    expect(await api.preview(representedContract)).toMatchObject({ status: "preview", saved: false, metadata: { clientRepresentative: representative, clientSnapshot: { director_name: "", director_post: "" } } });
+    expect(fake.rpc).not.toHaveBeenCalled();
+    await api.create(requestId, representedContract);
+    const saved = fake.rpc.mock.calls[0][1];
+    expect(saved.p_input.clientRepresentative).toEqual(representative);
+    expect(saved.p_payload.metadata.clientSnapshot).toMatchObject({ director_name: "", director_post: "" });
+    expect(saved.p_payload.html_content).toContain("на основании доверенности № TEST");
+    expect(withoutDirector.director_name).toBeNull();
+    expect(fake.rpc).toHaveBeenCalledOnce(); // Only the document RPC; no client write.
+  });
+  it.each(["inn", "legal_address"])("still requires client %s when a representative is supplied", async field => {
+    const fake = mockDb([{ ...client, [field]: null, director_name: null, director_post: null }, Object.entries(company).map(([key, value]) => ({ key, value }))]);
+    await expect(new CrmDocumentsService(fake.db).preview(representedContract)).rejects.toMatchObject({ code: "CLIENT_REQUISITES_MISSING" });
+    expect(fake.rpc).not.toHaveBeenCalled();
+  });
+  it("preserves the representative when revising dates and permits an explicit complete replacement", async () => {
+    const ctx = { client: { ...client, address: client.legal_address, director_name: "", director_post: "" }, company, assetOrigin: "https://24zxc.ru" };
+    const rendered = renderDocument(representedContract, ctx);
+    const previous = { source: "api", input: representedContract, snapshot: { metadata: rendered.metadata, contract_id: contractId } };
+    const fake = mockDb([previous, previous]);
+    const api = new CrmDocumentsService(fake.db);
+    await api.revise(requestId, documentId, 1, { date: "2026-10-01" });
+    expect(fake.rpc.mock.calls[0][1].p_input.clientRepresentative).toEqual(representative);
+    const replacement = { ...representative, basis: "доверенности № NEW от 30.09.2026" };
+    await api.revise(requestId, documentId, 1, { clientRepresentative: replacement });
+    expect(fake.rpc.mock.calls[1][1].p_payload.metadata.clientRepresentative).toEqual(replacement);
+    expect(fake.rpc.mock.calls[1][1].p_payload.html_content).toContain("на основании доверенности № NEW");
+    expect(fake.rpc.mock.calls[1][1].p_payload.metadata.clientSnapshot.director_name).toBe("");
+    expect(fake.from).toHaveBeenCalledTimes(2); // Saved snapshots, no refresh that changes original parties.
+  });
   it("saves email through exact client ID with expected old value and stable request ID", async () => {
     const fake = mockDb([]);
     await new CrmDocumentsService(fake.db).saveClientEmail(requestId, clientId, "client@example.invalid", null);

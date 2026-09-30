@@ -128,6 +128,7 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     date: formatDocumentDate(checked.date),
     company: escapedRequisites(company),
     client: escapedRequisites(client),
+    clientRepresentative: checked.clientRepresentative ? escapedRequisites(checked.clientRepresentative) : undefined,
     services: checked.services.map((service, index) => ({
       ...service,
       name: escapeHtml(service.name),
@@ -192,5 +193,6 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     metadata.invoiceBasisProvenance = "explicit-source-export";
   }
   if (checked.servicePeriod) metadata.servicePeriod = cloneJson(checked.servicePeriod);
+  if (checked.clientRepresentative) metadata.clientRepresentative = cloneJson(checked.clientRepresentative);
   return { html, services: checked.services, totalAmount: totals.totalAmount, metadata };
 }

@@ -34,12 +34,20 @@ export interface ServiceItem {
   computedLineTotal?: number;
 }
 
+/** Explicit signatory for this document; does not change the client's director. */
+export interface ClientRepresentative {
+  name: string;
+  post: string;
+  basis: string;
+}
+
 export interface DocumentData {
   type: "contract" | "invoice" | "act" | "reconciliation";
   number: string;
   date: string;
   company: CompanyRequisites;
   client: ClientRequisites;
+  clientRepresentative?: ClientRepresentative;
   services: ServiceItem[];
   /** Explicit server origin and shared integer-money result; old callers may omit them. */
   assetOrigin?: string;
@@ -333,6 +341,7 @@ function servicesTableHtml(services: ServiceItem[], computedGrossTotal?: number)
 
 export function generateContractHtml(data: DocumentData): string {
   const { company: c, client: cl, services, number: num, date } = data;
+  const representative = data.clientRepresentative;
   const total = data.computedGrossTotal ?? totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Договор №${num}</title>${baseStyles}</head><body>
     ${brandStrip}
@@ -345,11 +354,11 @@ export function generateContractHtml(data: DocumentData): string {
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, ИНН ${c.company_inn}, именуемое в дальнейшем «Исполнитель», с одной стороны, и</p>
       <p>${(() => {
-        if (isIndividualEntrepreneur(cl)) {
+        if (isIndividualEntrepreneur(cl) && !representative) {
           const ogrn = cl.ogrn ? `ОГРНИП ${cl.ogrn}` : "ОГРНИП";
           return `<strong>${cl.name}</strong>, ИНН ${cl.inn}, именуемый в дальнейшем «Заказчик», действующий на основании ${ogrn}, с другой стороны,`;
         }
-        return `<strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава, именуемое в дальнейшем «Заказчик», с другой стороны,`;
+        return `<strong>${cl.name}</strong>, ИНН ${cl.inn}${cl.kpp ? `, КПП ${cl.kpp}` : ""}, в лице ${representative ? `представителя ${declineFullName(representative.name)} (${representative.post}), ${getActingPhrase(representative.name)} на основании ${representative.basis}` : `${declinePost(cl.director_post || "Директор")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} на основании Устава`}, именуемое в дальнейшем «Заказчик», с другой стороны,`;
       })()}</p>
       <p>заключили настоящий Договор о нижеследующем:</p>
     </div>
@@ -424,7 +433,7 @@ export function generateContractHtml(data: DocumentData): string {
           <p>${cl.name}</p>
           <p>ИНН ${cl.inn}${isIndividualEntrepreneur(cl) ? (cl.ogrn ? ` ОГРНИП ${cl.ogrn}` : "") : (cl.kpp ? ` КПП ${cl.kpp}` : "") + (cl.ogrn ? ` ОГРН ${cl.ogrn}` : "")}</p>
           <p>${cl.address}</p>
-          <div class="signature-line">${isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор")} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
+          <div class="signature-line">${representative?.post || (isIndividualEntrepreneur(cl) ? "ИП" : (cl.director_post || "Директор"))} __________ / ${representative?.name || cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
         </div>
       </div>
     </div>

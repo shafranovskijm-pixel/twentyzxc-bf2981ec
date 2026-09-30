@@ -156,7 +156,7 @@ function calculateTotals(services, discount2) {
 }
 function validateDocumentInput(input) {
   const raw = record(input, "document");
-  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod"], "document");
+  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative"], "document");
   if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
     invalid("type", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F contract, invoice \u0438\u043B\u0438 act");
   }
@@ -176,6 +176,18 @@ function validateDocumentInput(input) {
     result.template = raw.template;
   } else if (raw.type === "contract") {
     result.template = "standard";
+  }
+  if (raw.clientRepresentative !== void 0) {
+    if (raw.type !== "contract" || result.template === "nmo") {
+      invalid("clientRepresentative", "\u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u0435\u043B\u044C \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard \u0438\u043B\u0438 frdo");
+    }
+    const representative = record(raw.clientRepresentative, "clientRepresentative");
+    knownKeys(representative, ["name", "post", "basis"], "clientRepresentative");
+    result.clientRepresentative = {
+      name: text(representative.name, "clientRepresentative.name", 500),
+      post: text(representative.post, "clientRepresentative.post", 1e3),
+      basis: text(representative.basis, "clientRepresentative.basis", 2e3)
+    };
   }
   for (const key of ["subject", "deadline", "paymentTerms"]) {
     if (raw[key] !== void 0 || raw.type === "contract") result[key] = text(raw[key], key, 5e3);
@@ -492,6 +504,7 @@ function servicesTableHtml(services, computedGrossTotal) {
 }
 function generateContractHtml(data) {
   const { company: c, client: cl, services, number: num, date } = data;
+  const representative = data.clientRepresentative;
   const total = data.computedGrossTotal ?? totalSum(services);
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>\u0414\u043E\u0433\u043E\u0432\u043E\u0440 \u2116${num}</title>${baseStyles}</head><body>
     ${brandStrip}
@@ -504,11 +517,11 @@ function generateContractHtml(data) {
     <div class="section">
       <p><strong>${c.company_short_name || c.company_name}</strong>, \u0418\u041D\u041D ${c.company_inn}, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u043E\u0435 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \xAB\u0418\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\xBB, \u0441 \u043E\u0434\u043D\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B, \u0438</p>
       <p>${(() => {
-    if (isIndividualEntrepreneur(cl)) {
+    if (isIndividualEntrepreneur(cl) && !representative) {
       const ogrn = cl.ogrn ? `\u041E\u0413\u0420\u041D\u0418\u041F ${cl.ogrn}` : "\u041E\u0413\u0420\u041D\u0418\u041F";
       return `<strong>${cl.name}</strong>, \u0418\u041D\u041D ${cl.inn}, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u044B\u0439 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \xAB\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A\xBB, \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 ${ogrn}, \u0441 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B,`;
     }
-    return `<strong>${cl.name}</strong>, \u0418\u041D\u041D ${cl.inn}${cl.kpp ? `, \u041A\u041F\u041F ${cl.kpp}` : ""}, \u0432 \u043B\u0438\u0446\u0435 ${declinePost(cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u0423\u0441\u0442\u0430\u0432\u0430, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u043E\u0435 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \xAB\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A\xBB, \u0441 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B,`;
+    return `<strong>${cl.name}</strong>, \u0418\u041D\u041D ${cl.inn}${cl.kpp ? `, \u041A\u041F\u041F ${cl.kpp}` : ""}, \u0432 \u043B\u0438\u0446\u0435 ${representative ? `\u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u0435\u043B\u044F ${declineFullName(representative.name)} (${representative.post}), ${getActingPhrase(representative.name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 ${representative.basis}` : `${declinePost(cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440")} ${declineFullName(cl.director_name)}, ${getActingPhrase(cl.director_name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u0423\u0441\u0442\u0430\u0432\u0430`}, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u043E\u0435 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \xAB\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A\xBB, \u0441 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B,`;
   })()}</p>
       <p>\u0437\u0430\u043A\u043B\u044E\u0447\u0438\u043B\u0438 \u043D\u0430\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u0414\u043E\u0433\u043E\u0432\u043E\u0440 \u043E \u043D\u0438\u0436\u0435\u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0435\u043C:</p>
     </div>
@@ -583,7 +596,7 @@ function generateContractHtml(data) {
           <p>${cl.name}</p>
           <p>\u0418\u041D\u041D ${cl.inn}${isIndividualEntrepreneur(cl) ? cl.ogrn ? ` \u041E\u0413\u0420\u041D\u0418\u041F ${cl.ogrn}` : "" : (cl.kpp ? ` \u041A\u041F\u041F ${cl.kpp}` : "") + (cl.ogrn ? ` \u041E\u0413\u0420\u041D ${cl.ogrn}` : "")}</p>
           <p>${cl.address}</p>
-          <div class="signature-line">${isIndividualEntrepreneur(cl) ? "\u0418\u041F" : cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440"} __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
+          <div class="signature-line">${representative?.post || (isIndividualEntrepreneur(cl) ? "\u0418\u041F" : cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440")} __________ / ${representative?.name || cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>
         </div>
       </div>
     </div>
@@ -934,6 +947,7 @@ var baseStyles2 = `
 `;
 function generateFrdoContractHtml(data) {
   const { company: c, client: cl, services, number: num, date } = data;
+  const representative = data.clientRepresentative;
   const total = data.computedGrossTotal ?? totalSum2(services);
   const periodText = data.deadline || "12 \u043C\u0435\u0441\u044F\u0446\u0435\u0432 \u0441 \u043C\u043E\u043C\u0435\u043D\u0442\u0430 \u043F\u043E\u0434\u043F\u0438\u0441\u0430\u043D\u0438\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430";
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>\u0414\u043E\u0433\u043E\u0432\u043E\u0440 \u0424\u0420\u0414\u041E \u2116${num}</title>${baseStyles2}</head><body>
@@ -947,11 +961,11 @@ function generateFrdoContractHtml(data) {
     const n = (cl.name || "").trim().toLowerCase();
     const ogrnDigits = (cl.ogrn || "").replace(/\D/g, "");
     const isIP = n.startsWith("\u0438\u043F ") || n.startsWith("\u0438\u043D\u0434\u0438\u0432\u0438\u0434\u0443\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u0440\u0435\u0434\u043F\u0440\u0438\u043D\u0438\u043C\u0430\u0442\u0435\u043B\u044C") || ogrnDigits.length === 15;
-    if (isIP) {
+    if (isIP && !representative) {
       const ogrn = cl.ogrn ? `\u041E\u0413\u0420\u041D\u0418\u041F ${cl.ogrn}` : "\u041E\u0413\u0420\u041D\u0418\u041F";
       return `<strong>${cl.name}</strong>, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u044B\u0439 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A, \u0418\u041D\u041D ${cl.inn}, \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 ${ogrn}`;
     }
-    return `<strong>${cl.name}</strong>, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u043E\u0435 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A, \u0432 \u043B\u0438\u0446\u0435 ${declinePost2(cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440").toLowerCase()} ${declineFullName2(cl.director_name)}, ${getActingPhrase2(cl.director_name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u0423\u0441\u0442\u0430\u0432\u0430`;
+    return `<strong>${cl.name}</strong>, \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u043E\u0435 \u0432 \u0434\u0430\u043B\u044C\u043D\u0435\u0439\u0448\u0435\u043C \u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A, \u0432 \u043B\u0438\u0446\u0435 ${representative ? `\u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u0435\u043B\u044F ${declineFullName2(representative.name)} (${representative.post}), ${getActingPhrase2(representative.name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 ${representative.basis}` : `${declinePost2(cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440").toLowerCase()} ${declineFullName2(cl.director_name)}, ${getActingPhrase2(cl.director_name)} \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u0423\u0441\u0442\u0430\u0432\u0430`}`;
   })()}, \u0441 \u0434\u0440\u0443\u0433\u043E\u0439 \u0441\u0442\u043E\u0440\u043E\u043D\u044B, \u0432\u043C\u0435\u0441\u0442\u0435 \u0438\u043C\u0435\u043D\u0443\u0435\u043C\u044B\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B, \u0437\u0430\u043A\u043B\u044E\u0447\u0438\u043B\u0438 \u043D\u0430\u0441\u0442\u043E\u044F\u0449\u0438\u0439 \u0414\u043E\u0433\u043E\u0432\u043E\u0440 \u043E \u043D\u0438\u0436\u0435\u0441\u043B\u0435\u0434\u0443\u044E\u0449\u0435\u043C:</p>
     </div>
 
@@ -1074,10 +1088,10 @@ function generateFrdoContractHtml(data) {
     const isIP = (cl.name || "").trim().toLowerCase().startsWith("\u0438\u043F ") || ogrnDigits.length === 15;
     if (isIP) {
       return `<p>\u0418\u041D\u041D ${cl.inn}${cl.ogrn ? ` \u041E\u0413\u0420\u041D\u0418\u041F ${cl.ogrn}` : ""}</p>
-        <div class="signature-line">\u0418\u041F __________ / ${cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>`;
+        <div class="signature-line">${representative?.post || "\u0418\u041F"} __________ / ${representative?.name || cl.director_name || cl.name.replace(/^ИП\s+/i, "")} /</div>`;
     }
     return `<p>\u0418\u041D\u041D${cl.inn ? "/" : ""}${cl.inn}${cl.kpp ? ` \u041A\u041F\u041F ${cl.kpp}` : ""}${cl.ogrn ? ` \u041E\u0413\u0420\u041D ${cl.ogrn}` : ""}</p>
-        <div class="signature-line">${cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440"} __________ / ${cl.director_name} /</div>`;
+        <div class="signature-line">${representative?.post || cl.director_post || "\u0414\u0438\u0440\u0435\u043A\u0442\u043E\u0440"} __________ / ${representative?.name || cl.director_name} /</div>`;
   })()}
         <p style="margin-top:5px;">\u041C.\u041F.</p>
       </div>
@@ -1130,7 +1144,7 @@ function generateFrdoContractHtml(data) {
         </div>
         <div class="signature-block">
           <p><strong>\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A:</strong></p>
-          <div class="signature-line">__________ / ${cl.director_name} /</div>
+          <div class="signature-line">__________ / ${representative?.name || cl.director_name} /</div>
           <p style="margin-top:5px;">\u041C.\u041F.</p>
         </div>
       </div>
@@ -1204,7 +1218,7 @@ function generateFrdoContractHtml(data) {
         </div>
         <div class="signature-block">
           <p><strong>\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A:</strong></p>
-          <div class="signature-line">__________ / ${cl.director_name} /</div>
+          <div class="signature-line">__________ / ${representative?.name || cl.director_name} /</div>
           <p style="margin-top:5px;">\u041C.\u041F.</p>
         </div>
       </div>
@@ -1703,6 +1717,7 @@ function renderDocument(input, context) {
     date: formatDocumentDate(checked.date),
     company: escapedRequisites(company),
     client: escapedRequisites(client),
+    clientRepresentative: checked.clientRepresentative ? escapedRequisites(checked.clientRepresentative) : void 0,
     services: checked.services.map((service2, index) => ({
       ...service2,
       name: escapeHtml(service2.name),
@@ -1764,6 +1779,7 @@ function renderDocument(input, context) {
     metadata.invoiceBasisProvenance = "explicit-source-export";
   }
   if (checked.servicePeriod) metadata.servicePeriod = cloneJson(checked.servicePeriod);
+  if (checked.clientRepresentative) metadata.clientRepresentative = cloneJson(checked.clientRepresentative);
   return { html, services: checked.services, totalAmount: totals.totalAmount, metadata };
 }
 
@@ -1965,7 +1981,7 @@ var CrmDocumentsService = class {
     if (missing.length) throw new CrmError("COMPANY_REQUISITES_MISSING", `\u0412 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u043E\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u044E\u0442: ${missing.join(", ")}.`);
     const needsClientRepresentative = input.type !== "invoice" && !(input.type === "act" && input.invoiceBasis);
     const clientFieldNames = { name: "\u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435", inn: "\u0418\u041D\u041D", address: "\u0430\u0434\u0440\u0435\u0441", director_name: "\u0424\u0418\u041E \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0438\u0442\u0435\u043B\u044F", director_post: "\u0434\u043E\u043B\u0436\u043D\u043E\u0441\u0442\u044C \u0440\u0443\u043A\u043E\u0432\u043E\u0434\u0438\u0442\u0435\u043B\u044F" };
-    const clientFields2 = needsClientRepresentative ? ["name", "inn", "address", "director_name", "director_post"] : ["name", "inn"];
+    const clientFields2 = needsClientRepresentative ? input.clientRepresentative ? ["name", "inn", "address"] : ["name", "inn", "address", "director_name", "director_post"] : ["name", "inn"];
     const missingClient = clientFields2.filter((key) => !client[key]?.trim());
     if (missingClient.length) {
       throw new CrmError("CLIENT_REQUISITES_MISSING", `\u0412 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u043D\u0435 \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u044B: ${missingClient.map((key) => clientFieldNames[key]).join(", ")}. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u044B\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u043A\u043B\u0438\u0435\u043D\u0442\u0430.`);
@@ -2017,7 +2033,7 @@ var CrmDocumentsService = class {
     return this.save(requestId, null, null, input, rendered, context.client, input.contractId || null);
   }
   async revise(requestId, documentId, expectedRevision, changes) {
-    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod"];
+    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative"];
     if (!Object.keys(changes).length || Object.keys(changes).some((key) => !allowed.includes(key))) {
       throw new CrmError("INVALID_CHANGES", "\u0418\u0437\u043C\u0435\u043D\u044F\u0442\u044C \u0442\u0438\u043F, \u043D\u043E\u043C\u0435\u0440, \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0438\u043B\u0438 \u0441\u0432\u044F\u0437\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u0430\u0432\u043A\u0443 \u043D\u0435\u043B\u044C\u0437\u044F.");
     }
@@ -2562,6 +2578,7 @@ var CLIENT_FILE_FIELDS = "id,client_id,file_name,file_size,content_type,sha256,d
 var INTERNAL_FIELDS = `${CLIENT_FILE_FIELDS},request_id,actor_id,source_file_id,file_path`;
 var BUCKET = "crm-client-files";
 var CHAT_FILE_HOST_SUFFIX = ".oaiusercontent.com";
+var CHAT_FILE_AZURE_HOST = "oaisdmntprpolandcentral.blob.core.windows.net";
 function databaseError(error) {
   if (error) throw new CrmError(error.message?.match(/CRM_[A-Z_]+/)?.[0] || "FILE_DATABASE_ERROR", "\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0438\u043B\u0438 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0444\u0430\u0439\u043B CRM. \u041F\u043E\u0432\u0442\u043E\u0440\u044F\u0439\u0442\u0435 \u0438\u043C\u043F\u043E\u0440\u0442 \u0441 \u0442\u0435\u043C \u0436\u0435 requestId.");
 }
@@ -2575,7 +2592,8 @@ function validateChatFileUrl(value) {
   } catch {
     throw new CrmError("INVALID_FILE_URL", "\u041D\u0435 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0430 \u0441\u0441\u044B\u043B\u043A\u0430 \u043D\u0430 \u043E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0439 \u0444\u0430\u0439\u043B ChatGPT.");
   }
-  if (url.protocol !== "https:" || !url.hostname.endsWith(CHAT_FILE_HOST_SUFFIX) || url.port || url.username || url.password || url.hash) {
+  const allowedHost = url.hostname.endsWith(CHAT_FILE_HOST_SUFFIX) || url.hostname === CHAT_FILE_AZURE_HOST;
+  if (url.protocol !== "https:" || !allowedHost || url.port || url.username || url.password || url.hash) {
     throw new CrmError("UNSUPPORTED_FILE_ORIGIN", `\u0418\u0441\u0442\u043E\u0447\u043D\u0438\u043A \u0444\u0430\u0439\u043B\u043E\u0432\u043E\u0433\u043E \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440\u0430 \u043F\u043E\u043A\u0430 \u043D\u0435 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F: ${url.protocol}//${url.hostname.slice(0, 253) || "(\u0431\u0435\u0437 \u0434\u043E\u043C\u0435\u043D\u0430)"}. \u041F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u043E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u043E\u0435 \u0432\u043B\u043E\u0436\u0435\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u0437 \u0444\u0430\u0439\u043B\u043E\u0432\u044B\u0439 \u043F\u0430\u0440\u0430\u043C\u0435\u0442\u0440 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u0430. \u041F\u0443\u0442\u044C \u0438 \u0442\u043E\u043A\u0435\u043D \u0441\u0441\u044B\u043B\u043A\u0438 \u043D\u0435 \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u044E\u0442\u0441\u044F.`);
   }
   return url;
@@ -2733,6 +2751,11 @@ var uuid2 = z.string().uuid();
 var service = z.object({ name: z.string().min(1).max(1e3), qty: z.number().positive(), price: z.number().nonnegative() }).strict();
 var discount = z.object({ kind: z.enum(["amount", "percent"]), value: z.number().nonnegative(), deadline: z.string().optional() }).strict();
 var servicePeriod = z.object({ start: z.string().optional(), end: z.string().optional(), noDeadline: z.boolean() }).strict();
+var clientRepresentative = z.object({
+  name: z.string().trim().min(1).max(500),
+  post: z.string().trim().min(1).max(1e3),
+  basis: z.string().trim().min(1).max(2e3).describe("\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u043E\u0435 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439 \u043F\u043E\u0441\u043B\u0435 \u0441\u043B\u043E\u0432 \xAB\u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0438\xBB, \u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 \u0434\u043E\u0432\u0435\u0440\u0435\u043D\u043D\u043E\u0441\u0442\u0438 \u2116... \u043E\u0442 ...; \u043D\u0435 \u0443\u0433\u0430\u0434\u044B\u0432\u0430\u0439\u0442\u0435.")
+}).strict();
 var invoiceBasis = z.object({
   source: z.literal("sintagma"),
   sourceKind: z.literal("subscription_invoice"),
@@ -2758,7 +2781,8 @@ var fields = {
   contractId: uuid2.optional(),
   discount: discount.optional(),
   invoiceBasis: invoiceBasis.optional().describe("\u0414\u043B\u044F \u0430\u043A\u0442\u0430 \u043A \u0441\u0447\u0451\u0442\u0443 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B \u0432\u043C\u0435\u0441\u0442\u043E contractId: \u0442\u043E\u0447\u043D\u044B\u0439 \u0441\u043D\u0438\u043C\u043E\u043A \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0435\u0433\u043E subscription_invoice \u0438\u0437 get_sintagma_invoice_export. \u041D\u0435 \u043F\u0440\u0438\u0434\u0443\u043C\u044B\u0432\u0430\u0439\u0442\u0435 ID \u0438\u043B\u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B. \u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A \u0438 \u043F\u043E\u043B\u043D\u0430\u044F \u0441\u0443\u043C\u043C\u0430 \u0434\u043E\u043B\u0436\u043D\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u043A\u043B\u0438\u0435\u043D\u0442\u0443 \u0438 \u0430\u043A\u0442\u0443."),
-  servicePeriod: servicePeriod.optional().describe("\u042F\u0432\u043D\u044B\u0435 \u0434\u0430\u0442\u044B \u043F\u0435\u0440\u0438\u043E\u0434\u0430 \u0443\u0441\u043B\u0443\u0433 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 YYYY-MM-DD; \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E \u043E\u0442 \u0434\u0430\u0442\u044B \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438 \u0434\u0430\u0442\u044B \u043E\u043F\u043B\u0430\u0442\u044B. \u0414\u043E\u043B\u0436\u043D\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0441\u0442\u0443 deadline.")
+  servicePeriod: servicePeriod.optional().describe("\u042F\u0432\u043D\u044B\u0435 \u0434\u0430\u0442\u044B \u043F\u0435\u0440\u0438\u043E\u0434\u0430 \u0443\u0441\u043B\u0443\u0433 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 YYYY-MM-DD; \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E \u043E\u0442 \u0434\u0430\u0442\u044B \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438 \u0434\u0430\u0442\u044B \u043E\u043F\u043B\u0430\u0442\u044B. \u0414\u043E\u043B\u0436\u043D\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0441\u0442\u0443 deadline."),
+  clientRepresentative: clientRepresentative.optional().describe("\u042F\u0432\u043D\u044B\u0439 \u043F\u043E\u0434\u043F\u0438\u0441\u0430\u043D\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard/frdo \u0438\u0437 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u043E\u0433\u043E \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430. \u041D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u0434\u0438\u0440\u0435\u043A\u0442\u043E\u0440\u0430 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430. \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0438\u043C\u044F, \u0434\u043E\u043B\u0436\u043D\u043E\u0441\u0442\u044C/\u0440\u043E\u043B\u044C \u0438 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439.")
 };
 var documentInput = z.object(fields).strict();
 var read = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -2911,6 +2935,7 @@ var crmTools = [
       deadline: z.string().optional(),
       paymentTerms: z.string().optional(),
       servicePeriod: servicePeriod.optional(),
+      clientRepresentative: clientRepresentative.optional(),
       discount: discount.nullable().optional()
     }).strict().refine((value) => Object.keys(value).length > 0, "\u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435") },
     annotations: write,

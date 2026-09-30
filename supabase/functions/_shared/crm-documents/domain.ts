@@ -1,4 +1,5 @@
 import { calculateDocumentMoney, DOCUMENT_MONEY_LIMITS, type DocumentMoney } from "../../../../src/lib/document-money.ts";
+import type { ClientRepresentative } from "../../../../src/lib/document-templates.ts";
 
 /** Runtime boundary for the document API. Monetary arithmetic is in integer kopecks. */
 export type DocumentType = "contract" | "invoice" | "act";
@@ -53,6 +54,7 @@ export interface DocumentInput {
   discount?: Discount;
   /** Structured CRM dates, supplied explicitly and independent of contractual wording. */
   servicePeriod?: ServicePeriod;
+  clientRepresentative?: ClientRepresentative;
 }
 
 export interface ValidationIssue {
@@ -179,7 +181,7 @@ export function calculateTotals(services: DocumentService[], discount?: Discount
 
 export function validateDocumentInput(input: unknown): DocumentInput {
   const raw = record(input, "document");
-  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod"], "document");
+  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative"], "document");
   if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
     invalid("type", "ожидается contract, invoice или act");
   }
@@ -199,6 +201,18 @@ export function validateDocumentInput(input: unknown): DocumentInput {
     result.template = raw.template;
   } else if (raw.type === "contract") {
     result.template = "standard";
+  }
+  if (raw.clientRepresentative !== undefined) {
+    if (raw.type !== "contract" || result.template === "nmo") {
+      invalid("clientRepresentative", "представитель поддерживается только для договора standard или frdo");
+    }
+    const representative = record(raw.clientRepresentative, "clientRepresentative");
+    knownKeys(representative, ["name", "post", "basis"], "clientRepresentative");
+    result.clientRepresentative = {
+      name: text(representative.name, "clientRepresentative.name", 500),
+      post: text(representative.post, "clientRepresentative.post", 1000),
+      basis: text(representative.basis, "clientRepresentative.basis", 2000),
+    };
   }
   for (const key of ["subject", "deadline", "paymentTerms"] as const) {
     if (raw[key] !== undefined || raw.type === "contract") result[key] = text(raw[key], key, 5000);

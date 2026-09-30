@@ -40,9 +40,34 @@ describe("original PDF transfer boundary", () => {
     expect(await downloadChatPdf(nativeFile, network)).toEqual(bytes);
     expect(network).toHaveBeenCalledWith(new URL(nativeFile.download_url), expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }));
   });
-  it("never follows a redirect returned by an allowed host, including a target in its query", async () => {
+  it("accepts original attachment bytes from the exact observed ChatGPT Azure account", async () => {
+    const network = fetcher();
+    const nativeFile = { ...file, download_url: "https://oaisdmntprpolandcentral.blob.core.windows.net/private/original.pdf?sig=private" };
+    const fake = dbMock();
+    const result = await new CrmClientFilesService(fake.db, actorId, network).importFile({ ...input, file: nativeFile });
+    expect(result).toMatchObject({ status: "saved", kind: "original_pdf", sent: false });
+    expect(network).toHaveBeenCalledWith(new URL(nativeFile.download_url), expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }));
+    expect(fake.storage.upload).toHaveBeenCalledWith(`${clientId}/${requestId}.pdf`, bytes, { contentType: "application/pdf", upsert: false });
+    expect(JSON.stringify(fake.rpc.mock.calls)).not.toContain("sig=private");
+  });
+  it.each([
+    "http://oaisdmntprpolandcentral.blob.core.windows.net/f",
+    "https://oaisdmntprpolandcentral.blob.core.windows.net.evil.example/f",
+    "https://evil-oaisdmntprpolandcentral.blob.core.windows.net/f",
+    "https://sub.oaisdmntprpolandcentral.blob.core.windows.net/f",
+    "https://oaisdmntprgermanywestcentral.blob.core.windows.net/f",
+    "https://oaisdmntprpolandcentral.blob.core.windows.net@evil.example/f",
+    "https://user:pass@oaisdmntprpolandcentral.blob.core.windows.net/f",
+    "https://oaisdmntprpolandcentral.blob.core.windows.net:444/f",
+    "https://oaisdmntprpolandcentral.blob.core.windows.net/f#fragment",
+  ])("rejects Azure lookalikes and unsafe URLs before any request: %s", async source => {
+    const network = fetcher();
+    await expect(downloadChatPdf({ ...file, download_url: source }, network)).rejects.toMatchObject({ code: "UNSUPPORTED_FILE_ORIGIN" });
+    expect(network).not.toHaveBeenCalled();
+  });
+  it.each(["sdmntprpolandcentral.oaiusercontent.com", "oaisdmntprpolandcentral.blob.core.windows.net"])("never follows a redirect from %s, including a target in its query", async host => {
     const network = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://127.0.0.1/private" } }));
-    const redirectingFile = { ...file, download_url: "https://sdmntprpolandcentral.oaiusercontent.com/file?redirect=https%3A%2F%2F127.0.0.1%2Fprivate" };
+    const redirectingFile = { ...file, download_url: `https://${host}/file?redirect=https%3A%2F%2F127.0.0.1%2Fprivate` };
     await expect(downloadChatPdf(redirectingFile, network)).rejects.toMatchObject({ code: "FILE_DOWNLOAD_FAILED" });
     expect(network).toHaveBeenCalledTimes(1);
     expect(network).toHaveBeenCalledWith(new URL(redirectingFile.download_url), expect.objectContaining({ redirect: "error" }));
