@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           actor_id: string
           client_id: string
+          content_type: string
           created_at: string
           description: string | null
           file_name: string
@@ -61,6 +62,7 @@ export type Database = {
         Insert: {
           actor_id: string
           client_id: string
+          content_type?: string
           created_at?: string
           description?: string | null
           file_name: string
@@ -74,6 +76,7 @@ export type Database = {
         Update: {
           actor_id?: string
           client_id?: string
+          content_type?: string
           created_at?: string
           description?: string | null
           file_name?: string
