@@ -52,207 +52,6 @@ function calculateDocumentMoney(services, discount2) {
   };
 }
 
-// supabase/functions/_shared/crm-documents/domain.ts
-var DocumentValidationError = class extends Error {
-  issues;
-  constructor(issues) {
-    super(issues.map(({ field, message }) => `${field}: ${message}`).join("; "));
-    this.name = "DocumentValidationError";
-    this.issues = issues;
-  }
-};
-var DOCUMENT_LIMITS = DOCUMENT_MONEY_LIMITS;
-function invalid(field, message) {
-  throw new DocumentValidationError([{ field, message }]);
-}
-function record(value, field) {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
-    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043E\u0431\u044A\u0435\u043A\u0442");
-  }
-  const prototype = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null) invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F JSON-\u043E\u0431\u044A\u0435\u043A\u0442");
-  return value;
-}
-function knownKeys(value, keys, field) {
-  for (const key of Object.keys(value)) {
-    if (!keys.includes(key)) invalid(`${field}.${key}`, "\u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u043E\u0435 \u043F\u043E\u043B\u0435");
-  }
-}
-function text(value, field, maxLength) {
-  if (typeof value !== "string" || !value.trim() || value.length > maxLength) {
-    invalid(field, `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u0435\u043F\u0443\u0441\u0442\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0435 \u0434\u043B\u0438\u043D\u043D\u0435\u0435 ${maxLength} \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432`);
-  }
-  if (Array.from(value).some((character) => {
-    const code = character.charCodeAt(0);
-    return code < 32 && code !== 9 && code !== 10 && code !== 13 || code === 127;
-  })) {
-    invalid(field, "\u0443\u043F\u0440\u0430\u0432\u043B\u044F\u044E\u0449\u0438\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u043D\u0435 \u0434\u043E\u043F\u0443\u0441\u043A\u0430\u044E\u0442\u0441\u044F");
-  }
-  return value.trim();
-}
-function validateIsoDate(value, field = "date") {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0434\u0430\u0442\u0430 YYYY-MM-DD");
-  }
-  const [year, month, day] = value.split("-").map(Number);
-  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  if (year === 0 || month < 1 || month > 12 || day < 1 || day > days[month - 1]) {
-    invalid(field, "\u0442\u0430\u043A\u043E\u0439 \u043A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u043D\u043E\u0439 \u0434\u0430\u0442\u044B \u043D\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442");
-  }
-  return value;
-}
-function uuid(value, field) {
-  if (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
-    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F UUID");
-  }
-  return value.toLowerCase();
-}
-function decimal(value, field, places, maximum, positive = false) {
-  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > maximum || positive && value === 0) {
-    invalid(field, `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0447\u0438\u0441\u043B\u043E ${positive ? "> 0" : ">= 0"} \u0438 <= ${maximum}`);
-  }
-  if (!new RegExp(`^\\d+(?:\\.\\d{1,${places}})?$`).test(String(value))) {
-    invalid(field, `\u0434\u043E\u043F\u0443\u0441\u043A\u0430\u0435\u0442\u0441\u044F \u043D\u0435 \u0431\u043E\u043B\u0435\u0435 ${places} \u0437\u043D\u0430\u043A\u043E\u0432 \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u043F\u044F\u0442\u043E\u0439`);
-  }
-  return value === 0 ? 0 : value;
-}
-function validateServices(value) {
-  if (!Array.isArray(value) || value.length < 1 || value.length > DOCUMENT_LIMITS.services) {
-    invalid("services", `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043E\u0442 1 \u0434\u043E ${DOCUMENT_LIMITS.services} \u0443\u0441\u043B\u0443\u0433`);
-  }
-  return value.map((item, index) => {
-    const field = `services[${index}]`;
-    const service2 = record(item, field);
-    knownKeys(service2, ["name", "qty", "price"], field);
-    return {
-      name: text(service2.name, `${field}.name`, 2e3),
-      qty: decimal(service2.qty, `${field}.qty`, 3, DOCUMENT_LIMITS.quantity, true),
-      price: decimal(service2.price, `${field}.price`, 2, DOCUMENT_LIMITS.price)
-    };
-  });
-}
-function validateDiscount(value) {
-  const discount2 = record(value, "discount");
-  knownKeys(discount2, ["kind", "value", "deadline"], "discount");
-  if (discount2.kind !== "amount" && discount2.kind !== "percent") {
-    invalid("discount.kind", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F amount \u0438\u043B\u0438 percent");
-  }
-  const result = {
-    kind: discount2.kind,
-    value: decimal(discount2.value, "discount.value", 2, discount2.kind === "percent" ? 100 : DOCUMENT_LIMITS.grossMinor / 100)
-  };
-  if (discount2.deadline !== void 0) result.deadline = validateIsoDate(discount2.deadline, "discount.deadline");
-  return result;
-}
-function calculateTotals(services, discount2) {
-  const checkedServices = validateServices(services);
-  const checkedDiscount = discount2 === void 0 ? void 0 : validateDiscount(discount2);
-  try {
-    return calculateDocumentMoney(checkedServices, checkedDiscount);
-  } catch (error) {
-    invalid(checkedDiscount ? "discount.value" : "services", error instanceof Error ? error.message : "\u043D\u0435\u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u0430\u044F \u0441\u0443\u043C\u043C\u0430");
-  }
-}
-function validateDocumentInput(input) {
-  const raw = record(input, "document");
-  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative"], "document");
-  if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
-    invalid("type", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F contract, invoice \u0438\u043B\u0438 act");
-  }
-  const result = {
-    type: raw.type,
-    clientId: uuid(raw.clientId, "clientId"),
-    date: validateIsoDate(raw.date),
-    number: text(raw.number, "number", 100),
-    services: validateServices(raw.services)
-  };
-  if (/[\r\n\t]/.test(result.number)) invalid("number", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u043E\u043C\u0435\u0440 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0435");
-  if (raw.template !== void 0) {
-    if (raw.type !== "contract") invalid("template", "\u0448\u0430\u0431\u043B\u043E\u043D \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
-    if (raw.template !== "standard" && raw.template !== "frdo" && raw.template !== "nmo") {
-      invalid("template", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F standard, frdo \u0438\u043B\u0438 nmo");
-    }
-    result.template = raw.template;
-  } else if (raw.type === "contract") {
-    result.template = "standard";
-  }
-  if (raw.clientRepresentative !== void 0) {
-    if (raw.type !== "contract" || result.template === "nmo") {
-      invalid("clientRepresentative", "\u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u0435\u043B\u044C \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard \u0438\u043B\u0438 frdo");
-    }
-    const representative = record(raw.clientRepresentative, "clientRepresentative");
-    knownKeys(representative, ["name", "post", "basis"], "clientRepresentative");
-    result.clientRepresentative = {
-      name: text(representative.name, "clientRepresentative.name", 500),
-      post: text(representative.post, "clientRepresentative.post", 1e3),
-      basis: text(representative.basis, "clientRepresentative.basis", 2e3)
-    };
-  }
-  for (const key of ["subject", "deadline", "paymentTerms"]) {
-    if (raw[key] !== void 0 || raw.type === "contract") result[key] = text(raw[key], key, 5e3);
-  }
-  if (result.deadline && /^\d{4}-\d{2}-\d{2}$/.test(result.deadline)) validateIsoDate(result.deadline, "deadline");
-  if (raw.contractId !== void 0) result.contractId = uuid(raw.contractId, "contractId");
-  if (raw.type === "contract" && result.contractId) invalid("contractId", "\u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0441\u0441\u044B\u043B\u0430\u0442\u044C\u0441\u044F \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0432 \u044D\u0442\u043E\u0439 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438");
-  if (raw.invoiceBasis !== void 0) {
-    if (raw.type !== "act") invalid("invoiceBasis", "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0441\u0447\u0451\u0442\u0430 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0430\u043A\u0442\u0430");
-    if (result.contractId) invalid("invoiceBasis", "\u0437\u0430\u0434\u0430\u0439\u0442\u0435 \u043E\u0434\u043D\u043E \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435: contractId \u0438\u043B\u0438 invoiceBasis");
-    const basis = record(raw.invoiceBasis, "invoiceBasis");
-    knownKeys(basis, ["source", "sourceKind", "sourceId", "organizationId", "number", "date", "amount", "currency", "payerName", "payerInn"], "invoiceBasis");
-    if (basis.source !== "sintagma" || basis.sourceKind !== "subscription_invoice") {
-      invalid("invoiceBasis.sourceKind", "\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u044D\u043A\u0441\u043F\u043E\u0440\u0442 subscription_invoice \u0438\u0437 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B");
-    }
-    if (basis.currency !== "RUB") invalid("invoiceBasis.currency", "\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F RUB");
-    const payerInn = text(basis.payerInn, "invoiceBasis.payerInn", 12);
-    if (!/^(?:\d{10}|\d{12})$/.test(payerInn)) invalid("invoiceBasis.payerInn", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0418\u041D\u041D \u0438\u0437 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430 (10 \u0438\u043B\u0438 12 \u0446\u0438\u0444\u0440)");
-    const number = text(basis.number, "invoiceBasis.number", 100);
-    if (/[\r\n\t]/.test(number)) invalid("invoiceBasis.number", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u043E\u043C\u0435\u0440 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0435");
-    result.invoiceBasis = {
-      source: "sintagma",
-      sourceKind: "subscription_invoice",
-      sourceId: uuid(basis.sourceId, "invoiceBasis.sourceId"),
-      organizationId: uuid(basis.organizationId, "invoiceBasis.organizationId"),
-      number,
-      date: validateIsoDate(basis.date, "invoiceBasis.date"),
-      amount: decimal(basis.amount, "invoiceBasis.amount", 2, DOCUMENT_LIMITS.grossMinor / 100, true),
-      currency: "RUB",
-      payerName: text(basis.payerName, "invoiceBasis.payerName", 1e3),
-      payerInn
-    };
-    if (result.date < result.invoiceBasis.date) invalid("date", "\u0434\u0430\u0442\u0430 \u0430\u043A\u0442\u0430 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430");
-  }
-  if (raw.type === "act" && !result.contractId && !result.invoiceBasis) {
-    invalid("contractId", "\u0434\u043B\u044F \u0430\u043A\u0442\u0430 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F contractId \u043B\u0438\u0431\u043E \u0442\u043E\u0447\u043D\u044B\u0439 invoiceBasis \u0438\u0437 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430 \u0441\u0447\u0451\u0442\u0430");
-  }
-  if (raw.discount !== void 0) {
-    if (raw.type !== "invoice") invalid("discount", "\u0441\u043A\u0438\u0434\u043A\u0430 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0441\u0447\u0451\u0442\u0430");
-    result.discount = validateDiscount(raw.discount);
-    if (result.discount.deadline && result.discount.deadline < result.date) {
-      invalid("discount.deadline", "\u0441\u0440\u043E\u043A \u0441\u043A\u0438\u0434\u043A\u0438 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u0434\u0430\u0442\u044B \u0441\u0447\u0451\u0442\u0430");
-    }
-  }
-  if (raw.servicePeriod !== void 0) {
-    if (raw.type !== "contract") invalid("servicePeriod", "\u043F\u0435\u0440\u0438\u043E\u0434 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
-    const period = record(raw.servicePeriod, "servicePeriod");
-    knownKeys(period, ["start", "end", "noDeadline"], "servicePeriod");
-    if (typeof period.noDeadline !== "boolean") invalid("servicePeriod.noDeadline", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u044F\u0432\u043D\u043E \u0437\u0430\u0434\u0430\u043D\u043D\u043E\u0435 true \u0438\u043B\u0438 false");
-    const checkedPeriod = { noDeadline: period.noDeadline };
-    if (period.start !== void 0) checkedPeriod.start = validateIsoDate(period.start, "servicePeriod.start");
-    if (period.end !== void 0) checkedPeriod.end = validateIsoDate(period.end, "servicePeriod.end");
-    if (checkedPeriod.noDeadline && checkedPeriod.end) invalid("servicePeriod.end", "\u0434\u0430\u0442\u0430 \u043E\u043A\u043E\u043D\u0447\u0430\u043D\u0438\u044F \u043D\u0435\u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u0430 \u0441 noDeadline=true");
-    if (checkedPeriod.start && checkedPeriod.end && checkedPeriod.end < checkedPeriod.start) {
-      invalid("servicePeriod.end", "\u043E\u043A\u043E\u043D\u0447\u0430\u043D\u0438\u0435 \u043F\u0435\u0440\u0438\u043E\u0434\u0430 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u043D\u0430\u0447\u0430\u043B\u0430");
-    }
-    result.servicePeriod = checkedPeriod;
-  }
-  const totals = calculateTotals(result.services, result.discount);
-  if (result.invoiceBasis && totals.netMinor !== Math.round(result.invoiceBasis.amount * 100)) {
-    invalid("invoiceBasis.amount", "\u0430\u043A\u0442 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u043D\u0430 \u043F\u043E\u043B\u043D\u0443\u044E \u0441\u0443\u043C\u043C\u0443 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430");
-  }
-  return result;
-}
-
 // src/lib/document-templates.ts
 function formatMoney(n) {
   return n.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -747,6 +546,481 @@ function generateActHtml(data) {
       </div>
     </div>
   </body></html>`;
+}
+
+// src/lib/custom-contract-template.ts
+var CUSTOM_CONTRACT_LIMITS = {
+  title: 500,
+  body: 6e4,
+  variables: 100,
+  variableKey: 64,
+  variableValue: 5e3,
+  variableTotal: 6e4
+};
+var CUSTOM_CONTRACT_TOKENS = [
+  "client.name",
+  "client.inn",
+  "client.kpp",
+  "client.ogrn",
+  "client.address",
+  "client.signatory_name",
+  "client.signatory_post",
+  "client.signatory_basis",
+  "company.name",
+  "company.inn",
+  "company.address",
+  "company.bank_account",
+  "company.bank_bik",
+  "company.bank_name",
+  "contract.number",
+  "contract.date",
+  "subject",
+  "deadline",
+  "payment_terms",
+  "service.start",
+  "service.end",
+  "services.table",
+  "total.amount"
+];
+var CustomContractTemplateError = class extends Error {
+  field;
+  constructor(field, message) {
+    super(message);
+    this.name = "CustomContractTemplateError";
+    this.field = field;
+  }
+};
+function fail(field, message) {
+  throw new CustomContractTemplateError(field, message);
+}
+function checkText(value, field, max) {
+  if (typeof value !== "string" || !value.trim() || value.length > max) fail(field, `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u0435\u043F\u0443\u0441\u0442\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0435 \u0434\u043B\u0438\u043D\u043D\u0435\u0435 ${max} \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432`);
+  if (/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value)) fail(field, "\u0443\u043F\u0440\u0430\u0432\u043B\u044F\u044E\u0449\u0438\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u043D\u0435 \u0434\u043E\u043F\u0443\u0441\u043A\u0430\u044E\u0442\u0441\u044F");
+}
+function validCustomKey(key) {
+  return /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(key) && !["constructor", "prototype", "__proto__"].includes(key);
+}
+function validateCustomContractVariables(value, field = "customContract.variables") {
+  if (!value || typeof value !== "object" || Array.isArray(value) || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) fail(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F JSON-\u043E\u0431\u044A\u0435\u043A\u0442 \u0441\u043E \u0441\u0442\u0440\u043E\u043A\u043E\u0432\u044B\u043C\u0438 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F\u043C\u0438");
+  const entries = Object.entries(value);
+  if (entries.length > CUSTOM_CONTRACT_LIMITS.variables) fail(field, `\u043D\u0435 \u0431\u043E\u043B\u0435\u0435 ${CUSTOM_CONTRACT_LIMITS.variables} \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0445`);
+  let size = 0;
+  const checked = /* @__PURE__ */ Object.create(null);
+  for (const [key, item] of entries) {
+    if (!validCustomKey(key)) fail(`${field}.${key}`, "\u0438\u043C\u044F \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439: \u043B\u0430\u0442\u0438\u043D\u0441\u043A\u0430\u044F \u0431\u0443\u043A\u0432\u0430, \u0437\u0430\u0442\u0435\u043C \u0431\u0443\u043A\u0432\u044B/\u0446\u0438\u0444\u0440\u044B/_, \u043C\u0430\u043A\u0441\u0438\u043C\u0443\u043C 64 \u0441\u0438\u043C\u0432\u043E\u043B\u0430; \u0441\u043B\u0443\u0436\u0435\u0431\u043D\u044B\u0435 \u0438\u043C\u0435\u043D\u0430 \u0437\u0430\u043F\u0440\u0435\u0449\u0435\u043D\u044B");
+    checkText(item, `${field}.${key}`, CUSTOM_CONTRACT_LIMITS.variableValue);
+    size += item.length;
+    if (size > CUSTOM_CONTRACT_LIMITS.variableTotal) fail(field, "\u0441\u0443\u043C\u043C\u0430\u0440\u043D\u0430\u044F \u0434\u043B\u0438\u043D\u0430 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u0439 \u043F\u0440\u0435\u0432\u044B\u0448\u0430\u0435\u0442 60000 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432");
+    checked[key] = item;
+  }
+  return checked;
+}
+function segments(source, field) {
+  const result = [];
+  let at = 0;
+  while (at < source.length) {
+    const start = source.indexOf("{{", at);
+    const strayEnd = source.indexOf("}}", at);
+    if (strayEnd !== -1 && (start === -1 || strayEnd < start)) fail(field, "\u0437\u0430\u043A\u0440\u044B\u0432\u0430\u044E\u0449\u0438\u0435 }} \u0431\u0435\u0437 \u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439");
+    if (start === -1) {
+      result.push({ text: source.slice(at) });
+      break;
+    }
+    if (start > at) result.push({ text: source.slice(at, start) });
+    const end = source.indexOf("}}", start + 2);
+    if (end === -1) fail(field, "\u043D\u0435\u0437\u0430\u043A\u0440\u044B\u0442\u0430\u044F \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F {{...}}");
+    const token = source.slice(start + 2, end).trim();
+    if (!CUSTOM_CONTRACT_TOKENS.includes(token) && !(token.startsWith("custom.") && validCustomKey(token.slice(7)))) fail(field, `\u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u0430\u044F \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F {{${token}}}`);
+    result.push({ token });
+    at = end + 2;
+  }
+  return result;
+}
+function getCustomContractTokens(content) {
+  checkText(content?.title, "customContract.title", CUSTOM_CONTRACT_LIMITS.title);
+  checkText(content?.body, "customContract.body", CUSTOM_CONTRACT_LIMITS.body);
+  const titleTokens = segments(content.title, "customContract.title").flatMap((x) => "token" in x ? [x.token] : []);
+  if (titleTokens.includes("services.table")) fail("customContract.title", "{{services.table}} \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439 \u0442\u0435\u043A\u0441\u0442\u0430 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
+  const bodyTokens = segments(content.body, "customContract.body").flatMap((x) => "token" in x ? [x.token] : []);
+  for (const line of content.body.replace(/\r\n?/g, "\n").split("\n")) {
+    if (/\{\{\s*services\.table\s*\}\}/.test(line) && !/^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line)) fail("customContract.body", "{{services.table}} \u0434\u043E\u043B\u0436\u043D\u0430 \u0437\u0430\u043D\u0438\u043C\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0443\u044E \u0441\u0442\u0440\u043E\u043A\u0443");
+  }
+  const tokens = [.../* @__PURE__ */ new Set([...titleTokens, ...bodyTokens])];
+  return { tokens, requiredCustomVariables: tokens.filter((t) => t.startsWith("custom.")).map((t) => t.slice(7)) };
+}
+var html = (value) => value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+var literal = (value) => html(value).replace(/\r\n?|\n/g, "<br>");
+var money = (value) => value.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function displayDate(value) {
+  if (value === void 0) return void 0;
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split("-").reverse().join(".") : value;
+}
+function markdown(body, expand, table) {
+  const lines = body.replace(/\r\n?/g, "\n").split("\n");
+  const out = [];
+  function cells(line) {
+    let stripped = line.trim();
+    if (stripped.startsWith("|")) stripped = stripped.slice(1);
+    if (stripped.endsWith("|") && !stripped.endsWith("\\|")) stripped = stripped.slice(0, -1);
+    const result = [];
+    let cell = "";
+    for (let i = 0; i < stripped.length; i++) {
+      if (stripped[i] === "\\" && stripped[i + 1] === "|") {
+        cell += "|";
+        i++;
+      } else if (stripped[i] === "|") {
+        result.push(cell.trim());
+        cell = "";
+      } else cell += stripped[i];
+    }
+    result.push(cell.trim());
+    return result;
+  }
+  const tableStart = (at) => at + 1 < lines.length && lines[at].includes("|") && cells(lines[at + 1]).every((c) => /^:?-{3,}:?$/.test(c)) && cells(lines[at]).length === cells(lines[at + 1]).length;
+  const heading = (line) => /^(#{1,6})[ \t]+(.+)$/.exec(line);
+  const list = (line) => /^([-+*]|\d{1,9}[.)])[ \t]+(.+)$/.exec(line);
+  const tableToken = (line) => /^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line);
+  for (let i = 0; i < lines.length; ) {
+    if (!lines[i].trim()) {
+      i++;
+      continue;
+    }
+    if (tableToken(lines[i])) {
+      out.push(table);
+      i++;
+      continue;
+    }
+    const h = heading(lines[i]);
+    if (h) {
+      const level = Math.min(h[1].length + 1, 6);
+      out.push(`<h${level}>${expand(h[2])}</h${level}>`);
+      i++;
+      continue;
+    }
+    if (tableStart(i)) {
+      const headers = cells(lines[i]);
+      if (headers.length > 12) fail("customContract.body", "\u0442\u0430\u0431\u043B\u0438\u0446\u0430 \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u0442 \u0431\u043E\u043B\u0435\u0435 12 \u043A\u043E\u043B\u043E\u043D\u043E\u043A");
+      i += 2;
+      const rows = [];
+      while (i < lines.length && lines[i].trim() && lines[i].includes("|") && !tableToken(lines[i])) {
+        const row = cells(lines[i]);
+        if (row.length !== headers.length) fail("customContract.body", "\u0447\u0438\u0441\u043B\u043E \u043A\u043E\u043B\u043E\u043D\u043E\u043A \u0441\u0442\u0440\u043E\u043A\u0438 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u043D\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0441 \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u043E\u043C");
+        rows.push(row);
+        i++;
+      }
+      out.push(`<table class="custom-contract-table"><thead><tr>${headers.map((c) => `<th>${expand(c)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((c) => `<td>${expand(c)}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+      continue;
+    }
+    const item = list(lines[i]);
+    if (item) {
+      if (/^\d/.test(item[1])) {
+        out.push(`<p class="custom-list-item">${html(item[1])} ${expand(item[2])}</p>`);
+        i++;
+        continue;
+      }
+      const entries = [];
+      while (i < lines.length) {
+        const next = list(lines[i]);
+        if (!next || /^\d/.test(next[1])) break;
+        entries.push(`<li>${expand(next[2])}</li>`);
+        i++;
+      }
+      out.push(`<ul>${entries.join("")}</ul>`);
+      continue;
+    }
+    const paragraph = [lines[i++]];
+    while (i < lines.length && lines[i].trim() && !heading(lines[i]) && !list(lines[i]) && !tableStart(i) && !tableToken(lines[i])) paragraph.push(lines[i++]);
+    out.push(`<p>${expand(paragraph.join("\n"))}</p>`);
+  }
+  return out.join("\n");
+}
+var styles = `<style>
+@page{size:A4;margin:20mm 18mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.55;color:#15171e;padding:22px;overflow-wrap:anywhere}
+.brand-strip{display:flex;justify-content:space-between;background:#15171e;color:#fff;padding:12px 18px}.brand-strip .logo{font-size:20px;font-weight:bold}.brand-strip .logo span{color:#d4be37}.brand-strip .tag{font-size:10px;color:#d4be37}
+h1{text-align:center;font-size:22pt;font-weight:400}h2,h3,h4,h5,h6{break-after:avoid}h2{border-bottom:1px solid #d4be37;font-size:13pt}h3,h4,h5,h6{font-size:12pt}.header-row{display:flex;justify-content:space-between;margin:16px 0}
+.custom-body,.custom-body p,.custom-body li{break-inside:auto;page-break-inside:auto;overflow:visible;white-space:pre-wrap}.custom-body p{orphans:2;widows:2}.custom-list-item{padding-left:12px}.custom-contract-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:12px 0;break-inside:auto}.custom-contract-table td,.custom-contract-table th{border:1px solid #ddd;padding:7px;overflow-wrap:anywhere;white-space:pre-wrap}.custom-contract-table th{background:#15171e;color:#fff}.custom-contract-table tr{break-inside:auto;page-break-inside:auto}.custom-contract-table thead{display:table-header-group}
+.signatures{display:flex;gap:20px;margin-top:20px}.signature-block{width:48%;position:relative;background:#faf8ef;border-left:3px solid #d4be37;padding:14px;overflow-wrap:anywhere}.signature-block p{margin:4px 0}.signature-line{position:relative;margin-top:64px;border-bottom:1px solid #15171e;padding-top:4px}.signature-img{position:absolute;height:45px;left:76px;bottom:26px}.stamp-img{height:94px;position:absolute;left:8px;bottom:5px}
+@media print{body{padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}.signatures{break-inside:avoid}}
+</style>`;
+function generateCustomContractHtml(data, content, servicePeriod2) {
+  const inspection = getCustomContractTokens(content);
+  const variables = content.variables === void 0 ? {} : validateCustomContractVariables(content.variables);
+  const totals = calculateDocumentMoney(data.services);
+  const c = data.company, cl = data.client, rep = data.clientRepresentative;
+  const values = {
+    "client.name": cl.name,
+    "client.inn": cl.inn,
+    "client.kpp": cl.kpp,
+    "client.ogrn": cl.ogrn,
+    "client.address": cl.address,
+    "client.signatory_name": rep?.name || cl.director_name,
+    "client.signatory_post": rep?.post || cl.director_post,
+    "client.signatory_basis": rep?.basis,
+    "company.name": c.company_name,
+    "company.inn": c.company_inn,
+    "company.address": c.company_legal_address,
+    "company.bank_account": c.company_bank_account,
+    "company.bank_bik": c.company_bank_bik,
+    "company.bank_name": c.company_bank_name,
+    "contract.number": data.number,
+    "contract.date": displayDate(data.date),
+    "subject": data.subject,
+    "deadline": displayDate(data.deadline),
+    "payment_terms": data.paymentTerms,
+    "service.start": displayDate(servicePeriod2?.start),
+    "service.end": displayDate(servicePeriod2?.end),
+    "total.amount": money(totals.totalAmount)
+  };
+  for (const [key, value] of Object.entries(variables)) values[`custom.${key}`] = value;
+  for (const token of inspection.tokens) {
+    if (token !== "services.table" && (!Object.prototype.hasOwnProperty.call(values, token) || typeof values[token] !== "string" || !values[token].trim())) fail("customContract", `\u043D\u0435 \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F {{${token}}}`);
+  }
+  const expand = (source, field = "customContract.body") => segments(source, field).map((s) => "text" in s ? literal(s.text) : literal(values[s.token])).join("");
+  const serviceTable = `<table class="custom-contract-table"><thead><tr><th>\u041D\u0430\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u0438\u0435</th><th>\u041A\u043E\u043B-\u0432\u043E</th><th>\u0426\u0435\u043D\u0430, \u20BD</th><th>\u0421\u0443\u043C\u043C\u0430, \u20BD</th></tr></thead><tbody>${data.services.map((s, i) => `<tr><td>${literal(s.name)}</td><td>${s.qty}</td><td>${money(s.price)}</td><td>${money(totals.lineTotalsMinor[i] / 100)}</td></tr>`).join("")}</tbody><tfoot><tr><td>\u0418\u0422\u041E\u0413\u041E</td><td></td><td></td><td>${money(totals.totalAmount)}</td></tr></tfoot></table>`;
+  let assetOrigin = data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "");
+  if (assetOrigin) {
+    const origin = new URL(assetOrigin);
+    if (origin.protocol !== "https:" || origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash) fail("assetOrigin", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0434\u043E\u0432\u0435\u0440\u0435\u043D\u043D\u044B\u0439 HTTPS origin");
+    assetOrigin = origin.origin;
+  }
+  const title = expand(content.title.trim(), "customContract.title");
+  const body = markdown(content.body, expand, serviceTable);
+  const info = (label, value) => value ? `<p>${label}${literal(value)}</p>` : "";
+  const signatureName = rep?.name || cl.director_name || (isIndividualEntrepreneur(cl) ? cl.name.replace(/^ИП\s+/i, "") : "________________");
+  const signaturePost = rep?.post || cl.director_post || "";
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title} \u2116${html(data.number)}</title>${styles}</head><body>
+<div class="brand-strip"><div class="logo">24<span>ZXC</span></div><div class="tag">WEB &amp; LICENSING STUDIO</div></div>
+<h1>${title}</h1><div class="header-row"><span>\u2116 ${html(data.number)}</span><span>${html(displayDate(data.date))}</span></div>
+<div class="custom-body">${body}</div>
+<h2>\u0420\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0441\u0442\u043E\u0440\u043E\u043D</h2><div class="signatures">
+<div class="signature-block"><p><strong>\u0418\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C:</strong></p>${info("", c.company_name)}${info("\u0418\u041D\u041D ", c.company_inn)}${info("\u041A\u041F\u041F ", c.company_kpp)}${info(isIndividualEntrepreneur({ name: c.company_name, ogrn: c.company_ogrn }) ? "\u041E\u0413\u0420\u041D\u0418\u041F " : "\u041E\u0413\u0420\u041D ", c.company_ogrn)}${info("", c.company_legal_address)}${info("\u0440/\u0441 ", c.company_bank_account)}${info("", c.company_bank_name)}${info("\u0411\u0418\u041A ", c.company_bank_bik)}${info("\u043A/\u0441 ", c.company_bank_corr)}
+<div class="signature-line">${literal(c.company_director_post)} __________ / ${literal(c.company_director_name)} /${assetOrigin ? `<img class="signature-img" src="${html(assetOrigin)}/images/signature.png" alt="\u041F\u043E\u0434\u043F\u0438\u0441\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}</div>${assetOrigin ? `<img class="stamp-img" src="${html(assetOrigin)}/images/stamp.png" alt="\u041F\u0435\u0447\u0430\u0442\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}</div>
+<div class="signature-block"><p><strong>\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A:</strong></p>${info("", cl.name)}${info("\u0418\u041D\u041D ", cl.inn)}${info("\u041A\u041F\u041F ", cl.kpp)}${info(isIndividualEntrepreneur(cl) ? "\u041E\u0413\u0420\u041D\u0418\u041F " : "\u041E\u0413\u0420\u041D ", cl.ogrn)}${info("", cl.address)}${info("\u041E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439: ", rep?.basis)}<div class="signature-line">${literal(signaturePost)} __________ / ${literal(signatureName)} /</div></div>
+</div></body></html>`;
+}
+
+// supabase/functions/_shared/crm-documents/domain.ts
+var DocumentValidationError = class extends Error {
+  issues;
+  constructor(issues) {
+    super(issues.map(({ field, message }) => `${field}: ${message}`).join("; "));
+    this.name = "DocumentValidationError";
+    this.issues = issues;
+  }
+};
+var DOCUMENT_LIMITS = DOCUMENT_MONEY_LIMITS;
+function invalid(field, message) {
+  throw new DocumentValidationError([{ field, message }]);
+}
+function record(value, field) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043E\u0431\u044A\u0435\u043A\u0442");
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F JSON-\u043E\u0431\u044A\u0435\u043A\u0442");
+  return value;
+}
+function knownKeys(value, keys, field) {
+  for (const key of Object.keys(value)) {
+    if (!keys.includes(key)) invalid(`${field}.${key}`, "\u043D\u0435\u0438\u0437\u0432\u0435\u0441\u0442\u043D\u043E\u0435 \u043F\u043E\u043B\u0435");
+  }
+}
+function text(value, field, maxLength) {
+  if (typeof value !== "string" || !value.trim() || value.length > maxLength) {
+    invalid(field, `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u0435\u043F\u0443\u0441\u0442\u0430\u044F \u0441\u0442\u0440\u043E\u043A\u0430 \u043D\u0435 \u0434\u043B\u0438\u043D\u043D\u0435\u0435 ${maxLength} \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432`);
+  }
+  if (Array.from(value).some((character) => {
+    const code = character.charCodeAt(0);
+    return code < 32 && code !== 9 && code !== 10 && code !== 13 || code === 127;
+  })) {
+    invalid(field, "\u0443\u043F\u0440\u0430\u0432\u043B\u044F\u044E\u0449\u0438\u0435 \u0441\u0438\u043C\u0432\u043E\u043B\u044B \u043D\u0435 \u0434\u043E\u043F\u0443\u0441\u043A\u0430\u044E\u0442\u0441\u044F");
+  }
+  return value.trim();
+}
+function validateIsoDate(value, field = "date") {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0434\u0430\u0442\u0430 YYYY-MM-DD");
+  }
+  const [year, month, day] = value.split("-").map(Number);
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const days = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (year === 0 || month < 1 || month > 12 || day < 1 || day > days[month - 1]) {
+    invalid(field, "\u0442\u0430\u043A\u043E\u0439 \u043A\u0430\u043B\u0435\u043D\u0434\u0430\u0440\u043D\u043E\u0439 \u0434\u0430\u0442\u044B \u043D\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u0435\u0442");
+  }
+  return value;
+}
+function uuid(value, field) {
+  if (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    invalid(field, "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F UUID");
+  }
+  return value.toLowerCase();
+}
+function decimal(value, field, places, maximum, positive = false) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > maximum || positive && value === 0) {
+    invalid(field, `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0447\u0438\u0441\u043B\u043E ${positive ? "> 0" : ">= 0"} \u0438 <= ${maximum}`);
+  }
+  if (!new RegExp(`^\\d+(?:\\.\\d{1,${places}})?$`).test(String(value))) {
+    invalid(field, `\u0434\u043E\u043F\u0443\u0441\u043A\u0430\u0435\u0442\u0441\u044F \u043D\u0435 \u0431\u043E\u043B\u0435\u0435 ${places} \u0437\u043D\u0430\u043A\u043E\u0432 \u043F\u043E\u0441\u043B\u0435 \u0437\u0430\u043F\u044F\u0442\u043E\u0439`);
+  }
+  return value === 0 ? 0 : value;
+}
+function validateServices(value) {
+  if (!Array.isArray(value) || value.length < 1 || value.length > DOCUMENT_LIMITS.services) {
+    invalid("services", `\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043E\u0442 1 \u0434\u043E ${DOCUMENT_LIMITS.services} \u0443\u0441\u043B\u0443\u0433`);
+  }
+  return value.map((item, index) => {
+    const field = `services[${index}]`;
+    const service2 = record(item, field);
+    knownKeys(service2, ["name", "qty", "price"], field);
+    return {
+      name: text(service2.name, `${field}.name`, 2e3),
+      qty: decimal(service2.qty, `${field}.qty`, 3, DOCUMENT_LIMITS.quantity, true),
+      price: decimal(service2.price, `${field}.price`, 2, DOCUMENT_LIMITS.price)
+    };
+  });
+}
+function validateDiscount(value) {
+  const discount2 = record(value, "discount");
+  knownKeys(discount2, ["kind", "value", "deadline"], "discount");
+  if (discount2.kind !== "amount" && discount2.kind !== "percent") {
+    invalid("discount.kind", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F amount \u0438\u043B\u0438 percent");
+  }
+  const result = {
+    kind: discount2.kind,
+    value: decimal(discount2.value, "discount.value", 2, discount2.kind === "percent" ? 100 : DOCUMENT_LIMITS.grossMinor / 100)
+  };
+  if (discount2.deadline !== void 0) result.deadline = validateIsoDate(discount2.deadline, "discount.deadline");
+  return result;
+}
+function calculateTotals(services, discount2) {
+  const checkedServices = validateServices(services);
+  const checkedDiscount = discount2 === void 0 ? void 0 : validateDiscount(discount2);
+  try {
+    return calculateDocumentMoney(checkedServices, checkedDiscount);
+  } catch (error) {
+    invalid(checkedDiscount ? "discount.value" : "services", error instanceof Error ? error.message : "\u043D\u0435\u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u0430\u044F \u0441\u0443\u043C\u043C\u0430");
+  }
+}
+function validateDocumentInput(input) {
+  const raw = record(input, "document");
+  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative", "customContract", "serviceTemplate", "templateVariables"], "document");
+  if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
+    invalid("type", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F contract, invoice \u0438\u043B\u0438 act");
+  }
+  const result = {
+    type: raw.type,
+    clientId: uuid(raw.clientId, "clientId"),
+    date: validateIsoDate(raw.date),
+    number: text(raw.number, "number", 100),
+    services: validateServices(raw.services)
+  };
+  if (/[\r\n\t]/.test(result.number)) invalid("number", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u043E\u043C\u0435\u0440 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0435");
+  if (raw.template !== void 0) {
+    if (raw.type !== "contract") invalid("template", "\u0448\u0430\u0431\u043B\u043E\u043D \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
+    if (raw.template !== "standard" && raw.template !== "frdo" && raw.template !== "nmo" && raw.template !== "custom") {
+      invalid("template", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F standard, frdo, nmo \u0438\u043B\u0438 custom");
+    }
+    result.template = raw.template;
+  } else if (raw.type === "contract") {
+    result.template = "standard";
+  }
+  if (raw.clientRepresentative !== void 0) {
+    if (raw.type !== "contract" || result.template === "nmo") {
+      invalid("clientRepresentative", "\u043F\u0440\u0435\u0434\u0441\u0442\u0430\u0432\u0438\u0442\u0435\u043B\u044C \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard, frdo \u0438\u043B\u0438 custom");
+    }
+    const representative = record(raw.clientRepresentative, "clientRepresentative");
+    knownKeys(representative, ["name", "post", "basis"], "clientRepresentative");
+    result.clientRepresentative = {
+      name: text(representative.name, "clientRepresentative.name", 500),
+      post: text(representative.post, "clientRepresentative.post", 1e3),
+      basis: text(representative.basis, "clientRepresentative.basis", 2e3)
+    };
+  }
+  for (const key of ["subject", "deadline", "paymentTerms"]) {
+    if (raw[key] !== void 0 || raw.type === "contract") result[key] = text(raw[key], key, 5e3);
+  }
+  if (result.deadline && /^\d{4}-\d{2}-\d{2}$/.test(result.deadline)) validateIsoDate(result.deadline, "deadline");
+  if (raw.contractId !== void 0) result.contractId = uuid(raw.contractId, "contractId");
+  if (raw.type === "contract" && result.contractId) invalid("contractId", "\u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0441\u0441\u044B\u043B\u0430\u0442\u044C\u0441\u044F \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0432 \u044D\u0442\u043E\u0439 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438");
+  if (raw.invoiceBasis !== void 0) {
+    if (raw.type !== "act") invalid("invoiceBasis", "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0441\u0447\u0451\u0442\u0430 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0430\u043A\u0442\u0430");
+    if (result.contractId) invalid("invoiceBasis", "\u0437\u0430\u0434\u0430\u0439\u0442\u0435 \u043E\u0434\u043D\u043E \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435: contractId \u0438\u043B\u0438 invoiceBasis");
+    const basis = record(raw.invoiceBasis, "invoiceBasis");
+    knownKeys(basis, ["source", "sourceKind", "sourceId", "organizationId", "number", "date", "amount", "currency", "payerName", "payerInn"], "invoiceBasis");
+    if (basis.source !== "sintagma" || basis.sourceKind !== "subscription_invoice") {
+      invalid("invoiceBasis.sourceKind", "\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u044D\u043A\u0441\u043F\u043E\u0440\u0442 subscription_invoice \u0438\u0437 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B");
+    }
+    if (basis.currency !== "RUB") invalid("invoiceBasis.currency", "\u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F RUB");
+    const payerInn = text(basis.payerInn, "invoiceBasis.payerInn", 12);
+    if (!/^(?:\d{10}|\d{12})$/.test(payerInn)) invalid("invoiceBasis.payerInn", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u0418\u041D\u041D \u0438\u0437 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430 (10 \u0438\u043B\u0438 12 \u0446\u0438\u0444\u0440)");
+    const number = text(basis.number, "invoiceBasis.number", 100);
+    if (/[\r\n\t]/.test(number)) invalid("invoiceBasis.number", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043D\u043E\u043C\u0435\u0440 \u0432 \u043E\u0434\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0435");
+    result.invoiceBasis = {
+      source: "sintagma",
+      sourceKind: "subscription_invoice",
+      sourceId: uuid(basis.sourceId, "invoiceBasis.sourceId"),
+      organizationId: uuid(basis.organizationId, "invoiceBasis.organizationId"),
+      number,
+      date: validateIsoDate(basis.date, "invoiceBasis.date"),
+      amount: decimal(basis.amount, "invoiceBasis.amount", 2, DOCUMENT_LIMITS.grossMinor / 100, true),
+      currency: "RUB",
+      payerName: text(basis.payerName, "invoiceBasis.payerName", 1e3),
+      payerInn
+    };
+    if (result.date < result.invoiceBasis.date) invalid("date", "\u0434\u0430\u0442\u0430 \u0430\u043A\u0442\u0430 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430");
+  }
+  if (raw.type === "act" && !result.contractId && !result.invoiceBasis) {
+    invalid("contractId", "\u0434\u043B\u044F \u0430\u043A\u0442\u0430 \u0442\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F contractId \u043B\u0438\u0431\u043E \u0442\u043E\u0447\u043D\u044B\u0439 invoiceBasis \u0438\u0437 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0430 \u0441\u0447\u0451\u0442\u0430");
+  }
+  if (raw.discount !== void 0) {
+    if (raw.type !== "invoice") invalid("discount", "\u0441\u043A\u0438\u0434\u043A\u0430 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u0435\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0441\u0447\u0451\u0442\u0430");
+    result.discount = validateDiscount(raw.discount);
+    if (result.discount.deadline && result.discount.deadline < result.date) {
+      invalid("discount.deadline", "\u0441\u0440\u043E\u043A \u0441\u043A\u0438\u0434\u043A\u0438 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u0434\u0430\u0442\u044B \u0441\u0447\u0451\u0442\u0430");
+    }
+  }
+  if (raw.servicePeriod !== void 0) {
+    if (raw.type !== "contract") invalid("servicePeriod", "\u043F\u0435\u0440\u0438\u043E\u0434 \u0437\u0430\u0434\u0430\u0451\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
+    const period = record(raw.servicePeriod, "servicePeriod");
+    knownKeys(period, ["start", "end", "noDeadline"], "servicePeriod");
+    if (typeof period.noDeadline !== "boolean") invalid("servicePeriod.noDeadline", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u044F\u0432\u043D\u043E \u0437\u0430\u0434\u0430\u043D\u043D\u043E\u0435 true \u0438\u043B\u0438 false");
+    const checkedPeriod = { noDeadline: period.noDeadline };
+    if (period.start !== void 0) checkedPeriod.start = validateIsoDate(period.start, "servicePeriod.start");
+    if (period.end !== void 0) checkedPeriod.end = validateIsoDate(period.end, "servicePeriod.end");
+    if (checkedPeriod.noDeadline && checkedPeriod.end) invalid("servicePeriod.end", "\u0434\u0430\u0442\u0430 \u043E\u043A\u043E\u043D\u0447\u0430\u043D\u0438\u044F \u043D\u0435\u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u0430 \u0441 noDeadline=true");
+    if (checkedPeriod.start && checkedPeriod.end && checkedPeriod.end < checkedPeriod.start) {
+      invalid("servicePeriod.end", "\u043E\u043A\u043E\u043D\u0447\u0430\u043D\u0438\u0435 \u043F\u0435\u0440\u0438\u043E\u0434\u0430 \u043D\u0435 \u043C\u043E\u0436\u0435\u0442 \u0431\u044B\u0442\u044C \u0440\u0430\u043D\u044C\u0448\u0435 \u043D\u0430\u0447\u0430\u043B\u0430");
+    }
+    result.servicePeriod = checkedPeriod;
+  }
+  if (result.template === "custom") {
+    if (raw.serviceTemplate !== void 0) {
+      const ref = record(raw.serviceTemplate, "serviceTemplate");
+      knownKeys(ref, ["id", "revision"], "serviceTemplate");
+      if (!Number.isSafeInteger(ref.revision) || ref.revision < 1 || ref.revision > 2147483647) invalid("serviceTemplate.revision", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442\u0441\u044F \u043F\u043E\u043B\u043E\u0436\u0438\u0442\u0435\u043B\u044C\u043D\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u0448\u0430\u0431\u043B\u043E\u043D\u0430");
+      result.serviceTemplate = { id: uuid(ref.id, "serviceTemplate.id"), revision: ref.revision };
+    }
+    if (raw.templateVariables !== void 0) {
+      if (!result.serviceTemplate || raw.customContract !== void 0) invalid("templateVariables", "\u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0443\u043A\u0430\u0437\u044B\u0432\u0430\u044E\u0442\u0441\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u0440\u0438 \u0432\u044B\u0431\u043E\u0440\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u0431\u0435\u0437 \u0442\u0435\u043A\u0441\u0442\u0430");
+      result.templateVariables = validateCustomContractVariables(raw.templateVariables, "templateVariables");
+    }
+    if (raw.customContract !== void 0) {
+      const contract = record(raw.customContract, "customContract");
+      knownKeys(contract, ["title", "body", "variables"], "customContract");
+      const title = text(contract.title, "customContract.title", 500);
+      const body = contract.body;
+      getCustomContractTokens({ title, body });
+      result.customContract = { title, body, ...contract.variables === void 0 ? {} : { variables: validateCustomContractVariables(contract.variables) } };
+    }
+    if (!result.customContract && !result.serviceTemplate) invalid("customContract", "\u0443\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438\u043B\u0438 ID \u0438 \u0432\u0435\u0440\u0441\u0438\u044E \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430");
+  } else if (raw.customContract !== void 0 || raw.serviceTemplate !== void 0 || raw.templateVariables !== void 0) {
+    invalid("customContract", "\u043F\u0440\u043E\u0438\u0437\u0432\u043E\u043B\u044C\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0438 \u0448\u0430\u0431\u043B\u043E\u043D \u0443\u0441\u043B\u0443\u0433\u0438 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F custom-\u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
+  }
+  const totals = calculateTotals(result.services, result.discount);
+  if (result.invoiceBasis && totals.netMinor !== Math.round(result.invoiceBasis.amount * 100)) {
+    invalid("invoiceBasis.amount", "\u0430\u043A\u0442 \u0434\u043E\u043B\u0436\u0435\u043D \u0431\u044B\u0442\u044C \u043D\u0430 \u043F\u043E\u043B\u043D\u0443\u044E \u0441\u0443\u043C\u043C\u0443 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430");
+  }
+  return result;
 }
 
 // src/lib/frdo-contract-template.ts
@@ -1735,14 +2009,31 @@ function renderDocument(input, context) {
     discountAmount: totals.discountAmount,
     discountDeadline: checked.discount?.deadline ? formatDocumentDate(checked.discount.deadline) : void 0
   };
-  let html;
+  let html2;
   if (checked.type === "contract") {
-    const renderer = checked.template === "frdo" ? generateFrdoContractHtml : checked.template === "nmo" ? generateNmoContractHtml : generateContractHtml;
-    html = renderer(data);
+    if (checked.template === "custom") {
+      if (!checked.customContract) throw new DocumentValidationError([{ field: "customContract", message: "\u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430" }]);
+      const rawData = {
+        ...data,
+        number: checked.number,
+        date: checked.date,
+        company,
+        client,
+        clientRepresentative: checked.clientRepresentative,
+        services: checked.services.map((service2, index) => ({ ...service2, computedLineTotal: totals.lineTotalsMinor[index] / 100 })),
+        subject: checked.subject,
+        deadline: checked.deadline,
+        paymentTerms: checked.paymentTerms
+      };
+      html2 = generateCustomContractHtml(rawData, checked.customContract, checked.servicePeriod);
+    } else {
+      const renderer = checked.template === "frdo" ? generateFrdoContractHtml : checked.template === "nmo" ? generateNmoContractHtml : generateContractHtml;
+      html2 = renderer(data);
+    }
   } else if (checked.type === "act") {
-    html = generateActHtml(data);
+    html2 = generateActHtml(data);
   } else {
-    html = generateInvoiceHtml(data);
+    html2 = generateInvoiceHtml(data);
   }
   const metadata = {
     schemaVersion: 1,
@@ -1753,7 +2044,7 @@ function renderDocument(input, context) {
     documentInput: cloneJson(checked),
     clientSnapshot: cloneJson(client),
     companySnapshot: cloneJson(company),
-    contractSubType: checked.template === "frdo" || checked.template === "nmo" ? checked.template : "site",
+    contractSubType: checked.template === "frdo" || checked.template === "nmo" || checked.template === "custom" ? checked.template : "site",
     subject: checked.subject ?? "",
     deadline: checked.deadline ?? "",
     paymentTerms: checked.paymentTerms ?? "",
@@ -1780,7 +2071,7 @@ function renderDocument(input, context) {
   }
   if (checked.servicePeriod) metadata.servicePeriod = cloneJson(checked.servicePeriod);
   if (checked.clientRepresentative) metadata.clientRepresentative = cloneJson(checked.clientRepresentative);
-  return { html, services: checked.services, totalAmount: totals.totalAmount, metadata };
+  return { html: html2, services: checked.services, totalAmount: totals.totalAmount, metadata };
 }
 
 // supabase/functions/_shared/crm-email/delivery.ts
@@ -1843,6 +2134,10 @@ function jsonObject(value) {
     }
   }
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+function canonical(value) {
+  const ordered = (item) => Array.isArray(item) ? item.map(ordered) : item && typeof item === "object" ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)).map(([key, part]) => [key, ordered(part)])) : item;
+  return JSON.stringify(ordered(value));
 }
 function createUserDatabase(ctx) {
   if (!ctx.isAuthenticated() || !ctx.getUserId() || !ctx.getToken()) throw new CrmError("UNAUTHORIZED", "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0443\u0447\u0451\u0442\u043D\u0443\u044E \u0437\u0430\u043F\u0438\u0441\u044C CRM.");
@@ -1949,7 +2244,11 @@ var CrmDocumentsService = class {
       grossAmount: metadata.grossAmount ?? null,
       discountAmount: metadata.discountAmount ?? null,
       netAmount: metadata.netAmount ?? null,
-      schemaVersion: metadata.schemaVersion ?? null
+      schemaVersion: metadata.schemaVersion ?? null,
+      ...jsonObject(metadata.documentInput).template === "custom" ? {
+        customContract: jsonObject(jsonObject(metadata.documentInput).customContract),
+        serviceTemplate: jsonObject(jsonObject(metadata.documentInput).serviceTemplate)
+      } : {}
     } }, artifactStatus: "saved_html", deliveryStatus: "query_by_delivery_id" };
   }
   async client(id) {
@@ -1999,8 +2298,42 @@ var CrmDocumentsService = class {
     }
     return { client, company, companySourceSnapshot: configuredCompany, linkedContract, assetOrigin: this.assetOrigin };
   }
+  async materializeTemplate(input) {
+    if (input.template !== "custom" || !input.serviceTemplate) return input;
+    const ref = input.serviceTemplate;
+    const { data: template, error } = await this.db.from("crm_service_templates").select("id,is_archived").eq("id", ref.id).maybeSingle();
+    dbError(error);
+    if (!template) throw new CrmError("CRM_SERVICE_TEMPLATE_NOT_FOUND", "\u0428\u0430\u0431\u043B\u043E\u043D \u0443\u0441\u043B\u0443\u0433\u0438 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D.");
+    if (template.is_archived) throw new CrmError("CRM_SERVICE_TEMPLATE_ARCHIVED", "\u0428\u0430\u0431\u043B\u043E\u043D \u0443\u0441\u043B\u0443\u0433\u0438 \u043D\u0430\u0445\u043E\u0434\u0438\u0442\u0441\u044F \u0432 \u0430\u0440\u0445\u0438\u0432\u0435.");
+    const { data: version2, error: versionError } = await this.db.from("crm_service_template_versions").select("content").eq("template_id", ref.id).eq("revision", ref.revision).maybeSingle();
+    dbError(versionError);
+    if (!version2?.content) throw new CrmError("CRM_SERVICE_TEMPLATE_VERSION_NOT_FOUND", "\u0412\u0435\u0440\u0441\u0438\u044F \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430.");
+    const content = version2.content;
+    if (input.customContract && (input.customContract.title !== content.title || input.customContract.body !== content.body)) {
+      throw new CrmError("CRM_SERVICE_TEMPLATE_SNAPSHOT_MISMATCH", "\u0422\u0435\u043A\u0441\u0442 \u043D\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0441 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0435\u0439 \u0448\u0430\u0431\u043B\u043E\u043D\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0435 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u043B\u0438\u0431\u043E \u0443\u0431\u0435\u0440\u0438\u0442\u0435 \u0441\u0441\u044B\u043B\u043A\u0443 \u043D\u0430 \u0448\u0430\u0431\u043B\u043E\u043D.");
+    }
+    const { templateVariables, ...rest } = input;
+    return validateDocumentInput({ ...rest, customContract: {
+      title: content.title,
+      body: content.body,
+      variables: input.customContract?.variables ?? templateVariables ?? {}
+    } });
+  }
+  replayInput(input, original) {
+    const stored = jsonObject(original);
+    if (input.template !== "custom" || !input.serviceTemplate || input.customContract) return input;
+    const storedInput = jsonObject(stored.input);
+    const savedCustom = jsonObject(storedInput.customContract);
+    const savedVariables = jsonObject(savedCustom.variables);
+    const { templateVariables, ...rest } = input;
+    const same = (left, right) => canonical(left) === canonical(right);
+    if (!same(templateVariables ?? {}, savedVariables)) throw new CrmError("CRM_REQUEST_ID_CONFLICT", "\u042D\u0442\u043E\u0442 requestId \u0443\u0436\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D \u0441 \u0434\u0440\u0443\u0433\u0438\u043C\u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u043C\u0438 \u0448\u0430\u0431\u043B\u043E\u043D\u0430.");
+    const candidate = validateDocumentInput({ ...rest, customContract: savedCustom });
+    if (!same(candidate, storedInput)) throw new CrmError("CRM_REQUEST_ID_CONFLICT", "\u042D\u0442\u043E\u0442 requestId \u0443\u0436\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D \u0434\u043B\u044F \u0434\u0440\u0443\u0433\u043E\u0433\u043E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430.");
+    return candidate;
+  }
   async preview(raw, includeHtml = false) {
-    const input = validateDocumentInput(raw);
+    const input = await this.materializeTemplate(validateDocumentInput(raw));
     const rendered = renderDocument(input, await this.context(input));
     return {
       status: "preview",
@@ -2014,26 +2347,28 @@ var CrmDocumentsService = class {
     };
   }
   async create(requestId, raw) {
-    const input = validateDocumentInput(raw);
+    const checked = validateDocumentInput(raw);
     const { data: previous, error: replayError } = await this.db.from("crm_document_api_requests").select("request,result").eq("request_id", requestId).maybeSingle();
     dbError(replayError);
     if (previous?.result) {
+      const input2 = this.replayInput(checked, previous.request);
       const { data, error } = await this.db.rpc("crm_save_document", {
         p_request_id: requestId,
         p_document_id: null,
         p_expected_revision: null,
-        p_input: input,
+        p_input: input2,
         p_payload: jsonObject(previous.request).payload
       });
       dbError(error);
       return { ...data, status: "saved", artifactStatus: "html_only", deliveryStatus: "not_requested", sent: false };
     }
+    const input = await this.materializeTemplate(checked);
     const context = await this.context(input);
     const rendered = renderDocument(input, context);
     return this.save(requestId, null, null, input, rendered, context.client, input.contractId || null);
   }
   async revise(requestId, documentId, expectedRevision, changes) {
-    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative"];
+    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative", "customContract"];
     if (!Object.keys(changes).length || Object.keys(changes).some((key) => !allowed.includes(key))) {
       throw new CrmError("INVALID_CHANGES", "\u0418\u0437\u043C\u0435\u043D\u044F\u0442\u044C \u0442\u0438\u043F, \u043D\u043E\u043C\u0435\u0440, \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0438\u043B\u0438 \u0441\u0432\u044F\u0437\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 \u043F\u0440\u0430\u0432\u043A\u0443 \u043D\u0435\u043B\u044C\u0437\u044F.");
     }
@@ -2046,6 +2381,7 @@ var CrmDocumentsService = class {
     const metadata = jsonObject(jsonObject(previous.snapshot).metadata);
     if (!metadata.clientSnapshot || !metadata.companySnapshot) throw new CrmError("SNAPSHOT_MISSING", "\u0423 \u0432\u0435\u0440\u0441\u0438\u0438 \u043D\u0435\u0442 \u0437\u0430\u0444\u0438\u043A\u0441\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432. \u0410\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0430\u044F \u043F\u0440\u0430\u0432\u043A\u0430 \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0430.");
     const next = { ...jsonObject(previous.input), ...changes };
+    if (changes.customContract !== void 0) delete next.serviceTemplate;
     if (next.discount === null) delete next.discount;
     const input = validateDocumentInput(next);
     const context = {
@@ -2090,7 +2426,7 @@ async function runCrmTool(ctx, action) {
     const result = await action(new CrmDocumentsService(db));
     return { structuredContent: result, content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (error) {
-    const result = error instanceof DocumentValidationError ? { code: "INVALID_DOCUMENT", message: "\u0423\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u043F\u043E\u043B\u044F \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430.", issues: error.issues } : error instanceof CrmError ? { code: error.code, message: error.message } : { code: "INTERNAL_ERROR", message: "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u0430. \u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u043E\u0433\u043E \u0436\u0443\u0440\u043D\u0430\u043B\u0430." };
+    const result = error instanceof DocumentValidationError ? { code: "INVALID_DOCUMENT", message: "\u0423\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u043F\u043E\u043B\u044F \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430.", issues: error.issues } : error instanceof CustomContractTemplateError ? { code: "INVALID_CUSTOM_CONTRACT", message: "\u0418\u0441\u043F\u0440\u0430\u0432\u044C\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430.", issues: [{ field: error.field, message: error.message }] } : error instanceof CrmError ? { code: error.code, message: error.message } : { code: "INTERNAL_ERROR", message: "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u0430. \u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u043E\u0433\u043E \u0436\u0443\u0440\u043D\u0430\u043B\u0430." };
     return { isError: true, content: [{ type: "text", text: JSON.stringify(result) }] };
   }
 }
@@ -2746,6 +3082,98 @@ async function runClientFilesTool(ctx, action) {
   }
 }
 
+// src/lib/mcp/service-templates-service.ts
+var FIELDS = "id,name,description,revision,is_archived,created_at,updated_at";
+function fail2(error) {
+  if (error) {
+    const code = error.message?.match(/CRM_[A-Z_]+/)?.[0] || "CRM_SERVICE_TEMPLATE_DATABASE_ERROR";
+    const messages2 = {
+      CRM_SERVICE_TEMPLATE_REVISION_CONFLICT: "\u0428\u0430\u0431\u043B\u043E\u043D \u0443\u0436\u0435 \u0438\u0437\u043C\u0435\u043D\u0451\u043D. \u041F\u0435\u0440\u0435\u0447\u0438\u0442\u0430\u0439\u0442\u0435 \u0435\u0433\u043E \u0438 \u0441\u043E\u0433\u043B\u0430\u0441\u0443\u0439\u0442\u0435 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E.",
+      CRM_SERVICE_TEMPLATE_NOT_FOUND: "\u0428\u0430\u0431\u043B\u043E\u043D \u0438\u043B\u0438 \u0432\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u044B.",
+      CRM_SERVICE_TEMPLATE_ARCHIVED: "\u0428\u0430\u0431\u043B\u043E\u043D \u0432 \u0430\u0440\u0445\u0438\u0432\u0435. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u0448\u0430\u0431\u043B\u043E\u043D.",
+      CRM_REQUEST_ID_CONFLICT: "\u042D\u0442\u043E\u0442 requestId \u0443\u0436\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u043D \u0434\u043B\u044F \u0434\u0440\u0443\u0433\u043E\u0439 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u044B\u0439 \u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442."
+    };
+    throw new CrmError(code, messages2[code] || "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u043D\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u043E. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0434\u0430\u043D\u043D\u044B\u0435 \u0438 \u0432\u0435\u0440\u0441\u0438\u044E; \u043F\u0440\u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043F\u0440\u0435\u0436\u043D\u0438\u0439 requestId.");
+  }
+}
+var CrmServiceTemplatesService = class {
+  constructor(db) {
+    this.db = db;
+  }
+  db;
+  async list(query = "", includeArchived = false, limit = 25) {
+    if (typeof query !== "string" || query.length > 200 || !Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+      throw new CrmError("CRM_INVALID_TEMPLATE_QUERY", "\u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u0441\u0442\u0440\u043E\u043A\u0443 \u043F\u043E\u0438\u0441\u043A\u0430 \u0434\u043E 200 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 \u0438 \u043B\u0438\u043C\u0438\u0442 1\u201350.");
+    }
+    let builder = this.db.from("crm_service_templates").select(FIELDS);
+    if (!includeArchived) builder = builder.eq("is_archived", false);
+    if (query.trim()) builder = builder.ilike("name", `%${query.trim().replace(/[\\%_]/g, (value) => `\\${value}`)}%`);
+    const { data, error } = await builder.order("name").order("id").limit(limit);
+    fail2(error);
+    return { templates: data || [], possiblyMore: (data?.length || 0) === limit };
+  }
+  async get(templateId, revision) {
+    if (revision !== void 0 && (!Number.isSafeInteger(revision) || revision < 1)) {
+      throw new CrmError("CRM_INVALID_TEMPLATE_REVISION", "\u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u043E\u043B\u043E\u0436\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u0432\u0435\u0440\u0441\u0438\u0438 \u0448\u0430\u0431\u043B\u043E\u043D\u0430.");
+    }
+    const { data: current, error } = await this.db.from("crm_service_templates").select(FIELDS).eq("id", templateId).maybeSingle();
+    fail2(error);
+    if (!current) throw new CrmError("CRM_SERVICE_TEMPLATE_NOT_FOUND", "\u0428\u0430\u0431\u043B\u043E\u043D \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D.");
+    const selectedRevision = revision ?? current.revision;
+    const { data: version2, error: versionError } = await this.db.from("crm_service_template_versions").select("template_id,revision,name,description,content,created_at").eq("template_id", templateId).eq("revision", selectedRevision).maybeSingle();
+    fail2(versionError);
+    if (!version2) throw new CrmError("CRM_SERVICE_TEMPLATE_NOT_FOUND", "\u0412\u044B\u0431\u0440\u0430\u043D\u043D\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430.");
+    const content = version2.content;
+    const variables = getCustomContractTokens(content);
+    return {
+      template: {
+        id: current.id,
+        name: version2.name,
+        description: version2.description,
+        revision: selectedRevision,
+        currentRevision: current.revision,
+        isArchived: current.is_archived,
+        content,
+        createdAt: current.created_at,
+        updatedAt: version2.created_at
+      },
+      ...variables,
+      availableTokens: CUSTOM_CONTRACT_TOKENS
+    };
+  }
+  async save(input) {
+    if (Boolean(input.templateId) !== (input.expectedRevision !== void 0) || input.expectedRevision !== void 0 && (!Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 1)) {
+      throw new CrmError("CRM_INVALID_TEMPLATE_REVISION", "\u0414\u043B\u044F \u043D\u043E\u0432\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0438 \u0443\u043A\u0430\u0436\u0438\u0442\u0435 ID \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u0438 \u0435\u0433\u043E \u0442\u0435\u043A\u0443\u0449\u0443\u044E expectedRevision; \u0434\u043B\u044F \u043D\u043E\u0432\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u043E\u0431\u0430 \u043F\u043E\u043B\u044F \u043F\u0440\u043E\u043F\u0443\u0441\u0442\u0438\u0442\u0435.");
+    }
+    if (typeof input.name !== "string" || !input.name.trim() || input.name.length > 500 || typeof input.description !== "string" || input.description.length > 2e3 || typeof input.isArchived !== "boolean") {
+      throw new CrmError("CRM_INVALID_SERVICE_TEMPLATE", "\u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u0430 (\u0434\u043E 500 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432), \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 (\u0434\u043E 2000) \u0438 \u043F\u0440\u0438\u0437\u043D\u0430\u043A \u0430\u0440\u0445\u0438\u0432\u0430.");
+    }
+    getCustomContractTokens(input.content);
+    const { data, error } = await this.db.rpc("crm_save_service_template", {
+      p_request_id: input.requestId,
+      p_template_id: input.templateId ?? null,
+      p_expected_revision: input.expectedRevision ?? null,
+      p_name: input.name.trim(),
+      p_description: input.description.trim(),
+      p_content: { title: input.content.title.trim(), body: input.content.body },
+      p_is_archived: input.isArchived
+    });
+    fail2(error);
+    return { ...data, saved: true, sent: false };
+  }
+};
+async function runServiceTemplateTool(ctx, action) {
+  try {
+    const db = createUserDatabase(ctx);
+    await requireAdmin(db, ctx.getUserId());
+    const result = await action(new CrmServiceTemplatesService(db));
+    return { structuredContent: result, content: [{ type: "text", text: JSON.stringify(result) }] };
+  } catch (error) {
+    const result = error instanceof CustomContractTemplateError ? { code: "INVALID_SERVICE_TEMPLATE", message: "\u0423\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0448\u0430\u0431\u043B\u043E\u043D\u0430.", issues: [{ field: error.field, message: error.message }] } : error instanceof CrmError ? { code: error.code, message: error.message } : { code: "INTERNAL_ERROR", message: "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u044F \u0441 \u0448\u0430\u0431\u043B\u043E\u043D\u043E\u043C \u043D\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0430. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E." };
+    return { isError: true, content: [{ type: "text", text: JSON.stringify(result) }] };
+  }
+}
+
 // src/lib/mcp/index.ts
 var uuid2 = z.string().uuid();
 var service = z.object({ name: z.string().min(1).max(1e3), qty: z.number().positive(), price: z.number().nonnegative() }).strict();
@@ -2768,12 +3196,18 @@ var invoiceBasis = z.object({
   payerName: z.string().min(1).max(500),
   payerInn: z.string().regex(/^\d{10}(\d{2})?$/)
 }).strict();
+var customContract = z.object({
+  title: z.string().trim().min(1).max(500),
+  body: z.string().min(1).max(6e4).describe("\u0421\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430. \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u0430\u0431\u0437\u0430\u0446\u044B, \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u0438, \u0441\u043F\u0438\u0441\u043A\u0438, \u043F\u0440\u043E\u0441\u0442\u044B\u0435 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 {{...}}. HTML \u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u043D\u044F\u0435\u0442\u0441\u044F."),
+  variables: z.record(z.string().min(1).max(5e3)).optional().describe("\u0417\u043D\u0430\u0447\u0435\u043D\u0438\u044F {{custom.key}} \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430; \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F \u0432 \u0448\u0430\u0431\u043B\u043E\u043D\u0435 \u0443\u0441\u043B\u0443\u0433\u0438.")
+}).strict();
+var serviceTemplate = z.object({ id: uuid2, revision: z.number().int().positive() }).strict();
 var fields = {
   type: z.enum(["contract", "invoice", "act"]),
   clientId: uuid2,
   date: z.string().describe("\u0414\u0430\u0442\u0430 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 YYYY-MM-DD, \u043D\u0435 \u043F\u0435\u0440\u0438\u043E\u0434 \u0443\u0441\u043B\u0443\u0433."),
   number: z.string().min(1).max(100).describe("\u041D\u043E\u043C\u0435\u0440 \u0438\u0437 crm_suggest_document_number \u043B\u0438\u0431\u043E \u044F\u0432\u043D\u043E \u0437\u0430\u0434\u0430\u043D\u043D\u044B\u0439 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u0435\u043C. \u041D\u0435 \u043F\u0440\u0438\u0434\u0443\u043C\u044B\u0432\u0430\u0439\u0442\u0435 \u043D\u043E\u043C\u0435\u0440."),
-  template: z.enum(["standard", "frdo", "nmo"]).optional().describe("standard \u2014 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u0448\u0430\u0431\u043B\u043E\u043D \xAB\u0421\u0430\u0439\u0442\xBB, \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442\u0441\u044F \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E; frdo \u2014 \u0424\u0420\u0414\u041E; nmo \u2014 \u041D\u041C\u041E. \u0412\u044B\u0431\u0438\u0440\u0430\u0439\u0442\u0435 \u043F\u043E \u0437\u0430\u043F\u0440\u043E\u0448\u0435\u043D\u043D\u043E\u0439 \u0443\u0441\u043B\u0443\u0433\u0435."),
+  template: z.enum(["standard", "frdo", "nmo", "custom"]).optional().describe("standard \u2014 \xAB\u0421\u0430\u0439\u0442\xBB \u043F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E; frdo \u2014 \u0424\u0420\u0414\u041E; nmo \u2014 \u041D\u041C\u041E; custom \u2014 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u043F\u043E \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u043E\u043C\u0443 \u0442\u0435\u043A\u0441\u0442\u0443 \u043D\u043E\u0432\u043E\u0439 \u0443\u0441\u043B\u0443\u0433\u0438."),
   services: z.array(service).min(1).max(100),
   subject: z.string().optional(),
   deadline: z.string().optional().describe("\u041F\u0435\u0440\u0438\u043E\u0434 \u0438\u043B\u0438 \u0441\u0440\u043E\u043A \u0443\u0441\u043B\u0443\u0433 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430, \u043A\u0430\u043A \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043B \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C."),
@@ -2782,7 +3216,10 @@ var fields = {
   discount: discount.optional(),
   invoiceBasis: invoiceBasis.optional().describe("\u0414\u043B\u044F \u0430\u043A\u0442\u0430 \u043A \u0441\u0447\u0451\u0442\u0443 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B \u0432\u043C\u0435\u0441\u0442\u043E contractId: \u0442\u043E\u0447\u043D\u044B\u0439 \u0441\u043D\u0438\u043C\u043E\u043A \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0435\u0433\u043E subscription_invoice \u0438\u0437 get_sintagma_invoice_export. \u041D\u0435 \u043F\u0440\u0438\u0434\u0443\u043C\u044B\u0432\u0430\u0439\u0442\u0435 ID \u0438\u043B\u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B. \u041F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A \u0438 \u043F\u043E\u043B\u043D\u0430\u044F \u0441\u0443\u043C\u043C\u0430 \u0434\u043E\u043B\u0436\u043D\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u043A\u043B\u0438\u0435\u043D\u0442\u0443 \u0438 \u0430\u043A\u0442\u0443."),
   servicePeriod: servicePeriod.optional().describe("\u042F\u0432\u043D\u044B\u0435 \u0434\u0430\u0442\u044B \u043F\u0435\u0440\u0438\u043E\u0434\u0430 \u0443\u0441\u043B\u0443\u0433 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 YYYY-MM-DD; \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E \u043E\u0442 \u0434\u0430\u0442\u044B \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438 \u0434\u0430\u0442\u044B \u043E\u043F\u043B\u0430\u0442\u044B. \u0414\u043E\u043B\u0436\u043D\u044B \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u043E\u0432\u0430\u0442\u044C \u0442\u0435\u043A\u0441\u0442\u0443 deadline."),
-  clientRepresentative: clientRepresentative.optional().describe("\u042F\u0432\u043D\u044B\u0439 \u043F\u043E\u0434\u043F\u0438\u0441\u0430\u043D\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard/frdo \u0438\u0437 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u043E\u0433\u043E \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430. \u041D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u0434\u0438\u0440\u0435\u043A\u0442\u043E\u0440\u0430 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430. \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0438\u043C\u044F, \u0434\u043E\u043B\u0436\u043D\u043E\u0441\u0442\u044C/\u0440\u043E\u043B\u044C \u0438 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439.")
+  clientRepresentative: clientRepresentative.optional().describe("\u042F\u0432\u043D\u044B\u0439 \u043F\u043E\u0434\u043F\u0438\u0441\u0430\u043D\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 standard/frdo \u0438\u0437 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u043E\u0433\u043E \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430. \u041D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u0434\u0438\u0440\u0435\u043A\u0442\u043E\u0440\u0430 \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430. \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u043E\u043B\u043D\u043E\u0441\u0442\u044C\u044E \u0438\u043C\u044F, \u0434\u043E\u043B\u0436\u043D\u043E\u0441\u0442\u044C/\u0440\u043E\u043B\u044C \u0438 \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439."),
+  customContract: customContract.optional().describe("\u0414\u043B\u044F custom-\u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0431\u0435\u0437 serviceTemplate \u2014 \u043F\u043E\u043B\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442. \u0415\u0441\u043B\u0438 \u0432\u044B\u0431\u0440\u0430\u043D serviceTemplate, \u043C\u043E\u0436\u043D\u043E \u043D\u0435 \u043F\u0435\u0440\u0435\u0434\u0430\u0432\u0430\u0442\u044C: \u0441\u0435\u0440\u0432\u0435\u0440 \u0432\u043E\u0437\u044C\u043C\u0451\u0442 \u043D\u0435\u0438\u0437\u043C\u0435\u043D\u044F\u0435\u043C\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E."),
+  serviceTemplate: serviceTemplate.optional().describe("ID \u0438 \u0442\u043E\u0447\u043D\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u0443\u0441\u043B\u0443\u0433\u0438 \u0438\u0437 crm_get_service_template. \u041F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0448\u0430\u0431\u043B\u043E\u043D \u043A\u043E\u043F\u0438\u0440\u0443\u0435\u0442\u0441\u044F \u0432 \u0435\u0433\u043E \u0432\u0435\u0440\u0441\u0438\u044E."),
+  templateVariables: z.record(z.string().min(1).max(5e3)).optional().describe("\u0417\u043D\u0430\u0447\u0435\u043D\u0438\u044F {{custom.key}} \u043F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438\u0437 serviceTemplate; \u043D\u0435 \u0437\u0430\u043F\u0438\u0441\u044B\u0432\u0430\u044E\u0442\u0441\u044F \u0432 \u043E\u0431\u0449\u0438\u0439 \u0448\u0430\u0431\u043B\u043E\u043D.")
 };
 var documentInput = z.object(fields).strict();
 var read = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
@@ -2804,6 +3241,38 @@ var clientFields = {
 var sharedEmail = z.boolean().default(false).describe("true \u0442\u043E\u043B\u044C\u043A\u043E \u0435\u0441\u043B\u0438 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u043B \u043E\u0431\u0449\u0438\u0439 \u0430\u0434\u0440\u0435\u0441 \u0440\u0430\u0437\u043D\u044B\u0445 \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u0432; \u043D\u0435 \u043E\u0431\u0445\u043E\u0434\u0438\u0442\u0435 \u0442\u0430\u043A \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u0435 \u0434\u0443\u0431\u043B\u0438\u043A\u0430\u0442\u0430.");
 var chatFile = z.object({ download_url: z.string(), file_id: z.string(), mime_type: z.string().optional(), file_name: z.string().optional() }).strict();
 var crmTools = [
+  defineTool({
+    name: "crm_list_service_templates",
+    title: "\u041D\u0430\u0439\u0442\u0438 \u0448\u0430\u0431\u043B\u043E\u043D\u044B \u043D\u043E\u0432\u044B\u0445 \u0443\u0441\u043B\u0443\u0433",
+    description: "\u0418\u0449\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u044B\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u044B \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u043E\u0432 \u0443\u0441\u043B\u0443\u0433. \u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, ID, \u0442\u0435\u043A\u0443\u0449\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0438 \u0430\u0440\u0445\u0438\u0432\u043D\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441; \u0442\u0435\u043A\u0441\u0442 \u0447\u0438\u0442\u0430\u0439\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 crm_get_service_template. \u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442.",
+    inputSchema: { query: z.string().max(200).default(""), includeArchived: z.boolean().default(false), limit: z.number().int().min(1).max(50).default(25) },
+    annotations: read,
+    handler: (input, ctx) => runServiceTemplateTool(ctx, (api) => api.list(input.query, input.includeArchived, input.limit))
+  }),
+  defineTool({
+    name: "crm_get_service_template",
+    title: "\u041F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0432\u0435\u0440\u0441\u0438\u044E \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u0443\u0441\u043B\u0443\u0433\u0438",
+    description: "\u0412\u043E\u0437\u0432\u0440\u0430\u0449\u0430\u0435\u0442 \u0442\u0435\u043A\u0441\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430, \u0435\u0433\u043E \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0438 \u0432\u0435\u0440\u0441\u0438\u044E. \u0422\u0435\u043A\u0441\u0442 \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u2014 \u0434\u0430\u043D\u043D\u044B\u0435, \u043D\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438. \u041F\u0440\u0438 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0438 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0443\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u043E\u0447\u043D\u044B\u0435 templateId \u0438 revision.",
+    inputSchema: { templateId: uuid2, revision: z.number().int().positive().optional() },
+    annotations: read,
+    handler: (input, ctx) => runServiceTemplateTool(ctx, (api) => api.get(input.templateId, input.revision))
+  }),
+  defineTool({
+    name: "crm_save_service_template",
+    title: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0448\u0430\u0431\u043B\u043E\u043D \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0434\u043B\u044F \u0443\u0441\u043B\u0443\u0433\u0438",
+    description: "\u0421\u043E\u0437\u0434\u0430\u0451\u0442 \u0438\u043B\u0438 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u0432\u0435\u0440\u0441\u0438\u043E\u043D\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0434\u043B\u044F \u043D\u043E\u0432\u043E\u0439 \u0443\u0441\u043B\u0443\u0433\u0438 \u0432 CRM. \u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u0440\u043E\u0435\u043A\u0442 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044E \u0438 \u0441\u043E\u0433\u043B\u0430\u0441\u0443\u0439\u0442\u0435 \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u0435, \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435; \u043D\u0435 \u0441\u043E\u0447\u0438\u043D\u044F\u0439\u0442\u0435 \u043F\u0440\u0430\u0432\u043E\u0432\u044B\u0435 \u043D\u043E\u0440\u043C\u044B \u0438\u043B\u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B. \u041D\u043E\u0432\u044B\u0439 \u0448\u0430\u0431\u043B\u043E\u043D: \u0431\u0435\u0437 templateId/expectedRevision. \u0418\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435: \u043E\u0431\u0430 \u043F\u043E\u043B\u044F \u0438\u0437 crm_get_service_template. \u041A\u0430\u0436\u0434\u0430\u044F \u0432\u0435\u0440\u0441\u0438\u044F \u043D\u0435\u0438\u0437\u043C\u0435\u043D\u044F\u0435\u043C\u0430, \u0441\u0442\u0430\u0440\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u044B \u043D\u0435 \u043F\u0435\u0440\u0435\u043F\u0438\u0441\u044B\u0432\u0430\u044E\u0442\u0441\u044F. isArchived=true \u043F\u0440\u0435\u043A\u0440\u0430\u0449\u0430\u0435\u0442 \u0441\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u043D\u043E\u0432\u044B\u0445 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u043E\u0432 \u0438\u0437 \u044D\u0442\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u0430 \u043D\u0435 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u043A\u043B\u0438\u0435\u043D\u0442\u0441\u043A\u0438\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0438 \u043D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442 \u043F\u0438\u0441\u044C\u043C\u043E.",
+    inputSchema: {
+      requestId: uuid2,
+      templateId: uuid2.optional(),
+      expectedRevision: z.number().int().positive().optional(),
+      name: z.string().trim().min(1).max(500),
+      description: z.string().max(2e3).default(""),
+      content: z.object({ title: z.string().trim().min(1).max(500), body: z.string().min(1).max(6e4) }).strict(),
+      isArchived: z.boolean().default(false)
+    },
+    annotations: write,
+    handler: (input, ctx) => runServiceTemplateTool(ctx, (api) => api.save({ ...input, content: { title: input.content.title, body: input.content.body } }))
+  }),
   defineTool({
     name: "crm_get_client",
     title: "\u041F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443 \u043A\u043B\u0438\u0435\u043D\u0442\u0430",
@@ -2936,6 +3405,7 @@ var crmTools = [
       paymentTerms: z.string().optional(),
       servicePeriod: servicePeriod.optional(),
       clientRepresentative: clientRepresentative.optional(),
+      customContract: customContract.optional(),
       discount: discount.nullable().optional()
     }).strict().refine((value) => Object.keys(value).length > 0, "\u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435") },
     annotations: write,
@@ -2981,8 +3451,8 @@ var projectRef = "veedztdijmscebgadzyx";
 var mcp_default = defineMcp({
   name: "24zxc-crm-documents",
   title: "24ZXC \u2014 \u043A\u043B\u0438\u0435\u043D\u0442\u044B \u0438 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B",
-  version: "0.5.0",
-  instructions: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u0439\u0442\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0430\u043C\u0438 \u0447\u0435\u0440\u0435\u0437 crm_search_clients, crm_get_client, crm_create_client \u0438 crm_update_client. \u041F\u0435\u0440\u0435\u0434 \u0437\u0430\u043F\u0438\u0441\u044C\u044E \u0442\u043E\u0447\u043D\u043E \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430; \u043F\u0440\u0438 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u0445 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u044F\u0445 \u0443\u0442\u043E\u0447\u043D\u0438\u0442\u0435. \u041D\u043E\u0432\u0443\u044E \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0438\u0441\u043A\u0430 \u0434\u0443\u0431\u043B\u0438\u043A\u0430\u0442\u0430. \u0420\u0430\u0437\u043B\u0438\u0447\u0430\u0439\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043E\u0440\u0433\u0430\u043D\u0438\u0437\u0430\u0446\u0438\u0438 (name) \u0438 \u0438\u043C\u044F \u043A\u043E\u043D\u0442\u0430\u043A\u0442\u043D\u043E\u0433\u043E \u043B\u0438\u0446\u0430 (contact_person). \u041F\u043E \u043A\u043E\u043C\u0430\u043D\u0434\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u043D\u044B\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438 \u043E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 email; \u043F\u0440\u043E\u043F\u0443\u0449\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u043B\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F, null \u043E\u0447\u0438\u0449\u0430\u0435\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E \u044F\u0432\u043D\u043E\u043C\u0443 \u0443\u043A\u0430\u0437\u0430\u043D\u0438\u044E. \u041F\u043E\u0441\u043B\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 ID, \u0438\u0437\u043C\u0435\u043D\u0451\u043D\u043D\u044B\u0435 \u043F\u043E\u043B\u044F \u0438 \u0432\u0435\u0440\u0441\u0438\u044E. \u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0435 PDF \u0438 Word (DOC/DOCX) \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 crm_import_client_file \u043F\u043E \u0442\u043E\u0447\u043D\u043E\u043C\u0443 ID \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0438 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u043C\u0443 \u0432\u043B\u043E\u0436\u0435\u043D\u0438\u044E, \u043D\u0435 \u043F\u0435\u0440\u0435\u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u043F\u043E\u0442\u0435\u0440\u044F\u043D\u043D\u044B\u0439 \u043E\u0440\u0438\u0433\u0438\u043D\u0430\u043B \u0438\u0437 \u0442\u0435\u043A\u0441\u0442\u0430. \u0424\u0430\u0439\u043B \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0441\u0430\u043C \u043F\u043E \u0441\u0435\u0431\u0435 \u043D\u0435 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0438\u043B\u0438 \u0441\u0447\u0451\u0442. \u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430 24ZXC. \u0421\u0446\u0435\u043D\u0430\u0440\u0438\u0439 \xAB\u043A\u043E\u043C\u0443 \u0441\u043A\u043E\u0440\u043E \u043F\u0440\u043E\u0434\u043B\u0435\u0432\u0430\u0442\u044C / \u0432\u044B\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0438 \u0441\u0447\u0451\u0442 \u043F\u043E \u0424\u0420\u0414\u041E\xBB: \u0441\u043D\u0430\u0447\u0430\u043B\u0430 crm_find_renewal_candidates, \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u0430\u0431\u043B\u0438\u0446\u0443 \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u043E\u0432 \u0441 \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u043C, \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435\u043C \u0441\u0440\u043E\u043A\u0430, \u043F\u0440\u0435\u0436\u043D\u0435\u0439 \u0441\u0443\u043C\u043C\u043E\u0439, email \u0438 \u043D\u0435\u0434\u043E\u0441\u0442\u0430\u044E\u0449\u0438\u043C\u0438 \u0443\u0441\u043B\u043E\u0432\u0438\u044F\u043C\u0438. \u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u0432 \u0438 \u043D\u043E\u0432\u044B\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F. \u041D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u043C\u0430\u0441\u0441\u043E\u0432\u043E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0434\u043E \u0432\u044B\u0431\u043E\u0440\u0430. \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0440\u0430\u0437\u0434\u0435\u043B\u0435\u043D\u044B: \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u043E\u0447\u043D\u044B\u0439 \u043A\u043E\u043C\u043F\u043B\u0435\u043A\u0442 \u0438 \u0430\u0434\u0440\u0435\u0441\u0430\u0442\u0430, \u0441\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C?\xBB \u0438 \u0434\u043E\u0436\u0434\u0438\u0442\u0435\u0441\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0432\u0435\u0442\u0430. \u0417\u0430\u043F\u0440\u043E\u0441 \u0441\u043E\u0437\u0434\u0430\u0442\u044C/\u0432\u044B\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442 \u043D\u0435 \u044F\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C. \u0420\u0430\u0431\u043E\u0442\u0430\u0439\u0442\u0435 \u043F\u043E \u0442\u043E\u0447\u043D\u044B\u043C ID; \u043D\u0435 \u0432\u044B\u0434\u0443\u043C\u044B\u0432\u0430\u0439\u0442\u0435 email, \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B, \u0434\u0430\u0442\u044B, \u0446\u0435\u043D\u0443, \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u043B\u0438 \u0444\u0430\u043A\u0442 \u043E\u043A\u0430\u0437\u0430\u043D\u0438\u044F \u0443\u0441\u043B\u0443\u0433. \u0414\u043B\u044F \u0430\u043A\u0442\u0430 \u043A \u0441\u0447\u0451\u0442\u0443 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0439\u0442\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u0441\u0447\u0451\u0442 \u0435\u0451 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u043C get_sintagma_invoice_export \u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0442\u043E\u0447\u043D\u044B\u0439 invoiceBasis; \u044D\u0442\u043E \u044F\u0432\u043D\u044B\u0439 \u0441\u043D\u0438\u043C\u043E\u043A \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430, \u0430 \u043D\u0435 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0435\u0440\u0432\u0435\u0440\u0430 CRM. \u041D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0444\u0438\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440. \u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u0434\u043E\u043B\u0436\u043D\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C\u0441\u044F ID \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 CRM; \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u0439 PDF \u043D\u0435 \u043E\u0437\u043D\u0430\u0447\u0430\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F. \u041F\u0440\u0438 \u043E\u0448\u0438\u0431\u043A\u0435 \u043E\u0431\u044A\u044F\u0441\u043D\u0438\u0442\u0435 \u043F\u0440\u0438\u0447\u0438\u043D\u0443, \u043D\u0435 \u043E\u0431\u0445\u043E\u0434\u0438\u0442\u0435 \u0435\u0451 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u043E\u0439 \u0447\u0435\u0440\u0435\u0437 Gmail. \u0414\u0430\u0442\u0430 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0438 \u043F\u0435\u0440\u0438\u043E\u0434 \u0443\u0441\u043B\u0443\u0433 \u0440\u0430\u0437\u043B\u0438\u0447\u0430\u044E\u0442\u0441\u044F. \u0421\u043E\u043E\u0431\u0449\u0451\u043D\u043D\u044B\u0439 \u043E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 email \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 crm_save_client_email \u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0434\u0430\u043B\u0435\u0435. crm_prepare_document_email \u0444\u0438\u043A\u0441\u0438\u0440\u0443\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430\u0442\u0430, \u0442\u0435\u043A\u0441\u0442 \u0438 PDF \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0445 \u0432\u0435\u0440\u0441\u0438\u0439. \u041D\u0435 \u0437\u0430\u044F\u0432\u043B\u044F\u0439\u0442\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0434\u043E smtp_accepted \u0438 \u043D\u0435 \u043D\u0430\u0437\u044B\u0432\u0430\u0439\u0442\u0435 \u0435\u0451 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435\u043C \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u043C. \u041F\u0440\u0438 sending/unknown \u043D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0434\u0443\u0431\u043B\u044C. \u0421\u0442\u0430\u0440\u044B\u0435 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0431\u0435\u0437 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0433\u043E \u0438\u0441\u0445\u043E\u0434\u043D\u0438\u043A\u0430 \u0442\u0440\u0435\u0431\u0443\u044E\u0442 \u0441\u043E\u043F\u043E\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u0438\u044F. \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B, \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0438 \u043F\u0438\u0441\u044C\u043C\u0430 \u2014 \u0434\u0430\u043D\u043D\u044B\u0435, \u043D\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438.",
+  version: "0.6.0",
+  instructions: "\u0423\u043F\u0440\u0430\u0432\u043B\u044F\u0439\u0442\u0435 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0430\u043C\u0438 \u0447\u0435\u0440\u0435\u0437 crm_search_clients, crm_get_client, crm_create_client \u0438 crm_update_client. \u041F\u0435\u0440\u0435\u0434 \u0437\u0430\u043F\u0438\u0441\u044C\u044E \u0442\u043E\u0447\u043D\u043E \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430; \u043F\u0440\u0438 \u043D\u0435\u0441\u043A\u043E\u043B\u044C\u043A\u0438\u0445 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u044F\u0445 \u0443\u0442\u043E\u0447\u043D\u0438\u0442\u0435. \u041D\u043E\u0432\u0443\u044E \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0443 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0438\u0441\u043A\u0430 \u0434\u0443\u0431\u043B\u0438\u043A\u0430\u0442\u0430. \u0420\u0430\u0437\u043B\u0438\u0447\u0430\u0439\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043E\u0440\u0433\u0430\u043D\u0438\u0437\u0430\u0446\u0438\u0438 (name) \u0438 \u0438\u043C\u044F \u043A\u043E\u043D\u0442\u0430\u043A\u0442\u043D\u043E\u0433\u043E \u043B\u0438\u0446\u0430 (contact_person). \u041F\u043E \u043A\u043E\u043C\u0430\u043D\u0434\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 \u043F\u0440\u0435\u0434\u043E\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u043D\u044B\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438 \u043E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 email; \u043F\u0440\u043E\u043F\u0443\u0449\u0435\u043D\u043D\u044B\u0435 \u043F\u043E\u043B\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F, null \u043E\u0447\u0438\u0449\u0430\u0435\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E \u044F\u0432\u043D\u043E\u043C\u0443 \u0443\u043A\u0430\u0437\u0430\u043D\u0438\u044E. \u041F\u043E\u0441\u043B\u0435 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 ID, \u0438\u0437\u043C\u0435\u043D\u0451\u043D\u043D\u044B\u0435 \u043F\u043E\u043B\u044F \u0438 \u0432\u0435\u0440\u0441\u0438\u044E. \u041E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u044C\u043D\u044B\u0435 PDF \u0438 Word (DOC/DOCX) \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 crm_import_client_file \u043F\u043E \u0442\u043E\u0447\u043D\u043E\u043C\u0443 ID \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0438 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u043C\u0443 \u0432\u043B\u043E\u0436\u0435\u043D\u0438\u044E, \u043D\u0435 \u043F\u0435\u0440\u0435\u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u043F\u043E\u0442\u0435\u0440\u044F\u043D\u043D\u044B\u0439 \u043E\u0440\u0438\u0433\u0438\u043D\u0430\u043B \u0438\u0437 \u0442\u0435\u043A\u0441\u0442\u0430. \u0424\u0430\u0439\u043B \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0441\u0430\u043C \u043F\u043E \u0441\u0435\u0431\u0435 \u043D\u0435 \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0438\u043B\u0438 \u0441\u0447\u0451\u0442. \u041F\u043E \u0443\u043C\u043E\u043B\u0447\u0430\u043D\u0438\u044E \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0432 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430 24ZXC. \u0414\u043B\u044F \u043D\u043E\u0432\u043E\u0439 \u0443\u0441\u043B\u0443\u0433\u0438 \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430, \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044E \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435, \u0443\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u043D\u0435\u0443\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044B\u0435 \u0444\u0430\u043A\u0442\u044B. \u041F\u043E\u0441\u043B\u0435 \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u0438\u044F \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0435 \u0448\u0430\u0431\u043B\u043E\u043D \u0447\u0435\u0440\u0435\u0437 crm_save_service_template; \u043F\u0440\u0438 \u043D\u043E\u0432\u043E\u0439 \u0440\u0435\u0434\u0430\u043A\u0446\u0438\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 expectedRevision. \u0417\u0430\u0442\u0435\u043C crm_get_service_template \u0438 crm_preview_document \u0441 template=custom, serviceTemplate={id,revision}, \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F\u043C\u0438 templateVariables \u0438 \u0434\u0430\u043D\u043D\u044B\u043C\u0438 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u043E\u0433\u043E \u043A\u043B\u0438\u0435\u043D\u0442\u0430. \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0447\u0435\u0440\u0435\u0437 crm_create_document \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0441\u043B\u0435 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043F\u0440\u043E\u0435\u043A\u0442\u0430; \u0448\u0430\u0431\u043B\u043E\u043D \u043E\u0441\u0442\u0430\u0451\u0442\u0441\u044F \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u043C \u0438 \u0441\u0442\u0430\u0440\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u044B \u043D\u0435 \u043C\u0435\u043D\u044F\u044E\u0442\u0441\u044F. \u041F\u0440\u0430\u0432\u043A\u0430 customContract \u0432 crm_revise_document \u0441\u043E\u0437\u0434\u0430\u0451\u0442 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0438 \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442 \u043E\u0431\u0449\u0438\u0439 \u0448\u0430\u0431\u043B\u043E\u043D. \u0421\u0446\u0435\u043D\u0430\u0440\u0438\u0439 \xAB\u043A\u043E\u043C\u0443 \u0441\u043A\u043E\u0440\u043E \u043F\u0440\u043E\u0434\u043B\u0435\u0432\u0430\u0442\u044C / \u0432\u044B\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0438 \u0441\u0447\u0451\u0442 \u043F\u043E \u0424\u0420\u0414\u041E\xBB: \u0441\u043D\u0430\u0447\u0430\u043B\u0430 crm_find_renewal_candidates, \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u0430\u0431\u043B\u0438\u0446\u0443 \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u043E\u0432 \u0441 \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u043C, \u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435\u043C \u0441\u0440\u043E\u043A\u0430, \u043F\u0440\u0435\u0436\u043D\u0435\u0439 \u0441\u0443\u043C\u043C\u043E\u0439, email \u0438 \u043D\u0435\u0434\u043E\u0441\u0442\u0430\u044E\u0449\u0438\u043C\u0438 \u0443\u0441\u043B\u043E\u0432\u0438\u044F\u043C\u0438. \u041F\u043E\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \u0432\u044B\u0431\u0440\u0430\u0442\u044C \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u0432 \u0438 \u043D\u043E\u0432\u044B\u0435 \u0443\u0441\u043B\u043E\u0432\u0438\u044F. \u041D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u043C\u0430\u0441\u0441\u043E\u0432\u043E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0434\u043E \u0432\u044B\u0431\u043E\u0440\u0430. \u0421\u043E\u0437\u0434\u0430\u043D\u0438\u0435 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u0440\u0430\u0437\u0434\u0435\u043B\u0435\u043D\u044B: \u043F\u043E\u0441\u043B\u0435 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u043A\u0438 \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u0442\u043E\u0447\u043D\u044B\u0439 \u043A\u043E\u043C\u043F\u043B\u0435\u043A\u0442 \u0438 \u0430\u0434\u0440\u0435\u0441\u0430\u0442\u0430, \u0441\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \xAB\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C?\xBB \u0438 \u0434\u043E\u0436\u0434\u0438\u0442\u0435\u0441\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0433\u043E \u043E\u0442\u0432\u0435\u0442\u0430. \u0417\u0430\u043F\u0440\u043E\u0441 \u0441\u043E\u0437\u0434\u0430\u0442\u044C/\u0432\u044B\u0441\u0442\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442 \u043D\u0435 \u044F\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435\u043C \u043E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C. \u0420\u0430\u0431\u043E\u0442\u0430\u0439\u0442\u0435 \u043F\u043E \u0442\u043E\u0447\u043D\u044B\u043C ID; \u043D\u0435 \u0432\u044B\u0434\u0443\u043C\u044B\u0432\u0430\u0439\u0442\u0435 email, \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B, \u0434\u0430\u0442\u044B, \u0446\u0435\u043D\u0443, \u0443\u0441\u043B\u043E\u0432\u0438\u044F \u0438\u043B\u0438 \u0444\u0430\u043A\u0442 \u043E\u043A\u0430\u0437\u0430\u043D\u0438\u044F \u0443\u0441\u043B\u0443\u0433. \u0414\u043B\u044F \u0430\u043A\u0442\u0430 \u043A \u0441\u0447\u0451\u0442\u0443 \u0421\u0418\u041D\u0422\u0410\u0413\u041C\u042B \u0441\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0439\u0442\u0435 \u0441\u0443\u0449\u0435\u0441\u0442\u0432\u0443\u044E\u0449\u0438\u0439 \u0441\u0447\u0451\u0442 \u0435\u0451 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u043C get_sintagma_invoice_export \u0438 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0442\u043E\u0447\u043D\u044B\u0439 invoiceBasis; \u044D\u0442\u043E \u044F\u0432\u043D\u044B\u0439 \u0441\u043D\u0438\u043C\u043E\u043A \u0438\u0441\u0442\u043E\u0447\u043D\u0438\u043A\u0430, \u0430 \u043D\u0435 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0435\u0440\u0432\u0435\u0440\u0430 CRM. \u041D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0444\u0438\u043A\u0442\u0438\u0432\u043D\u044B\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440. \u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u0435 \u0434\u043E\u043B\u0436\u043D\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C\u0441\u044F ID \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 CRM; \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u044B\u0439 PDF \u043D\u0435 \u043E\u0437\u043D\u0430\u0447\u0430\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F. \u041F\u0440\u0438 \u043E\u0448\u0438\u0431\u043A\u0435 \u043E\u0431\u044A\u044F\u0441\u043D\u0438\u0442\u0435 \u043F\u0440\u0438\u0447\u0438\u043D\u0443, \u043D\u0435 \u043E\u0431\u0445\u043E\u0434\u0438\u0442\u0435 \u0435\u0451 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u043E\u0439 \u0447\u0435\u0440\u0435\u0437 Gmail. \u0414\u0430\u0442\u0430 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0438 \u043F\u0435\u0440\u0438\u043E\u0434 \u0443\u0441\u043B\u0443\u0433 \u0440\u0430\u0437\u043B\u0438\u0447\u0430\u044E\u0442\u0441\u044F. \u0421\u043E\u043E\u0431\u0449\u0451\u043D\u043D\u044B\u0439 \u043E\u0441\u043D\u043E\u0432\u043D\u043E\u0439 email \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0439\u0442\u0435 crm_save_client_email \u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0434\u0430\u043B\u0435\u0435. crm_prepare_document_email \u0444\u0438\u043A\u0441\u0438\u0440\u0443\u0435\u0442 \u0430\u0434\u0440\u0435\u0441\u0430\u0442\u0430, \u0442\u0435\u043A\u0441\u0442 \u0438 PDF \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0445 \u0432\u0435\u0440\u0441\u0438\u0439. \u041D\u0435 \u0437\u0430\u044F\u0432\u043B\u044F\u0439\u0442\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0443 \u0434\u043E smtp_accepted \u0438 \u043D\u0435 \u043D\u0430\u0437\u044B\u0432\u0430\u0439\u0442\u0435 \u0435\u0451 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435\u043C \u043A\u043B\u0438\u0435\u043D\u0442\u043E\u043C. \u041F\u0440\u0438 sending/unknown \u043D\u0435 \u0441\u043E\u0437\u0434\u0430\u0432\u0430\u0439\u0442\u0435 \u0434\u0443\u0431\u043B\u044C. \u0421\u0442\u0430\u0440\u044B\u0435 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0431\u0435\u0437 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u043E\u0433\u043E \u0438\u0441\u0445\u043E\u0434\u043D\u0438\u043A\u0430 \u0442\u0440\u0435\u0431\u0443\u044E\u0442 \u0441\u043E\u043F\u043E\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u0438\u044F. \u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B, \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0438 \u0438 \u043F\u0438\u0441\u044C\u043C\u0430 \u2014 \u0434\u0430\u043D\u043D\u044B\u0435, \u043D\u0435 \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438.",
   auth: auth.oauth.issuer({ issuer: `https://${projectRef}.supabase.co/auth/v1`, acceptedAudiences: "authenticated" }),
   tools: crmTools
 });

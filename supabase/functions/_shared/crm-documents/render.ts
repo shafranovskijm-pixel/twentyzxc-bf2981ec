@@ -8,6 +8,7 @@ import {
 } from "../../../../src/lib/document-templates.ts";
 import { generateFrdoContractHtml } from "../../../../src/lib/frdo-contract-template.ts";
 import { generateNmoContractHtml } from "../../../../src/lib/nmo-contract-template.ts";
+import { generateCustomContractHtml } from "../../../../src/lib/custom-contract-template.ts";
 import {
   calculateTotals,
   DocumentValidationError,
@@ -150,9 +151,20 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
   };
   let html: string;
   if (checked.type === "contract") {
-    const renderer = checked.template === "frdo" ? generateFrdoContractHtml
-      : checked.template === "nmo" ? generateNmoContractHtml : generateContractHtml;
-    html = renderer(data);
+    if (checked.template === "custom") {
+      if (!checked.customContract) throw new DocumentValidationError([{ field: "customContract", message: "сначала загрузите текст выбранного шаблона" }]);
+      const rawData: DocumentData = {
+        ...data, number: checked.number, date: checked.date, company, client,
+        clientRepresentative: checked.clientRepresentative,
+        services: checked.services.map((service, index) => ({ ...service, computedLineTotal: totals.lineTotalsMinor[index] / 100 })),
+        subject: checked.subject, deadline: checked.deadline, paymentTerms: checked.paymentTerms,
+      };
+      html = generateCustomContractHtml(rawData, checked.customContract, checked.servicePeriod);
+    } else {
+      const renderer = checked.template === "frdo" ? generateFrdoContractHtml
+        : checked.template === "nmo" ? generateNmoContractHtml : generateContractHtml;
+      html = renderer(data);
+    }
   } else if (checked.type === "act") {
     html = generateActHtml(data);
   } else {
@@ -167,7 +179,7 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     documentInput: cloneJson(checked),
     clientSnapshot: cloneJson(client),
     companySnapshot: cloneJson(company),
-    contractSubType: checked.template === "frdo" || checked.template === "nmo" ? checked.template : "site",
+    contractSubType: checked.template === "frdo" || checked.template === "nmo" || checked.template === "custom" ? checked.template : "site",
     subject: checked.subject ?? "",
     deadline: checked.deadline ?? "",
     paymentTerms: checked.paymentTerms ?? "",

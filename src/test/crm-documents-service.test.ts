@@ -45,8 +45,8 @@ describe("CRM authorization and protocol boundary", () => {
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
   it("advertises only implemented operations, and marks writes as writes", () => {
-    expect(crmTools.map(tool => tool.name)).toHaveLength(20);
-    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|prepare_document_email|send_document_email/.test(tool.name));
+    expect(crmTools.map(tool => tool.name)).toHaveLength(23);
+    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|save_service_template|prepare_document_email|send_document_email/.test(tool.name));
     for (const name of ["crm_import_client_pdf", "crm_import_client_file"]) {
       const fileTool = crmTools.find(tool => tool.name === name) as { _meta?: Record<string, unknown> };
       expect(fileTool._meta?.["openai/fileParams"]).toEqual(["file"]);

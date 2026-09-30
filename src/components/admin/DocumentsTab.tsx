@@ -39,6 +39,13 @@ import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
 type DocType = "contract" | "invoice" | "act" | "reconciliation";
 type ContractSubType = "site" | "frdo" | "nmo" | "other";
 
+function isApiCustomDocument(doc: { metadata?: unknown }): boolean {
+  try {
+    const metadata = typeof doc.metadata === "string" ? JSON.parse(doc.metadata) : doc.metadata;
+    return metadata?.source === "crm-documents-api" && metadata?.contractSubType === "custom";
+  } catch { return false; }
+}
+
 const DOC_LABELS: Record<DocType, string> = {
   contract: "Договор",
   invoice: "Счёт на оплату",
@@ -1573,6 +1580,10 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
   };
 
   const loadDocumentForEdit = useCallback((doc: any) => {
+    if (isApiCustomDocument(doc)) {
+      toast.info("Это договор по сохранённому шаблону услуги. Текст и условия меняйте через чат; здесь его можно открыть и скачать из истории.");
+      return;
+    }
     setDocType(doc.doc_type as DocType);
     setDocNumber(doc.doc_number);
     setDocDate(doc.doc_date);
@@ -2357,7 +2368,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                       <span className="font-mono text-xs">№{doc.doc_number}</span>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
-                      {onEdit && <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-3.5 h-3.5" /></Button>}
+                      {onEdit && !isApiCustomDocument(doc) && <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-3.5 h-3.5" /></Button>}
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))}><Eye className="w-3.5 h-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => {
                         const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;
@@ -2399,7 +2410,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {onEdit && <Button variant="ghost" size="icon" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>}
+                          {onEdit && !isApiCustomDocument(doc) && <Button variant="ghost" size="icon" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>}
                           <Button variant="ghost" size="icon" onClick={() => setPreviewHtml(embedDocImages(doc.html_content))} title="Открыть"><Eye className="w-4 h-4" /></Button>
                           <Button variant="ghost" size="icon" onClick={() => {
                             const label = DOC_TYPE_LABELS_HIST[doc.doc_type]?.label || doc.doc_type;

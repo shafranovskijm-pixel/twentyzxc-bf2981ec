@@ -5,6 +5,7 @@ import { renderDocument } from "../../../supabase/functions/_shared/crm-document
 import type { ClientRequisites, CompanyRequisites } from "../document-templates";
 import { publicDelivery, type Delivery } from "../../../supabase/functions/_shared/crm-email/delivery";
 import { normalizeCompanyRequisites } from "./company-requisites";
+import { CustomContractTemplateError } from "../custom-contract-template";
 
 // Explicit fields: clients also contains passwords, which must never reach MCP.
 export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person,crm_revision";
@@ -24,6 +25,12 @@ function dbError(error: { code?: string; message?: string } | null) {
 function jsonObject(value: unknown): Record<string, unknown> {
   if (typeof value === "string") { try { return jsonObject(JSON.parse(value)); } catch { return {}; } }
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+function canonical(value: unknown): string {
+  const ordered = (item: unknown): unknown => Array.isArray(item) ? item.map(ordered)
+    : item && typeof item === "object" ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)).map(([key, part]) => [key, ordered(part)]))
+    : item;
+  return JSON.stringify(ordered(value));
 }
 export function createUserDatabase(ctx: ToolContext) {
   if (!ctx.isAuthenticated() || !ctx.getUserId() || !ctx.getToken()) throw new CrmError("UNAUTHORIZED", "Подключите учётную запись CRM.");
@@ -133,6 +140,10 @@ export class CrmDocumentsService {
     return { document: { ...data, metadata: undefined, integration: {
       grossAmount: metadata.grossAmount ?? null, discountAmount: metadata.discountAmount ?? null,
       netAmount: metadata.netAmount ?? null, schemaVersion: metadata.schemaVersion ?? null,
+      ...(jsonObject(metadata.documentInput).template === "custom" ? {
+        customContract: jsonObject(jsonObject(metadata.documentInput).customContract),
+        serviceTemplate: jsonObject(jsonObject(metadata.documentInput).serviceTemplate),
+      } : {}),
     } }, artifactStatus: "saved_html", deliveryStatus: "query_by_delivery_id" };
   }
 
@@ -184,21 +195,60 @@ export class CrmDocumentsService {
     return { client, company, companySourceSnapshot: configuredCompany, linkedContract, assetOrigin: this.assetOrigin };
   }
 
+  private async materializeTemplate(input: DocumentInput): Promise<DocumentInput> {
+    if (input.template !== "custom" || !input.serviceTemplate) return input;
+    const ref = input.serviceTemplate;
+    const { data: template, error } = await this.db.from("crm_service_templates")
+      .select("id,is_archived").eq("id", ref.id).maybeSingle();
+    dbError(error);
+    if (!template) throw new CrmError("CRM_SERVICE_TEMPLATE_NOT_FOUND", "Шаблон услуги не найден.");
+    if (template.is_archived) throw new CrmError("CRM_SERVICE_TEMPLATE_ARCHIVED", "Шаблон услуги находится в архиве.");
+    const { data: version, error: versionError } = await this.db.from("crm_service_template_versions")
+      .select("content").eq("template_id", ref.id).eq("revision", ref.revision).maybeSingle();
+    dbError(versionError);
+    if (!version?.content) throw new CrmError("CRM_SERVICE_TEMPLATE_VERSION_NOT_FOUND", "Версия шаблона не найдена.");
+    const content = version.content as { title: string; body: string };
+    if (input.customContract && (input.customContract.title !== content.title || input.customContract.body !== content.body)) {
+      throw new CrmError("CRM_SERVICE_TEMPLATE_SNAPSHOT_MISMATCH", "Текст не совпадает с выбранной версией шаблона. Сохраните новую версию либо уберите ссылку на шаблон.");
+    }
+    const { templateVariables, ...rest } = input;
+    return validateDocumentInput({ ...rest, customContract: {
+      title: content.title, body: content.body,
+      variables: input.customContract?.variables ?? templateVariables ?? {},
+    } });
+  }
+
+  private replayInput(input: DocumentInput, original: unknown): DocumentInput {
+    const stored = jsonObject(original);
+    if (input.template !== "custom" || !input.serviceTemplate || input.customContract) return input;
+    const storedInput = jsonObject(stored.input);
+    const savedCustom = jsonObject(storedInput.customContract);
+    const savedVariables = jsonObject(savedCustom.variables);
+    const { templateVariables, ...rest } = input;
+    const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
+    if (!same(templateVariables ?? {}, savedVariables)) throw new CrmError("CRM_REQUEST_ID_CONFLICT", "Этот requestId уже использован с другими переменными шаблона.");
+    const candidate = validateDocumentInput({ ...rest, customContract: savedCustom });
+    // SQL also checks actor and exact command identity under a row lock.
+    if (!same(candidate, storedInput)) throw new CrmError("CRM_REQUEST_ID_CONFLICT", "Этот requestId уже использован для другого документа.");
+    return candidate;
+  }
+
   async preview(raw: unknown, includeHtml = false) {
-    const input = validateDocumentInput(raw);
+    const input = await this.materializeTemplate(validateDocumentInput(raw));
     const rendered = renderDocument(input, await this.context(input));
     return { status: "preview", input, totalAmount: rendered.totalAmount, metadata: rendered.metadata,
       ...(includeHtml ? { html: rendered.html } : {}), artifactStatus: "html_only", saved: false, sent: false };
   }
 
   async create(requestId: string, raw: unknown) {
-    const input = validateDocumentInput(raw);
+    const checked = validateDocumentInput(raw);
     // A successful retry must not depend on changed/deleted client settings.
     // The SQL function remains authoritative for actor + command identity.
     const { data: previous, error: replayError } = await this.db.from("crm_document_api_requests")
       .select("request,result").eq("request_id", requestId).maybeSingle();
     dbError(replayError);
     if (previous?.result) {
+      const input = this.replayInput(checked, previous.request);
       const { data, error } = await this.db.rpc("crm_save_document", {
         p_request_id: requestId, p_document_id: null, p_expected_revision: null,
         p_input: input, p_payload: jsonObject(previous.request).payload,
@@ -206,13 +256,14 @@ export class CrmDocumentsService {
       dbError(error);
       return { ...data, status: "saved", artifactStatus: "html_only", deliveryStatus: "not_requested", sent: false };
     }
+    const input = await this.materializeTemplate(checked);
     const context = await this.context(input);
     const rendered = renderDocument(input, context);
     return this.save(requestId, null, null, input, rendered, context.client, input.contractId || null);
   }
 
   async revise(requestId: string, documentId: string, expectedRevision: number, changes: Record<string, unknown>) {
-    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative"];
+    const allowed = ["date", "services", "subject", "deadline", "paymentTerms", "discount", "servicePeriod", "clientRepresentative", "customContract"];
     if (!Object.keys(changes).length || Object.keys(changes).some(key => !allowed.includes(key))) {
       throw new CrmError("INVALID_CHANGES", "Изменять тип, номер, клиента или связь документа через правку нельзя.");
     }
@@ -225,6 +276,7 @@ export class CrmDocumentsService {
     const metadata = jsonObject(jsonObject(previous.snapshot).metadata);
     if (!metadata.clientSnapshot || !metadata.companySnapshot) throw new CrmError("SNAPSHOT_MISSING", "У версии нет зафиксированных реквизитов. Автоматическая правка остановлена.");
     const next = { ...jsonObject(previous.input), ...changes };
+    if (changes.customContract !== undefined) delete next.serviceTemplate;
     if (next.discount === null) delete next.discount;
     const input = validateDocumentInput(next);
     const context = {
@@ -264,6 +316,8 @@ export async function runCrmTool<T>(ctx: ToolContext, action: (service: CrmDocum
   } catch (error) {
     const result = error instanceof DocumentValidationError
       ? { code: "INVALID_DOCUMENT", message: "Уточните поля документа.", issues: error.issues }
+      : error instanceof CustomContractTemplateError
+      ? { code: "INVALID_CUSTOM_CONTRACT", message: "Исправьте текст или переменные договора.", issues: [{ field: error.field, message: error.message }] }
       : error instanceof CrmError ? { code: error.code, message: error.message }
       : { code: "INTERNAL_ERROR", message: "Операция не выполнена. Требуется проверка серверного журнала." };
     return { isError: true, content: [{ type: "text" as const, text: JSON.stringify(result) }] };

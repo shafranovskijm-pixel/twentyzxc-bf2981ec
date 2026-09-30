@@ -309,7 +309,7 @@ function genericTable(tbl: HTMLTableElement): PmNode {
   if (!rows.length) return { text: "" };
   const cols = rows[0].length;
   return {
-    table: { widths: Array(cols).fill("*"), body: rows, dontBreakRows: true, headerRows: 1 },
+    table: { widths: Array(cols).fill("*"), body: rows, dontBreakRows: !tbl.classList.contains("custom-contract-table"), headerRows: 1 },
     layout: {
       hLineWidth: () => 0.5,
       vLineWidth: () => 0.5,

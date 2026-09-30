@@ -1,9 +1,10 @@
 import { calculateDocumentMoney, DOCUMENT_MONEY_LIMITS, type DocumentMoney } from "../../../../src/lib/document-money.ts";
 import type { ClientRepresentative } from "../../../../src/lib/document-templates.ts";
+import { getCustomContractTokens, validateCustomContractVariables, type CustomContractContent } from "../../../../src/lib/custom-contract-template.ts";
 
 /** Runtime boundary for the document API. Monetary arithmetic is in integer kopecks. */
 export type DocumentType = "contract" | "invoice" | "act";
-export type ContractTemplate = "standard" | "frdo" | "nmo";
+export type ContractTemplate = "standard" | "frdo" | "nmo" | "custom";
 
 export interface DocumentService {
   name: string;
@@ -55,6 +56,12 @@ export interface DocumentInput {
   /** Structured CRM dates, supplied explicitly and independent of contractual wording. */
   servicePeriod?: ServicePeriod;
   clientRepresentative?: ClientRepresentative;
+  /** Materialized text is frozen in every document revision. */
+  customContract?: CustomContractContent;
+  /** Optional immutable version used to create this document. */
+  serviceTemplate?: { id: string; revision: number };
+  /** Values for a template reference before it is materialized. */
+  templateVariables?: Record<string, string>;
 }
 
 export interface ValidationIssue {
@@ -181,7 +188,7 @@ export function calculateTotals(services: DocumentService[], discount?: Discount
 
 export function validateDocumentInput(input: unknown): DocumentInput {
   const raw = record(input, "document");
-  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative"], "document");
+  knownKeys(raw, ["type", "clientId", "date", "number", "template", "services", "subject", "deadline", "paymentTerms", "contractId", "invoiceBasis", "discount", "servicePeriod", "clientRepresentative", "customContract", "serviceTemplate", "templateVariables"], "document");
   if (raw.type !== "contract" && raw.type !== "invoice" && raw.type !== "act") {
     invalid("type", "ожидается contract, invoice или act");
   }
@@ -195,8 +202,8 @@ export function validateDocumentInput(input: unknown): DocumentInput {
   if (/[\r\n\t]/.test(result.number)) invalid("number", "ожидается номер в одной строке");
   if (raw.template !== undefined) {
     if (raw.type !== "contract") invalid("template", "шаблон задаётся только для договора");
-    if (raw.template !== "standard" && raw.template !== "frdo" && raw.template !== "nmo") {
-      invalid("template", "ожидается standard, frdo или nmo");
+    if (raw.template !== "standard" && raw.template !== "frdo" && raw.template !== "nmo" && raw.template !== "custom") {
+      invalid("template", "ожидается standard, frdo, nmo или custom");
     }
     result.template = raw.template;
   } else if (raw.type === "contract") {
@@ -204,7 +211,7 @@ export function validateDocumentInput(input: unknown): DocumentInput {
   }
   if (raw.clientRepresentative !== undefined) {
     if (raw.type !== "contract" || result.template === "nmo") {
-      invalid("clientRepresentative", "представитель поддерживается только для договора standard или frdo");
+      invalid("clientRepresentative", "представитель поддерживается только для договора standard, frdo или custom");
     }
     const representative = record(raw.clientRepresentative, "clientRepresentative");
     knownKeys(representative, ["name", "post", "basis"], "clientRepresentative");
@@ -266,6 +273,29 @@ export function validateDocumentInput(input: unknown): DocumentInput {
       invalid("servicePeriod.end", "окончание периода не может быть раньше начала");
     }
     result.servicePeriod = checkedPeriod;
+  }
+  if (result.template === "custom") {
+    if (raw.serviceTemplate !== undefined) {
+      const ref = record(raw.serviceTemplate, "serviceTemplate");
+      knownKeys(ref, ["id", "revision"], "serviceTemplate");
+      if (!Number.isSafeInteger(ref.revision) || (ref.revision as number) < 1 || (ref.revision as number) > 2147483647) invalid("serviceTemplate.revision", "ожидается положительная версия шаблона");
+      result.serviceTemplate = { id: uuid(ref.id, "serviceTemplate.id"), revision: ref.revision as number };
+    }
+    if (raw.templateVariables !== undefined) {
+      if (!result.serviceTemplate || raw.customContract !== undefined) invalid("templateVariables", "переменные указываются только при выборе сохранённого шаблона без текста");
+      result.templateVariables = validateCustomContractVariables(raw.templateVariables, "templateVariables");
+    }
+    if (raw.customContract !== undefined) {
+      const contract = record(raw.customContract, "customContract");
+      knownKeys(contract, ["title", "body", "variables"], "customContract");
+      const title = text(contract.title, "customContract.title", 500);
+      const body = contract.body as string;
+      getCustomContractTokens({ title, body });
+      result.customContract = { title, body, ...(contract.variables === undefined ? {} : { variables: validateCustomContractVariables(contract.variables) }) };
+    }
+    if (!result.customContract && !result.serviceTemplate) invalid("customContract", "укажите текст договора или ID и версию сохранённого шаблона");
+  } else if (raw.customContract !== undefined || raw.serviceTemplate !== undefined || raw.templateVariables !== undefined) {
+    invalid("customContract", "произвольный текст и шаблон услуги доступны только для custom-договора");
   }
   const totals = calculateTotals(result.services, result.discount);
   if (result.invoiceBasis && totals.netMinor !== Math.round(result.invoiceBasis.amount * 100)) {

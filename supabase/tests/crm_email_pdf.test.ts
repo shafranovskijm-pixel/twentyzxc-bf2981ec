@@ -3,6 +3,7 @@ import { strict as assert } from "node:assert";
 import { DOMParser } from "npm:linkedom@0.18.12";
 import { PdfRenderError, renderDocumentPdf, resolveDocumentImages } from "../functions/_shared/crm-email/pdf.ts";
 import { generateActHtml, generateContractHtml, generateInvoiceHtml, type DocumentData } from "../../src/lib/document-templates.ts";
+import { generateCustomContractHtml } from "../../src/lib/custom-contract-template.ts";
 
 const parse = (body: string): Document => new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${body}</body></html>`, "text/html") as unknown as Document;
 const asset = (name: string) => Deno.readFile(new URL(`../../public/images/${name}.png`, import.meta.url));
@@ -119,5 +120,32 @@ Deno.test("current CRM contract, invoice and act templates render with exact ori
       await Deno.writeFile(`${outputDir}/24zxc-current-${name}-template.pdf`, bytes);
       await Deno.writeTextFile(`${outputDir}/24zxc-current-${name}-template.html`, html);
     }
+  }
+});
+
+Deno.test("multi-page custom service contract renders to PDF with its pinned text and branded images", async () => {
+  const fixture: DocumentData = {
+    type: "contract", number: "TEST-CUSTOM/2026", date: "2026-09-30", assetOrigin: "https://24zxc.ru",
+    company: { company_name: "ТЕСТОВЫЙ ИСПОЛНИТЕЛЬ", company_short_name: "Тест", company_inn: "000000000000", company_kpp: "", company_ogrn: "",
+      company_legal_address: "Тестовый адрес", company_actual_address: "", company_bank_account: "00000000000000000000", company_bank_bik: "000000000",
+      company_bank_corr: "00000000000000000000", company_bank_name: "Тестовый банк", company_director_name: "Тестовый исполнитель", company_director_post: "Директор", company_phone: "", company_email: "" },
+    client: { name: "Тестовый заказчик", inn: "0000000000", kpp: "", ogrn: "", address: "Тестовый адрес", director_name: "Тестовый руководитель", director_post: "Директор" },
+    services: [{ name: "Тестовая услуга", qty: 1, price: 1200 }], subject: "Тестовая услуга", deadline: "30 дней", paymentTerms: "100% предоплата",
+  };
+  const body = `## Предмет договора\nИсполнитель оказывает {{subject}}.\n\n{{services.table}}\n\n${Array.from({ length: 90 }, (_, i) => `${i + 1}. Тестовый пункт ${i + 1}: {{custom.scope}}.`).join("\n")}\n\n| Этап | Результат |\n| --- | --- |\n| Один | Тестовый результат |`;
+  const html = generateCustomContractHtml(fixture, { title: "Тестовый договор № {{contract.number}}", body, variables: { scope: "не является офертой" } });
+  const bytesByUrl = new Map([ ["https://24zxc.ru/images/signature.png", await asset("signature")], ["https://24zxc.ru/images/stamp.png", await asset("stamp")] ]);
+  const fetchAsset: typeof fetch = (url) => {
+    const bytes = bytesByUrl.get(String(url)); assert(bytes, "Unexpected image request");
+    return Promise.resolve(new Response(bytes, { headers: { "content-type": "image/png" } }));
+  };
+  const bytes = await renderDocumentPdf(html, "ТЕСТОВЫЙ ОБРАЗЕЦ — НЕ ДОКУМЕНТ (custom)", { fetch: fetchAsset });
+  assert.equal(new TextDecoder().decode(bytes.subarray(0, 5)), "%PDF-");
+  assert((new TextDecoder("latin1").decode(bytes).match(/\/Subtype \/Image/g) || []).length >= 2);
+  const outputDir = Deno.env.get("CRM_PDF_QA_DIR");
+  if (outputDir) {
+    await Deno.mkdir(outputDir, { recursive: true });
+    await Deno.writeFile(`${outputDir}/24zxc-custom-service-contract.pdf`, bytes);
+    await Deno.writeTextFile(`${outputDir}/24zxc-custom-service-contract.html`, html);
   }
 });
