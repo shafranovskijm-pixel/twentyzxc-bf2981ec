@@ -35,9 +35,13 @@ ambiguous legacy links require manual reconciliation. Cards are not merged.
 The native ChatGPT file parameter schema follows
 https://developers.openai.com/plugins/reference#file-apis: `_meta.openai/fileParams`
 lists `file`, with required `download_url` and `file_id`; `mime_type` and `file_name`
-are declared optional. Download uses HTTPS `files.oaiusercontent.com` only, no
-redirects or arbitrary URL fetch. Another actual host must be verified before it
-can be supported. Maximum 10 MiB. PDF signature/end marker, Word OLE directory
+are declared optional. Download allows only HTTPS subdomains of `oaiusercontent.com`,
+the [OpenAI-documented file-host family](https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps).
+This includes the observed native transport host `sdmntprpolandcentral.oaiusercontent.com`.
+Matching uses the full `.oaiusercontent.com` DNS-label boundary; the bare apex,
+lookalike domains, arbitrary user hosts and Azure URLs are rejected. Redirects,
+credentials, non-default ports and URL fragments remain forbidden.
+Maximum 10 MiB. PDF signature/end marker, Word OLE directory
 or DOCX archive structure/content types, and SHA256 are checked. DOCM, encrypted,
 malformed or disguised formats are rejected. Word content is never executed.
 

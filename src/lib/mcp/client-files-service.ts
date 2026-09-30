@@ -8,6 +8,10 @@ export const MAX_CLIENT_PDF_BYTES = MAX_CLIENT_FILE_BYTES;
 export const CLIENT_FILE_FIELDS = "id,client_id,file_name,file_size,content_type,sha256,description,created_at";
 const INTERNAL_FIELDS = `${CLIENT_FILE_FIELDS},request_id,actor_id,source_file_id,file_path`;
 const BUCKET = "crm-client-files";
+// OpenAI's documented file-host family. The leading dot is a DNS-label
+// boundary: neither the bare apex nor evil-oaiusercontent.com is included.
+// https://help.openai.com/en/articles/9247338-network-recommendations-for-chatgpt-errors-on-web-and-apps
+const CHAT_FILE_HOST_SUFFIX = ".oaiusercontent.com";
 export interface ChatFile { download_url: string; file_id: string; mime_type?: string; file_name?: string }
 export interface ImportClientPdfInput { requestId: string; clientId: string; file: ChatFile; fileName?: string; description?: string }
 export type ImportClientFileInput = ImportClientPdfInput;
@@ -21,8 +25,8 @@ function publicFile(row: Record<string, unknown>) {
 export function validateChatFileUrl(value: string): URL {
   let url: URL;
   try { url = new URL(value); } catch { throw new CrmError("INVALID_FILE_URL", "Не получена ссылка на оригинальный файл ChatGPT."); }
-  // Exact OpenAI file origin only. No Azure wildcards, user-hosted URLs or redirects.
-  if (url.protocol !== "https:" || url.hostname !== "files.oaiusercontent.com" || url.port || url.username || url.password || url.hash) {
+  // Only OpenAI's file-host family. No arbitrary hosts, Azure URLs or redirects.
+  if (url.protocol !== "https:" || !url.hostname.endsWith(CHAT_FILE_HOST_SUFFIX) || url.port || url.username || url.password || url.hash) {
     throw new CrmError("UNSUPPORTED_FILE_ORIGIN", `Источник файлового параметра пока не поддерживается: ${url.protocol}//${url.hostname.slice(0, 253) || "(без домена)"}. Передайте оригинальное вложение через файловый параметр инструмента. Путь и токен ссылки не записываются.`);
   }
   return url;

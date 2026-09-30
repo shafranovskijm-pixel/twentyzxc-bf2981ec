@@ -31,8 +31,21 @@ function dbMock(results: unknown[] = [{ id: clientId }, null]) {
 }
 
 describe("original PDF transfer boundary", () => {
-  it.each(["http://files.oaiusercontent.com/f", "https://localhost/f", "https://127.0.0.1/f", "https://files.oaiusercontent.com.evil.example/f", "https://anything.blob.core.windows.net/f", "https://user:pass@files.oaiusercontent.com/f", "https://files.oaiusercontent.com:444/f", "data:application/pdf;base64,abc"])("rejects unsupported source %s", source => {
+  it.each(["http://files.oaiusercontent.com/f", "https://localhost/f", "https://127.0.0.1/f", "https://files.oaiusercontent.com.evil.example/f", "https://anything.blob.core.windows.net/f", "https://user:pass@files.oaiusercontent.com/f", "https://files.oaiusercontent.com:444/f", "data:application/pdf;base64,abc", "http://sdmntprpolandcentral.oaiusercontent.com/f", "https://sdmntprpolandcentral.oaiusercontent.com.evil.example/f", "https://oaiusercontent.com/f", "https://evil-oaiusercontent.com/f", "https://files.evil-oaiusercontent.com/f", "https://sdmntprpolandcentral.blob.core.windows.net/f", "https://sdmntprpolandcentral.oaiusercontent.com@evil.example/f", "https://sdmntprpolandcentral.oaiusercontent.com:444/f", "https://sdmntprpolandcentral.oaiusercontent.com/f#fragment", "https://192.168.1.1/f", "https://[::1]/f", "https://user.example/f"])("rejects unsupported source %s", source => {
     expect(() => validateChatFileUrl(source)).toThrow();
+  });
+  it.each(["files.oaiusercontent.com", "sdmntprpolandcentral.oaiusercontent.com", "sdmntprgermanywestcentral.oaiusercontent.com", "sub.region.oaiusercontent.com"])("accepts the documented file-host family: %s", async host => {
+    const network = fetcher();
+    const nativeFile = { ...file, download_url: `https://${host}/original.pdf?sig=private` };
+    expect(await downloadChatPdf(nativeFile, network)).toEqual(bytes);
+    expect(network).toHaveBeenCalledWith(new URL(nativeFile.download_url), expect.objectContaining({ redirect: "error", signal: expect.any(AbortSignal) }));
+  });
+  it("never follows a redirect returned by an allowed host, including a target in its query", async () => {
+    const network = vi.fn().mockResolvedValue(new Response(null, { status: 302, headers: { Location: "https://127.0.0.1/private" } }));
+    const redirectingFile = { ...file, download_url: "https://sdmntprpolandcentral.oaiusercontent.com/file?redirect=https%3A%2F%2F127.0.0.1%2Fprivate" };
+    await expect(downloadChatPdf(redirectingFile, network)).rejects.toMatchObject({ code: "FILE_DOWNLOAD_FAILED" });
+    expect(network).toHaveBeenCalledTimes(1);
+    expect(network).toHaveBeenCalledWith(new URL(redirectingFile.download_url), expect.objectContaining({ redirect: "error" }));
   });
   it("passes signed query privately, with redirects forbidden and a timeout", async () => {
     const network = fetcher();
