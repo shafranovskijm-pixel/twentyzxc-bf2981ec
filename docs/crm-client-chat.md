@@ -61,7 +61,7 @@ order. Provision the private 10 MiB `crm-client-files` bucket with Lovable's Sto
 tool before the file migration: bucket SQL changes are blocked by that platform.
 If the tool cannot set allowed MIME types, the migration permits NULL there and
 enforces MIME plus exact UUID/UUID.extension paths in the admin INSERT policy.
-Apply the separate `20260930040000_crm_client_word_files.sql` migration after the
+Apply the canonical `20260930024508_6b5c5206-bd90-423e-ae78-e7ec4427bf64.sql` migration after the
 three already-applied canonical client migrations to enable PDF, DOC and DOCX;
 MCP additionally validates the actual bytes. A public/oversized bucket fails the
 prerequisite guard. Regenerate/commit the MCP function and manifest, deploy function, publish

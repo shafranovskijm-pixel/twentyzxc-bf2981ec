@@ -50,7 +50,7 @@ try {
   await db.exec("UPDATE storage.buckets SET allowed_mime_types=NULL WHERE id='crm-client-files'");
   await db.exec(migration);
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_files.sql"), "utf8"));
-  const wordMigration = await readFile(path.join(root, "supabase/migrations/20260930040000_crm_client_word_files.sql"), "utf8");
+  const wordMigration = await readFile(path.join(root, "supabase/migrations/20260930024508_6b5c5206-bd90-423e-ae78-e7ec4427bf64.sql"), "utf8");
   await db.exec("UPDATE storage.buckets SET allowed_mime_types=ARRAY['application/pdf'] WHERE id='crm-client-files'");
   try {
     await db.exec(`BEGIN;\n${wordMigration}\nCOMMIT;`);
