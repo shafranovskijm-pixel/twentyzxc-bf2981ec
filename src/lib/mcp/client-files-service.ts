@@ -23,7 +23,7 @@ export function validateChatFileUrl(value: string): URL {
   try { url = new URL(value); } catch { throw new CrmError("INVALID_FILE_URL", "Не получена ссылка на оригинальный файл ChatGPT."); }
   // Exact OpenAI file origin only. No Azure wildcards, user-hosted URLs or redirects.
   if (url.protocol !== "https:" || url.hostname !== "files.oaiusercontent.com" || url.port || url.username || url.password || url.hash) {
-    throw new CrmError("UNSUPPORTED_FILE_ORIGIN", "Ссылка на файл не относится к поддерживаемому хранилищу ChatGPT. Требуется оригинальное вложение, переданное через файловый параметр инструмента.");
+    throw new CrmError("UNSUPPORTED_FILE_ORIGIN", `Источник файлового параметра пока не поддерживается: ${url.protocol}//${url.hostname.slice(0, 253) || "(без домена)"}. Передайте оригинальное вложение через файловый параметр инструмента. Путь и токен ссылки не записываются.`);
   }
   return url;
 }
