@@ -1,8 +1,11 @@
 export interface RenewableContractPeriod {
+  /** Retained for existing callers; a document date never establishes a service end. */
   contract_date?: string | null;
   paid_until?: string | null;
   service_end?: string | null;
   service_no_deadline?: boolean;
+  is_archived?: boolean;
+  is_one_time?: boolean;
 }
 
 export interface ContractRenewalPeriod {
@@ -12,7 +15,7 @@ export interface ContractRenewalPeriod {
 
 const parseDateOnly = (value: string | null | undefined) => {
   if (!value) return null;
-  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
 
   const year = Number(match[1]);
@@ -55,13 +58,11 @@ const addYearsClamped = (value: Date, years: number) => {
 export const getContractRenewalPeriod = (
   contract: RenewableContractPeriod,
 ): ContractRenewalPeriod | null => {
-  if (contract.service_no_deadline) return null;
-  let previousEnd = parseDateOnly(contract.service_end) || parseDateOnly(contract.paid_until);
-  if (!previousEnd) {
-    const previousStart = parseDateOnly(contract.contract_date);
-    if (!previousStart) return null;
-    previousEnd = addYearsClamped(previousStart, 1);
-  }
+  if (contract.service_no_deadline || contract.is_archived || contract.is_one_time) return null;
+  // Same precedence as the renewal reminders. paid_until is a CRM period date,
+  // not evidence of a payment; an invalid explicit service_end remains unknown.
+  const previousEnd = parseDateOnly(contract.service_end || contract.paid_until);
+  if (!previousEnd) return null;
 
   const newStart = addDays(previousEnd, 1);
   const newEnd = addDays(addYearsClamped(newStart, 1), -1);

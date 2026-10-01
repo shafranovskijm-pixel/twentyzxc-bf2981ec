@@ -27,7 +27,7 @@ export const defaultNotificationSettings: NotificationSettings = {
 export const notificationTypeLabels: Record<keyof NotificationSettings, { title: string; description: string }> = {
   overdue: { title: "Просроченные оплаты", description: "Договоры с истёкшей датой оплаты" },
   expiring: { title: "Оплата скоро истекает", description: "Напоминание за 3 дня до окончания оплаты" },
-  renewals: { title: "Продление договоров", description: "Годовщина договоров «Сайт» и «ФРДО» за 14 дней" },
+  renewals: { title: "Продление договоров", description: "Проверка продления «Сайт» и «ФРДО» по указанному сроку в ближайшие 14 дней" },
   deadlines: { title: "Сроки услуг клиентов", description: "Напоминания за 3, 2 и 1 месяц до окончания услуги" },
   tasks: { title: "Задачи планера", description: "Ежедневные напоминания по задачам" },
   leads: { title: "Заявки с сайта", description: "Новые лиды из форм, брифов и конструктора" },

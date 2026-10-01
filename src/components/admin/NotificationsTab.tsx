@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CalendarClock, Clock, UserPlus, RefreshCw, Hourglass, BellOff, FileText, X, Undo2, FilePlus2 } from "lucide-react";
 import { isBefore, addDays, subHours, format } from "date-fns";
+import { selectRenewalReminders, describeRenewalTerm } from "../../../supabase/functions/_shared/renewal-reminders";
 import {
   useNotificationSettings,
   useDismissedNotifications,
@@ -54,7 +55,7 @@ const NotificationsTab = ({ onOpenContracts, onNewContract }: NotificationsTabPr
     queryFn: async () => {
       const { data, error } = await supabase
         .from("contracts")
-        .select("id, client_name, contract_number, paid_until, contract_date, contract_type, payment_status")
+        .select("id, client_name, contract_number, paid_until, service_end, contract_type, payment_status, is_archived, is_one_time, service_no_deadline")
         .eq("is_archived", false);
       if (error) throw error;
       return data;
@@ -104,6 +105,11 @@ const NotificationsTab = ({ onOpenContracts, onNewContract }: NotificationsTabPr
   const items = useMemo(() => {
     const list: Item[] = [];
     const now = new Date();
+    // Use the same explicit dates and UTC calendar day as the Telegram report.
+    const renewals = new Map(selectRenewalReminders(
+      contracts.filter(c => c.contract_type === "Сайт" || c.contract_type === "ФРДО"),
+      now.toISOString().slice(0, 10),
+    ).map(reminder => [reminder.contract.id, reminder]));
 
     contracts.forEach((c) => {
       if (c.paid_until && c.payment_status !== "оплачено") {
@@ -135,25 +141,19 @@ const NotificationsTab = ({ onOpenContracts, onNewContract }: NotificationsTabPr
         }
       }
 
-      if (c.contract_date && (c.contract_type === "Сайт" || c.contract_type === "ФРДО")) {
-        const start = new Date(c.contract_date);
-        const anniversary = new Date(start);
-        anniversary.setFullYear(now.getFullYear());
-        if (anniversary < now) anniversary.setFullYear(now.getFullYear() + 1);
-        const days = Math.round((anniversary.getTime() - now.getTime()) / 86400000);
-        if (days >= 0 && days <= 14) {
-          list.push({
-            id: `renew-${c.id}`,
-            dismissKey: `renewals:${c.id}`,
-            snapshot: String(anniversary.getFullYear()),
-            type: "renewals",
-            icon: RefreshCw,
-            color: "text-primary",
-            label: `Продление: ${c.client_name}`,
-            meta: `${c.contract_type} · через ${days} дн.`,
-            clientName: c.client_name,
-          });
-        }
+      const renewal = renewals.get(c.id);
+      if (renewal) {
+        list.push({
+          id: `renew-${c.id}`,
+          dismissKey: `renewals:${c.id}`,
+          snapshot: renewal.expiryDate.slice(0, 4),
+          type: "renewals",
+          icon: RefreshCw,
+          color: "text-primary",
+          label: `Проверить продление: ${c.client_name}`,
+          meta: `${c.contract_type} · ${describeRenewalTerm(renewal)}`,
+          clientName: c.client_name,
+        });
       }
     });
 

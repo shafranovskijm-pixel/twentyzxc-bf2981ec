@@ -37,6 +37,7 @@ import {
 } from "@/lib/contracts-validity";
 import { ensureClient } from "@/lib/ensure-client";
 import { getContractRenewalPeriod } from "@/lib/contract-renewal";
+import { selectRenewalReminders, describeRenewalTerm } from "../../../supabase/functions/_shared/renewal-reminders";
 
 interface Contract {
   id: string;
@@ -979,17 +980,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     return daysLeft !== null && daysLeft < 0;
   };
 
-  const getAnniversaryDays = (contractDate: string | null, contractType: string | null): number | null => {
-    if (!contractDate || !contractType) return null;
-    const type = contractType.toLowerCase();
-    if (!type.includes("сайт") && !type.includes("фрдо")) return null;
-    const cd = new Date(contractDate);
-    const now = new Date();
-    const nextAnniversary = new Date(cd);
-    nextAnniversary.setFullYear(now.getFullYear());
-    if (nextAnniversary < now) nextAnniversary.setFullYear(now.getFullYear() + 1);
-    const diffDays = Math.round((nextAnniversary.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays <= 14 ? diffDays : null;
+  const getRenewalReminder = (contract: Contract) => {
+    if (contract.contract_type !== "Сайт" && contract.contract_type !== "ФРДО") return null;
+    return selectRenewalReminders([contract], new Date().toISOString().slice(0, 10))[0] ?? null;
   };
 
   if (contractsError) {
@@ -1052,9 +1045,9 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                     {c.contract_date && <span>{new Date(c.contract_date).toLocaleDateString("ru-RU")}</span>}
                     <span className="font-medium text-foreground">{formatAmount(c.amount)}</span>
                     {c.contract_type && <span>{c.contract_type}</span>}
-                    {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                    {(() => { const reminder = getRenewalReminder(c); return reminder ? (
                       <span className="flex items-center gap-1 text-orange-500 font-semibold">
-                        <RefreshCw className="w-3 h-3" />Продление через {d} дн.
+                        <RefreshCw className="w-3 h-3" />Проверить продление: {describeRenewalTerm(reminder)}
                       </span>
                     ) : null; })()}
                   </div>
@@ -1161,12 +1154,12 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                         <TooltipProvider>
                           <div className="flex items-center gap-1.5">
                             {c.contract_type || "—"}
-                            {(() => { const d = getAnniversaryDays(c.contract_date, c.contract_type); return d !== null ? (
+                            {(() => { const reminder = getRenewalReminder(c); return reminder ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <RefreshCw className="w-4 h-4 text-orange-500" />
                                 </TooltipTrigger>
-                                <TooltipContent>Продление через {d} дн.</TooltipContent>
+                                <TooltipContent>Проверить продление: {describeRenewalTerm(reminder)}</TooltipContent>
                               </Tooltip>
                             ) : null; })()}
                           </div>

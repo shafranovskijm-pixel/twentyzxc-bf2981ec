@@ -45,7 +45,9 @@ export function createUserDatabase(ctx: ToolContext) {
 export async function requireAdmin(db: SupabaseClient, userId: string | undefined) {
   if (!userId) throw new CrmError("UNAUTHORIZED", "Требуется вход.");
   const { data, error } = await db.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (error || data !== true) throw new CrmError("FORBIDDEN", "Доступ к документам CRM разрешён администратору.");
+  // An unavailable role query does not establish that the user lacks the role.
+  dbError(error);
+  if (data !== true) throw new CrmError("FORBIDDEN", "Доступ к документам CRM разрешён администратору.");
 }
 
 /** One instance per call, using only the verified user's token and existing RLS. */

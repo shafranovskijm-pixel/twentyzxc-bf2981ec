@@ -2152,7 +2152,8 @@ function createUserDatabase(ctx) {
 async function requireAdmin(db, userId) {
   if (!userId) throw new CrmError("UNAUTHORIZED", "\u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u0432\u0445\u043E\u0434.");
   const { data, error } = await db.rpc("has_role", { _user_id: userId, _role: "admin" });
-  if (error || data !== true) throw new CrmError("FORBIDDEN", "\u0414\u043E\u0441\u0442\u0443\u043F \u043A \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430\u043C CRM \u0440\u0430\u0437\u0440\u0435\u0448\u0451\u043D \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440\u0443.");
+  dbError(error);
+  if (data !== true) throw new CrmError("FORBIDDEN", "\u0414\u043E\u0441\u0442\u0443\u043F \u043A \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430\u043C CRM \u0440\u0430\u0437\u0440\u0435\u0448\u0451\u043D \u0430\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440\u0443.");
 }
 var CrmDocumentsService = class {
   constructor(db, assetOrigin = "https://24zxc.ru") {

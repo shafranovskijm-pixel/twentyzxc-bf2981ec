@@ -44,6 +44,10 @@ describe("CRM authorization and protocol boundary", () => {
     await requireAdmin({ rpc } as never, clientId);
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
+  it("reports a failed role lookup as a database error and never grants access", async () => {
+    const db = { rpc: vi.fn().mockResolvedValue({ data: true, error: { code: "PGRST000", message: "internal connection details" } }) } as never;
+    await expect(requireAdmin(db, clientId)).rejects.toMatchObject({ code: "DATABASE_ERROR", message: "Не удалось выполнить операцию с CRM." });
+  });
   it("advertises only implemented operations, and marks writes as writes", () => {
     expect(crmTools.map(tool => tool.name)).toHaveLength(23);
     for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|save_service_template|prepare_document_email|send_document_email/.test(tool.name));
