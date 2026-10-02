@@ -19,16 +19,25 @@ describe("getContractRenewalPeriod", () => {
     });
   });
 
-  it("derives the previous end date when only the contract date is available", () => {
-    expect(getContractRenewalPeriod({ contract_date: "2026-08-16" })).toEqual({
-      startDate: "2027-08-17",
-      endDate: "2028-08-16",
-    });
+  it("does not infer an annual term from a document date", () => {
+    expect(getContractRenewalPeriod({ contract_date: "2026-08-16" })).toBeNull();
   });
 
   it("does not create a period from invalid or missing dates", () => {
     expect(getContractRenewalPeriod({})).toBeNull();
     expect(getContractRenewalPeriod({ paid_until: "2027-02-30" })).toBeNull();
+    expect(getContractRenewalPeriod({ service_end: "2026-02-30", paid_until: "2026-09-30" })).toBeNull();
+    expect(getContractRenewalPeriod({ service_end: "2026-09-30T23:00:00Z" })).toBeNull();
+  });
+
+  it("prefers the service term over the recorded paid-through date", () => {
+    expect(getContractRenewalPeriod({ service_end: "2027-11-01", paid_until: "2026-09-30" })).toEqual({
+      startDate: "2027-11-02", endDate: "2028-11-01",
+    });
+  });
+
+  it.each(["is_archived", "is_one_time", "service_no_deadline"] as const)("does not prefill a renewal for %s", flag => {
+    expect(getContractRenewalPeriod({ service_end: "2026-09-30", [flag]: true })).toBeNull();
   });
 });
 

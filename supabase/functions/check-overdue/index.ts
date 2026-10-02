@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getNotificationSettings, getDismissedNotifications, isDismissed } from "../_shared/notification-settings.ts";
+import { selectRenewalReminders, describeRenewalTerm } from "../_shared/renewal-reminders.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,36 +68,19 @@ serve(async (req) => {
       throw err2;
     }
 
-    // 3. Website contracts approaching 1-year anniversary (14 days before)
-    // For "Сайт" contracts: remind 2 weeks before the contract_date anniversary
+    // 3. Recorded service terms within 14 days; a document date is not an expiry.
     const { data: allRenewalContracts, error: err3 } = await supabase
       .from("contracts")
-      .select("id, client_name, contract_number, contract_date, amount, contract_type")
+      .select("id, client_name, contract_number, amount, contract_type, service_end, paid_until, is_archived, is_one_time, service_no_deadline")
       .eq("is_archived", false)
-      .in("contract_type", ["Сайт", "ФРДО"])
-      .not("contract_date", "is", null);
+      .in("contract_type", ["Сайт", "ФРДО"]);
 
     if (err3) {
       console.error("Error fetching site contracts:", err3);
       throw err3;
     }
 
-    // Check which contracts have an anniversary within 14 days
-    const renewalReminders = (allRenewalContracts || []).filter(c => {
-      const contractDate = new Date(c.contract_date!);
-      const todayDate = new Date(today);
-      // Calculate next anniversary
-      const nextAnniversary = new Date(contractDate);
-      nextAnniversary.setFullYear(todayDate.getFullYear());
-      // If anniversary already passed this year, check next year
-      if (nextAnniversary < todayDate) {
-        nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
-      }
-      // Check if anniversary is exactly 14 days from now
-      const diffMs = nextAnniversary.getTime() - todayDate.getTime();
-      const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-      return diffDays >= 0 && diffDays <= 14;
-    });
+    const renewalReminders = selectRenewalReminders(allRenewalContracts || [], today);
 
     // 4. Service deadlines approaching (3 months, 2 months, 1 month)
     const { data: allClientsWithDeadline, error: err4 } = await supabase
@@ -130,13 +114,10 @@ serve(async (req) => {
       .filter((c) => !isDismissed(dismissedMap, `overdue:${c.id}`, String(c.paid_until)));
     const expiringList = (notifSettings.expiring ? (expiring || []) : [])
       .filter((c) => !isDismissed(dismissedMap, `expiring:${c.id}`, String(c.paid_until)));
-    const renewalList = (notifSettings.renewals ? renewalReminders : []).filter((c) => {
-      const todayDate = new Date(today);
-      const nextAnniversary = new Date(c.contract_date!);
-      nextAnniversary.setFullYear(todayDate.getFullYear());
-      if (nextAnniversary < todayDate) nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
-      return !isDismissed(dismissedMap, `renewals:${c.id}`, String(nextAnniversary.getFullYear()));
-    });
+    const renewalList = (notifSettings.renewals ? renewalReminders : []).filter((reminder) =>
+      // Keep the existing per-year dismissal format, using the actual term's year.
+      !isDismissed(dismissedMap, `renewals:${reminder.contract.id}`, reminder.expiryDate.slice(0, 4))
+    );
     const serviceList = (notifSettings.deadlines ? serviceReminders : [])
       .filter((r) => !isDismissed(dismissedMap, `deadlines:${r.id}`, String(r.deadline)));
 
@@ -177,22 +158,13 @@ serve(async (req) => {
     }
 
     if (renewalCount > 0) {
-      text += `🔄 <b>Продление договоров через 2 недели (${renewalCount}):</b>\n`;
-      for (const c of renewalList) {
-        const todayDate = new Date(today);
-        const contractDate = new Date(c.contract_date!);
-        const nextAnniversary = new Date(contractDate);
-        nextAnniversary.setFullYear(todayDate.getFullYear());
-        if (nextAnniversary < todayDate) nextAnniversary.setFullYear(todayDate.getFullYear() + 1);
-        const diffDays = Math.round((nextAnniversary.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24));
-        
+      text += `🔄 <b>Проверить продление в ближайшие 14 дней (${renewalCount}):</b>\n`;
+      for (const reminder of renewalList) {
+        const c = reminder.contract;
         const amt = c.amount ? `${Number(c.amount).toLocaleString("ru-RU")} ₽` : "—";
         const num = c.contract_number ? `№${c.contract_number}` : "";
         const type = c.contract_type || "";
-        const contractDateStr = c.contract_date
-          ? new Date(c.contract_date).toLocaleDateString("ru-RU")
-          : "—";
-        text += `  • ${c.client_name} ${num} [${type}] — ${amt} (договор от ${contractDateStr}, через ${diffDays} дн.)\n`;
+        text += `  • ${c.client_name} ${num} [${type}] — ${amt} (${describeRenewalTerm(reminder)})\n`;
       }
       text += `\n`;
     }
