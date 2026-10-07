@@ -52,6 +52,9 @@ export function patchRuntimeResolver(source, format) {
   let result = exactlyOnce(source, 'const p = args.path;', `const p = args.path;\n\t\t\t\tif (p === "@lovable.dev/mcp-js/stacks/supabase") return { path: ${resolved} };`, "private runtime resolver");
   if (format === "esm") result = exactlyOnce(result, 'import { build } from "esbuild";', 'import { build } from "esbuild";\nimport { fileURLToPath } from "node:url";', "runtime URL import");
   result = exactlyOnce(result, 'const versions = readProjectDependencyVersions(projectRoot);', 'const versions = { "@modelcontextprotocol/sdk": "1.28.0", "jose": "6.2.2", ...readProjectDependencyVersions(projectRoot) };', "pinned runtime dependencies");
+  // esbuild erases types but the platform requires an index.ts entry point.
+  // Keep SDK ownership detection intact and typecheck the authored source instead.
+  result = exactlyOnce(result, '${GENERATED_BANNER}\\n// supabase function:', '${GENERATED_BANNER}\\n// @ts-nocheck -- Generated JavaScript; typecheck src/lib/mcp/index.ts instead.\\n// supabase function:', "generated JavaScript typecheck directive");
   return result;
 }
 
