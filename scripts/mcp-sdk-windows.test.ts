@@ -4,9 +4,18 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { z } from "zod";
-import { PATCHED_SDK_VERSION, patchWindowsResolver, patchToolMetadata, patchRuntimeResolver } from "./mcp-sdk-windows.mjs";
+import { PATCHED_SDK_VERSION, patchWindowsResolver, patchToolMetadata, patchRuntimeResolver, patchOptionalCloudflareImport } from "./mcp-sdk-windows.mjs";
 
 describe("pinned Windows MCP SDK resolver correction", () => {
+  it.each(["cors-BXcpNLm9.js", "cors-CDnoIzo6.cjs"])("keeps optional Workers metrics out of the static graph in %s", file => {
+    const source = readFileSync(resolve("node_modules/@lovable.dev/mcp-js/dist", file), "utf8");
+    const patched = patchOptionalCloudflareImport(source);
+    expect(patched).toContain('import(/* @vite-ignore */ cloudflareWorkersModule)');
+    expect(patched).not.toMatch(/import\(\s*(?:\/\*.*?\*\/\s*)?["']cloudflare:workers["']/s);
+    expect(patchOptionalCloudflareImport(patched)).toBe(patched);
+    expect(() => patchOptionalCloudflareImport("changed SDK")).toThrow("unexpected");
+    expect(() => patchOptionalCloudflareImport(source.replace('"cloudflare:workers"', '"changed:workers"'))).toThrow("unexpected");
+  });
   it("returns native file parameter metadata through the real MCP tools/list transport", async () => {
     const sdkPath = pathToFileURL(resolve(`.codex-temp/mcp-sdk-${PATCHED_SDK_VERSION}/dist/stacks/supabase/index.js`)).href;
     const { createSupabaseHandler } = await import(/* @vite-ignore */ sdkPath);
@@ -69,6 +78,8 @@ describe("pinned Windows MCP SDK resolver correction", () => {
     expect(manifest.auth.issuer).not.toContain("project-ref-unset");
     expect(compiled).not.toMatch(/npm:[A-Za-z]:[\\/]/);
     expect(compiled).not.toContain("project-ref-unset");
+    expect(compiled).not.toContain('"npm:cloudflare:workers"');
+    expect(compiled).toContain("cloudflareWorkersModule");
     expect(compiled).toContain("Deno.serve(createSupabaseHandler(");
     expect(compiled).toContain("_meta: tool._meta");
     for (const name of ["crm_import_client_pdf", "crm_import_client_file"]) {

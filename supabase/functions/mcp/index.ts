@@ -3772,11 +3772,12 @@ var BaseMetricRecorder = class {
   }
 };
 var cloudflareEnvPromise;
+var cloudflareWorkersModule = "cloudflare:workers";
 async function readCloudflareEnv(name) {
   try {
     cloudflareEnvPromise ??= import(
       /* @vite-ignore */
-      "npm:cloudflare:workers"
+      cloudflareWorkersModule
     ).then((m) => m.env).catch((err) => {
       log.debug("metrics.cloudflare_env_import_failed", describeError(err));
     });

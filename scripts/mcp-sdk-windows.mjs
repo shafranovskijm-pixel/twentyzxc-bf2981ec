@@ -32,6 +32,17 @@ export function patchToolMetadata(source) {
   return exactlyOnce(source, "annotations: tool.annotations", "_meta: tool._meta,\n\t\t\tannotations: tool.annotations", "tool metadata forwarding");
 }
 
+/** Keep optional Workers metrics out of the Supabase static dependency graph. */
+export function patchOptionalCloudflareImport(source) {
+  const binding = 'let cloudflareEnvPromise;';
+  let result = exactlyOnce(source, binding, `${binding}\nconst cloudflareWorkersModule = "cloudflare:workers";`, "optional Workers module binding");
+  result = exactlyOnce(result,
+    'import(\n\t\t\t/* @vite-ignore */\n\t\t\t"cloudflare:workers"\n)',
+    'import(/* @vite-ignore */ cloudflareWorkersModule)',
+    "optional Workers import");
+  return result;
+}
+
 export function patchRuntimeResolver(source, format) {
   const target = format === "esm"
     ? 'new URL("./index.js", import.meta.url).pathname'
@@ -71,6 +82,9 @@ export async function loadMcpPlugin(projectRoot) {
   const patched = inputs.map(([file, format]) => [file, patchRuntimeResolver(patchWindowsResolver(readFileSync(resolve(sdkRoot, file), "utf8"), format), format)]);
   for (const file of ["dist/list-tools-ChLj1G6z.js", "dist/list-tools-DChR_9Q2.cjs", "dist/mcp-BiyuOOzg.js", "dist/mcp-C_SCcw5F.cjs"]) {
     patched.push([file, patchToolMetadata(readFileSync(resolve(sdkRoot, file), "utf8"))]);
+  }
+  for (const file of ["dist/cors-BXcpNLm9.js", "dist/cors-CDnoIzo6.cjs"]) {
+    patched.push([file, patchOptionalCloudflareImport(readFileSync(resolve(sdkRoot, file), "utf8"))]);
   }
   const workDir = resolve(root, ".codex-temp");
   mkdirSync(workDir, { recursive: true });
