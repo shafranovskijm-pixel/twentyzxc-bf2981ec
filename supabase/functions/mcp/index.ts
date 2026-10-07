@@ -580,8 +580,10 @@ var CUSTOM_CONTRACT_TOKENS = [
   "service.start",
   "service.end",
   "services.table",
+  "company.signature",
   "total.amount"
 ];
+var blockTokens = /* @__PURE__ */ new Set(["services.table", "company.signature"]);
 var CustomContractTemplateError = class extends Error {
   field;
   constructor(field, message) {
@@ -640,10 +642,19 @@ function getCustomContractTokens(content) {
   checkText(content?.title, "customContract.title", CUSTOM_CONTRACT_LIMITS.title);
   checkText(content?.body, "customContract.body", CUSTOM_CONTRACT_LIMITS.body);
   const titleTokens = segments(content.title, "customContract.title").flatMap((x) => "token" in x ? [x.token] : []);
-  if (titleTokens.includes("services.table")) fail("customContract.title", "{{services.table}} \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439 \u0442\u0435\u043A\u0441\u0442\u0430 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430");
+  for (const token of titleTokens) {
+    if (blockTokens.has(token)) fail("customContract.title", `{{${token}}} \u0440\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0430 \u0442\u043E\u043B\u044C\u043A\u043E \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439 \u0442\u0435\u043A\u0441\u0442\u0430 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430`);
+  }
   const bodyTokens = segments(content.body, "customContract.body").flatMap((x) => "token" in x ? [x.token] : []);
+  for (const match of content.body.matchAll(/\{\{\s*(services\.table|company\.signature)\s*\}\}/g)) {
+    if (/[\r\n]/.test(match[0])) fail("customContract.body", `{{${match[1]}}} \u0434\u043E\u043B\u0436\u043D\u0430 \u0437\u0430\u043D\u0438\u043C\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0443\u044E \u0441\u0442\u0440\u043E\u043A\u0443`);
+  }
   for (const line of content.body.replace(/\r\n?/g, "\n").split("\n")) {
-    if (/\{\{\s*services\.table\s*\}\}/.test(line) && !/^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line)) fail("customContract.body", "{{services.table}} \u0434\u043E\u043B\u0436\u043D\u0430 \u0437\u0430\u043D\u0438\u043C\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0443\u044E \u0441\u0442\u0440\u043E\u043A\u0443");
+    for (const match of line.matchAll(/\{\{\s*(services\.table|company\.signature)\s*\}\}/g)) {
+      if (line.trim() !== match[0]) {
+        fail("customContract.body", `{{${match[1]}}} \u0434\u043E\u043B\u0436\u043D\u0430 \u0437\u0430\u043D\u0438\u043C\u0430\u0442\u044C \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u0443\u044E \u0441\u0442\u0440\u043E\u043A\u0443`);
+      }
+    }
   }
   const tokens = [.../* @__PURE__ */ new Set([...titleTokens, ...bodyTokens])];
   return { tokens, requiredCustomVariables: tokens.filter((t) => t.startsWith("custom.")).map((t) => t.slice(7)) };
@@ -655,7 +666,7 @@ function displayDate(value) {
   if (value === void 0) return void 0;
   return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.split("-").reverse().join(".") : value;
 }
-function markdown(body, expand, table) {
+function markdown(body, expand, blocks) {
   const lines = body.replace(/\r\n?/g, "\n").split("\n");
   const out = [];
   function cells(line) {
@@ -679,14 +690,15 @@ function markdown(body, expand, table) {
   const tableStart = (at) => at + 1 < lines.length && lines[at].includes("|") && cells(lines[at + 1]).every((c) => /^:?-{3,}:?$/.test(c)) && cells(lines[at]).length === cells(lines[at + 1]).length;
   const heading = (line) => /^(#{1,6})[ \t]+(.+)$/.exec(line);
   const list = (line) => /^([-+*]|\d{1,9}[.)])[ \t]+(.+)$/.exec(line);
-  const tableToken = (line) => /^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line);
+  const blockToken = (line) => /^\s*\{\{\s*(services\.table|company\.signature)\s*\}\}\s*$/.exec(line)?.[1];
   for (let i = 0; i < lines.length; ) {
     if (!lines[i].trim()) {
       i++;
       continue;
     }
-    if (tableToken(lines[i])) {
-      out.push(table);
+    const block = blockToken(lines[i]);
+    if (block) {
+      out.push(blocks[block]);
       i++;
       continue;
     }
@@ -702,7 +714,7 @@ function markdown(body, expand, table) {
       if (headers.length > 12) fail("customContract.body", "\u0442\u0430\u0431\u043B\u0438\u0446\u0430 \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u0442 \u0431\u043E\u043B\u0435\u0435 12 \u043A\u043E\u043B\u043E\u043D\u043E\u043A");
       i += 2;
       const rows = [];
-      while (i < lines.length && lines[i].trim() && lines[i].includes("|") && !tableToken(lines[i])) {
+      while (i < lines.length && lines[i].trim() && lines[i].includes("|") && !blockToken(lines[i])) {
         const row = cells(lines[i]);
         if (row.length !== headers.length) fail("customContract.body", "\u0447\u0438\u0441\u043B\u043E \u043A\u043E\u043B\u043E\u043D\u043E\u043A \u0441\u0442\u0440\u043E\u043A\u0438 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u043D\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0441 \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u043E\u043C");
         rows.push(row);
@@ -729,10 +741,23 @@ function markdown(body, expand, table) {
       continue;
     }
     const paragraph = [lines[i++]];
-    while (i < lines.length && lines[i].trim() && !heading(lines[i]) && !list(lines[i]) && !tableStart(i) && !tableToken(lines[i])) paragraph.push(lines[i++]);
+    while (i < lines.length && lines[i].trim() && !heading(lines[i]) && !list(lines[i]) && !tableStart(i) && !blockToken(lines[i])) paragraph.push(lines[i++]);
     out.push(`<p>${expand(paragraph.join("\n"))}</p>`);
   }
   return out.join("\n");
+}
+function rejectUnsignedCompanyLines(body, directorName) {
+  const normalize = (value) => value.toLocaleLowerCase("ru-RU").replace(/ё/g, "\u0435").replace(/[^\p{L}]/gu, "");
+  const parts = directorName.trim().split(/\s+/);
+  const names = /* @__PURE__ */ new Set([normalize(directorName), normalize(parts[0] + parts.slice(1).map((p) => p[0]).join(""))]);
+  names.delete("");
+  for (const [index, line] of body.split(/\r\n?|\n/).entries()) {
+    for (const match of line.matchAll(/_{3,}\s*\/?\s*([^/\n]+?)(?:\s*\/|$)/g)) {
+      if (names.has(normalize(match[1]))) {
+        fail("customContract.body", `\u0441\u0442\u0440\u043E\u043A\u0430 ${index + 1}: \u043F\u0443\u0441\u0442\u0430\u044F \u043F\u043E\u0434\u043F\u0438\u0441\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F; \u0437\u0430\u043C\u0435\u043D\u0438\u0442\u0435 \u0435\u0451 \u043D\u0430 {{company.signature}} \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439. \u041F\u043E\u043B\u044F \u0437\u0430\u043A\u0430\u0437\u0447\u0438\u043A\u0430 \u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0431\u0435\u0437 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F`);
+      }
+    }
+  }
 }
 var styles = `<style>
 @page{size:A4;margin:20mm 18mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.55;color:#15171e;padding:22px;overflow-wrap:anywhere}
@@ -773,8 +798,9 @@ function generateCustomContractHtml(data, content, servicePeriod2) {
   };
   for (const [key, value] of Object.entries(variables)) values[`custom.${key}`] = value;
   for (const token of inspection.tokens) {
-    if (token !== "services.table" && (!Object.prototype.hasOwnProperty.call(values, token) || typeof values[token] !== "string" || !values[token].trim())) fail("customContract", `\u043D\u0435 \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F {{${token}}}`);
+    if (!blockTokens.has(token) && (!Object.prototype.hasOwnProperty.call(values, token) || typeof values[token] !== "string" || !values[token].trim())) fail("customContract", `\u043D\u0435 \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F {{${token}}}`);
   }
+  rejectUnsignedCompanyLines(segments(content.body, "customContract.body").map((s) => "text" in s ? s.text : blockTokens.has(s.token) ? `{{${s.token}}}` : values[s.token]).join(""), c.company_director_name);
   const expand = (source, field = "customContract.body") => segments(source, field).map((s) => "text" in s ? literal(s.text) : literal(values[s.token])).join("");
   const serviceTable = `<table class="custom-contract-table"><thead><tr><th>\u041D\u0430\u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u0438\u0435</th><th>\u041A\u043E\u043B-\u0432\u043E</th><th>\u0426\u0435\u043D\u0430, \u20BD</th><th>\u0421\u0443\u043C\u043C\u0430, \u20BD</th></tr></thead><tbody>${data.services.map((s, i) => `<tr><td>${literal(s.name)}</td><td>${s.qty}</td><td>${money(s.price)}</td><td>${money(totals.lineTotalsMinor[i] / 100)}</td></tr>`).join("")}</tbody><tfoot><tr><td>\u0418\u0422\u041E\u0413\u041E</td><td></td><td></td><td>${money(totals.totalAmount)}</td></tr></tfoot></table>`;
   let assetOrigin = data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "");
@@ -784,7 +810,12 @@ function generateCustomContractHtml(data, content, servicePeriod2) {
     assetOrigin = origin.origin;
   }
   const title = expand(content.title.trim(), "customContract.title");
-  const body = markdown(content.body, expand, serviceTable);
+  if (inspection.tokens.includes("company.signature") && !assetOrigin) fail("assetOrigin", "\u0434\u043B\u044F {{company.signature}} \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C HTTPS origin \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0439 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0438 \u043F\u0435\u0447\u0430\u0442\u0438");
+  const companySignature = `<div class="signature-line">${literal(c.company_director_post)} __________ / ${literal(c.company_director_name)} /${assetOrigin ? `<img class="signature-img" src="${html(assetOrigin)}/images/signature.png" alt="\u041F\u043E\u0434\u043F\u0438\u0441\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}</div>${assetOrigin ? `<img class="stamp-img" src="${html(assetOrigin)}/images/stamp.png" alt="\u041F\u0435\u0447\u0430\u0442\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}`;
+  const body = markdown(content.body, expand, {
+    "services.table": serviceTable,
+    "company.signature": `<div class="signatures custom-company-signature"><div class="signature-block"><p><strong>\u0418\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C:</strong></p><p>${literal(c.company_name)}</p>${companySignature}</div></div>`
+  });
   const info = (label, value) => value ? `<p>${label}${literal(value)}</p>` : "";
   const signatureName = rep?.name || cl.director_name || (isIndividualEntrepreneur(cl) ? cl.name.replace(/^ИП\s+/i, "") : "________________");
   const signaturePost = rep?.post || cl.director_post || "";
@@ -794,7 +825,7 @@ function generateCustomContractHtml(data, content, servicePeriod2) {
 <div class="custom-body">${body}</div>
 <h2>\u0420\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0441\u0442\u043E\u0440\u043E\u043D</h2><div class="signatures">
 <div class="signature-block"><p><strong>\u0418\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C:</strong></p>${info("", c.company_name)}${info("\u0418\u041D\u041D ", c.company_inn)}${info("\u041A\u041F\u041F ", c.company_kpp)}${info(isIndividualEntrepreneur({ name: c.company_name, ogrn: c.company_ogrn }) ? "\u041E\u0413\u0420\u041D\u0418\u041F " : "\u041E\u0413\u0420\u041D ", c.company_ogrn)}${info("", c.company_legal_address)}${info("\u0440/\u0441 ", c.company_bank_account)}${info("", c.company_bank_name)}${info("\u0411\u0418\u041A ", c.company_bank_bik)}${info("\u043A/\u0441 ", c.company_bank_corr)}
-<div class="signature-line">${literal(c.company_director_post)} __________ / ${literal(c.company_director_name)} /${assetOrigin ? `<img class="signature-img" src="${html(assetOrigin)}/images/signature.png" alt="\u041F\u043E\u0434\u043F\u0438\u0441\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}</div>${assetOrigin ? `<img class="stamp-img" src="${html(assetOrigin)}/images/stamp.png" alt="\u041F\u0435\u0447\u0430\u0442\u044C \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F">` : ""}</div>
+${companySignature}</div>
 <div class="signature-block"><p><strong>\u0417\u0430\u043A\u0430\u0437\u0447\u0438\u043A:</strong></p>${info("", cl.name)}${info("\u0418\u041D\u041D ", cl.inn)}${info("\u041A\u041F\u041F ", cl.kpp)}${info(isIndividualEntrepreneur(cl) ? "\u041E\u0413\u0420\u041D\u0418\u041F " : "\u041E\u0413\u0420\u041D ", cl.ogrn)}${info("", cl.address)}${info("\u041E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u043B\u043D\u043E\u043C\u043E\u0447\u0438\u0439: ", rep?.basis)}<div class="signature-line">${literal(signaturePost)} __________ / ${literal(signatureName)} /</div></div>
 </div></body></html>`;
 }
@@ -3198,7 +3229,7 @@ var invoiceBasis = z.object({
 }).strict();
 var customContract = z.object({
   title: z.string().trim().min(1).max(500),
-  body: z.string().min(1).max(6e4).describe("\u0421\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430. \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u0438\u0432\u0430\u044E\u0442\u0441\u044F \u0430\u0431\u0437\u0430\u0446\u044B, \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u0438, \u0441\u043F\u0438\u0441\u043A\u0438, \u043F\u0440\u043E\u0441\u0442\u044B\u0435 \u0442\u0430\u0431\u043B\u0438\u0446\u044B \u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 {{...}}. HTML \u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u043D\u044F\u0435\u0442\u0441\u044F."),
+  body: z.string().min(1).max(6e4).describe("\u0421\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u044B\u0439 \u0442\u0435\u043A\u0441\u0442 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430. \u0410\u0431\u0437\u0430\u0446\u044B, \u0437\u0430\u0433\u043E\u043B\u043E\u0432\u043A\u0438, \u0441\u043F\u0438\u0441\u043A\u0438, \u043F\u0440\u043E\u0441\u0442\u044B\u0435 \u0442\u0430\u0431\u043B\u0438\u0446\u044B, \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 {{...}}; HTML \u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u043D\u044F\u0435\u0442\u0441\u044F. \u0412\u043C\u0435\u0441\u0442\u043E \u043A\u0430\u0436\u0434\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u0438 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u0432\u043D\u0443\u0442\u0440\u0438 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u0438 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u0439 \u0441\u0442\u0430\u0432\u044C\u0442\u0435 {{company.signature}} \u043E\u0442\u0434\u0435\u043B\u044C\u043D\u043E\u0439 \u0441\u0442\u0440\u043E\u043A\u043E\u0439: \u043E\u043D\u0430 \u0432\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442 \u043F\u043E\u0434\u043F\u0438\u0441\u044C \u0438 \u043F\u0435\u0447\u0430\u0442\u044C 24ZXC. \u041F\u043E\u0434\u043F\u0438\u0441\u044C \u0437\u0430\u043A\u0430\u0437\u0447\u0438\u043A\u0430 \u043E\u0441\u0442\u0430\u0432\u043B\u044F\u0439\u0442\u0435 \u043F\u0443\u0441\u0442\u043E\u0439. \u0417\u0430\u043A\u043B\u044E\u0447\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0439 \u0431\u043B\u043E\u043A \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432 \u0438 \u043F\u043E\u0434\u043F\u0438\u0441\u0435\u0439 \u0434\u043E\u0431\u0430\u0432\u043B\u044F\u0435\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438. \u041F\u043E\u0434\u0447\u0451\u0440\u043A\u0438\u0432\u0430\u043D\u0438\u044F \u0441 \u0424\u0418\u041E \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u043F\u043E\u0434\u043F\u0438\u0441\u044C\u044E \u043D\u0435 \u044F\u0432\u043B\u044F\u044E\u0442\u0441\u044F \u0438 \u043E\u0442\u043A\u043B\u043E\u043D\u044F\u044E\u0442\u0441\u044F; \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0432\u0441\u0435 \u043C\u0435\u0441\u0442\u0430 \u043F\u043E\u0434\u043F\u0438\u0441\u0438 \u0432 HTML/PDF."),
   variables: z.record(z.string().min(1).max(5e3)).optional().describe("\u0417\u043D\u0430\u0447\u0435\u043D\u0438\u044F {{custom.key}} \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u044D\u0442\u043E\u0433\u043E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430; \u043D\u0435 \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F \u0432 \u0448\u0430\u0431\u043B\u043E\u043D\u0435 \u0443\u0441\u043B\u0443\u0433\u0438.")
 }).strict();
 var serviceTemplate = z.object({ id: uuid2, revision: z.number().int().positive() }).strict();

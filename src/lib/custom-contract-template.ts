@@ -16,8 +16,10 @@ export const CUSTOM_CONTRACT_TOKENS = [
   "client.signatory_name", "client.signatory_post", "client.signatory_basis",
   "company.name", "company.inn", "company.address", "company.bank_account", "company.bank_bik", "company.bank_name",
   "contract.number", "contract.date", "subject", "deadline", "payment_terms", "service.start", "service.end",
-  "services.table", "total.amount",
+  "services.table", "company.signature", "total.amount",
 ] as const;
+
+const blockTokens = new Set(["services.table", "company.signature"]);
 
 export class CustomContractTemplateError extends Error {
   readonly field: string;
@@ -80,10 +82,19 @@ export function getCustomContractTokens(content: Pick<CustomContractContent, "ti
   checkText(content?.title, "customContract.title", CUSTOM_CONTRACT_LIMITS.title);
   checkText(content?.body, "customContract.body", CUSTOM_CONTRACT_LIMITS.body);
   const titleTokens = segments(content.title, "customContract.title").flatMap(x => "token" in x ? [x.token] : []);
-  if (titleTokens.includes("services.table")) fail("customContract.title", "{{services.table}} разрешена только отдельной строкой текста договора");
+  for (const token of titleTokens) {
+    if (blockTokens.has(token)) fail("customContract.title", `{{${token}}} разрешена только отдельной строкой текста договора`);
+  }
   const bodyTokens = segments(content.body, "customContract.body").flatMap(x => "token" in x ? [x.token] : []);
+  for (const match of content.body.matchAll(/\{\{\s*(services\.table|company\.signature)\s*\}\}/g)) {
+    if (/[\r\n]/.test(match[0])) fail("customContract.body", `{{${match[1]}}} должна занимать отдельную строку`);
+  }
   for (const line of content.body.replace(/\r\n?/g, "\n").split("\n")) {
-    if (/\{\{\s*services\.table\s*\}\}/.test(line) && !/^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line)) fail("customContract.body", "{{services.table}} должна занимать отдельную строку");
+    for (const match of line.matchAll(/\{\{\s*(services\.table|company\.signature)\s*\}\}/g)) {
+      if (line.trim() !== match[0]) {
+        fail("customContract.body", `{{${match[1]}}} должна занимать отдельную строку`);
+      }
+    }
   }
   const tokens = [...new Set([...titleTokens, ...bodyTokens])];
   return { tokens, requiredCustomVariables: tokens.filter(t => t.startsWith("custom.")).map(t => t.slice(7)) };
@@ -98,7 +109,7 @@ function displayDate(value?: string): string | undefined {
 }
 
 /** Parse block Markdown first; substitutions are escaped text and can never add Markdown structure. */
-function markdown(body: string, expand: (source: string) => string, table: string): string {
+function markdown(body: string, expand: (source: string) => string, blocks: Record<string, string>): string {
   const lines = body.replace(/\r\n?/g, "\n").split("\n");
   const out: string[] = [];
   function cells(line: string): string[] {
@@ -117,10 +128,11 @@ function markdown(body: string, expand: (source: string) => string, table: strin
   const tableStart = (at: number) => at + 1 < lines.length && lines[at].includes("|") && cells(lines[at + 1]).every(c => /^:?-{3,}:?$/.test(c)) && cells(lines[at]).length === cells(lines[at + 1]).length;
   const heading = (line: string) => /^(#{1,6})[ \t]+(.+)$/.exec(line);
   const list = (line: string) => /^([-+*]|\d{1,9}[.)])[ \t]+(.+)$/.exec(line);
-  const tableToken = (line: string) => /^\s*\{\{\s*services\.table\s*\}\}\s*$/.test(line);
+  const blockToken = (line: string) => /^\s*\{\{\s*(services\.table|company\.signature)\s*\}\}\s*$/.exec(line)?.[1];
   for (let i = 0; i < lines.length;) {
     if (!lines[i].trim()) { i++; continue; }
-    if (tableToken(lines[i])) { out.push(table); i++; continue; }
+    const block = blockToken(lines[i]);
+    if (block) { out.push(blocks[block]); i++; continue; }
     const h = heading(lines[i]);
     if (h) { const level = Math.min(h[1].length + 1, 6); out.push(`<h${level}>${expand(h[2])}</h${level}>`); i++; continue; }
     if (tableStart(i)) {
@@ -128,7 +140,7 @@ function markdown(body: string, expand: (source: string) => string, table: strin
       if (headers.length > 12) fail("customContract.body", "таблица содержит более 12 колонок");
       i += 2;
       const rows: string[][] = [];
-      while (i < lines.length && lines[i].trim() && lines[i].includes("|") && !tableToken(lines[i])) {
+      while (i < lines.length && lines[i].trim() && lines[i].includes("|") && !blockToken(lines[i])) {
         const row = cells(lines[i]);
         if (row.length !== headers.length) fail("customContract.body", "число колонок строки таблицы не совпадает с заголовком");
         rows.push(row); i++;
@@ -145,10 +157,25 @@ function markdown(body: string, expand: (source: string) => string, table: strin
       out.push(`<ul>${entries.join("")}</ul>`); continue;
     }
     const paragraph = [lines[i++]];
-    while (i < lines.length && lines[i].trim() && !heading(lines[i]) && !list(lines[i]) && !tableStart(i) && !tableToken(lines[i])) paragraph.push(lines[i++]);
+    while (i < lines.length && lines[i].trim() && !heading(lines[i]) && !list(lines[i]) && !tableStart(i) && !blockToken(lines[i])) paragraph.push(lines[i++]);
     out.push(`<p>${expand(paragraph.join("\n"))}</p>`);
   }
   return out.join("\n");
+}
+
+/** Never infer consent to stamp a blank. Require an explicit block for recognizable supplier blanks. */
+function rejectUnsignedCompanyLines(body: string, directorName: string): void {
+  const normalize = (value: string) => value.toLocaleLowerCase("ru-RU").replace(/ё/g, "е").replace(/[^\p{L}]/gu, "");
+  const parts = directorName.trim().split(/\s+/);
+  const names = new Set([normalize(directorName), normalize(parts[0] + parts.slice(1).map(p => p[0]).join(""))]);
+  names.delete("");
+  for (const [index, line] of body.split(/\r\n?|\n/).entries()) {
+    for (const match of line.matchAll(/_{3,}\s*\/?\s*([^/\n]+?)(?:\s*\/|$)/g)) {
+      if (names.has(normalize(match[1]))) {
+        fail("customContract.body", `строка ${index + 1}: пустая подпись исполнителя; замените её на {{company.signature}} отдельной строкой. Поля заказчика оставьте без подписи исполнителя`);
+      }
+    }
+  }
 }
 
 const styles = `<style>
@@ -179,8 +206,9 @@ export function generateCustomContractHtml(data: DocumentData, content: CustomCo
   };
   for (const [key, value] of Object.entries(variables)) values[`custom.${key}`] = value;
   for (const token of inspection.tokens) {
-    if (token !== "services.table" && (!Object.prototype.hasOwnProperty.call(values, token) || typeof values[token] !== "string" || !values[token]!.trim())) fail("customContract", `не заполнена переменная {{${token}}}`);
+    if (!blockTokens.has(token) && (!Object.prototype.hasOwnProperty.call(values, token) || typeof values[token] !== "string" || !values[token]!.trim())) fail("customContract", `не заполнена переменная {{${token}}}`);
   }
+  rejectUnsignedCompanyLines(segments(content.body, "customContract.body").map(s => "text" in s ? s.text : blockTokens.has(s.token) ? `{{${s.token}}}` : values[s.token]!).join(""), c.company_director_name);
   const expand = (source: string, field = "customContract.body") => segments(source, field).map(s => "text" in s ? literal(s.text) : literal(values[s.token]!)).join("");
   const serviceTable = `<table class="custom-contract-table"><thead><tr><th>Наименование</th><th>Кол-во</th><th>Цена, ₽</th><th>Сумма, ₽</th></tr></thead><tbody>${data.services.map((s, i) => `<tr><td>${literal(s.name)}</td><td>${s.qty}</td><td>${money(s.price)}</td><td>${money(totals.lineTotalsMinor[i] / 100)}</td></tr>`).join("")}</tbody><tfoot><tr><td>ИТОГО</td><td></td><td></td><td>${money(totals.totalAmount)}</td></tr></tfoot></table>`;
   let assetOrigin = data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "");
@@ -190,7 +218,12 @@ export function generateCustomContractHtml(data: DocumentData, content: CustomCo
     assetOrigin = origin.origin;
   }
   const title = expand(content.title.trim(), "customContract.title");
-  const body = markdown(content.body, expand, serviceTable);
+  if (inspection.tokens.includes("company.signature") && !assetOrigin) fail("assetOrigin", "для {{company.signature}} необходим HTTPS origin изображений подписи и печати");
+  const companySignature = `<div class="signature-line">${literal(c.company_director_post)} __________ / ${literal(c.company_director_name)} /${assetOrigin ? `<img class="signature-img" src="${html(assetOrigin)}/images/signature.png" alt="Подпись исполнителя">` : ""}</div>${assetOrigin ? `<img class="stamp-img" src="${html(assetOrigin)}/images/stamp.png" alt="Печать исполнителя">` : ""}`;
+  const body = markdown(content.body, expand, {
+    "services.table": serviceTable,
+    "company.signature": `<div class="signatures custom-company-signature"><div class="signature-block"><p><strong>Исполнитель:</strong></p><p>${literal(c.company_name)}</p>${companySignature}</div></div>`,
+  });
   const info = (label: string, value: string | undefined) => value ? `<p>${label}${literal(value)}</p>` : "";
   const signatureName = rep?.name || cl.director_name || (isIndividualEntrepreneur(cl) ? cl.name.replace(/^ИП\s+/i, "") : "________________");
   const signaturePost = rep?.post || cl.director_post || "";
@@ -200,7 +233,7 @@ export function generateCustomContractHtml(data: DocumentData, content: CustomCo
 <div class="custom-body">${body}</div>
 <h2>Реквизиты и подписи сторон</h2><div class="signatures">
 <div class="signature-block"><p><strong>Исполнитель:</strong></p>${info("", c.company_name)}${info("ИНН ", c.company_inn)}${info("КПП ", c.company_kpp)}${info(isIndividualEntrepreneur({ name: c.company_name, ogrn: c.company_ogrn }) ? "ОГРНИП " : "ОГРН ", c.company_ogrn)}${info("", c.company_legal_address)}${info("р/с ", c.company_bank_account)}${info("", c.company_bank_name)}${info("БИК ", c.company_bank_bik)}${info("к/с ", c.company_bank_corr)}
-<div class="signature-line">${literal(c.company_director_post)} __________ / ${literal(c.company_director_name)} /${assetOrigin ? `<img class="signature-img" src="${html(assetOrigin)}/images/signature.png" alt="Подпись исполнителя">` : ""}</div>${assetOrigin ? `<img class="stamp-img" src="${html(assetOrigin)}/images/stamp.png" alt="Печать исполнителя">` : ""}</div>
+${companySignature}</div>
 <div class="signature-block"><p><strong>Заказчик:</strong></p>${info("", cl.name)}${info("ИНН ", cl.inn)}${info("КПП ", cl.kpp)}${info(isIndividualEntrepreneur(cl) ? "ОГРНИП " : "ОГРН ", cl.ogrn)}${info("", cl.address)}${info("Основание полномочий: ", rep?.basis)}<div class="signature-line">${literal(signaturePost)} __________ / ${literal(signatureName)} /</div></div>
 </div></body></html>`;
 }

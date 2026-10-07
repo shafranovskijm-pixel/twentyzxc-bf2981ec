@@ -425,6 +425,9 @@ function signaturesBlock(container: Element, images: Record<string, string>): Pm
     layout: "noBorders",
   }));
   if (wrapped.length === 1) {
+    if (container.classList.contains("custom-company-signature")) {
+      return { columns: [{ ...wrapped[0], width: 240 }, { width: "*", text: "" }], margin: [0, 6, 0, 0], unbreakable: true };
+    }
     // Compact invoice signature: right-aligned narrow card, tight top margin,
     // and NOT marked unbreakable so pdfmake never forces it onto a new page
     // when there is room under the totals block.

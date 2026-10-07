@@ -4,12 +4,32 @@ import { DOMParser } from "npm:linkedom@0.18.12";
 import { PdfRenderError, renderDocumentPdf, resolveDocumentImages } from "../functions/_shared/crm-email/pdf.ts";
 import { generateActHtml, generateContractHtml, generateInvoiceHtml, type DocumentData } from "../../src/lib/document-templates.ts";
 import { generateCustomContractHtml } from "../../src/lib/custom-contract-template.ts";
+import { signatureFixture, signatureBody } from "../../src/test/fixtures/custom-contract-signatures.ts";
+import { inflateSync } from "node:zlib";
+import { Buffer } from "node:buffer";
 
 const parse = (body: string): Document => new DOMParser().parseFromString(`<!doctype html><html><head></head><body>${body}</body></html>`, "text/html") as unknown as Document;
 const asset = (name: string) => Deno.readFile(new URL(`../../public/images/${name}.png`, import.meta.url));
 const data = (bytes: Uint8Array, mime = "image/png") => `data:${mime};base64,${btoa(Array.from(bytes, b => String.fromCharCode(b)).join(""))}`;
 const rejects = (action: () => Promise<unknown>, code: string) => assert.rejects(action, (error: unknown) => error instanceof PdfRenderError && error.code === code);
 const noFetch: typeof fetch = () => { throw new Error("Network must not be used"); };
+
+// Count actual painting instructions, not unique embedded assets. PDF may reuse
+// one image object in several places; merely counting /Image objects misses gaps.
+function paintedPdfImages(bytes: Uint8Array): number {
+  const pdf = Buffer.from(bytes).toString("latin1");
+  let count = 0;
+  for (const match of pdf.matchAll(/(\d+) 0 obj\s*(<<(?:(?!\bendobj\b)[\s\S])*?>>)\s*stream\r?\n/g)) {
+    if (/\/Subtype\s*\/Image\b/.test(match[2])) continue;
+    const length = /\/Length\s+(\d+)\b/.exec(match[2]);
+    if (!length) continue;
+    const start = match.index! + match[0].length;
+    const compressed = bytes.subarray(start, start + Number(length[1]));
+    const stream = /\/FlateDecode/.test(match[2]) ? inflateSync(compressed).toString("latin1") : Buffer.from(compressed).toString("latin1");
+    count += (stream.match(/\/I\d+\s+Do\b/g) || []).length;
+  }
+  return count;
+}
 
 Deno.test("PDF images allow only exact branded assets; deny SSRF before fetch", async () => {
   for (const src of ["http://24zxc.ru/images/stamp.png", "https://example.invalid/images/stamp.png", "https://127.0.0.1/images/stamp.png", "http://169.254.169.254/latest/meta-data", "//24zxc.ru/images/stamp.png", "https://24zxc.ru/other.png", "https://24zxc.ru/images/stamp.png?token=x", "https://24zxc.ru/images/stamp.png#x", "https://user:pass@24zxc.ru/images/stamp.png", "file:///secret.png", "data:image/svg+xml;base64,PHN2Zy8+"]) {
@@ -147,5 +167,26 @@ Deno.test("multi-page custom service contract renders to PDF with its pinned tex
     await Deno.mkdir(outputDir, { recursive: true });
     await Deno.writeFile(`${outputDir}/24zxc-custom-service-contract.pdf`, bytes);
     await Deno.writeTextFile(`${outputDir}/24zxc-custom-service-contract.html`, html);
+  }
+});
+
+Deno.test("custom main contract and appendices paint every requested supplier signature and stamp in the actual PDF", async () => {
+  const sectionText = Array.from({ length: 18 }, (_, i) => `${i + 1}. ТЕСТОВЫЙ ОБРАЗЕЦ — НЕ ДОКУМЕНТ. Проверка сохранения условий и подписей при переходе на следующую страницу.`).join("\n\n");
+  const body = signatureBody.replace(/(## [^\n]+)\n/g, `$1\n${sectionText}\n\n`);
+  const html = generateCustomContractHtml(signatureFixture, { title: "ТЕСТОВЫЙ ОБРАЗЕЦ — НЕ ДОКУМЕНТ", body });
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  assert.equal(doc.querySelectorAll(".signature-img").length, 3);
+  assert.equal(doc.querySelectorAll(".stamp-img").length, 3);
+  const images = new Map([["https://24zxc.ru/images/signature.png", await asset("signature")], ["https://24zxc.ru/images/stamp.png", await asset("stamp")]]);
+  const bytes = await renderDocumentPdf(html, "ТЕСТОВЫЙ ОБРАЗЕЦ — НЕ ДОКУМЕНТ", { fetch: (url) => {
+    const image = images.get(String(url)); assert(image, "Unexpected asset");
+    return Promise.resolve(new Response(image, { headers: { "content-type": "image/png" } }));
+  } });
+  assert.equal(paintedPdfImages(bytes), 6, "All three signature/stamp pairs must actually be painted");
+  const outputDir = Deno.env.get("CRM_PDF_QA_DIR");
+  if (outputDir) {
+    await Deno.mkdir(outputDir, { recursive: true });
+    await Deno.writeFile(`${outputDir}/24zxc-repeated-signatures.pdf`, bytes);
+    await Deno.writeTextFile(`${outputDir}/24zxc-repeated-signatures.html`, html);
   }
 });
