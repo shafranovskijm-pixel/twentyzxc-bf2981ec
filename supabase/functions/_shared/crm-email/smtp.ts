@@ -1,6 +1,6 @@
 /** SMTP transport. An accepted response is not proof of delivery to the recipient. */
 export type EmailAttachment = { filename: string; base64: string; contentType?: string };
-export type SmtpEmail = { to: string; subject: string; html: string; attachments: EmailAttachment[]; messageId: string };
+export type SmtpEmail = { to: string; subject: string; html: string; attachments: EmailAttachment[]; messageId: string; replyTo?: string };
 export type SmtpOutcome = "failed" | "unknown";
 
 export class SmtpDeliveryError extends Error {
@@ -81,6 +81,7 @@ function messageId(value: string): string {
 }
 export function validateSmtpEmail(input: SmtpEmail): void {
   validateEmailAddress(input.to);
+  if (input.replyTo !== undefined) validateEmailAddress(input.replyTo);
   header(input.subject, 500);
   messageId(input.messageId);
   if (typeof input.html !== "string" || !input.html || encoder.encode(input.html).length > MAX_HTML_BYTES) invalid();
@@ -230,6 +231,7 @@ export async function sendSmtpEmailToRecipients(input: SmtpEmail, recipients: st
     const boundary = `crm_${crypto.randomUUID().replace(/-/g, "")}`;
     const headers = [`From: ${mimeEncode(fromName)} <${from}>`, `To: ${recipients.map(to => `<${to}>`).join(",\r\n ")}`,
       `Subject: ${mimeEncode(input.subject)}`, `Date: ${new Date().toUTCString()}`, `Message-ID: ${messageId(input.messageId)}`, "MIME-Version: 1.0"];
+    if (input.replyTo) headers.push(`Reply-To: <${validateEmailAddress(input.replyTo)}>`);
     const html = wrapBase64(base64(encoder.encode(input.html)));
     if (input.attachments.length) {
       headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`);

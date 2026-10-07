@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getNotificationSettings } from "../_shared/notification-settings.ts";
+import { sendSmtpEmail, validateEmailAddress } from "../_shared/crm-email/smtp.ts";
+import { acknowledgeSiteLead } from "../_shared/site-sales.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,6 +10,8 @@ const corsHeaders = {
 };
 
 interface ContactFormData {
+  requestId?: string;
+  offer?: string;
   type: 'contact' | 'brief';
   service?: string;
   name: string;
@@ -127,6 +131,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let savedLeadId: string | null = null;
+  let emailStatus = "not_applicable";
+  const savedResult = (extra: Record<string, unknown>) => JSON.stringify({ success: true, saved: true, leadId: savedLeadId, emailStatus, ...extra });
   try {
     // Rate limiting
     cleanupOldEntries();
@@ -149,6 +156,11 @@ serve(async (req) => {
       email: phoneMirroredIntoEmail ? "" : data.email?.trim() || "",
       phone: data.phone?.trim() || "",
     };
+    const subscription = normalizedData.offer === "site-subscription" || normalizedData.attribution?.utm_landing === "24sintagma_sites_subscription";
+    if (subscription) validateEmailAddress(normalizedData.email);
+    if (normalizedData.requestId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(normalizedData.requestId)) {
+      return new Response(JSON.stringify({ success: false, saved: false, error: "Invalid request ID" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     
     // Validate required fields
     if (!normalizedData.name || (!normalizedData.email && !normalizedData.phone)) {
@@ -162,7 +174,7 @@ serve(async (req) => {
     if (
       normalizedData.name.length > 200 ||
       normalizedData.email?.length > 255 ||
-      normalizedData.phone?.length > 100
+      (normalizedData.phone?.length || 0) > 100
     ) {
       return new Response(
         JSON.stringify({ success: false, error: 'Input too long' }),
@@ -170,7 +182,7 @@ serve(async (req) => {
       );
     }
 
-    const message = formatMessage(normalizedData);
+    let message = formatMessage(normalizedData);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -202,8 +214,10 @@ serve(async (req) => {
       .filter(Boolean)
       .join("\n");
 
-    const { error: leadError } = await supabase.from("leads").insert({
-      source: normalizedData.attribution?.utm_source
+    const leadId = normalizedData.requestId || crypto.randomUUID();
+    const lead = {
+      id: leadId,
+      source: subscription ? "24sintagma.ru/sites" : normalizedData.attribution?.utm_source
         ? `24zxc.ru/${normalizedData.attribution.utm_source}`
         : "24zxc.ru",
       name: normalizedData.name,
@@ -211,21 +225,57 @@ serve(async (req) => {
       email: normalizedData.email || null,
       message: leadMessage || null,
       status: "new",
-    });
+    };
+    const { error: leadError } = await supabase.from("leads").insert(lead);
 
     if (leadError) {
+      if (leadError.code === "23505" && normalizedData.requestId) {
+        const { data: existing, error } = await supabase.from("leads").select("id,name,email,phone,message,source,sales_response").eq("id", leadId).maybeSingle();
+        if (!error && existing && existing.name === lead.name && existing.email === lead.email && existing.phone === lead.phone && existing.message === lead.message && existing.source === lead.source) {
+          savedLeadId = leadId;
+          emailStatus = existing.sales_response?.state || "not_applicable";
+          return new Response(savedResult({ delivered: false, duplicate: true }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+        return new Response(JSON.stringify({ success: false, saved: false, error: "Request ID conflict" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
       console.error("Lead persistence error:", leadError);
       return new Response(
         JSON.stringify({ success: false, saved: false, error: "Lead could not be saved" }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    savedLeadId = leadId;
+    if (subscription) {
+      emailStatus = "unknown";
+      try {
+        emailStatus = await acknowledgeSiteLead(leadId, normalizedData.email, {
+          claim: async state => {
+            // A fresh request ID must not turn the public form into repeated mail
+            // to the same address. The lead and Telegram handoff still remain.
+            const { data: recent, error: recentError } = await supabase.from("leads").select("id").eq("source", "24sintagma.ru/sites").eq("email", normalizedData.email).neq("id", leadId).gte("created_at", new Date(Date.now() - 3600000).toISOString()).limit(1);
+            if (recentError) throw recentError;
+            if (recent?.length) return false;
+            const { data, error } = await supabase.from("leads").update({ sales_response: state }).eq("id", leadId).eq("sales_response", "{}").select("id");
+            if (error) throw error;
+            return data?.length === 1;
+          },
+          finish: async state => {
+            const { error } = await supabase.from("leads").update({ sales_response: state }).eq("id", leadId);
+            if (error) throw error;
+          },
+          send: sendSmtpEmail,
+        });
+      } catch {
+        console.error("Site acknowledgement needs manual reconciliation", { leadId });
+      }
+      message += `\n🆔 <b>Заявка:</b> ${leadId}\n✉️ <b>Автоответ:</b> ${emailStatus === "accepted" ? "SMTP принял письмо; доставка клиенту ещё не подтверждена" : "Нужна проверка: " + emailStatus}`;
+    }
 
     const notifSettings = await getNotificationSettings(supabase);
     if (!notifSettings.leads) {
       console.log("Lead notifications disabled in settings");
       return new Response(
-        JSON.stringify({ success: true, saved: true, delivered: false, reason: 'disabled' }),
+        savedResult({ delivered: false, reason: 'disabled' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -236,7 +286,7 @@ serve(async (req) => {
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
       console.error('Missing Telegram configuration; lead saved without notification');
       return new Response(
-        JSON.stringify({ success: true, saved: true, delivered: false, reason: 'telegram_not_configured' }),
+        savedResult({ delivered: false, reason: 'telegram_not_configured' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -258,28 +308,30 @@ serve(async (req) => {
     } catch (error) {
       console.error('Telegram transport error after lead persistence:', error);
       return new Response(
-        JSON.stringify({ success: true, saved: true, delivered: false, reason: 'telegram_transport_error' }),
+        savedResult({ delivered: false, reason: 'telegram_transport_error' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!telegramResponse.ok) {
+    const telegramReceipt = await telegramResponse.json().catch(() => null);
+    if (!telegramResponse.ok || telegramReceipt?.ok !== true || !Number.isInteger(telegramReceipt?.result?.message_id)) {
       console.error('Telegram API error after lead persistence:', {
         status: telegramResponse.status,
         statusText: telegramResponse.statusText,
       });
       return new Response(
-        JSON.stringify({ success: true, saved: true, delivered: false, reason: 'telegram_error' }),
+        savedResult({ delivered: false, reason: 'telegram_error' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     return new Response(
-      JSON.stringify({ success: true, saved: true, delivered: true }),
+      savedResult({ delivered: true, notificationMessageId: telegramReceipt.result.message_id }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Error sending telegram message:', error);
+    if (savedLeadId) return new Response(savedResult({ delivered: false, reason: "notification_failed" }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     return new Response(
       JSON.stringify({ success: false, error: 'Failed to send message. Please try again later.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

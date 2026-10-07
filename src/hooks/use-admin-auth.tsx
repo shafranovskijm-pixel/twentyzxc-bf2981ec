@@ -80,10 +80,22 @@ export const useAdminAuth = () => {
 
   useEffect(() => {
     let mounted = true;
+    let authRevision = 0;
+    const deferred = new Set<ReturnType<typeof setTimeout>>();
+    // A failed refresh must not leave the whole admin page behind an endless spinner.
+    const initializationTimeout = setTimeout(() => {
+      if (mounted) {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
+    }, 15000);
 
+    const initialRevision = authRevision;
     // 1. Get current session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!mounted) return;
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (!mounted || initialRevision !== authRevision) return;
+      if (error) throw error;
+      const revision = authRevision;
 
       if (!session) {
         // Definitively no session — clear everything
@@ -103,9 +115,12 @@ export const useAdminAuth = () => {
         setIsLoading(false);
         // Background re-verify (don't reset on failure)
         const fresh = await checkAdminRole(session.user.id);
-        if (mounted) {
+        if (mounted && revision === authRevision) {
           if (fresh) {
             writeCache(session.user.id, true);
+          } else if (fresh === false) {
+            setIsAdmin(false);
+            clearCache();
           }
           // Only revoke if RPC explicitly returned false (not timeout/error)
           // We already set isAdmin=true from cache, keep it unless fresh === false explicitly
@@ -115,18 +130,26 @@ export const useAdminAuth = () => {
 
       // No cache — must verify
       const admin = await checkAdminRole(session.user.id);
-      if (!mounted) return;
+      if (!mounted || revision !== authRevision) return;
       setIsAdmin(admin === true);
       if (admin === true) writeCache(session.user.id, true);
       setIsLoading(false);
-    });
+    }).catch((error) => {
+      console.error("Admin session initialization failed", error);
+      if (mounted) {
+        setIsAdmin(false);
+        setIsLoading(false);
+      }
+    }).finally(() => clearTimeout(initializationTimeout));
 
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
 
         if (event === "SIGNED_OUT") {
+          authRevision++;
+          clearTimeout(initializationTimeout);
           setUser(null);
           setIsAdmin(false);
           clearCache();
@@ -141,6 +164,8 @@ export const useAdminAuth = () => {
         }
 
         if (event === "SIGNED_IN" && session?.user) {
+          const revision = ++authRevision;
+          clearTimeout(initializationTimeout);
           setUser(session.user);
           // Check cache first
           const c = readCache();
@@ -149,17 +174,25 @@ export const useAdminAuth = () => {
             setIsLoading(false);
             return;
           }
-          const admin = await checkAdminRole(session.user.id);
-          if (!mounted) return;
-          setIsAdmin(admin === true);
-          if (admin === true) writeCache(session.user.id, true);
-          setIsLoading(false);
+          // Supabase holds its auth lock while notifying listeners. Do not await
+          // another Supabase request inside that listener (it can deadlock).
+          const timer = setTimeout(async () => {
+            deferred.delete(timer);
+            const admin = await checkAdminRole(session.user.id);
+            if (!mounted || revision !== authRevision) return;
+            setIsAdmin(admin === true);
+            if (admin === true) writeCache(session.user.id, true);
+            setIsLoading(false);
+          }, 0);
+          deferred.add(timer);
         }
       }
     );
 
     return () => {
       mounted = false;
+      clearTimeout(initializationTimeout);
+      for (const timer of deferred) clearTimeout(timer);
       subscription.unsubscribe();
     };
   }, [checkAdminRole]);
