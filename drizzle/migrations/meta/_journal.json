@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791775093440,
+      "tag": "0000_crm_current_bank_requisites",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791775117993,
+      "tag": "0001_pin_confirmed_company_bank",
+      "breakpoints": true
+    }
+  ]
+}

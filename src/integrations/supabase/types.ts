@@ -380,6 +380,66 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_company_bank_pin_requests: {
+        Row: {
+          actor_id: string
+          created_at: string
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          request: Json
+          request_id: string
+          result: Json
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          request?: Json
+          request_id?: string
+          result?: Json
+        }
+        Relationships: []
+      }
+      crm_company_bank_policy: {
+        Row: {
+          company_bank_account: string
+          company_bank_bik: string
+          company_bank_corr: string
+          company_bank_name: string
+          issuer_inn: string
+          retired_accounts: string[]
+          revision: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          company_bank_account: string
+          company_bank_bik: string
+          company_bank_corr: string
+          company_bank_name: string
+          issuer_inn: string
+          retired_accounts?: string[]
+          revision: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          company_bank_account?: string
+          company_bank_bik?: string
+          company_bank_corr?: string
+          company_bank_name?: string
+          issuer_inn?: string
+          retired_accounts?: string[]
+          revision?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       crm_document_api_requests: {
         Row: {
           actor_id: string
@@ -2183,6 +2243,20 @@ export type Database = {
       }
     }
     Functions: {
+      crm_assert_current_bank_document: {
+        Args: { p_company?: Json; p_html: string }
+        Returns: undefined
+      }
+      crm_bank_decode_numeric_entities: {
+        Args: { p_text: string }
+        Returns: string
+      }
+      crm_bank_html_issuer_inns: {
+        Args: { p_plain: string }
+        Returns: string[]
+      }
+      crm_bank_html_text: { Args: { p_html: string }; Returns: string }
+      crm_bank_name_normalized: { Args: { p_value: string }; Returns: string }
       crm_claim_document_email: {
         Args: { p_actor_id: string; p_delivery_id: string }
         Returns: Json
@@ -2207,6 +2281,15 @@ export type Database = {
           p_error: string
           p_receipt: Json
           p_state: string
+        }
+        Returns: Json
+      }
+      crm_get_company_bank_policy: { Args: never; Returns: Json }
+      crm_pin_company_bank_requisites: {
+        Args: {
+          p_expected_revision: number
+          p_profile: Json
+          p_request_id: string
         }
         Returns: Json
       }
