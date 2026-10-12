@@ -32,6 +32,7 @@ import { calculateDocumentMoney, documentStoredAmount, type DocumentMoney } from
 import { generateReconciliationHtml, type ReconciliationRow } from "@/lib/reconciliation-template";
 import { preloadDocumentImages } from "@/lib/document-images";
 import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
+import { documentEmailErrorMessage } from "@/lib/document-email-error";
 import SignPdfCard from "./SignPdfCard";
 import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
@@ -1522,7 +1523,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       }, 500);
     } catch (err: any) {
       console.error('[Email] Error:', err);
-      toast.error(err.message || "Не удалось отправить письмо");
+      toast.error(await documentEmailErrorMessage(err));
       setEmailProgress({ step: '', percent: 0 });
     }
     setEmailSending(false);

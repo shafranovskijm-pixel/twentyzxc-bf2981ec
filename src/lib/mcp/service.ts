@@ -6,6 +6,7 @@ import type { ClientRequisites, CompanyRequisites } from "../document-templates"
 import { publicDelivery, type Delivery } from "../../../supabase/functions/_shared/crm-email/delivery";
 import { normalizeCompanyRequisites } from "./company-requisites";
 import { CustomContractTemplateError } from "../custom-contract-template";
+import { CurrentBankRequisitesError, assertCurrentCompanyBankRequisites, withCurrentCompanyBankRequisites, type CurrentBankPolicy } from "../../../supabase/functions/_shared/current-bank-requisites";
 
 // Explicit fields: clients also contains passwords, which must never reach MCP.
 export const CLIENT_FIELDS = "id,name,inn,kpp,ogrn,legal_address,director_name,director_post,email,phone,contact_person,crm_revision";
@@ -52,6 +53,21 @@ export async function requireAdmin(db: SupabaseClient, userId: string | undefine
 export class CrmDocumentsService {
   constructor(private db: SupabaseClient, private assetOrigin = "https://24zxc.ru") {}
 
+  async getCompanyBankPolicy(): Promise<CurrentBankPolicy | null> {
+    const { data, error } = await this.db.rpc("crm_get_company_bank_policy");
+    dbError(error);
+    return data as CurrentBankPolicy | null;
+  }
+
+  async pinCompanyBankRequisites(requestId: string, expectedRevision: number | null,
+    profile: Pick<CurrentBankPolicy, "issuer_inn" | "company_bank_account" | "company_bank_bik" | "company_bank_corr" | "company_bank_name"> & { retired_accounts?: string[] }) {
+    const { data, error } = await this.db.rpc("crm_pin_company_bank_requisites", {
+      p_request_id: requestId, p_expected_revision: expectedRevision, p_profile: profile,
+    });
+    dbError(error);
+    return data;
+  }
+
   async saveClientEmail(requestId: string, clientId: string, email: string, expectedEmail: string | null) {
     const { data, error } = await this.db.rpc("crm_save_client_email", {
       p_request_id: requestId, p_client_id: clientId, p_email: email, p_expected_email: expectedEmail,
@@ -66,6 +82,9 @@ export class CrmDocumentsService {
       let code: string | undefined;
       if (error.context instanceof Response) {
         try { code = (await error.context.json()).code; } catch { /* no raw transport errors */ }
+      }
+      if (code === "CRM_COMPANY_BANK_ACCOUNT_RETIRED" || code === "CRM_COMPANY_BANK_REQUISITES_NOT_CURRENT") {
+        throw new CrmError(code, "Отправка остановлена из-за устаревших банковских реквизитов. Создайте новую версию документа через crm_revise_document с текущей date, затем подготовьте новое письмо и покажите его пользователю перед отправкой.");
       }
       throw new CrmError(code?.match(/^CRM_[A-Z_]+$/)?.[0] || "EMAIL_OPERATION_UNCONFIRMED",
         "Операция не подтверждена. Для отправки проверьте crm_get_email_delivery по deliveryId; не создавайте новую отправку для обхода ошибки.");
@@ -140,6 +159,8 @@ export class CrmDocumentsService {
     return { document: { ...data, metadata: undefined, integration: {
       grossAmount: metadata.grossAmount ?? null, discountAmount: metadata.discountAmount ?? null,
       netAmount: metadata.netAmount ?? null, schemaVersion: metadata.schemaVersion ?? null,
+      companyBankPolicyRevision: metadata.companyBankPolicyRevision ?? null,
+      companyBankAccount: jsonObject(metadata.companySnapshot).company_bank_account ?? null,
       ...(jsonObject(metadata.documentInput).template === "custom" ? {
         customContract: jsonObject(jsonObject(metadata.documentInput).customContract),
         serviceTemplate: jsonObject(jsonObject(metadata.documentInput).serviceTemplate),
@@ -181,6 +202,8 @@ export class CrmDocumentsService {
     if (missingClient.length) {
       throw new CrmError("CLIENT_REQUISITES_MISSING", `В карточке клиента не заполнены: ${missingClient.map(key => clientFieldNames[key]).join(", ")}. Используйте подтверждённые реквизиты клиента.`);
     }
+    const bankPolicy = await this.getCompanyBankPolicy();
+    assertCurrentCompanyBankRequisites(company, bankPolicy);
     let linkedContract: { id: string; number: string; date: string } | undefined;
     if (input.contractId) {
       if (input.type === "contract") throw new CrmError("INVALID_CONTRACT_LINK", "Новый договор создаётся без ссылки на другой договор.");
@@ -192,7 +215,7 @@ export class CrmDocumentsService {
       if (!contract || contract.is_archived || !contract.contract_number || !contract.contract_date) throw new CrmError("INVALID_CONTRACT_LINK", "Выберите действующую запись договора этого клиента с номером и датой.");
       linkedContract = { id: contract.id, number: contract.contract_number, date: contract.contract_date };
     }
-    return { client, company, companySourceSnapshot: configuredCompany, linkedContract, assetOrigin: this.assetOrigin };
+    return { client, company, companySourceSnapshot: configuredCompany, bankPolicy, linkedContract, assetOrigin: this.assetOrigin };
   }
 
   private async materializeTemplate(input: DocumentInput): Promise<DocumentInput> {
@@ -279,10 +302,27 @@ export class CrmDocumentsService {
     if (changes.customContract !== undefined) delete next.serviceTemplate;
     if (next.discount === null) delete next.discount;
     const input = validateDocumentInput(next);
+    // A lost response must replay the immutable successful command even after
+    // bank details rotate. SQL still verifies actor, input and request identity;
+    // outgoing delivery checks independently reject a now-obsolete saved PDF.
+    const { data: completed, error: replayError } = await this.db.from("crm_document_api_requests")
+      .select("request,result").eq("request_id", requestId).maybeSingle();
+    dbError(replayError);
+    if (completed?.result) {
+      const { data, error: saveError } = await this.db.rpc("crm_save_document", {
+        p_request_id: requestId, p_document_id: documentId, p_expected_revision: expectedRevision,
+        p_input: input, p_payload: jsonObject(completed.request).payload,
+      });
+      dbError(saveError);
+      return { ...data, status: "saved", artifactStatus: "html_only", deliveryStatus: "not_requested", sent: false };
+    }
+    const bankPolicy = await this.getCompanyBankPolicy();
     const context = {
       client: metadata.clientSnapshot as ClientRequisites,
-      company: metadata.companySnapshot as CompanyRequisites,
-      companySourceSnapshot: metadata.companySourceSnapshot as CompanyRequisites | undefined,
+      company: withCurrentCompanyBankRequisites(metadata.companySnapshot as CompanyRequisites, bankPolicy),
+      companySourceSnapshot: metadata.companySourceSnapshot
+        ? withCurrentCompanyBankRequisites(metadata.companySourceSnapshot as CompanyRequisites, bankPolicy) : undefined,
+      bankPolicy,
       linkedContract: metadata.linkedContractSnapshot as { id: string; number: string; date: string } | undefined,
       assetOrigin: this.assetOrigin,
     };
@@ -318,6 +358,7 @@ export async function runCrmTool<T>(ctx: ToolContext, action: (service: CrmDocum
       ? { code: "INVALID_DOCUMENT", message: "Уточните поля документа.", issues: error.issues }
       : error instanceof CustomContractTemplateError
       ? { code: "INVALID_CUSTOM_CONTRACT", message: "Исправьте текст или переменные договора.", issues: [{ field: error.field, message: error.message }] }
+      : error instanceof CurrentBankRequisitesError ? { code: error.code, message: error.message }
       : error instanceof CrmError ? { code: error.code, message: error.message }
       : { code: "INTERNAL_ERROR", message: "Операция не выполнена. Требуется проверка серверного журнала." };
     return { isError: true, content: [{ type: "text" as const, text: JSON.stringify(result) }] };

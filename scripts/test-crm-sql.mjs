@@ -30,6 +30,7 @@ try {
       BEGIN NEW.updated_at := now(); RETURN NEW; END;
     $$;
   `);
+  await db.exec(await migration("20260210072200_29bc3257-460c-4852-be8a-174cd06a6895.sql"));
   const crm = await migration("20260304023931_cbf864df-beb7-4e1e-9239-4ddad4fb4c6e.sql");
   await db.exec(crm.slice(0, crm.indexOf("-- Create private storage bucket")));
   for (const name of [
@@ -59,12 +60,69 @@ try {
   await db.exec(await migration("20260929154614_fc0f953c-2472-4bb7-9567-ebfab952ac63.sql"));
   await db.exec(await migration("20260929154814_e2df41be-2506-41a3-ac4b-a05e6da7fcca.sql"));
   await db.exec(await migration("20260930060000_crm_service_templates.sql"));
+  await db.exec(await migration("20261012010000_crm_current_bank_requisites.sql"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_document_api.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_email_delivery.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_invoice_acts.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_commands.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_rename_documents.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_service_templates.sql"), "utf8"));
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_current_bank_requisites.sql"), "utf8"));
+  const activationSource = await readFile(path.join(root, "supabase/tests/crm_confirmed_bank_activation.sql"), "utf8");
+  const activationParts = activationSource.split("-- APPLY CONFIRMED MIGRATION HERE");
+  if (activationParts.length !== 2) throw new Error("Expected confirmed bank activation test boundary");
+  const activation = await migration("20261012020000_pin_confirmed_company_bank.sql");
+  await db.exec(activationParts[0]);
+  for (const [key, value] of [
+    ["company_inn", "999999999999"],
+    ["company_bank_account", "40914810200040551529"],
+    ["company_bank_bik", "044525000"],
+    ["company_bank_corr", "30101810645374525000"],
+    ["company_bank_name", "Другой банк"],
+  ]) {
+    await db.exec("SAVEPOINT invalid_activation_settings");
+    await db.query("UPDATE public.site_settings SET value=$1::jsonb WHERE key=$2", [JSON.stringify(value), key]);
+    let rejection;
+    try { await db.exec(activation); } catch (error) { rejection = error; }
+    await db.exec("ROLLBACK TO SAVEPOINT invalid_activation_settings");
+    if (rejection?.message !== "CRM_CONFIRMED_BANK_SETTINGS_MISMATCH") throw new Error(`Confirmed bank migration did not reject differing ${key}`);
+    await db.exec("RELEASE SAVEPOINT invalid_activation_settings");
+  }
+  await db.exec("SAVEPOINT missing_activation_setting");
+  await db.exec("DELETE FROM public.site_settings WHERE key='company_bank_bik'");
+  let missingRejection;
+  try { await db.exec(activation); } catch (error) { missingRejection = error; }
+  await db.exec("ROLLBACK TO SAVEPOINT missing_activation_setting");
+  if (missingRejection?.message !== "CRM_CONFIRMED_BANK_SETTINGS_MISMATCH") throw new Error("Confirmed bank migration did not reject missing bank setting");
+  await db.exec("RELEASE SAVEPOINT missing_activation_setting");
+  await db.exec("SAVEPOINT conflicting_activation_policy");
+  await db.exec(`INSERT INTO public.crm_company_bank_policy(singleton,issuer_inn,company_bank_account,company_bank_bik,company_bank_corr,company_bank_name,revision,retired_accounts)
+    VALUES(true,'253615392404','40802810200000522079','044525068','30101810645374525068','ООО «ОЗОН Банк»',7,ARRAY['40914810200040551529'])`);
+  let policyRejection;
+  try { await db.exec(activation); } catch (error) { policyRejection = error; }
+  await db.exec("ROLLBACK TO SAVEPOINT conflicting_activation_policy");
+  if (policyRejection?.message !== "CRM_CONFIRMED_BANK_POLICY_CONFLICT") throw new Error("Confirmed bank migration did not reject incomplete pre-existing policy");
+  await db.exec("RELEASE SAVEPOINT conflicting_activation_policy");
+  await db.exec("SAVEPOINT differing_activation_policy");
+  await db.exec(`INSERT INTO public.crm_company_bank_policy(singleton,issuer_inn,company_bank_account,company_bank_bik,company_bank_corr,company_bank_name,revision,retired_accounts)
+    VALUES(true,'253615392404','40802810200000522000','044525068','30101810645374525068','ООО «ОЗОН Банк»',7,ARRAY['40914810200040551529','40914810200003058331'])`);
+  let differingPolicyRejection;
+  try { await db.exec(activation); } catch (error) { differingPolicyRejection = error; }
+  await db.exec("ROLLBACK TO SAVEPOINT differing_activation_policy");
+  if (differingPolicyRejection?.message !== "CRM_CONFIRMED_BANK_POLICY_CONFLICT") throw new Error("Confirmed bank migration did not reject differing pre-existing account");
+  await db.exec("RELEASE SAVEPOINT differing_activation_policy");
+  await db.exec("SAVEPOINT equivalent_activation_bank_name");
+  await db.exec(`UPDATE public.site_settings SET value='"ооо \\"озон банк\\""'::jsonb WHERE key='company_bank_name'`);
+  await db.exec(activation);
+  await db.exec("SELECT pg_temp.activation_assert((SELECT p.company_bank_name=s.value#>>'{}' FROM public.crm_company_bank_policy p JOIN public.site_settings s ON s.key='company_bank_name'),'equivalent bank name pins existing exact string without settings rewrite')");
+  await db.exec("ROLLBACK TO SAVEPOINT equivalent_activation_bank_name");
+  await db.exec("RELEASE SAVEPOINT equivalent_activation_bank_name");
+  await db.exec(activation);
+  const policyBeforeReplay = (await db.query("SELECT to_jsonb(p) AS policy FROM public.crm_company_bank_policy p")).rows[0].policy;
+  await db.exec(activation);
+  const policyAfterReplay = (await db.query("SELECT to_jsonb(p) AS policy FROM public.crm_company_bank_policy p")).rows[0].policy;
+  if (JSON.stringify(policyAfterReplay) !== JSON.stringify(policyBeforeReplay)) throw new Error("Confirmed bank activation replay rewrote the policy");
+  await db.exec(activationParts[1]);
   console.log("PASS: CRM migration executed and all SQL integration assertions passed in PGlite.");
   console.log("Not tested here: live Supabase Auth, deployed RLS, storage, multi-session concurrency, PDF, SMTP.");
 } catch (error) {

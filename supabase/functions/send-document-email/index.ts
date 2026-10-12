@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { EmailAuthorizationError, authorizeLegacyEmail, requestBearer } from "../_shared/crm-email/legacy-auth.ts";
 import { parseLegacyRecipients, sendSmtpEmailToRecipients, SmtpDeliveryError, validateSmtpEmail, type SmtpEmail } from "../_shared/crm-email/smtp.ts";
+import { assertLegacyEmailCurrentBankRequisites, PaymentRequisitesUnverifiedError } from "../_shared/crm-email/payment-check.ts";
+import { CurrentBankRequisitesError, type CurrentBankPolicy } from "../_shared/current-bank-requisites.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,13 +56,24 @@ serve(async request => {
       attachments, messageId: `${crypto.randomUUID()}@24zxc.ru`,
     };
     validateSmtpEmail(email);
-    await authorizeLegacyEmail(token, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), database, recipients);
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    await authorizeLegacyEmail(token, serviceKey, database, recipients);
+    // Read the canonical policy only after caller and recipients have been authorized.
+    // OrgSales is allowed to send for another issuer; the internal policy read does
+    // not confer any new client/document permissions on that caller.
+    const policyDatabase = serviceKey ? createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } }) : database;
+    const bankPolicy = await policyDatabase.rpc("crm_get_company_bank_policy", {});
+    if (bankPolicy.error) throw new PaymentRequisitesUnverifiedError();
+    await assertLegacyEmailCurrentBankRequisites(email, bankPolicy.data as CurrentBankPolicy | null);
     // Existing callers may supply async:true, but 202 never proved submission.
     // Respond only after SMTP accepts the message; queued is no longer reported as sent.
     const { receipt } = await sendSmtpEmailToRecipients(email, recipients);
     return json({ success: true, status: "accepted", receipt, messageId: email.messageId });
   } catch (error) {
     if (error instanceof EmailAuthorizationError) return json({ success: false, error: error.message }, error.status);
+    if (error instanceof CurrentBankRequisitesError || error instanceof PaymentRequisitesUnverifiedError) {
+      return json({ success: false, error: error.message, code: error.code }, 409);
+    }
     if (error instanceof SmtpDeliveryError) {
       const inputError = error.code.startsWith("SMTP_INVALID_") || error.code === "SMTP_ATTACHMENTS_TOO_LARGE";
       return json({ success: false, error: error.code, outcome: error.outcome }, inputError ? 400 : 502);
