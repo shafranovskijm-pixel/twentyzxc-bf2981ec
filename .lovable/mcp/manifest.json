@@ -17,6 +17,104 @@
     },
     "tools": [
       {
+        "name": "crm_get_company_bank_policy",
+        "title": "Актуальные банковские реквизиты исполнителя",
+        "description": "Читает закреплённый полный расчётный счёт, банк, БИК, корреспондентский счёт, ИНН исполнителя и версию. null означает, что реквизиты ещё не закреплены. Не восстанавливайте полный номер по первым или последним цифрам и не копируйте реквизиты исполнителя из старого договора.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_pin_company_bank_requisites",
+        "title": "Закрепить актуальный расчётный счёт",
+        "description": "По явной команде пользователя атомарно закрепляет полный комплект банковских реквизитов исполнителя и обновляет настройки CRM. Только подтверждённые пользователем полные значения. Перед изменением прочитайте crm_get_company_bank_policy; expectedRevision=null только для первого закрепления. Предыдущий счёт автоматически становится устаревшим. retired_accounts содержит только полные известные старые счета этого исполнителя. Старые документы сохраняются; новые версии и отправки проверяют актуальность. Повтор одной операции использует тот же requestId. Не отправляет письма.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "expectedRevision": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "profile": {
+              "type": "object",
+              "properties": {
+                "issuer_inn": {
+                  "type": "string",
+                  "pattern": "^\\d{10}(\\d{2})?$"
+                },
+                "company_bank_account": {
+                  "type": "string",
+                  "pattern": "^\\d{20}$"
+                },
+                "company_bank_bik": {
+                  "type": "string",
+                  "pattern": "^\\d{9}$"
+                },
+                "company_bank_corr": {
+                  "type": "string",
+                  "pattern": "^\\d{20}$"
+                },
+                "company_bank_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "retired_accounts": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^\\d{20}$"
+                  },
+                  "maxItems": 100
+                }
+              },
+              "required": [
+                "issuer_inn",
+                "company_bank_account",
+                "company_bank_bik",
+                "company_bank_corr",
+                "company_bank_name"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "requestId",
+            "expectedRevision",
+            "profile"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
         "name": "crm_list_service_templates",
         "title": "Найти шаблоны новых услуг",
         "description": "Ищет сохранённые шаблоны договоров услуг. Показывает название, ID, текущую версию и архивный статус; текст читайте через crm_get_service_template. Ничего не меняет.",
@@ -1509,7 +1607,7 @@
       {
         "name": "crm_revise_document",
         "title": "Изменить дату, стоимость или скидку",
-        "description": "Создаёт новую версию документа, созданного API. Сохраняет старую версию и реквизиты. Передайте актуальный expectedRevision; конфликт требует перечитать документ. services заменяет весь список услуг. discount:null убирает скидку. Для повторной отправки подготовьте новое письмо с новой версией и новым requestId по явной команде пользователя.",
+        "description": "Создаёт новую версию документа, созданного API. Старую версию сохраняет; в новую подставляет закреплённые актуальные банковские реквизиты того же исполнителя, остальные реквизиты сохраняет из исходника. Передайте актуальный expectedRevision; конфликт требует перечитать документ. services заменяет весь список услуг. discount:null убирает скидку. Для обновления только банковских реквизитов передайте текущую date без изменения. Для повторной отправки подготовьте новое письмо с новой версией и новым requestId по явной команде пользователя.",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
