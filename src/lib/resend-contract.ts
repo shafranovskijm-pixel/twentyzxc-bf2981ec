@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generatePdfBlob, blobToBase64 } from "./document-pdf";
+import { documentEmailErrorMessage } from "./document-email-error";
 
 export interface ResendOptions {
   contractId: string;
@@ -94,63 +95,9 @@ async function findStoredPdf(
   return null;
 }
 
-/** Try to create a signed URL for a stored file; returns null if missing. */
-async function trySignedUrl(filePath: string): Promise<string | null> {
-  try {
-    const { data, error } = await supabase.storage
-      .from("contracts")
-      .createSignedUrl(filePath, 60 * 60 * 24 * 7);
-    if (error || !data?.signedUrl) return null;
-    // HEAD-проверка, что файл реально существует
-    const head = await fetch(data.signedUrl, { method: "HEAD" });
-    if (!head.ok) return null;
-    return data.signedUrl;
-  } catch {
-    return null;
-  }
-}
-
 /**
- * Upload PDF under deterministic name and register in contract_files.
- * Used as fallback when no stored PDF exists.
- */
-async function uploadAndSign(
-  blob: Blob,
-  displayName: string,
-  storageName: string,
-  contractId: string
-): Promise<string> {
-  const path = `${contractId}/${storageName}`;
-  const { error: upErr } = await supabase.storage
-    .from("contracts")
-    .upload(path, blob, { contentType: "application/pdf", upsert: true });
-  if (upErr) throw new Error(`Upload: ${upErr.message}`);
-
-  // Register in contract_files (avoid duplicate by path)
-  const { data: existing } = await supabase
-    .from("contract_files")
-    .select("id")
-    .eq("contract_id", contractId)
-    .eq("file_path", path)
-    .maybeSingle();
-  if (!existing) {
-    await supabase.from("contract_files").insert({
-      contract_id: contractId,
-      file_name: displayName,
-      file_path: path,
-      file_size: blob.size,
-    });
-  }
-
-  const { data, error } = await supabase.storage
-    .from("contracts")
-    .createSignedUrl(path, 60 * 60 * 24 * 7);
-  if (error || !data?.signedUrl) throw new Error("Не удалось создать ссылку");
-  return data.signedUrl;
-}
-
-/**
- * Get PDF bytes for a kind of document — prefer stored PDF, fallback to regenerating from HTML.
+ * Build from the latest saved document HTML; an older PDF may contain retired bank details.
+ * An uploaded PDF is a fallback only when there is no saved editable document.
  * Returns { base64, filename, label } or null if neither stored file nor source HTML exist.
  */
 async function getOrBuildPdfAttachment(
@@ -160,7 +107,15 @@ async function getOrBuildPdfAttachment(
   const doc = await findLatestDoc(kind, opts);
   const labelPrefix = kind === "contract" ? "Договор" : "Счёт";
 
-  // 1. Try stored PDF — download bytes directly (no signed URL)
+  if (doc?.html_content?.trim()) {
+    const blob = await generatePdfBlob(doc.html_content);
+    const base64 = await blobToBase64(blob);
+    const filename = `${labelPrefix}_${safeFilename(doc.doc_number)}_${doc.doc_date}.pdf`;
+    // Rendering for resend must not overwrite an archived (possibly signed) PDF.
+    return { base64, filename, label: `${labelPrefix} №${doc.doc_number} от ${formatDate(doc.doc_date)}` };
+  }
+
+  // A legacy uploaded PDF is inspected by the server before SMTP submission.
   const stored = await findStoredPdf(opts.contractId, kind);
   if (stored) {
     try {
@@ -180,18 +135,7 @@ async function getOrBuildPdfAttachment(
     }
   }
 
-  // 2. Fallback — regenerate PDF from stored HTML
-  if (!doc) return null;
-  const blob = await generatePdfBlob(doc.html_content);
-  const base64 = await blobToBase64(blob);
-  const safeNum = safeFilename(doc.doc_number);
-  const filename = `${labelPrefix}_${safeNum}_${doc.doc_date}.pdf`;
-  // Best-effort: also persist so future sends are faster (ignore failure)
-  try {
-    const storageName = `${kind === "contract" ? "Dogovor" : "Schet"}_${safeNum}_${doc.doc_date}.pdf`;
-    await uploadAndSign(blob, filename, storageName, opts.contractId);
-  } catch {}
-  return { base64, filename, label: `${labelPrefix} №${doc.doc_number} от ${formatDate(doc.doc_date)}` };
+  return null;
 }
 
 /** Resend an existing contract (and optionally invoice) PDF by email. */
@@ -227,7 +171,10 @@ export async function resendContractEmail(opts: ResendOptions): Promise<void> {
   const { data, error } = await supabase.functions.invoke("send-document-email", {
     body: { to: recipients.join(","), subject: docLabel, html, attachments, async: true },
   });
-  if (error) throw error;
+  if (error) {
+    // Supabase wraps non-2xx responses. Preserve the server's actionable bank warning.
+    throw new Error(await documentEmailErrorMessage(error));
+  }
   if (!data?.success) throw new Error(data?.error || "Ошибка отправки");
 
   // Save email back to client if changed

@@ -9,6 +9,7 @@ import {
 import { generateFrdoContractHtml } from "../../../../src/lib/frdo-contract-template.ts";
 import { generateNmoContractHtml } from "../../../../src/lib/nmo-contract-template.ts";
 import { generateCustomContractHtml } from "../../../../src/lib/custom-contract-template.ts";
+import { assertCurrentBankText, assertCurrentCompanyBankRequisites, type CurrentBankPolicy } from "../current-bank-requisites.ts";
 import {
   calculateTotals,
   DocumentValidationError,
@@ -31,6 +32,8 @@ export interface RenderContext {
   company: CompanyRequisites;
   /** Exact configured values before deriving an ИП signature from its legal name. */
   companySourceSnapshot?: CompanyRequisites;
+  /** Confirmed issuer bank profile loaded from CRM, not from document input. */
+  bankPolicy?: CurrentBankPolicy | null;
   linkedContract?: LinkedContractSnapshot;
   /** Supplied by trusted server configuration, never from the document request. */
   assetOrigin: string;
@@ -104,6 +107,7 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
   const totals = calculateTotals(checked.services, checked.discount);
   const client = copyRequisites(context.client, CLIENT_FIELDS, "client");
   const company = copyRequisites(context.company, COMPANY_FIELDS, "company");
+  assertCurrentCompanyBankRequisites(company, context.bankPolicy ?? null);
   const companySourceSnapshot = context.companySourceSnapshot
     ? copyRequisites(context.companySourceSnapshot, COMPANY_FIELDS, "companySourceSnapshot") : undefined;
   if (checked.invoiceBasis && checked.invoiceBasis.payerInn !== client.inn.trim()) {
@@ -170,6 +174,7 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
   } else {
     html = generateInvoiceHtml(data);
   }
+  assertCurrentBankText(html, context.bankPolicy ?? null, true);
   const metadata: RenderedDocument["metadata"] = {
     schemaVersion: 1,
     source: "crm-documents-api",
@@ -199,6 +204,9 @@ export function renderDocument(input: DocumentInput, context: RenderContext): Re
     lineTotalsMinor: totals.lineTotalsMinor,
   };
   if (companySourceSnapshot) metadata.companySourceSnapshot = cloneJson(companySourceSnapshot);
+  if (context.bankPolicy && context.bankPolicy.issuer_inn === company.company_inn) {
+    metadata.companyBankPolicyRevision = context.bankPolicy.revision;
+  }
   if (linkedContract) metadata.linkedContractSnapshot = cloneJson(linkedContract);
   if (checked.invoiceBasis) {
     metadata.invoiceBasisSnapshot = cloneJson(checked.invoiceBasis);

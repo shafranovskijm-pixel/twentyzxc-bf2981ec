@@ -62,6 +62,22 @@ const sharedEmail = z.boolean().default(false).describe("true только ес�
 const chatFile = z.object({ download_url: z.string(), file_id: z.string(), mime_type: z.string().optional(), file_name: z.string().optional() }).strict();
 
 export const crmTools = [
+  defineTool({ name: "crm_get_company_bank_policy", title: "Актуальные банковские реквизиты исполнителя",
+    description: "Читает закреплённый полный расчётный счёт, банк, БИК, корреспондентский счёт, ИНН исполнителя и версию. null означает, что реквизиты ещё не закреплены. Не восстанавливайте полный номер по первым или последним цифрам и не копируйте реквизиты исполнителя из старого договора.",
+    inputSchema: {}, annotations: read,
+    handler: (_input, ctx) => runCrmTool(ctx, async api => ({ policy: await api.getCompanyBankPolicy() })),
+  }),
+  defineTool({ name: "crm_pin_company_bank_requisites", title: "Закрепить актуальный расчётный счёт",
+    description: "По явной команде пользователя атомарно закрепляет полный комплект банковских реквизитов исполнителя и обновляет настройки CRM. Только подтверждённые пользователем полные значения. Перед изменением прочитайте crm_get_company_bank_policy; expectedRevision=null только для первого закрепления. Предыдущий счёт автоматически становится устаревшим. retired_accounts содержит только полные известные старые счета этого исполнителя. Старые документы сохраняются; новые версии и отправки проверяют актуальность. Повтор одной операции использует тот же requestId. Не отправляет письма.",
+    inputSchema: { requestId: uuid, expectedRevision: z.number().int().positive().nullable(), profile: z.object({
+      issuer_inn: z.string().regex(/^\d{10}(\d{2})?$/),
+      company_bank_account: z.string().regex(/^\d{20}$/), company_bank_bik: z.string().regex(/^\d{9}$/),
+      company_bank_corr: z.string().regex(/^\d{20}$/), company_bank_name: z.string().trim().min(1).max(300),
+      retired_accounts: z.array(z.string().regex(/^\d{20}$/)).max(100).optional(),
+    }).strict() }, annotations: write,
+    handler: (input, ctx) => runCrmTool(ctx, api => api.pinCompanyBankRequisites(input.requestId, input.expectedRevision,
+      input.profile as Parameters<typeof api.pinCompanyBankRequisites>[2])),
+  }),
   defineTool({ name: "crm_list_service_templates", title: "Найти шаблоны новых услуг",
     description: "Ищет сохранённые шаблоны договоров услуг. Показывает название, ID, текущую версию и архивный статус; текст читайте через crm_get_service_template. Ничего не меняет.",
     inputSchema: { query: z.string().max(200).default(""), includeArchived: z.boolean().default(false), limit: z.number().int().min(1).max(50).default(25) }, annotations: read,
@@ -157,7 +173,7 @@ export const crmTools = [
     handler: (input, ctx) => runCrmTool(ctx, api => api.create(input.requestId, input.document)),
   }),
   defineTool({ name: "crm_revise_document", title: "Изменить дату, стоимость или скидку",
-    description: "Создаёт новую версию документа, созданного API. Сохраняет старую версию и реквизиты. Передайте актуальный expectedRevision; конфликт требует перечитать документ. services заменяет весь список услуг. discount:null убирает скидку. Для повторной отправки подготовьте новое письмо с новой версией и новым requestId по явной команде пользователя.",
+    description: "Создаёт новую версию документа, созданного API. Старую версию сохраняет; в новую подставляет закреплённые актуальные банковские реквизиты того же исполнителя, остальные реквизиты сохраняет из исходника. Передайте актуальный expectedRevision; конфликт требует перечитать документ. services заменяет весь список услуг. discount:null убирает скидку. Для обновления только банковских реквизитов передайте текущую date без изменения. Для повторной отправки подготовьте новое письмо с новой версией и новым requestId по явной команде пользователя.",
     inputSchema: { requestId: uuid, documentId: uuid, expectedRevision: z.number().int().positive(), changes: z.object({
       date: z.string().optional(), services: z.array(service).min(1).max(100).optional(),
       subject: z.string().optional(), deadline: z.string().optional(), paymentTerms: z.string().optional(),

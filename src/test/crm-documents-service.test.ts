@@ -28,7 +28,10 @@ function mockDb(results: unknown[]) {
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: value, error: null }).then(resolve);
     return builder;
   }), rpc: vi.fn().mockResolvedValue({ data: { documentId, revision: 1, contractId: null, replayed: false }, error: null }) };
-  return { db: db as unknown as SupabaseClient, calls, rpc: db.rpc, from: db.from };
+  // The policy read is a separate read operation; existing assertions below
+  // track document/client writes. Unpinned fixtures retain their old semantics.
+  return { db: { ...db, rpc: (name: string, args?: unknown) => name === "crm_get_company_bank_policy"
+    ? Promise.resolve({ data: null, error: null }) : db.rpc(name, args) } as unknown as SupabaseClient, calls, rpc: db.rpc, from: db.from };
 }
 
 describe("CRM authorization and protocol boundary", () => {
@@ -45,8 +48,8 @@ describe("CRM authorization and protocol boundary", () => {
     expect(rpc).toHaveBeenCalledWith("has_role", { _user_id: clientId, _role: "admin" });
   });
   it("advertises only implemented operations, and marks writes as writes", () => {
-    expect(crmTools.map(tool => tool.name)).toHaveLength(23);
-    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|save_service_template|prepare_document_email|send_document_email/.test(tool.name));
+    expect(crmTools.map(tool => tool.name)).toHaveLength(25);
+    for (const tool of crmTools) expect(tool.annotations?.readOnlyHint).toBe(!/create|revise|update_client|import_client|save_client|save_service_template|pin_company_bank|prepare_document_email|send_document_email/.test(tool.name));
     for (const name of ["crm_import_client_pdf", "crm_import_client_file"]) {
       const fileTool = crmTools.find(tool => tool.name === name) as { _meta?: Record<string, unknown> };
       expect(fileTool._meta?.["openai/fileParams"]).toEqual(["file"]);
@@ -91,7 +94,7 @@ describe("CRM queries and document persistence", () => {
     const ctx = { client: { ...client, address: client.legal_address, director_name: "", director_post: "" }, company, assetOrigin: "https://24zxc.ru" };
     const rendered = renderDocument(representedContract, ctx);
     const previous = { source: "api", input: representedContract, snapshot: { metadata: rendered.metadata, contract_id: contractId } };
-    const fake = mockDb([previous, previous]);
+    const fake = mockDb([previous, null, previous, null]);
     const api = new CrmDocumentsService(fake.db);
     await api.revise(requestId, documentId, 1, { date: "2026-10-01" });
     expect(fake.rpc.mock.calls[0][1].p_input.clientRepresentative).toEqual(representative);
@@ -100,7 +103,7 @@ describe("CRM queries and document persistence", () => {
     expect(fake.rpc.mock.calls[1][1].p_payload.metadata.clientRepresentative).toEqual(replacement);
     expect(fake.rpc.mock.calls[1][1].p_payload.html_content).toContain("на основании доверенности № NEW");
     expect(fake.rpc.mock.calls[1][1].p_payload.metadata.clientSnapshot.director_name).toBe("");
-    expect(fake.from).toHaveBeenCalledTimes(2); // Saved snapshots, no refresh that changes original parties.
+    expect(fake.from).toHaveBeenCalledTimes(4); // Original snapshots plus immutable successful-command lookup.
   });
   it("saves email through exact client ID with expected old value and stable request ID", async () => {
     const fake = mockDb([]);
@@ -218,7 +221,7 @@ describe("CRM queries and document persistence", () => {
     const rendered = renderDocument(input, { client: rawClient, company, companySourceSnapshot: sourceCompany, assetOrigin: "https://24zxc.ru" });
     const fake = mockDb([{ source: "api", input, snapshot: { metadata: rendered.metadata, contract_id: contractId } }]);
     await new CrmDocumentsService(fake.db).revise(requestId, documentId, 1, { date: "2026-10-01" });
-    expect(fake.from).toHaveBeenCalledTimes(1); // No fresh site_settings can silently replace the issuer.
+    expect(fake.from).toHaveBeenCalledTimes(2); // Original snapshot + replay journal, no replacement of legal identity.
     const payload = fake.rpc.mock.calls[0][1];
     expect(payload).toMatchObject({ p_document_id: documentId, p_expected_revision: 1, p_payload: { doc_date: "2026-10-01", contract_id: contractId, metadata: { companySnapshot: company } } });
     expect(payload.p_payload.metadata.companySourceSnapshot).toEqual(sourceCompany);

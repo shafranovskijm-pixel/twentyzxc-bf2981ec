@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Save, Loader2, Building2, Landmark, User, Search } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { COMPANY_BANK_FIELDS, type CurrentBankPolicy } from "../../../supabase/functions/_shared/current-bank-requisites";
 
 const FIELDS = [
   { section: "org", label: "Полное название", key: "company_name", placeholder: "ООО «Компания»" },
@@ -34,6 +36,17 @@ const RequisitesTab = () => {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [lookingUp, setLookingUp] = useState(false);
+  const [pinning, setPinning] = useState(false);
+  const queryClient = useQueryClient();
+  const bankPolicy = useQuery({
+    queryKey: ["company-bank-policy"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("crm_get_company_bank_policy");
+      if (error) throw error;
+      return data as CurrentBankPolicy | null;
+    },
+  });
+  const bankChanged = !!bankPolicy.data && COMPANY_BANK_FIELDS.some(key => values[key] !== bankPolicy.data?.[key]);
 
   const lookupInn = async () => {
     const inn = values.company_inn?.trim();
@@ -84,6 +97,10 @@ const RequisitesTab = () => {
   }, [settings]);
 
   const handleSave = async () => {
+    if (bankChanged) {
+      toast.error("Для смены закреплённого счёта используйте кнопку «Закрепить новые банковские реквизиты».");
+      return;
+    }
     setSaving(true);
     try {
       const savePromise = updateMultiple.mutateAsync(
@@ -98,6 +115,34 @@ const RequisitesTab = () => {
       toast.error(e?.message === "timeout" ? "Таймаут сохранения, попробуйте ещё раз" : "Ошибка сохранения");
     }
     setSaving(false);
+  };
+
+  const handlePinBank = async () => {
+    const profile = {
+      issuer_inn: values.company_inn?.trim(),
+      ...Object.fromEntries(COMPANY_BANK_FIELDS.map(key => [key, values[key]?.trim() || ""])),
+    } as Record<string, string>;
+    if (!/^\d{10}(\d{2})?$/.test(profile.issuer_inn || "") || !/^\d{20}$/.test(profile.company_bank_account)
+      || !/^\d{9}$/.test(profile.company_bank_bik) || !/^\d{20}$/.test(profile.company_bank_corr) || !profile.company_bank_name) {
+      toast.error("Укажите полный ИНН, расчётный счёт (20 цифр), БИК (9 цифр), корреспондентский счёт (20 цифр) и банк.");
+      return;
+    }
+    setPinning(true);
+    try {
+      const { error } = await (supabase as any).rpc("crm_pin_company_bank_requisites", {
+        p_request_id: crypto.randomUUID(), p_expected_revision: bankPolicy.data?.revision ?? null, p_profile: profile,
+      });
+      if (error) throw error;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["company-bank-policy"] }),
+        queryClient.invalidateQueries({ queryKey: ["site-settings"] }),
+      ]);
+      toast.success("Актуальные банковские реквизиты закреплены. Старый счёт больше не разрешён для отправки.");
+    } catch (error: any) {
+      toast.error(error?.message?.includes("CRM_COMPANY_BANK_REVISION_CONFLICT")
+        ? "Реквизиты уже изменились. Обновите страницу и проверьте текущую версию."
+        : "Не удалось закрепить реквизиты. Проверьте полный комплект и сохранённый ИНН исполнителя.");
+    } finally { setPinning(false); }
   };
 
   if (isLoading) return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
@@ -144,6 +189,19 @@ const RequisitesTab = () => {
                   )}
                 </div>
               ))}
+              {s.id === "bank" && <div className="sm:col-span-2 space-y-3 rounded-md border p-3 text-sm">
+                {bankPolicy.isLoading ? <p>Проверяем закреплённые реквизиты…</p>
+                  : bankPolicy.isError ? <p>Не удалось проверить закреплённые реквизиты. Обновите страницу перед изменением счёта.</p>
+                  : bankPolicy.data ? <><p>Актуальный счёт: <strong>{bankPolicy.data.company_bank_account}</strong>. {bankPolicy.data.company_bank_name}. Версия {bankPolicy.data.revision}.</p>
+                    <p className="text-muted-foreground">Новые документы используют эти реквизиты. Отправка со старым счётом блокируется; исторические документы сохраняются.</p>
+                    {bankPolicy.data.retired_accounts.length > 0 && <p className="text-muted-foreground">Устаревшие счета: {bankPolicy.data.retired_accounts.join(", ")}</p>}</>
+                  : <p>Закрепите подтверждённый комплект, чтобы новые документы и отправка проверяли актуальность расчётного счёта.</p>}
+                <Button type="button" variant="outline" onClick={handlePinBank}
+                  disabled={bankPolicy.isLoading || bankPolicy.isError || pinning || (!!bankPolicy.data && !bankChanged)}>
+                  {pinning && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {bankPolicy.data ? "Закрепить новые банковские реквизиты" : "Закрепить актуальные банковские реквизиты"}
+                </Button>
+              </div>}
             </CardContent>
           </Card>
         );

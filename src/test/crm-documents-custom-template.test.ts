@@ -26,7 +26,8 @@ function dbWithRows(rows: unknown[]) {
     builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: value, error: null }).then(resolve);
     return builder;
   });
-  return { db: { from, rpc } as unknown as SupabaseClient, rpc, from };
+  return { db: { from, rpc: (name: string, args?: unknown) => name === "crm_get_company_bank_policy"
+    ? Promise.resolve({ data: null, error: null }) : rpc(name, args) } as unknown as SupabaseClient, rpc, from };
 }
 const settings = Object.entries(company).map(([key, value]) => ({ key, value }));
 

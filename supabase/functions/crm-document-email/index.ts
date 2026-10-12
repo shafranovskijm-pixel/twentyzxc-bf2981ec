@@ -77,6 +77,9 @@ export async function handler(req: Request): Promise<Response> {
     return json({ ...result, downloads });
   } catch (error) {
     const code = error instanceof Error ? error.message.match(/^CRM_[A-Z_]+$/)?.[0] : null;
+    if (code === "CRM_COMPANY_BANK_ACCOUNT_RETIRED" || code === "CRM_COMPANY_BANK_REQUISITES_NOT_CURRENT") {
+      return json({ code, message: "Отправка остановлена: документ содержит устаревшие банковские реквизиты исполнителя. Создайте новую версию с закреплённым актуальным счётом и подготовьте письмо заново." }, 409);
+    }
     return json({ code: code || "CRM_EMAIL_OPERATION_FAILED", message: "Операция не завершена. Проверьте состояние отправки по deliveryId; повтор команды отправки не отправит письмо повторно." }, 400);
   }
 }

@@ -1926,6 +1926,53 @@ function generateNmoContractHtml(data) {
   </body></html>`;
 }
 
+// supabase/functions/_shared/current-bank-requisites.ts
+var COMPANY_BANK_FIELDS = [
+  "company_bank_account",
+  "company_bank_bik",
+  "company_bank_corr",
+  "company_bank_name"
+];
+var CurrentBankRequisitesError = class extends Error {
+  constructor(code, message) {
+    super(message);
+    this.code = code;
+  }
+  code;
+};
+var digits = (value) => value.replace(/\D/gu, "");
+var bankName = (value) => value.toLocaleLowerCase("ru-RU").replace(/[\s\p{P}]/gu, "");
+function assertCurrentCompanyBankRequisites(company, policy) {
+  if (!policy || digits(company.company_inn) !== policy.issuer_inn) return;
+  if (policy.retired_accounts.includes(digits(company.company_bank_account))) {
+    throw new CurrentBankRequisitesError("CRM_COMPANY_BANK_ACCOUNT_RETIRED", "\u0420\u0430\u0441\u0447\u0451\u0442\u043D\u044B\u0439 \u0441\u0447\u0451\u0442 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u0443\u0441\u0442\u0430\u0440\u0435\u043B. \u0421\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0441 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u043C\u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u0430\u043C\u0438.");
+  }
+  if (COMPANY_BANK_FIELDS.some((key) => key === "company_bank_name" ? bankName(company[key]) !== bankName(policy[key]) : digits(company[key]) !== policy[key])) {
+    throw new CurrentBankRequisitesError("CRM_COMPANY_BANK_REQUISITES_NOT_CURRENT", "\u0411\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u043D\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0430\u044E\u0442 \u0441 \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0451\u043D\u043D\u044B\u043C\u0438. \u041E\u0431\u043D\u043E\u0432\u0438\u0442\u0435 \u0438\u0445 \u0432 \u043D\u043E\u0432\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0438 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u043F\u0435\u0440\u0435\u0434 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u043E\u0439.");
+  }
+}
+function assertCurrentBankText(text2, policy, requireCurrentAccount = false) {
+  if (!policy) return;
+  const visible = text2.replace(/&#(x[0-9a-f]+|[0-9]+);/giu, (entity, code) => {
+    const value = Number.parseInt(
+      code.startsWith("x") || code.startsWith("X") ? code.slice(1) : code,
+      code.startsWith("x") || code.startsWith("X") ? 16 : 10
+    );
+    return value >= 0 && value <= 1114111 ? String.fromCodePoint(value) : entity;
+  }).replace(/<[^>]*>/gu, " ").replace(/&(?:nbsp|quot|laquo|raquo|apos);/giu, " ");
+  const numeric = digits(visible);
+  if (policy.retired_accounts.some((account) => numeric.includes(account))) {
+    throw new CurrentBankRequisitesError("CRM_COMPANY_BANK_ACCOUNT_RETIRED", "\u0414\u043E\u043A\u0443\u043C\u0435\u043D\u0442 \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u0442 \u0441\u0442\u0430\u0440\u044B\u0439 \u0440\u0430\u0441\u0447\u0451\u0442\u043D\u044B\u0439 \u0441\u0447\u0451\u0442 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F. \u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0430; \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u044C\u0442\u0435 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0441 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u043C\u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u0430\u043C\u0438.");
+  }
+  if (requireCurrentAccount && numeric.includes(policy.issuer_inn) && ([policy.company_bank_account, policy.company_bank_bik, policy.company_bank_corr].some((value) => !numeric.includes(value)) || !bankName(visible).includes(bankName(policy.company_bank_name)))) {
+    throw new CurrentBankRequisitesError("CRM_COMPANY_BANK_REQUISITES_NOT_CURRENT", "\u0412 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0435 \u043D\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0439 \u043A\u043E\u043C\u043F\u043B\u0435\u043A\u0442 \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0445 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F.");
+  }
+}
+function withCurrentCompanyBankRequisites(company, policy) {
+  if (!policy || digits(company.company_inn) !== policy.issuer_inn) return { ...company };
+  return { ...company, ...Object.fromEntries(COMPANY_BANK_FIELDS.map((key) => [key, policy[key]])) };
+}
+
 // supabase/functions/_shared/crm-documents/render.ts
 var CLIENT_FIELDS = [
   "name",
@@ -1999,6 +2046,7 @@ function renderDocument(input, context) {
   const totals = calculateTotals(checked.services, checked.discount);
   const client = copyRequisites(context.client, CLIENT_FIELDS, "client");
   const company = copyRequisites(context.company, COMPANY_FIELDS, "company");
+  assertCurrentCompanyBankRequisites(company, context.bankPolicy ?? null);
   const companySourceSnapshot = context.companySourceSnapshot ? copyRequisites(context.companySourceSnapshot, COMPANY_FIELDS, "companySourceSnapshot") : void 0;
   if (checked.invoiceBasis && checked.invoiceBasis.payerInn !== client.inn.trim()) {
     throw new DocumentValidationError([{ field: "invoiceBasis.payerInn", message: "\u0418\u041D\u041D \u043F\u043B\u0430\u0442\u0435\u043B\u044C\u0449\u0438\u043A\u0430 \u0438\u0441\u0445\u043E\u0434\u043D\u043E\u0433\u043E \u0441\u0447\u0451\u0442\u0430 \u043D\u0435 \u0441\u043E\u0432\u043F\u0430\u0434\u0430\u0435\u0442 \u0441 \u0418\u041D\u041D \u043A\u043B\u0438\u0435\u043D\u0442\u0430 CRM" }]);
@@ -2067,6 +2115,7 @@ function renderDocument(input, context) {
   } else {
     html2 = generateInvoiceHtml(data);
   }
+  assertCurrentBankText(html2, context.bankPolicy ?? null, true);
   const metadata = {
     schemaVersion: 1,
     source: "crm-documents-api",
@@ -2096,6 +2145,9 @@ function renderDocument(input, context) {
     lineTotalsMinor: totals.lineTotalsMinor
   };
   if (companySourceSnapshot) metadata.companySourceSnapshot = cloneJson(companySourceSnapshot);
+  if (context.bankPolicy && context.bankPolicy.issuer_inn === company.company_inn) {
+    metadata.companyBankPolicyRevision = context.bankPolicy.revision;
+  }
   if (linkedContract) metadata.linkedContractSnapshot = cloneJson(linkedContract);
   if (checked.invoiceBasis) {
     metadata.invoiceBasisSnapshot = cloneJson(checked.invoiceBasis);
@@ -2193,6 +2245,20 @@ var CrmDocumentsService = class {
   }
   db;
   assetOrigin;
+  async getCompanyBankPolicy() {
+    const { data, error } = await this.db.rpc("crm_get_company_bank_policy");
+    dbError(error);
+    return data;
+  }
+  async pinCompanyBankRequisites(requestId, expectedRevision, profile) {
+    const { data, error } = await this.db.rpc("crm_pin_company_bank_requisites", {
+      p_request_id: requestId,
+      p_expected_revision: expectedRevision,
+      p_profile: profile
+    });
+    dbError(error);
+    return data;
+  }
   async saveClientEmail(requestId, clientId, email2, expectedEmail) {
     const { data, error } = await this.db.rpc("crm_save_client_email", {
       p_request_id: requestId,
@@ -2212,6 +2278,9 @@ var CrmDocumentsService = class {
           code = (await error.context.json()).code;
         } catch {
         }
+      }
+      if (code === "CRM_COMPANY_BANK_ACCOUNT_RETIRED" || code === "CRM_COMPANY_BANK_REQUISITES_NOT_CURRENT") {
+        throw new CrmError(code, "\u041E\u0442\u043F\u0440\u0430\u0432\u043A\u0430 \u043E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u0430 \u0438\u0437-\u0437\u0430 \u0443\u0441\u0442\u0430\u0440\u0435\u0432\u0448\u0438\u0445 \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0445 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432. \u0421\u043E\u0437\u0434\u0430\u0439\u0442\u0435 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430 \u0447\u0435\u0440\u0435\u0437 crm_revise_document \u0441 \u0442\u0435\u043A\u0443\u0449\u0435\u0439 date, \u0437\u0430\u0442\u0435\u043C \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u044C\u0442\u0435 \u043D\u043E\u0432\u043E\u0435 \u043F\u0438\u0441\u044C\u043C\u043E \u0438 \u043F\u043E\u043A\u0430\u0436\u0438\u0442\u0435 \u0435\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044E \u043F\u0435\u0440\u0435\u0434 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u043E\u0439.");
       }
       throw new CrmError(
         code?.match(/^CRM_[A-Z_]+$/)?.[0] || "EMAIL_OPERATION_UNCONFIRMED",
@@ -2277,6 +2346,8 @@ var CrmDocumentsService = class {
       discountAmount: metadata.discountAmount ?? null,
       netAmount: metadata.netAmount ?? null,
       schemaVersion: metadata.schemaVersion ?? null,
+      companyBankPolicyRevision: metadata.companyBankPolicyRevision ?? null,
+      companyBankAccount: jsonObject(metadata.companySnapshot).company_bank_account ?? null,
       ...jsonObject(metadata.documentInput).template === "custom" ? {
         customContract: jsonObject(jsonObject(metadata.documentInput).customContract),
         serviceTemplate: jsonObject(jsonObject(metadata.documentInput).serviceTemplate)
@@ -2317,6 +2388,8 @@ var CrmDocumentsService = class {
     if (missingClient.length) {
       throw new CrmError("CLIENT_REQUISITES_MISSING", `\u0412 \u043A\u0430\u0440\u0442\u043E\u0447\u043A\u0435 \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u043D\u0435 \u0437\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u044B: ${missingClient.map((key) => clientFieldNames[key]).join(", ")}. \u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u044B\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u043A\u043B\u0438\u0435\u043D\u0442\u0430.`);
     }
+    const bankPolicy = await this.getCompanyBankPolicy();
+    assertCurrentCompanyBankRequisites(company, bankPolicy);
     let linkedContract;
     if (input.contractId) {
       if (input.type === "contract") throw new CrmError("INVALID_CONTRACT_LINK", "\u041D\u043E\u0432\u044B\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440 \u0441\u043E\u0437\u0434\u0430\u0451\u0442\u0441\u044F \u0431\u0435\u0437 \u0441\u0441\u044B\u043B\u043A\u0438 \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0439 \u0434\u043E\u0433\u043E\u0432\u043E\u0440.");
@@ -2328,7 +2401,7 @@ var CrmDocumentsService = class {
       if (!contract || contract.is_archived || !contract.contract_number || !contract.contract_date) throw new CrmError("INVALID_CONTRACT_LINK", "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u044E\u0449\u0443\u044E \u0437\u0430\u043F\u0438\u0441\u044C \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430 \u044D\u0442\u043E\u0433\u043E \u043A\u043B\u0438\u0435\u043D\u0442\u0430 \u0441 \u043D\u043E\u043C\u0435\u0440\u043E\u043C \u0438 \u0434\u0430\u0442\u043E\u0439.");
       linkedContract = { id: contract.id, number: contract.contract_number, date: contract.contract_date };
     }
-    return { client, company, companySourceSnapshot: configuredCompany, linkedContract, assetOrigin: this.assetOrigin };
+    return { client, company, companySourceSnapshot: configuredCompany, bankPolicy, linkedContract, assetOrigin: this.assetOrigin };
   }
   async materializeTemplate(input) {
     if (input.template !== "custom" || !input.serviceTemplate) return input;
@@ -2416,10 +2489,25 @@ var CrmDocumentsService = class {
     if (changes.customContract !== void 0) delete next.serviceTemplate;
     if (next.discount === null) delete next.discount;
     const input = validateDocumentInput(next);
+    const { data: completed, error: replayError } = await this.db.from("crm_document_api_requests").select("request,result").eq("request_id", requestId).maybeSingle();
+    dbError(replayError);
+    if (completed?.result) {
+      const { data, error: saveError } = await this.db.rpc("crm_save_document", {
+        p_request_id: requestId,
+        p_document_id: documentId,
+        p_expected_revision: expectedRevision,
+        p_input: input,
+        p_payload: jsonObject(completed.request).payload
+      });
+      dbError(saveError);
+      return { ...data, status: "saved", artifactStatus: "html_only", deliveryStatus: "not_requested", sent: false };
+    }
+    const bankPolicy = await this.getCompanyBankPolicy();
     const context = {
       client: metadata.clientSnapshot,
-      company: metadata.companySnapshot,
-      companySourceSnapshot: metadata.companySourceSnapshot,
+      company: withCurrentCompanyBankRequisites(metadata.companySnapshot, bankPolicy),
+      companySourceSnapshot: metadata.companySourceSnapshot ? withCurrentCompanyBankRequisites(metadata.companySourceSnapshot, bankPolicy) : void 0,
+      bankPolicy,
       linkedContract: metadata.linkedContractSnapshot,
       assetOrigin: this.assetOrigin
     };
@@ -2458,7 +2546,7 @@ async function runCrmTool(ctx, action) {
     const result = await action(new CrmDocumentsService(db));
     return { structuredContent: result, content: [{ type: "text", text: JSON.stringify(result) }] };
   } catch (error) {
-    const result = error instanceof DocumentValidationError ? { code: "INVALID_DOCUMENT", message: "\u0423\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u043F\u043E\u043B\u044F \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430.", issues: error.issues } : error instanceof CustomContractTemplateError ? { code: "INVALID_CUSTOM_CONTRACT", message: "\u0418\u0441\u043F\u0440\u0430\u0432\u044C\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430.", issues: [{ field: error.field, message: error.message }] } : error instanceof CrmError ? { code: error.code, message: error.message } : { code: "INTERNAL_ERROR", message: "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u0430. \u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u043E\u0433\u043E \u0436\u0443\u0440\u043D\u0430\u043B\u0430." };
+    const result = error instanceof DocumentValidationError ? { code: "INVALID_DOCUMENT", message: "\u0423\u0442\u043E\u0447\u043D\u0438\u0442\u0435 \u043F\u043E\u043B\u044F \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430.", issues: error.issues } : error instanceof CustomContractTemplateError ? { code: "INVALID_CUSTOM_CONTRACT", message: "\u0418\u0441\u043F\u0440\u0430\u0432\u044C\u0442\u0435 \u0442\u0435\u043A\u0441\u0442 \u0438\u043B\u0438 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u044B\u0435 \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430.", issues: [{ field: error.field, message: error.message }] } : error instanceof CurrentBankRequisitesError ? { code: error.code, message: error.message } : error instanceof CrmError ? { code: error.code, message: error.message } : { code: "INTERNAL_ERROR", message: "\u041E\u043F\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0432\u044B\u043F\u043E\u043B\u043D\u0435\u043D\u0430. \u0422\u0440\u0435\u0431\u0443\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u0441\u0435\u0440\u0432\u0435\u0440\u043D\u043E\u0433\u043E \u0436\u0443\u0440\u043D\u0430\u043B\u0430." };
     return { isError: true, content: [{ type: "text", text: JSON.stringify(result) }] };
   }
 }
@@ -3274,6 +3362,33 @@ var sharedEmail = z.boolean().default(false).describe("true \u0442\u043E\u043B\u
 var chatFile = z.object({ download_url: z.string(), file_id: z.string(), mime_type: z.string().optional(), file_name: z.string().optional() }).strict();
 var crmTools = [
   defineTool({
+    name: "crm_get_company_bank_policy",
+    title: "\u0410\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0435 \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F",
+    description: "\u0427\u0438\u0442\u0430\u0435\u0442 \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0451\u043D\u043D\u044B\u0439 \u043F\u043E\u043B\u043D\u044B\u0439 \u0440\u0430\u0441\u0447\u0451\u0442\u043D\u044B\u0439 \u0441\u0447\u0451\u0442, \u0431\u0430\u043D\u043A, \u0411\u0418\u041A, \u043A\u043E\u0440\u0440\u0435\u0441\u043F\u043E\u043D\u0434\u0435\u043D\u0442\u0441\u043A\u0438\u0439 \u0441\u0447\u0451\u0442, \u0418\u041D\u041D \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u0438 \u0432\u0435\u0440\u0441\u0438\u044E. null \u043E\u0437\u043D\u0430\u0447\u0430\u0435\u0442, \u0447\u0442\u043E \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0435\u0449\u0451 \u043D\u0435 \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0435\u043D\u044B. \u041D\u0435 \u0432\u043E\u0441\u0441\u0442\u0430\u043D\u0430\u0432\u043B\u0438\u0432\u0430\u0439\u0442\u0435 \u043F\u043E\u043B\u043D\u044B\u0439 \u043D\u043E\u043C\u0435\u0440 \u043F\u043E \u043F\u0435\u0440\u0432\u044B\u043C \u0438\u043B\u0438 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u043C \u0446\u0438\u0444\u0440\u0430\u043C \u0438 \u043D\u0435 \u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u0438\u0437 \u0441\u0442\u0430\u0440\u043E\u0433\u043E \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u0430.",
+    inputSchema: {},
+    annotations: read,
+    handler: (_input, ctx) => runCrmTool(ctx, async (api) => ({ policy: await api.getCompanyBankPolicy() }))
+  }),
+  defineTool({
+    name: "crm_pin_company_bank_requisites",
+    title: "\u0417\u0430\u043A\u0440\u0435\u043F\u0438\u0442\u044C \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0439 \u0440\u0430\u0441\u0447\u0451\u0442\u043D\u044B\u0439 \u0441\u0447\u0451\u0442",
+    description: "\u041F\u043E \u044F\u0432\u043D\u043E\u0439 \u043A\u043E\u043C\u0430\u043D\u0434\u0435 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F \u0430\u0442\u043E\u043C\u0430\u0440\u043D\u043E \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u044F\u0435\u0442 \u043F\u043E\u043B\u043D\u044B\u0439 \u043A\u043E\u043C\u043F\u043B\u0435\u043A\u0442 \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0445 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F \u0438 \u043E\u0431\u043D\u043E\u0432\u043B\u044F\u0435\u0442 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438 CRM. \u0422\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043D\u043D\u044B\u0435 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u0435\u043C \u043F\u043E\u043B\u043D\u044B\u0435 \u0437\u043D\u0430\u0447\u0435\u043D\u0438\u044F. \u041F\u0435\u0440\u0435\u0434 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435\u043C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0439\u0442\u0435 crm_get_company_bank_policy; expectedRevision=null \u0442\u043E\u043B\u044C\u043A\u043E \u0434\u043B\u044F \u043F\u0435\u0440\u0432\u043E\u0433\u043E \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0435\u043D\u0438\u044F. \u041F\u0440\u0435\u0434\u044B\u0434\u0443\u0449\u0438\u0439 \u0441\u0447\u0451\u0442 \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438 \u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0441\u044F \u0443\u0441\u0442\u0430\u0440\u0435\u0432\u0448\u0438\u043C. retired_accounts \u0441\u043E\u0434\u0435\u0440\u0436\u0438\u0442 \u0442\u043E\u043B\u044C\u043A\u043E \u043F\u043E\u043B\u043D\u044B\u0435 \u0438\u0437\u0432\u0435\u0441\u0442\u043D\u044B\u0435 \u0441\u0442\u0430\u0440\u044B\u0435 \u0441\u0447\u0435\u0442\u0430 \u044D\u0442\u043E\u0433\u043E \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F. \u0421\u0442\u0430\u0440\u044B\u0435 \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u044E\u0442\u0441\u044F; \u043D\u043E\u0432\u044B\u0435 \u0432\u0435\u0440\u0441\u0438\u0438 \u0438 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u044E\u0442 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u043E\u0441\u0442\u044C. \u041F\u043E\u0432\u0442\u043E\u0440 \u043E\u0434\u043D\u043E\u0439 \u043E\u043F\u0435\u0440\u0430\u0446\u0438\u0438 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0435\u0442 \u0442\u043E\u0442 \u0436\u0435 requestId. \u041D\u0435 \u043E\u0442\u043F\u0440\u0430\u0432\u043B\u044F\u0435\u0442 \u043F\u0438\u0441\u044C\u043C\u0430.",
+    inputSchema: { requestId: uuid2, expectedRevision: z.number().int().positive().nullable(), profile: z.object({
+      issuer_inn: z.string().regex(/^\d{10}(\d{2})?$/),
+      company_bank_account: z.string().regex(/^\d{20}$/),
+      company_bank_bik: z.string().regex(/^\d{9}$/),
+      company_bank_corr: z.string().regex(/^\d{20}$/),
+      company_bank_name: z.string().trim().min(1).max(300),
+      retired_accounts: z.array(z.string().regex(/^\d{20}$/)).max(100).optional()
+    }).strict() },
+    annotations: write,
+    handler: (input, ctx) => runCrmTool(ctx, (api) => api.pinCompanyBankRequisites(
+      input.requestId,
+      input.expectedRevision,
+      input.profile
+    ))
+  }),
+  defineTool({
     name: "crm_list_service_templates",
     title: "\u041D\u0430\u0439\u0442\u0438 \u0448\u0430\u0431\u043B\u043E\u043D\u044B \u043D\u043E\u0432\u044B\u0445 \u0443\u0441\u043B\u0443\u0433",
     description: "\u0418\u0449\u0435\u0442 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D\u043D\u044B\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u044B \u0434\u043E\u0433\u043E\u0432\u043E\u0440\u043E\u0432 \u0443\u0441\u043B\u0443\u0433. \u041F\u043E\u043A\u0430\u0437\u044B\u0432\u0430\u0435\u0442 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, ID, \u0442\u0435\u043A\u0443\u0449\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0438 \u0430\u0440\u0445\u0438\u0432\u043D\u044B\u0439 \u0441\u0442\u0430\u0442\u0443\u0441; \u0442\u0435\u043A\u0441\u0442 \u0447\u0438\u0442\u0430\u0439\u0442\u0435 \u0447\u0435\u0440\u0435\u0437 crm_get_service_template. \u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043C\u0435\u043D\u044F\u0435\u0442.",
@@ -3428,7 +3543,7 @@ var crmTools = [
   defineTool({
     name: "crm_revise_document",
     title: "\u0418\u0437\u043C\u0435\u043D\u0438\u0442\u044C \u0434\u0430\u0442\u0443, \u0441\u0442\u043E\u0438\u043C\u043E\u0441\u0442\u044C \u0438\u043B\u0438 \u0441\u043A\u0438\u0434\u043A\u0443",
-    description: "\u0421\u043E\u0437\u0434\u0430\u0451\u0442 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430, \u0441\u043E\u0437\u0434\u0430\u043D\u043D\u043E\u0433\u043E API. \u0421\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0441\u0442\u0430\u0440\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0438 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B. \u041F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0439 expectedRevision; \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442 \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u043F\u0435\u0440\u0435\u0447\u0438\u0442\u0430\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442. services \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u0432\u0435\u0441\u044C \u0441\u043F\u0438\u0441\u043E\u043A \u0443\u0441\u043B\u0443\u0433. discount:null \u0443\u0431\u0438\u0440\u0430\u0435\u0442 \u0441\u043A\u0438\u0434\u043A\u0443. \u0414\u043B\u044F \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0439 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u044C\u0442\u0435 \u043D\u043E\u0432\u043E\u0435 \u043F\u0438\u0441\u044C\u043C\u043E \u0441 \u043D\u043E\u0432\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0435\u0439 \u0438 \u043D\u043E\u0432\u044B\u043C requestId \u043F\u043E \u044F\u0432\u043D\u043E\u0439 \u043A\u043E\u043C\u0430\u043D\u0434\u0435 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F.",
+    description: "\u0421\u043E\u0437\u0434\u0430\u0451\u0442 \u043D\u043E\u0432\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442\u0430, \u0441\u043E\u0437\u0434\u0430\u043D\u043D\u043E\u0433\u043E API. \u0421\u0442\u0430\u0440\u0443\u044E \u0432\u0435\u0440\u0441\u0438\u044E \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442; \u0432 \u043D\u043E\u0432\u0443\u044E \u043F\u043E\u0434\u0441\u0442\u0430\u0432\u043B\u044F\u0435\u0442 \u0437\u0430\u043A\u0440\u0435\u043F\u043B\u0451\u043D\u043D\u044B\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0435 \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0442\u043E\u0433\u043E \u0436\u0435 \u0438\u0441\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044F, \u043E\u0441\u0442\u0430\u043B\u044C\u043D\u044B\u0435 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u044B \u0441\u043E\u0445\u0440\u0430\u043D\u044F\u0435\u0442 \u0438\u0437 \u0438\u0441\u0445\u043E\u0434\u043D\u0438\u043A\u0430. \u041F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0439 expectedRevision; \u043A\u043E\u043D\u0444\u043B\u0438\u043A\u0442 \u0442\u0440\u0435\u0431\u0443\u0435\u0442 \u043F\u0435\u0440\u0435\u0447\u0438\u0442\u0430\u0442\u044C \u0434\u043E\u043A\u0443\u043C\u0435\u043D\u0442. services \u0437\u0430\u043C\u0435\u043D\u044F\u0435\u0442 \u0432\u0435\u0441\u044C \u0441\u043F\u0438\u0441\u043E\u043A \u0443\u0441\u043B\u0443\u0433. discount:null \u0443\u0431\u0438\u0440\u0430\u0435\u0442 \u0441\u043A\u0438\u0434\u043A\u0443. \u0414\u043B\u044F \u043E\u0431\u043D\u043E\u0432\u043B\u0435\u043D\u0438\u044F \u0442\u043E\u043B\u044C\u043A\u043E \u0431\u0430\u043D\u043A\u043E\u0432\u0441\u043A\u0438\u0445 \u0440\u0435\u043A\u0432\u0438\u0437\u0438\u0442\u043E\u0432 \u043F\u0435\u0440\u0435\u0434\u0430\u0439\u0442\u0435 \u0442\u0435\u043A\u0443\u0449\u0443\u044E date \u0431\u0435\u0437 \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u044F. \u0414\u043B\u044F \u043F\u043E\u0432\u0442\u043E\u0440\u043D\u043E\u0439 \u043E\u0442\u043F\u0440\u0430\u0432\u043A\u0438 \u043F\u043E\u0434\u0433\u043E\u0442\u043E\u0432\u044C\u0442\u0435 \u043D\u043E\u0432\u043E\u0435 \u043F\u0438\u0441\u044C\u043C\u043E \u0441 \u043D\u043E\u0432\u043E\u0439 \u0432\u0435\u0440\u0441\u0438\u0435\u0439 \u0438 \u043D\u043E\u0432\u044B\u043C requestId \u043F\u043E \u044F\u0432\u043D\u043E\u0439 \u043A\u043E\u043C\u0430\u043D\u0434\u0435 \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F.",
     inputSchema: { requestId: uuid2, documentId: uuid2, expectedRevision: z.number().int().positive(), changes: z.object({
       date: z.string().optional(),
       services: z.array(service).min(1).max(100).optional(),

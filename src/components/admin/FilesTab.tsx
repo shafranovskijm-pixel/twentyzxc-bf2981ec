@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import FilesFolderCard from "./files/FilesFolderCard";
 import BulkFolderUpload from "./files/BulkFolderUpload";
 import { blobToBase64 } from "@/lib/document-pdf";
+import { documentEmailErrorMessage } from "@/lib/document-email-error";
 
 interface ContractFolder {
   id: string;
@@ -187,7 +188,7 @@ const FilesTab = () => {
       setEmailFile(null);
       setEmailTo("");
     } catch (e: any) {
-      toast.error(`Ошибка: ${e.message || "не удалось отправить"}`);
+      toast.error(`Ошибка: ${await documentEmailErrorMessage(e, "не удалось отправить")}`);
     }
     setEmailSending(false);
   };
