@@ -35,6 +35,7 @@ import {
   type ClientServiceDeadlineSort,
 } from "@/lib/client-service-deadline";
 import { isFrdoContractType } from "@/lib/contract-renewal";
+import PaymentDetailsButton from "./payments/PaymentDetailsButton";
 
 interface Client {
   id: string;
@@ -1167,19 +1168,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 <span className="text-muted-foreground">{formatDate(c.contract_date)}</span>
                 {c.amount && <span className="font-medium">{Number(c.amount).toLocaleString("ru-RU")} ₽</span>}
                 {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
-                <button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    const newStatus = c.payment_status === "оплачено" ? "не оплачено" : "оплачено";
-                    await supabase.from("contracts").update({ payment_status: newStatus } as any).eq("id", c.id);
-                    queryClient.invalidateQueries({ queryKey: ["admin-clients"] });
-                    queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-                    toast.success(`Статус: ${newStatus}`);
-                  }}
-                  className={`text-xs ml-auto px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${statusColor(c.payment_status)}`}
-                >
-                  {c.payment_status || "не оплачено"}
-                </button>
+                <PaymentDetailsButton clientId={clientId} clientName={clientName} contractId={c.id} legacyStatus={c.payment_status} documentLabel={`Договор №${c.contract_number || "без номера"}`} />
                 {c.file_path && (
                   <Button
                     variant="ghost"
@@ -1234,6 +1223,7 @@ const ClientHistory = ({ clientName, clientId }: { clientName: string; clientId:
                 <span className="font-mono text-xs">№{d.doc_number}</span>
                 <span className="text-muted-foreground">{formatDate(d.doc_date)}</span>
                 {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
+                {d.doc_type === "invoice" && <PaymentDetailsButton clientId={clientId} clientName={clientName} invoiceId={d.id} documentLabel={`Счёт №${d.doc_number}`} />}
                 {d.html_content && (
                   <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setPreviewHtml(d.html_content)}>
                     <Eye className="w-3.5 h-3.5" />
@@ -1685,6 +1675,7 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
           </AccordionTrigger>
           <AccordionContent>
             <ContractsSection
+              clientId={p.editingId}
               clientName={p.clientName}
               onOpenContract={() => p.onOpenQuickDocument("contract")}
               onRenewContract={(contractId) => p.onRenewContract?.(contractId)}
@@ -1934,12 +1925,14 @@ const ClientCardSections = (p: ClientCardSectionsProps) => {
 // ============================================================
 const ContractsSection = ({
   clientName,
+  clientId,
   onOpenContract,
   onRenewContract,
 }: {
   clientName: string;
   onOpenContract: () => void;
   onRenewContract: (contractId: string) => void;
+  clientId: string;
 }) => {
   const queryClient = useQueryClient();
   const { data: contracts = [], isLoading } = useClientContracts(clientName);
@@ -2034,19 +2027,7 @@ const ContractsSection = ({
             {c.contract_type && <Badge variant="outline" className="text-xs">{c.contract_type}</Badge>}
             {c.paid_until && <span className="text-xs text-muted-foreground">до {fmt(c.paid_until)}</span>}
           </div>
-          <button
-            onClick={async (e) => {
-              e.stopPropagation();
-              const newStatus = c.payment_status === "оплачено" ? "не оплачено" : "оплачено";
-              await supabase.from("contracts").update({ payment_status: newStatus } as any).eq("id", c.id);
-              queryClient.invalidateQueries({ queryKey: ["client-history-contracts", clientName] });
-              queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-              toast.success(`Статус: ${newStatus}`);
-            }}
-            className={`text-xs ml-auto px-2 py-0.5 rounded-full border cursor-pointer transition-colors ${statusColor(c.payment_status)}`}
-          >
-            {c.payment_status || "не оплачено"}
-          </button>
+          <PaymentDetailsButton clientId={clientId} clientName={clientName} contractId={c.id} legacyStatus={c.payment_status} documentLabel={`Договор №${c.contract_number || "без номера"}`} />
           {isFrdoContractType(c.contract_type) && (
             <Button
               variant="outline"
@@ -2179,6 +2160,7 @@ const DocumentsSection = ({ clientName, clientId, onOpenQuickDocument }: { clien
               <span className="text-muted-foreground text-xs">{fmt(d.doc_date)}</span>
               {d.total_amount && <span className="font-medium ml-auto">{Number(d.total_amount).toLocaleString("ru-RU")} ₽</span>}
             </div>
+            {d.doc_type === "invoice" && <PaymentDetailsButton clientId={clientId} clientName={clientName} invoiceId={d.id} documentLabel={`Счёт №${d.doc_number}`} />}
             <div className="flex items-center gap-0.5 shrink-0">
               {d.html_content && (
                 <>

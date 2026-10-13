@@ -14,13 +14,14 @@ import {
 import { motion } from "framer-motion";
 import { format, subMonths, startOfMonth, endOfMonth, isAfter, isBefore, addDays } from "date-fns";
 import { ru } from "date-fns/locale";
+import { summarizeDashboardPayments, type DashboardPaymentState } from "@/lib/dashboard-payments";
 
 interface DashboardTabProps {
   onNavigate: (section: string) => void;
 }
 
 const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
-  const { data: contracts = [], isLoading: l1 } = useQuery({
+  const { data: contracts = [], isLoading: l1, error: contractsError } = useQuery({
     queryKey: ["dashboard-contracts"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,6 +32,37 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
       return data;
     },
   });
+
+  const { data: paymentStates = [], isLoading: l5, error: paymentError } = useQuery({
+    queryKey: ["dashboard-payment-states", contracts.map((contract) => contract.id)],
+    enabled: !l1 && !contractsError,
+    queryFn: async () => {
+      const states: DashboardPaymentState[] = [];
+      // Restrict and batch the lookup so the API row limit cannot silently drop managed contracts.
+      for (let offset = 0; offset < contracts.length; offset += 250) {
+        const ids = contracts.slice(offset, offset + 250).map((contract) => contract.id);
+        for (let start = 0; ; start += 1000) {
+          const { data, error } = await supabase
+            .from("crm_payment_states" as any)
+            .select("contract_id, paid_amount")
+            .in("contract_id", ids)
+            .order("target_type")
+            .order("target_id")
+            .range(start, start + 999);
+          if (error) throw error;
+          const page = (data || []) as unknown as DashboardPaymentState[];
+          states.push(...page);
+          if (page.length < 1000) break;
+        }
+      }
+      return states;
+    },
+  });
+
+  const payments = useMemo(
+    () => summarizeDashboardPayments(contracts, contractsError || paymentError ? null : paymentStates),
+    [contracts, paymentStates, contractsError, paymentError],
+  );
 
   const { data: leads = [], isLoading: l2 } = useQuery({
     queryKey: ["dashboard-leads"],
@@ -66,11 +98,9 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
     },
   });
 
-  const isLoading = l1 || l2 || l3 || l4;
+  const isLoading = l1 || l2 || l3 || l4 || l5;
 
   const kpi = useMemo(() => {
-    const paid = contracts.filter((c) => c.payment_status === "оплачено");
-    const revenue = paid.reduce((s, c) => s + (Number(c.amount) || 0) + (Number(c.amount_extra) || 0), 0);
     const activeContracts = contracts.length;
     const now = new Date();
     const monthStart = startOfMonth(now);
@@ -89,28 +119,28 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
         c.payment_status !== "оплачено"
     );
 
-    return { revenue, activeContracts, newLeads, conversion, overdue, expiringSoon };
+    return { activeContracts, newLeads, conversion, overdue, expiringSoon };
   }, [contracts, leads]);
 
-  // Revenue by month (last 6 months)
+  // Legacy estimates grouped by contract date, not a cash-receipt timeline.
   const revenueChart = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
       const month = subMonths(now, 5 - i);
       const ms = startOfMonth(month);
       const me = endOfMonth(month);
-      const total = contracts
+      const total = (payments?.entries || [])
         .filter(
-          (c) =>
-            c.payment_status === "оплачено" &&
-            c.contract_date &&
-            new Date(c.contract_date) >= ms &&
-            new Date(c.contract_date) <= me
+          (entry) =>
+            entry.source === "legacy" &&
+            entry.contract.contract_date &&
+            new Date(entry.contract.contract_date) >= ms &&
+            new Date(entry.contract.contract_date) <= me
         )
-        .reduce((s, c) => s + (Number(c.amount) || 0) + (Number(c.amount_extra) || 0), 0);
+        .reduce((sum, entry) => sum + entry.amount, 0);
       return { name: format(month, "LLL", { locale: ru }), value: total };
     });
-  }, [contracts]);
+  }, [payments]);
 
   // Leads by month (last 6 months)
   const leadsChart = useMemo(() => {
@@ -140,20 +170,20 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
     ];
   }, [leads, contracts]);
 
-  // Top 5 clients by revenue
+  // Top 5 by known saved amounts plus explicitly labelled legacy estimates.
   const topClients = useMemo(() => {
     const revenueMap: Record<string, number> = {};
-    contracts.forEach((c) => {
-      if (c.payment_status === "оплачено") {
-        const amt = (Number(c.amount) || 0) + (Number(c.amount_extra) || 0);
-        revenueMap[c.client_name] = (revenueMap[c.client_name] || 0) + amt;
+    payments?.entries.forEach((entry) => {
+      if (entry.amount > 0) {
+        const name = entry.contract.client_name;
+        revenueMap[name] = (revenueMap[name] || 0) + Math.round(entry.amount * 100);
       }
     });
     return Object.entries(revenueMap)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
-      .map(([name, revenue]) => ({ name, revenue }));
-  }, [contracts]);
+      .map(([name, revenue]) => ({ name, revenue: revenue / 100 }));
+  }, [payments]);
 
   // Service type stats
   const serviceStats = useMemo(() => {
@@ -182,10 +212,13 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
 
   const kpiCards = [
     {
-      title: "Выручка",
-      value: `${kpi.revenue.toLocaleString("ru-RU")} ₽`,
+      title: "Поступления по договорам",
+      value: !payments ? "Недоступно" : payments.unknownContracts > 0 && payments.knownStateCount === 0 && payments.legacyEstimateCount === 0
+        ? "Неизвестно" : `${payments.total.toLocaleString("ru-RU")} ₽`,
       icon: DollarSign,
       color: "text-emerald-400",
+      subtitle: !payments ? "Не удалось проверить суммы" : payments.unknownContracts > 0
+        ? "Неполная сумма — см. пояснение ниже" : "Известные суммы + старые оценки",
     },
     {
       title: "Активные договоры",
@@ -237,25 +270,34 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
         ))}
       </div>
 
+      <p className="text-xs text-muted-foreground" role={payments ? undefined : "alert"}>
+        {payments ? <>
+          В поступлениях и рейтинге клиентов: сохранённые известные суммы — {payments.savedAmount.toLocaleString("ru-RU")} ₽,
+          включая частичные оплаты; оценка по старым отметкам «оплачено» — {payments.legacyAmount.toLocaleString("ru-RU")} ₽.
+          {payments.unknownContracts > 0 && <> Неизвестные суммы по договорам ({payments.unknownContracts}) не включены; для них учтена только известная часть.</>}
+        </> : "Не удалось загрузить учёт оплаты. Денежные итоги и рейтинг клиентов скрыты, чтобы не подменять сохранённые суммы стоимостью договоров. Обновите страницу, чтобы повторить загрузку."}
+      </p>
+
       {/* Charts */}
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Выручка по месяцам</CardTitle>
+            <CardTitle className="text-sm">Старые отметки оплаты по дате договора</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
+            <p className="text-xs text-muted-foreground mb-3">Оценка по стоимости договоров. Это не календарь денежных поступлений. Договоры с сохранёнными суммами оплаты исключены.</p>
+            {!payments ? <p className="text-xs text-muted-foreground py-2">Данные оплаты недоступны</p> : <ResponsiveContainer width="100%" height={200}>
               <BarChart data={revenueChart}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220 8% 20%)" />
                 <XAxis dataKey="name" tick={{ fontSize: 11, fill: "hsl(220 10% 55%)" }} />
                 <YAxis tick={{ fontSize: 11, fill: "hsl(220 10% 55%)" }} />
                 <Tooltip
                   contentStyle={{ backgroundColor: "hsl(220 8% 16%)", border: "1px solid hsl(220 8% 20%)", borderRadius: 8, fontSize: 12 }}
-                  formatter={(v: number) => [`${v.toLocaleString("ru-RU")} ₽`, "Выручка"]}
+                  formatter={(v: number) => [`${v.toLocaleString("ru-RU")} ₽`, "Оценка"]}
                 />
                 <Bar dataKey="value" fill="hsl(45 65% 52%)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer>}
           </CardContent>
         </Card>
 
@@ -317,11 +359,11 @@ const DashboardTab = ({ onNavigate }: DashboardTabProps) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
-              Топ-5 клиентов по выручке
+              Топ-5 клиентов по учтённым суммам
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {topClients.length === 0 ? (
+            {!payments ? <p className="text-xs text-muted-foreground py-2">Данные оплаты недоступны</p> : topClients.length === 0 ? (
               <p className="text-xs text-muted-foreground py-2">Нет данных</p>
             ) : (
               topClients.map((c, i) => {

@@ -37,6 +37,7 @@ import {
 } from "@/lib/contracts-validity";
 import { ensureClient } from "@/lib/ensure-client";
 import { getContractRenewalPeriod } from "@/lib/contract-renewal";
+import PaymentDetailsButton, { usePaymentStateRows } from "./payments/PaymentDetailsButton";
 
 interface Contract {
   id: string;
@@ -223,9 +224,13 @@ interface ContractsTabProps {
 
 const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpenNew, renewalSourceId, onConsumed, onOpenConstructor }: ContractsTabProps = {}) => {
   const queryClient = useQueryClient();
+  const paymentStateQuery = usePaymentStateRows();
+  const paymentStates = paymentStateQuery.data || [];
   const { settings } = useSiteSettings();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const managedPayment = !!editingId && paymentStates.some(state => state.contract_id === editingId);
+  const paymentAmountsLocked = !!editingId && (!paymentStateQuery.isSuccess || managedPayment);
   const [clientName, setClientName] = useState("");
   const [contractNumber, setContractNumber] = useState("");
   const [contractDate, setContractDate] = useState("");
@@ -739,7 +744,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       client_name: savedClient.name,
       contract_number: contractNumber.trim() || null,
       contract_date: contractDate || null,
-      payment_status: paymentStatus || null,
+      ...(!editingId ? { payment_status: paymentStatus || null } : {}),
       amount: amount ? parseFloat(amount) : null,
       amount_extra: amountExtra ? parseFloat(amountExtra) : null,
       contract_type: contractType.trim() || null,
@@ -751,6 +756,12 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
       service_no_deadline: serviceNoDeadline,
       is_one_time: isOneTime,
     };
+
+    // Payment state is owned by the payment RPC, not the document editor.
+    if (paymentAmountsLocked) {
+      delete payload.amount;
+      delete payload.amount_extra;
+    }
 
     // Optimistic update for edits
     if (editingId) {
@@ -767,9 +778,10 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
         resetForm(); toast.success("Договор обновлён");
         queryClient.invalidateQueries({ queryKey: ["doc-contracts"] });
         queryClient.invalidateQueries({ queryKey: ["admin-contracts"] });
-      } catch {
+      } catch (error) {
         queryClient.setQueryData(["admin-contracts"], prev);
-        toast.error("Ошибка сохранения — изменения откачены");
+        const message = error && typeof error === "object" && "message" in error ? String(error.message) : "Не удалось сохранить договор";
+        toast.error(message);
       } finally { setSaving(false); }
     } else {
       // New contract — check session first, then insert
@@ -832,30 +844,6 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
     },
     onSuccess: () => { toast.success("Готово"); },
     onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка"); },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
-  });
-
-  const togglePaymentStatus = useMutation({
-    mutationFn: async ({ id, current }: { id: string; current: string | null }) => {
-      const cycle = ["не оплачено", "частично", "оплачено"];
-      const idx = cycle.indexOf(current || "не оплачено");
-      const next = cycle[(idx + 1) % cycle.length];
-      const { error } = await supabase.from("contracts").update({ payment_status: next } as any).eq("id", id);
-      if (error) throw error;
-      return { id, next };
-    },
-    onMutate: async ({ id, current }) => {
-      await queryClient.cancelQueries({ queryKey: ["admin-contracts"] });
-      const prev = queryClient.getQueryData<Contract[]>(["admin-contracts"]);
-      const cycle = ["не оплачено", "частично", "оплачено"];
-      const idx = cycle.indexOf(current || "не оплачено");
-      const next = cycle[(idx + 1) % cycle.length];
-      queryClient.setQueryData<Contract[]>(["admin-contracts"], (old) =>
-        old?.map((c) => c.id === id ? { ...c, payment_status: next } : c) ?? []
-      );
-      return { prev };
-    },
-    onError: (_e, _v, ctx) => { if (ctx?.prev) queryClient.setQueryData(["admin-contracts"], ctx.prev); toast.error("Ошибка обновления статуса"); },
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-contracts"] }),
   });
 
@@ -1036,11 +1024,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                     <button onClick={() => onOpenClient?.(c.client_name)} className="font-medium text-left hover:text-primary hover:underline underline-offset-2 transition-colors text-sm">
                       {c.client_name}
                     </button>
-                    <Badge
-                      variant={statusColor(c.payment_status)}
-                      className="shrink-0 text-xs cursor-pointer hover:opacity-80 transition-opacity select-none"
-                      onClick={(e) => { e.stopPropagation(); togglePaymentStatus.mutate({ id: c.id, current: c.payment_status }); }}
-                    >{c.payment_status || "—"}</Badge>
+                    <PaymentDetailsButton clientName={c.client_name} contractId={c.id} legacyStatus={c.payment_status} documentLabel={`Договор №${c.contract_number || "без номера"}`} />
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                     {c.contract_number && (
@@ -1142,11 +1126,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
                       </TableCell>
                       <TableCell>{c.contract_date ? new Date(c.contract_date).toLocaleDateString("ru-RU") : "—"}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={statusColor(c.payment_status)}
-                          className="cursor-pointer hover:opacity-80 transition-opacity select-none"
-                          onClick={() => togglePaymentStatus.mutate({ id: c.id, current: c.payment_status })}
-                        >{c.payment_status || "—"}</Badge>
+                        <PaymentDetailsButton clientName={c.client_name} contractId={c.id} legacyStatus={c.payment_status} documentLabel={`Договор №${c.contract_number || "без номера"}`} />
                       </TableCell>
                       <TableCell>
                         <PaidUntilQuickEdit
@@ -1310,7 +1290,7 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
             />
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="space-y-2"><Label>Дата договора</Label><Input type="date" value={contractDate} onChange={(e) => setContractDate(e.target.value)} /></div>
-              <div className="space-y-2"><Label>Статус оплаты</Label><Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="оплачено / не оплачено" /></div>
+              <div className="space-y-2"><Label>{editingId ? "Оплата" : "Прежняя отметка об оплате"}</Label>{editingId ? <PaymentDetailsButton clientName={contracts.find(contract => contract.id === editingId)?.client_name || clientName} contractId={editingId} legacyStatus={paymentStatus} documentLabel={`Договор №${contractNumber || "без номера"}`} /> : <Input value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} placeholder="не подтверждает сумму поступлений" />}</div>
               <div className="space-y-2">
                 <Label>Оплачено до</Label>
                 <Input type="date" value={paidUntil} onChange={(e) => setPaidUntil(e.target.value)} disabled={isOneTime} className={isOneTime ? "opacity-50" : ""} />
@@ -1343,10 +1323,12 @@ const ContractsTab = ({ onOpenClient, initialClientName, initialSearch, autoOpen
               <Label htmlFor="is-one-time" className="text-sm cursor-pointer">Единоразово (без периода оплаты)</Label>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-2"><Label>Сумма</Label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="23000" /></div>
-              <div className="space-y-2"><Label>Доп. сумма</Label><Input type="number" value={amountExtra} onChange={(e) => setAmountExtra(e.target.value)} placeholder="5000" /></div>
+              <div className="space-y-2"><Label>Сумма</Label><Input type="number" disabled={paymentAmountsLocked} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="23000" /></div>
+              <div className="space-y-2"><Label>Доп. сумма</Label><Input type="number" disabled={paymentAmountsLocked} value={amountExtra} onChange={(e) => setAmountExtra(e.target.value)} placeholder="5000" /></div>
               <div className="space-y-2"><Label>Ответственный</Label><Input value={responsible} onChange={(e) => setResponsible(e.target.value)} placeholder="Иванов" /></div>
             </div>
+            {managedPayment && <p className="text-xs text-muted-foreground">Суммы защищены: по договору уже ведётся история оплаты. Изменение оплаты доступно через подключение ChatGPT.</p>}
+            {editingId && !paymentStateQuery.isSuccess && <p className="text-xs text-muted-foreground">Изменение сумм доступно после проверки истории оплаты.{paymentStateQuery.isError ? " Не удалось загрузить данные — обновите страницу." : " Идёт загрузка…"}</p>}
             <div className="space-y-2"><Label>Заметки</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Примечания..." rows={2} /></div>
             <div className="space-y-2"><Label>Файл договора (PDF/Word)</Label><Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFile(e.target.files?.[0] || null)} /></div>
             <Button onClick={saveContract} disabled={saving || uploading} className="w-full">
