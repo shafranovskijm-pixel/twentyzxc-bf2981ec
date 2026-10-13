@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.1"
   }
   public: {
     Tables: {
@@ -577,6 +577,104 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      crm_payment_commands: {
+        Row: {
+          actor_id: string
+          backend_pid: number
+          client_id: string
+          contract_id: string | null
+          created_at: string
+          previous_snapshot: Json
+          request: Json
+          request_id: string
+          result: Json | null
+          target_id: string
+          target_type: string
+          transaction_id: number
+        }
+        Insert: {
+          actor_id: string
+          backend_pid?: number
+          client_id: string
+          contract_id?: string | null
+          created_at?: string
+          previous_snapshot: Json
+          request: Json
+          request_id: string
+          result?: Json | null
+          target_id: string
+          target_type: string
+          transaction_id?: number
+        }
+        Update: {
+          actor_id?: string
+          backend_pid?: number
+          client_id?: string
+          contract_id?: string | null
+          created_at?: string
+          previous_snapshot?: Json
+          request?: Json
+          request_id?: string
+          result?: Json | null
+          target_id?: string
+          target_type?: string
+          transaction_id?: number
+        }
+        Relationships: []
+      }
+      crm_payment_states: {
+        Row: {
+          amount_due: number
+          client_id: string
+          confirmation_source: string | null
+          contract_id: string | null
+          legacy_status: string | null
+          paid_amount: number | null
+          paid_on: string | null
+          reason: string | null
+          revision: number
+          target_id: string
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount_due: number
+          client_id: string
+          confirmation_source?: string | null
+          contract_id?: string | null
+          legacy_status?: string | null
+          paid_amount?: number | null
+          paid_on?: string | null
+          reason?: string | null
+          revision?: number
+          target_id: string
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number
+          client_id?: string
+          confirmation_source?: string | null
+          contract_id?: string | null
+          legacy_status?: string | null
+          paid_amount?: number | null
+          paid_on?: string | null
+          reason?: string | null
+          revision?: number
+          target_id?: string
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_payment_states_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       crm_service_template_commands: {
         Row: {
@@ -2285,6 +2383,26 @@ export type Database = {
         Returns: Json
       }
       crm_get_company_bank_policy: { Args: never; Returns: Json }
+      crm_get_payment_status: {
+        Args: {
+          p_client_id: string
+          p_contract_id?: string
+          p_invoice_id?: string
+        }
+        Returns: Json
+      }
+      crm_payment_snapshot: {
+        Args: {
+          p_client_id: string
+          p_contract_id: string
+          p_invoice_id: string
+        }
+        Returns: Json
+      }
+      crm_payment_status: {
+        Args: { p_due: number; p_paid: number }
+        Returns: string
+      }
       crm_pin_company_bank_requisites: {
         Args: {
           p_expected_revision: number
@@ -2360,6 +2478,22 @@ export type Database = {
       crm_service_template_content_valid: {
         Args: { value: Json }
         Returns: boolean
+      }
+      crm_set_payment_status: {
+        Args: {
+          p_client_id: string
+          p_confirmation_source?: string
+          p_contract_id: string
+          p_expected_revision: number
+          p_expected_source_revision: string
+          p_invoice_id: string
+          p_paid_amount?: number
+          p_paid_on?: string
+          p_reason?: string
+          p_request_id: string
+          p_status: string
+        }
+        Returns: Json
       }
       crm_suggest_document_number: {
         Args: { p_doc_date: string; p_doc_type: string }
