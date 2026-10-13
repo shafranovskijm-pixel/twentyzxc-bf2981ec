@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "24zxc-crm-documents",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "title": "24ZXC — клиенты и документы"
     },
     "tools": [
@@ -610,6 +610,11 @@
         "name": "crm_import_client_file",
         "title": "Сохранить PDF или Word в карточку клиента",
         "description": "Переносит оригинальное вложение PDF, DOC или DOCX до 10 МиБ из чата в приватные файлы точно выбранного клиента. Передайте исходный файл через file; не сочиняйте ссылку или file_id и не пересоздавайте оригинал из распознанного текста. Сначала проверьте организацию в самом документе. При нескольких клиентах уточните выбор. Сохраняет исходные байты, имя, размер, формат и SHA256, возвращает ID файла; для ссылки используйте crm_get_client_file. Повтор с тем же requestId не создаёт дубля. Это сохранение файла, не создание договора/счёта/акта и не отправка клиенту.",
+        "_meta": {
+          "openai/fileParams": [
+            "file"
+          ]
+        },
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -671,6 +676,11 @@
         "name": "crm_import_client_pdf",
         "title": "Сохранить PDF из чата в карточку клиента",
         "description": "Загружает оригинальное вложение PDF до 10 МиБ в приватные файлы выбранного клиента. Передайте исходный файл через file, не сочиняйте ссылку, file_id или содержимое. Проверьте организацию в самом документе; совпадения похожего имени недостаточно. При отсутствии доступа к оригиналу сообщите это, не подменяйте PDF пересозданным текстом. Это архивный файл: не создаёт договор, счёт или акт и не отправляет письмо. Сохранение подтверждается file.id, размером и SHA256. Повторяйте тот же requestId при сбое.",
+        "_meta": {
+          "openai/fileParams": [
+            "file"
+          ]
+        },
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -968,6 +978,168 @@
           },
           "required": [
             "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_get_payment_status",
+        "title": "Прочитать оплату договора или счёта",
+        "description": "Читает сохранённые сумму к оплате с учётом скидки, общую сумму поступлений, остаток, статус, историю, paymentRevision и sourceRevision. Сначала найдите точного клиента и нужный договор/счёт через crm_search_clients, crm_list_contracts и crm_list_documents. Обязательны clientId и contractId либо invoiceId; если указаны оба, счёт должен принадлежать этому договору. При нескольких договорах или счетах уточните, какой оплатили; клиентское имя не выбирает договор. requiresInvoiceSelection требует отдельного invoiceId. Старые отметки без подтверждённой суммы возвращаются отдельно в legacyStatus; null не означает ноль. Это чтение CRM, не сверка с банком.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "contractId": {
+              "anyOf": [
+                {
+                  "$ref": "#/properties/clientId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "invoiceId": {
+              "anyOf": [
+                {
+                  "$ref": "#/properties/clientId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_set_payment_status",
+        "title": "Изменить оплату договора или счёта",
+        "description": "По явной команде пользователя сохраняет оплату точно выбранного договора или счёта и повторным чтением проверяет результат. Сначала crm_get_payment_status: передайте его paymentRevision как expectedRevision и sourceRevision как expectedSourceRevision. paid означает полную сумму с уже учтённой скидкой; unpaid — ноль; partial требует общую полученную сумму paidAmount. paidAmount всегда накопленная сумма в рублях, НЕ новое поступление к прибавлению: «ещё 5000» сначала сопоставьте с текущими поступлениями. Несколько договоров одного клиента изменяются раздельно; не распределяйте платёж автоматически. Неизвестная дата оплаты — null, не текущая дата. Слова пользователя — user_report; bank_document только по предоставленному банковскому документу с его описанием/ссылкой в reason, это не онлайн-подтверждение банка. Повтор после сбоя — тот же requestId и те же данные, без повторного зачисления; при конфликте перечитайте и уточните, не подменяйте версию автоматически. Вернув verified=true, сообщите сохранённый статус, поступления, остаток и источник. Не меняет HTML/PDF, подписи, номера, даты документов, сроки услуг, paid_until; не отправляет письма.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "clientId": {
+              "$ref": "#/properties/requestId"
+            },
+            "contractId": {
+              "anyOf": [
+                {
+                  "$ref": "#/properties/requestId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "invoiceId": {
+              "anyOf": [
+                {
+                  "$ref": "#/properties/requestId"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "expectedRevision": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "paymentRevision из последнего crm_get_payment_status; 0 допустим для первой записи."
+            },
+            "expectedSourceRevision": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Точный sourceRevision из чтения; защищает сумму, скидку и связь документа."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "unpaid",
+                "partial",
+                "paid"
+              ]
+            },
+            "paidAmount": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Общая сумма уже полученных денег в рублях, до двух знаков после запятой. Для partial обязательна. Для paid можно пропустить: полная сумма после скидки."
+            },
+            "paidOn": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Известная дата поступления YYYY-MM-DD; неизвестна — null. Дата записи в историю фиксируется отдельно."
+            },
+            "confirmationSource": {
+              "type": "string",
+              "enum": [
+                "user_report",
+                "bank_document"
+              ],
+              "default": "user_report"
+            },
+            "reason": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 2000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Основание/комментарий. Для bank_document обязательны реквизиты или ссылка предоставленного документа; не выдумывайте подтверждение банка."
+            }
+          },
+          "required": [
+            "requestId",
+            "clientId",
+            "expectedRevision",
+            "expectedSourceRevision",
+            "status"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"

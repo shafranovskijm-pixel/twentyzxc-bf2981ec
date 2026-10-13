@@ -34,6 +34,7 @@ import { preloadDocumentImages } from "@/lib/document-images";
 import { generatePdfBase64 as renderDocumentPdfBase64 } from "@/lib/document-pdf";
 import { documentEmailErrorMessage } from "@/lib/document-email-error";
 import SignPdfCard from "./SignPdfCard";
+import PaymentDetailsButton from "./payments/PaymentDetailsButton";
 import { renderTzHtml } from "@/lib/tz/render";
 import { mergeHtmlsToPdf } from "@/lib/tz/bundle";
 
@@ -428,10 +429,21 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       const { data: allContracts, error } = await supabase
         .from("contracts")
-        .select("contract_number, contract_date, amount, payment_status, paid_until, client_name")
+        .select("id, contract_number, contract_date, amount, payment_status, paid_until, client_name")
         .order("contract_date", { ascending: true });
       if (error) throw error;
       const clientContracts = (allContracts || []).filter(c => matches(c.client_name));
+
+      // Payment confirmation stores a cumulative amount, not dated bank entries.
+      // Never turn it into a receipt for the gross contract amount on its issue date.
+      const managedContracts = new Set<string>();
+      if (clientContracts.length) {
+        const { data: paymentStates, error: paymentError } = await supabase
+          .from("crm_payment_states" as any).select("contract_id")
+          .in("contract_id", clientContracts.map(c => c.id));
+        if (paymentError) throw new Error("Не удалось проверить учёт оплаты. Автоматическая сверка остановлена.");
+        for (const payment of paymentStates || []) managedContracts.add((payment as any).contract_id);
+      }
 
       const { data: allActs } = await supabase
         .from("generated_documents")
@@ -468,7 +480,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
 
       // Кредит — отметки об оплате (payment_status = 'оплачено')
       for (const c of (clientContracts || [])) {
-        if (c.payment_status === "оплачено" && inPeriod(c.contract_date)) {
+        if (!managedContracts.has(c.id) && c.payment_status === "оплачено" && inPeriod(c.contract_date)) {
           rows.push({
             date: c.contract_date as string,
             doc: `Оплата по договору №${c.contract_number || ""}`,
@@ -495,6 +507,7 @@ const DocumentsTab = ({ initialContractId, initialDocType, initialClientName, in
       rows.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
       setReconRows(rows);
       toast.success(`Загружено ${rows.length} операций`);
+      if (managedContracts.size) toast.warning("Отметки оплаты не включены в поступления сверки: внесите суммы и даты по выписке. Дата договора не считается датой платежа.");
     } catch (e: any) {
       console.error("[Recon] load failed:", e);
       toast.error(e.message || "Не удалось загрузить операции");
@@ -2382,6 +2395,11 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                     <span>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</span>
                     <span>{doc.client_name}</span>
                   </div>
+                  {(doc.doc_type === "invoice" || (doc.doc_type === "contract" && doc.contract_id)) && (
+                    <PaymentDetailsButton clientId={doc.client_id} clientName={doc.client_name}
+                      contractId={doc.contract_id} invoiceId={doc.doc_type === "invoice" ? doc.id : undefined}
+                      documentLabel={`${typeInfo.label} №${doc.doc_number}`} />
+                  )}
                 </div>
               );
             })}
@@ -2396,6 +2414,7 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                   <TableHead>Дата</TableHead>
                   <TableHead>Клиент</TableHead>
                   <TableHead>Сумма</TableHead>
+                  <TableHead>Оплата</TableHead>
                   <TableHead className="w-36"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -2409,6 +2428,13 @@ const RecentDocuments = ({ onEdit }: { onEdit?: (doc: any) => void }) => {
                       <TableCell>{formatRuDateNumeric(doc.doc_date) || doc.doc_date}</TableCell>
                       <TableCell>{doc.client_name}</TableCell>
                       <TableCell>{doc.total_amount ? Number(doc.total_amount).toLocaleString("ru-RU", { minimumFractionDigits: 2 }) + " ₽" : "—"}</TableCell>
+                      <TableCell>
+                        {(doc.doc_type === "invoice" || (doc.doc_type === "contract" && doc.contract_id)) && (
+                          <PaymentDetailsButton clientId={doc.client_id} clientName={doc.client_name}
+                            contractId={doc.contract_id} invoiceId={doc.doc_type === "invoice" ? doc.id : undefined}
+                            documentLabel={`${typeInfo.label} №${doc.doc_number}`} />
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           {onEdit && !isApiCustomDocument(doc) && <Button variant="ghost" size="icon" onClick={() => onEdit(doc)} title="Редактировать"><Pencil className="w-4 h-4" /></Button>}

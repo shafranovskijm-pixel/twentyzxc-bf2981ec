@@ -61,6 +61,7 @@ try {
   await db.exec(await migration("20260929154814_e2df41be-2506-41a3-ac4b-a05e6da7fcca.sql"));
   await db.exec(await migration("20260930060000_crm_service_templates.sql"));
   await db.exec(await migration("20261012010000_crm_current_bank_requisites.sql"));
+  await db.exec(await migration("20261013010000_crm_payments.sql"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_document_api.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_email_delivery.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_invoice_acts.sql"), "utf8"));
@@ -68,6 +69,7 @@ try {
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_client_rename_documents.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_service_templates.sql"), "utf8"));
   await db.exec(await readFile(path.join(root, "supabase/tests/crm_current_bank_requisites.sql"), "utf8"));
+  await db.exec(await readFile(path.join(root, "supabase/tests/crm_payments.sql"), "utf8"));
   const activationSource = await readFile(path.join(root, "supabase/tests/crm_confirmed_bank_activation.sql"), "utf8");
   const activationParts = activationSource.split("-- APPLY CONFIRMED MIGRATION HERE");
   if (activationParts.length !== 2) throw new Error("Expected confirmed bank activation test boundary");

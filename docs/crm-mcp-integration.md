@@ -1,5 +1,10 @@
 # ChatGPT / MCP: CRM document integration
 
+Payment-status commands prepared for issue #20 are documented in
+[crm-payments.md](crm-payments.md), including their migration, deployment order,
+legacy-data handling and verification limits. The historical publication notes
+below do not establish that the new payment operations have been deployed.
+
 Status on 2026-09-28: the backend, migration and frontend are published; the
 personal ChatGPT connection is not yet established. No successful end-to-end
 OAuth sign-in or document creation from ChatGPT is claimed.
