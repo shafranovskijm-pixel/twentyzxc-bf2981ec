@@ -45,6 +45,12 @@ const getLoginErrorDescription = (reason?: AdminSignInFailureReason) => {
   if (reason === "role_check_failed") {
     return "Сервер не смог проверить права администратора. Повторите вход через минуту.";
   }
+  if (reason === "request_timeout") {
+    return "Сервер входа долго не отвечает. Результат входа пока не подтверждён. Обновите страницу и повторите попытку.";
+  }
+  if (reason === "service_unavailable") {
+    return "Сервис входа временно недоступен. Доступ к CRM не подтверждён. Повторите попытку позже.";
+  }
   return "Не удалось выполнить вход. Проверьте интернет и повторите попытку.";
 };
 
@@ -62,6 +68,7 @@ export const AdminLoginDialog = ({
   const [mode, setMode] = useState<AuthMode>(() => (isPasswordRecoveryUrl() ? "new-password" : "login"));
   const [resetSent, setResetSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorDescription, setErrorDescription] = useState("");
 
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
@@ -77,6 +84,7 @@ export const AdminLoginDialog = ({
     const { error, reason } = await onLogin(email, password);
 
     if (error) {
+      setErrorDescription(getLoginErrorDescription(reason));
       toast.error("Не удалось войти", {
         description: getLoginErrorDescription(reason),
       });
@@ -129,11 +137,17 @@ export const AdminLoginDialog = ({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isLoading) return;
+    setErrorDescription("");
     setIsLoading(true);
     try {
       if (mode === "request-reset") await handleResetRequest();
       else if (mode === "new-password") await handleNewPassword();
       else await handleLogin();
+    } catch {
+      const description = getLoginErrorDescription();
+      setErrorDescription(description);
+      toast.error("Запрос не выполнен", { description });
     } finally {
       setIsLoading(false);
     }
@@ -241,6 +255,8 @@ export const AdminLoginDialog = ({
             </div>
           )}
 
+          {errorDescription && <p role="alert" className="rounded-md border border-destructive/40 p-3 text-sm text-destructive">{errorDescription}</p>}
+
           <Button type="submit" className="w-full" disabled={isLoading || (mode === "request-reset" && resetSent)}>
             {isLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -251,13 +267,14 @@ export const AdminLoginDialog = ({
             ) : (
               <LogIn className="mr-2 h-4 w-4" />
             )}
-            {mode === "request-reset" ? "Отправить ссылку" : mode === "new-password" ? "Сохранить пароль" : "Войти"}
+            {mode === "request-reset" ? "Отправить ссылку" : mode === "new-password" ? "Сохранить пароль" : isLoading ? "Проверяем доступ…" : "Войти"}
           </Button>
 
           {mode === "login" && onRequestPasswordReset && (
             <Button
               type="button"
               variant="ghost"
+              disabled={isLoading}
               className="w-full text-muted-foreground"
               onClick={() => {
                 setMode("request-reset");
@@ -273,6 +290,7 @@ export const AdminLoginDialog = ({
               type="button"
               variant="ghost"
               className="w-full gap-2 text-muted-foreground"
+              disabled={isLoading}
               onClick={() => setMode("login")}
             >
               <ArrowLeft className="h-4 w-4" />

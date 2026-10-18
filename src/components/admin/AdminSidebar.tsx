@@ -27,6 +27,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
 export const defaultMenuItems = [
+  { id: "incoming", label: "Входящие заявки", icon: MessageSquare },
   { id: "sales", label: "Продажи", icon: TrendingUp },
   { id: "proposals", label: "Коммерческие предложения", icon: FileSignature },
   { id: "planner", label: "Планер", icon: CalendarDays },

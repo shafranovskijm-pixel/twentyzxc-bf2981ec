@@ -27,6 +27,7 @@ const TzTab = lazyWithRetry(() => import("@/components/admin/TzTab"));
 const NmoTab = lazyWithRetry(() => import("@/components/admin/NmoTab"));
 const FrdoTab = lazyWithRetry(() => import("@/components/admin/FrdoTab"));
 const SalesTab = lazyWithRetry(() => import("@/components/admin/SalesTab"));
+const LeadsPanel = lazyWithRetry(() => import("@/components/admin/LeadsPanel"));
 const ProposalsTab = lazyWithRetry(() => import("@/components/admin/ProposalsTab"));
 const InlineAIChat = lazyWithRetry(() => import("@/components/admin/InlineAIChat"));
 import NotificationsPanel from "@/components/admin/NotificationsPanel";
@@ -517,6 +518,7 @@ const Admin = () => {
   }
 
   const sectionTitles: Record<string, string> = {
+    incoming: "Входящие заявки",
     sales: "Продажи",
     proposals: "Коммерческие предложения",
     seo: "SEO-настройки",
@@ -1150,6 +1152,7 @@ const Admin = () => {
                   setActiveSection(section);
                 }}
               />}
+              {activeSection === "incoming" && <LeadsPanel />}
               {activeSection === "sales" && <SalesTab />}
               {activeSection === "proposals" && <ProposalsTab
                 initialClientId={proposalsInitialClientId}

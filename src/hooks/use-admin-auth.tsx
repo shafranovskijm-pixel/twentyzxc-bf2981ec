@@ -1,19 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { AdminAuthTimeoutError, withAdminAuthTimeout } from "@/lib/admin-auth-timeout";
 
 const CACHE_KEY = "admin_session_cache";
-
-interface AdminCache {
-  userId: string;
-  isAdmin: boolean;
-  timestamp: number;
-}
 
 export type AdminSignInFailureReason =
   | "invalid_credentials"
   | "not_admin"
   | "role_check_failed"
+  | "request_timeout"
+  | "service_unavailable"
   | "unknown";
 
 export interface AdminSignInResult {
@@ -21,81 +18,62 @@ export interface AdminSignInResult {
   reason?: AdminSignInFailureReason;
 }
 
-function readCache(): AdminCache | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as AdminCache;
-  } catch {
-    return null;
-  }
-}
-
 function writeCache(userId: string, isAdmin: boolean) {
-  localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, isAdmin, timestamp: Date.now() }));
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ userId, isAdmin, timestamp: Date.now() }));
+  } catch { /* Optional UI metadata must not prevent a verified login. */ }
 }
 
 function clearCache() {
-  localStorage.removeItem(CACHE_KEY);
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* Browser persistence is optional. */ }
 }
 
 export const useAdminAuth = () => {
-  const cached = readCache();
-
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(cached?.isAdmin ?? false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const roleChecks = useRef(new Map<string, Promise<boolean | null>>());
+  const authRevision = useRef(0);
 
-  const checkAdminRole = useCallback(async (userId: string): Promise<boolean | null> => {
-    const attempt = async (): Promise<boolean | null> => {
+  const checkAdminRole = useCallback((userId: string): Promise<boolean | null> => {
+    const existing = roleChecks.current.get(userId);
+    if (existing) return existing;
+    // SIGNED_IN and the login form share the same bounded verification.
+    const check = (async (): Promise<boolean | null> => {
       try {
-        const timeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
-          setTimeout(() => resolve({ data: null, error: { message: "timeout" } }), 15000)
-        );
-        const query = supabase.rpc("has_role", {
+        const result = await withAdminAuthTimeout(supabase.rpc("has_role", {
           _user_id: userId,
           _role: "admin" as const,
-        }).then((res) => res);
-
-        const result = await Promise.race([query, timeout]);
-        if (result.error) {
-          console.error("checkAdminRole error:", result.error);
-          return null;
-        }
-        return !!result.data;
-      } catch (e) {
-        console.error("checkAdminRole exception:", e);
+        }).then(res => res), 12000);
+        if (result.error) return null;
+        return result.data === true;
+      } catch {
         return null;
       }
-    };
-
-    // Retry twice — the backend can be briefly unavailable (cold start / pooler).
-    for (let i = 0; i < 3; i++) {
-      const res = await attempt();
-      if (res !== null) return res;
-      if (i < 2) await new Promise((r) => setTimeout(r, 1500));
-    }
-    return null;
+    })().finally(() => {
+      if (roleChecks.current.get(userId) === check) roleChecks.current.delete(userId);
+    });
+    roleChecks.current.set(userId, check);
+    return check;
   }, []);
 
   useEffect(() => {
     let mounted = true;
-    let authRevision = 0;
     const deferred = new Set<ReturnType<typeof setTimeout>>();
+    const initialRevision = authRevision.current;
     // A failed refresh must not leave the whole admin page behind an endless spinner.
     const initializationTimeout = setTimeout(() => {
-      if (mounted) {
+      if (mounted && initialRevision === authRevision.current) {
         setIsAdmin(false);
         setIsLoading(false);
       }
     }, 15000);
 
-    const initialRevision = authRevision;
     // 1. Get current session
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
-      if (!mounted || initialRevision !== authRevision) return;
+      if (!mounted || initialRevision !== authRevision.current) return;
       if (error) throw error;
-      const revision = authRevision;
+      const revision = authRevision.current;
 
       if (!session) {
         // Definitively no session — clear everything
@@ -108,35 +86,15 @@ export const useAdminAuth = () => {
 
       setUser(session.user);
 
-      // If we have a valid cache for this user, use it immediately
-      const c = readCache();
-      if (c && c.userId === session.user.id && c.isAdmin) {
-        setIsAdmin(true);
-        setIsLoading(false);
-        // Background re-verify (don't reset on failure)
-        const fresh = await checkAdminRole(session.user.id);
-        if (mounted && revision === authRevision) {
-          if (fresh) {
-            writeCache(session.user.id, true);
-          } else if (fresh === false) {
-            setIsAdmin(false);
-            clearCache();
-          }
-          // Only revoke if RPC explicitly returned false (not timeout/error)
-          // We already set isAdmin=true from cache, keep it unless fresh === false explicitly
-        }
-        return;
-      }
-
-      // No cache — must verify
+      // A local cache is UI metadata, never evidence of administrator access.
       const admin = await checkAdminRole(session.user.id);
-      if (!mounted || revision !== authRevision) return;
+      if (!mounted || revision !== authRevision.current) return;
       setIsAdmin(admin === true);
       if (admin === true) writeCache(session.user.id, true);
       setIsLoading(false);
     }).catch((error) => {
       console.error("Admin session initialization failed", error);
-      if (mounted) {
+      if (mounted && initialRevision === authRevision.current) {
         setIsAdmin(false);
         setIsLoading(false);
       }
@@ -148,7 +106,8 @@ export const useAdminAuth = () => {
         if (!mounted) return;
 
         if (event === "SIGNED_OUT") {
-          authRevision++;
+          authRevision.current++;
+          roleChecks.current.clear();
           clearTimeout(initializationTimeout);
           setUser(null);
           setIsAdmin(false);
@@ -164,22 +123,16 @@ export const useAdminAuth = () => {
         }
 
         if (event === "SIGNED_IN" && session?.user) {
-          const revision = ++authRevision;
+          const revision = ++authRevision.current;
           clearTimeout(initializationTimeout);
           setUser(session.user);
-          // Check cache first
-          const c = readCache();
-          if (c && c.userId === session.user.id && c.isAdmin) {
-            setIsAdmin(true);
-            setIsLoading(false);
-            return;
-          }
+          setIsAdmin(false);
           // Supabase holds its auth lock while notifying listeners. Do not await
           // another Supabase request inside that listener (it can deadlock).
           const timer = setTimeout(async () => {
             deferred.delete(timer);
             const admin = await checkAdminRole(session.user.id);
-            if (!mounted || revision !== authRevision) return;
+            if (!mounted || revision !== authRevision.current) return;
             setIsAdmin(admin === true);
             if (admin === true) writeCache(session.user.id, true);
             setIsLoading(false);
@@ -191,6 +144,8 @@ export const useAdminAuth = () => {
 
     return () => {
       mounted = false;
+      authRevision.current++;
+      roleChecks.current.clear();
       clearTimeout(initializationTimeout);
       for (const timer of deferred) clearTimeout(timer);
       subscription.unsubscribe();
@@ -198,54 +153,64 @@ export const useAdminAuth = () => {
   }, [checkAdminRole]);
 
   const signIn = async (email: string, password: string): Promise<AdminSignInResult> => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
+    authRevision.current++;
+    setIsAdmin(false);
+    try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const { data, error } = await withAdminAuthTimeout(supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      }), 15000);
 
-    if (error) {
-      const isInvalidCredentials =
-        error.code === "invalid_credentials" ||
-        /invalid login credentials/i.test(error.message);
-      return {
-        error,
-        reason: isInvalidCredentials ? "invalid_credentials" : "unknown",
-      };
-    }
+      if (error) {
+        const isInvalidCredentials =
+          error.code === "invalid_credentials" ||
+          /invalid login credentials/i.test(error.message);
+        const isServiceUnavailable = typeof error.status === "number" && error.status >= 500;
+        return {
+          error,
+          reason: isInvalidCredentials ? "invalid_credentials" : isServiceUnavailable ? "service_unavailable" : "unknown",
+        };
+      }
 
-    if (!data.user) {
-      return { error: new Error("Пользователь не получен"), reason: "unknown" };
-    }
+      if (!data.user || !data.session) {
+        return { error: new Error("Сессия не получена"), reason: "unknown" };
+      }
 
-    setUser(data.user);
-    const admin = await checkAdminRole(data.user.id);
+      const revision = authRevision.current;
+      setUser(data.user);
+      const admin = await checkAdminRole(data.user.id);
+      if (revision !== authRevision.current || admin === null) {
+        if (revision === authRevision.current) setIsAdmin(false);
+        return {
+          error: new Error("Не удалось проверить права администратора"),
+          reason: "role_check_failed",
+        };
+      }
 
-    if (admin === null) {
+      if (!admin) {
+        setUser(null);
+        setIsAdmin(false);
+        clearCache();
+        try { await withAdminAuthTimeout(supabase.auth.signOut(), 5000); } catch { /* Access remains denied. */ }
+        return {
+          error: new Error("У пользователя нет прав администратора"),
+          reason: "not_admin",
+        };
+      }
+
+      setIsAdmin(true);
+      writeCache(data.user.id, true);
+      return { error: null };
+    } catch (error) {
       setIsAdmin(false);
-      setIsLoading(false);
       return {
-        error: new Error("Не удалось проверить права администратора"),
-        reason: "role_check_failed",
+        error: error instanceof Error ? error : new Error("Не удалось выполнить вход"),
+        reason: error instanceof AdminAuthTimeoutError ? "request_timeout" : "unknown",
       };
-    }
-
-    if (!admin) {
-      await supabase.auth.signOut();
-      setUser(null);
-      setIsAdmin(false);
-      clearCache();
+    } finally {
       setIsLoading(false);
-      return {
-        error: new Error("У пользователя нет прав администратора"),
-        reason: "not_admin",
-      };
     }
-
-    setIsAdmin(true);
-    writeCache(data.user.id, true);
-    setIsLoading(false);
-    return { error: null };
   };
 
   const requestPasswordReset = async (email: string) => {
@@ -265,10 +230,12 @@ export const useAdminAuth = () => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    authRevision.current++;
+    roleChecks.current.clear();
     setUser(null);
     setIsAdmin(false);
     clearCache();
+    try { await withAdminAuthTimeout(supabase.auth.signOut(), 5000); } catch { /* Local access is already closed. */ }
   };
 
   return {
