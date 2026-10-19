@@ -15,6 +15,13 @@
       "when": 1791775117993,
       "tag": "0001_pin_confirmed_company_bank",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792385070945,
+      "tag": "0002_crm_frdo_credentials",
+      "breakpoints": true
     }
   ]
 }
