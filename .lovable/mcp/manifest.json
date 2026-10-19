@@ -12,7 +12,7 @@
   "mcp": {
     "server": {
       "name": "24zxc-crm-documents",
-      "version": "0.7.0",
+      "version": "0.8.0",
       "title": "24ZXC — клиенты и документы"
     },
     "tools": [
@@ -267,6 +267,186 @@
           },
           "required": [
             "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_get_frdo_access_status",
+        "title": "Проверить наличие доступов ФИС ФРДО",
+        "description": "По точному clientId возвращает организацию, ИНН, crm_revision и признаки наличия логина, пароля ДПО и пароля ПО. Существующие логины и пароли не возвращает. Сначала найдите организацию; при нескольких совпадениях уточните карточку.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "required": [
+            "clientId"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_compare_frdo_access",
+        "title": "Сверить доступы ФИС ФРДО с карточкой",
+        "description": "Проверяет предоставленные пользователем логин и/или пароли ДПО/ПО по точному clientId и ИНН выбранной организации. Возвращает только match, different или not_set для переданных полей. Ничего не сохраняет и не выполняет вход в ФИС ФРДО; совпадение с CRM не подтверждает действительность доступа во внешней системе. Не повторяйте значения в ответе и не перебирайте варианты паролей.",
+        "annotations": {
+          "readOnlyHint": true,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "clientId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "expectedInn": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(\\d{10}|\\d{12})$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Точный ИНН выбранной карточки из crm_get_client; null только если ИНН в ней отсутствует. Не угадывайте организацию по доступам."
+            },
+            "credentials": {
+              "type": "object",
+              "properties": {
+                "login": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 500
+                },
+                "passwordDpo": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096,
+                  "description": "Пароль ФИС ФРДО для ДПО; не подставляйте сюда пароль ПО без указания пользователя."
+                },
+                "passwordPo": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096,
+                  "description": "Пароль ФИС ФРДО для ПО; отдельное поле от ДПО."
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "clientId",
+            "expectedInn",
+            "credentials"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "crm_update_frdo_access",
+        "title": "Сохранить доступы ФИС ФРДО в карточке",
+        "description": "По команде пользователя сохраняет предоставленные доступы в существующей карточке: общий логин, отдельные пароли ДПО и ПО. Сначала точно выберите организацию через crm_search_clients, прочитайте crm_get_frdo_access_status/crm_get_client, передайте clientId, её ИНН и актуальный expectedRevision. При нескольких карточках уточните выбор. Передаются только изменяемые поля; пропуск сохраняет прежнее, null очищает только по явному указанию. Не выдумывайте доступы и не копируйте пароль ДПО в ПО автоматически. При конфликте перечитайте карточку. Один requestId относится к одной неизменной операции. replayed:true — историческая квитанция; после последующих правок актуальное состояние прочитайте отдельно. Ответ содержит только признаки наличия и названия изменённых полей; не повторяйте логин или пароль в чате. Не выполняет вход во внешнюю систему.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "requestId": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "clientId": {
+              "$ref": "#/properties/requestId"
+            },
+            "expectedRevision": {
+              "type": "integer",
+              "exclusiveMinimum": 0
+            },
+            "expectedInn": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(\\d{10}|\\d{12})$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Точный ИНН выбранной карточки из crm_get_client; null только если ИНН в ней отсутствует. Не угадывайте организацию по доступам."
+            },
+            "changes": {
+              "type": "object",
+              "properties": {
+                "login": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "passwordDpo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "passwordPo": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4096
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "requestId",
+            "clientId",
+            "expectedRevision",
+            "expectedInn",
+            "changes"
           ],
           "additionalProperties": false,
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -610,6 +790,11 @@
         "name": "crm_import_client_file",
         "title": "Сохранить PDF или Word в карточку клиента",
         "description": "Переносит оригинальное вложение PDF, DOC или DOCX до 10 МиБ из чата в приватные файлы точно выбранного клиента. Передайте исходный файл через file; не сочиняйте ссылку или file_id и не пересоздавайте оригинал из распознанного текста. Сначала проверьте организацию в самом документе. При нескольких клиентах уточните выбор. Сохраняет исходные байты, имя, размер, формат и SHA256, возвращает ID файла; для ссылки используйте crm_get_client_file. Повтор с тем же requestId не создаёт дубля. Это сохранение файла, не создание договора/счёта/акта и не отправка клиенту.",
+        "_meta": {
+          "openai/fileParams": [
+            "file"
+          ]
+        },
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -671,6 +856,11 @@
         "name": "crm_import_client_pdf",
         "title": "Сохранить PDF из чата в карточку клиента",
         "description": "Загружает оригинальное вложение PDF до 10 МиБ в приватные файлы выбранного клиента. Передайте исходный файл через file, не сочиняйте ссылку, file_id или содержимое. Проверьте организацию в самом документе; совпадения похожего имени недостаточно. При отсутствии доступа к оригиналу сообщите это, не подменяйте PDF пересозданным текстом. Это архивный файл: не создаёт договор, счёт или акт и не отправляет письмо. Сохранение подтверждается file.id, размером и SHA256. Повторяйте тот же requestId при сбое.",
+        "_meta": {
+          "openai/fileParams": [
+            "file"
+          ]
+        },
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
