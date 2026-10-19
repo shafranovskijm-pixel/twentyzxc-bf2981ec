@@ -334,6 +334,7 @@ export function generateFrdoContractHtml(data: DocumentData): string {
         <p>${c.company_bank_name}</p>
         <p>БИК ${c.company_bank_bik}</p>
         <p>р/с ${c.company_bank_account}</p>
+        <p>к/с ${c.company_bank_corr}</p>
         <div class="signature-line">
           / ${c.company_director_name} /
           <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />

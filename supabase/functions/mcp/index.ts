@@ -1379,6 +1379,7 @@ function generateFrdoContractHtml(data) {
         <p>${c.company_bank_name}</p>
         <p>\u0411\u0418\u041A ${c.company_bank_bik}</p>
         <p>\u0440/\u0441 ${c.company_bank_account}</p>
+        <p>\u043A/\u0441 ${c.company_bank_corr}</p>
         <div class="signature-line">
           / ${c.company_director_name} /
           <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
@@ -4093,11 +4094,12 @@ var BaseMetricRecorder = class {
   }
 };
 var cloudflareEnvPromise;
+var cloudflareWorkersModule = "cloudflare:workers";
 async function readCloudflareEnv(name) {
   try {
     cloudflareEnvPromise ??= import(
       /* @vite-ignore */
-      "npm:cloudflare:workers"
+      cloudflareWorkersModule
     ).then((m) => m.env).catch((err) => {
       log.debug("metrics.cloudflare_env_import_failed", describeError(err));
     });
@@ -4773,6 +4775,7 @@ function createMcpProtocolHandler(mcp, options2 = {}) {
         description: tool.description,
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
+        _meta: tool._meta,
         annotations: tool.annotations
       }, adaptToolToSdkCallback(tool, authResult.auth, recorder));
       const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: void 0 });
@@ -4877,6 +4880,7 @@ function buildMcpListing(mcp) {
       name: tool.name,
       title: tool.title,
       description: tool.description,
+      _meta: tool._meta,
       annotations: tool.annotations,
       inputSchema: shapeToJsonSchema(tool.inputSchema),
       outputSchema: shapeToJsonSchema(tool.outputSchema)

@@ -60,6 +60,36 @@ describe("confirmed issuer payment details", () => {
     expect(payload.p_payload.metadata.companyBankPolicyRevision).toBe(2);
     expect(JSON.stringify(previous)).toBe(originalJson);
   });
+  const frdoInput = { type: "contract" as const, template: "frdo" as const, clientId: input.clientId, date: input.date,
+    number: "TEST-FRDO", services: input.services, subject: "Тестовый договор ФРДО", deadline: "30 дней", paymentTerms: "100%" };
+  it("prints the full pinned bank tuple, including the correspondent account, in an FRDO contract", () => {
+    const rendered = renderDocument(frdoInput, context);
+    for (const value of [policy.company_bank_account, policy.company_bank_bik, policy.company_bank_corr, policy.company_bank_name]) {
+      expect(rendered.html).toContain(value);
+    }
+    expect(rendered.metadata.companyBankPolicyRevision).toBe(2);
+  });
+  it("refreshes an FRDO contract with the same date, changing only confirmed bank values and policy revision", async () => {
+    const oldCompany = { ...company, company_bank_account: oldAccount, company_bank_corr: "30100000000000000009", company_bank_name: "Прежний банк" };
+    const original = renderDocument(frdoInput, { ...context, company: oldCompany, bankPolicy: null });
+    const previous = { source: "api", input: frdoInput, snapshot: { metadata: original.metadata, contract_id: null } };
+    const originalJson = JSON.stringify(previous);
+    const rpc = vi.fn(async (name: string, _args?: unknown) => ({ data: name === "crm_get_company_bank_policy" ? policy : { documentId: "saved", revision: 2 }, error: null }));
+    const builder: Record<string, unknown> = {};
+    for (const method of ["select", "eq", "maybeSingle"]) builder[method] = () => builder;
+    builder.then = (resolve: (result: unknown) => unknown) => Promise.resolve({ data: previous, error: null }).then(resolve);
+    const db = { from: () => builder, rpc } as unknown as SupabaseClient;
+    await new CrmDocumentsService(db).revise("22222222-2222-4222-8222-222222222222", "33333333-3333-4333-8333-333333333333", 1, { date: frdoInput.date });
+    const payload = rpc.mock.calls.find(([name]) => name === "crm_save_document")?.[1] as { p_input: unknown; p_payload: { html_content: string; metadata: Record<string, unknown> } };
+    expect(payload.p_input).toEqual(frdoInput);
+    expect(payload.p_payload.html_content).toContain(policy.company_bank_corr);
+    expect(payload.p_payload.html_content).not.toContain(oldAccount);
+    expect(payload.p_payload.metadata.documentInput).toEqual(previous.input);
+    expect(payload.p_payload.metadata.clientSnapshot).toEqual(previous.snapshot.metadata.clientSnapshot);
+    expect(payload.p_payload.metadata.companySnapshot).toEqual(company);
+    expect(payload.p_payload.metadata.companyBankPolicyRevision).toBe(2);
+    expect(JSON.stringify(previous)).toBe(originalJson);
+  });
   it("does not replace a different issuer's bank details", () => {
     const other = { ...company, company_inn: "000000000004", company_bank_account: "40700000000000000005" };
     const rendered = renderDocument(input, { ...context, company: other });
