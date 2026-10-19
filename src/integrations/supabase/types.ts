@@ -578,6 +578,45 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_frdo_access_commands: {
+        Row: {
+          actor_id: string
+          changed_fields: string[]
+          client_id: string
+          created_at: string
+          expected_inn: string | null
+          expected_revision: number
+          request_fingerprint: string
+          request_id: string
+          requested_fields: string[]
+          result: Json
+        }
+        Insert: {
+          actor_id: string
+          changed_fields: string[]
+          client_id: string
+          created_at?: string
+          expected_inn?: string | null
+          expected_revision: number
+          request_fingerprint: string
+          request_id: string
+          requested_fields: string[]
+          result: Json
+        }
+        Update: {
+          actor_id?: string
+          changed_fields?: string[]
+          client_id?: string
+          created_at?: string
+          expected_inn?: string | null
+          expected_revision?: number
+          request_fingerprint?: string
+          request_id?: string
+          requested_fields?: string[]
+          result?: Json
+        }
+        Relationships: []
+      }
       crm_payment_commands: {
         Row: {
           actor_id: string
@@ -2345,6 +2384,13 @@ export type Database = {
         Args: { p_company?: Json; p_html: string }
         Returns: undefined
       }
+      crm_assert_frdo_identity: {
+        Args: {
+          p_client: Database["public"]["Tables"]["clients"]["Row"]
+          p_expected_inn: string
+        }
+        Returns: undefined
+      }
       crm_bank_decode_numeric_entities: {
         Args: { p_text: string }
         Returns: string
@@ -2361,6 +2407,14 @@ export type Database = {
       }
       crm_client_card_json: {
         Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
+        Returns: Json
+      }
+      crm_compare_frdo_access: {
+        Args: {
+          p_client_id: string
+          p_credentials: Json
+          p_expected_inn: string
+        }
         Returns: Json
       }
       crm_custom_contract_variables_valid: {
@@ -2382,7 +2436,23 @@ export type Database = {
         }
         Returns: Json
       }
+      crm_frdo_client_json: {
+        Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
+        Returns: Json
+      }
+      crm_frdo_command_fingerprint: {
+        Args: { p_command: Json; p_existing?: string }
+        Returns: string
+      }
+      crm_frdo_presence_json: {
+        Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
+        Returns: Json
+      }
       crm_get_company_bank_policy: { Args: never; Returns: Json }
+      crm_get_frdo_access_status: {
+        Args: { p_client_id: string }
+        Returns: Json
+      }
       crm_get_payment_status: {
         Args: {
           p_client_id: string
@@ -2463,6 +2533,16 @@ export type Database = {
         }
         Returns: Json
       }
+      crm_save_frdo_access: {
+        Args: {
+          p_changes: Json
+          p_client_id: string
+          p_expected_inn: string
+          p_expected_revision: number
+          p_request_id: string
+        }
+        Returns: Json
+      }
       crm_save_service_template: {
         Args: {
           p_content: Json
@@ -2498,6 +2578,10 @@ export type Database = {
       crm_suggest_document_number: {
         Args: { p_doc_date: string; p_doc_type: string }
         Returns: Json
+      }
+      crm_validate_frdo_values: {
+        Args: { p_allow_null: boolean; p_values: Json }
+        Returns: undefined
       }
       get_active_listings: {
         Args: never
