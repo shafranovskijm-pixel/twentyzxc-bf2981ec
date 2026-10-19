@@ -1379,6 +1379,7 @@ function generateFrdoContractHtml(data) {
         <p>${c.company_bank_name}</p>
         <p>\u0411\u0418\u041A ${c.company_bank_bik}</p>
         <p>\u0440/\u0441 ${c.company_bank_account}</p>
+        <p>\u043A/\u0441 ${c.company_bank_corr}</p>
         <div class="signature-line">
           / ${c.company_director_name} /
           <img class="signature-img" src="${data.assetOrigin ?? (typeof window !== "undefined" ? window.location.origin : "")}/images/signature.png" />
