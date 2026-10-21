@@ -617,6 +617,111 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_frdo_email_deliveries: {
+        Row: {
+          actor_id: string
+          attachments: Json
+          body: string
+          client_id: string
+          client_snapshot: Json
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          interaction_id: string | null
+          message_id: string
+          prepared_at: string | null
+          receipt: Json | null
+          recipient: string
+          request: Json
+          request_id: string
+          sending_at: string | null
+          state: string
+          subject: string
+          templates: Json
+          updated_at: string
+        }
+        Insert: {
+          actor_id: string
+          attachments?: Json
+          body: string
+          client_id: string
+          client_snapshot: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id: string
+          interaction_id?: string | null
+          message_id: string
+          prepared_at?: string | null
+          receipt?: Json | null
+          recipient: string
+          request: Json
+          request_id: string
+          sending_at?: string | null
+          state?: string
+          subject: string
+          templates: Json
+          updated_at?: string
+        }
+        Update: {
+          actor_id?: string
+          attachments?: Json
+          body?: string
+          client_id?: string
+          client_snapshot?: Json
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          interaction_id?: string | null
+          message_id?: string
+          prepared_at?: string | null
+          receipt?: Json | null
+          recipient?: string
+          request?: Json
+          request_id?: string
+          sending_at?: string | null
+          state?: string
+          subject?: string
+          templates?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_frdo_template_catalog: {
+        Row: {
+          content_type: string
+          filename: string
+          id: string
+          label: string
+          revision: number
+          sha256: string
+          size: number
+          source_url: string
+        }
+        Insert: {
+          content_type: string
+          filename: string
+          id: string
+          label: string
+          revision: number
+          sha256: string
+          size: number
+          source_url: string
+        }
+        Update: {
+          content_type?: string
+          filename?: string
+          id?: string
+          label?: string
+          revision?: number
+          sha256?: string
+          size?: number
+          source_url?: string
+        }
+        Relationships: []
+      }
       crm_payment_commands: {
         Row: {
           actor_id: string
@@ -714,6 +819,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      crm_pdf_asset_catalog: {
+        Row: {
+          content_type: string
+          id: string
+          sha256: string
+          size: number
+          source_url: string
+        }
+        Insert: {
+          content_type: string
+          id: string
+          sha256: string
+          size: number
+          source_url: string
+        }
+        Update: {
+          content_type?: string
+          id?: string
+          sha256?: string
+          size?: number
+          source_url?: string
+        }
+        Relationships: []
       }
       crm_service_template_commands: {
         Row: {
@@ -821,6 +950,57 @@ export type Database = {
           name?: string
           revision?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      crm_signed_pdfs: {
+        Row: {
+          actor_id: string
+          asset_hashes: Json
+          created_at: string
+          file_name: string
+          id: string
+          output_sha256: string
+          output_size: number
+          page_count: number
+          placements: Json
+          request: Json
+          request_id: string
+          source_file_id: string
+          source_sha256: string
+          storage_path: string
+        }
+        Insert: {
+          actor_id: string
+          asset_hashes: Json
+          created_at?: string
+          file_name: string
+          id?: string
+          output_sha256: string
+          output_size: number
+          page_count: number
+          placements: Json
+          request: Json
+          request_id: string
+          source_file_id: string
+          source_sha256: string
+          storage_path: string
+        }
+        Update: {
+          actor_id?: string
+          asset_hashes?: Json
+          created_at?: string
+          file_name?: string
+          id?: string
+          output_sha256?: string
+          output_size?: number
+          page_count?: number
+          placements?: Json
+          request?: Json
+          request_id?: string
+          source_file_id?: string
+          source_sha256?: string
+          storage_path?: string
         }
         Relationships: []
       }
@@ -2401,7 +2581,12 @@ export type Database = {
       }
       crm_bank_html_text: { Args: { p_html: string }; Returns: string }
       crm_bank_name_normalized: { Args: { p_value: string }; Returns: string }
+      crm_check_signed_pdf_storage: { Args: never; Returns: boolean }
       crm_claim_document_email: {
+        Args: { p_actor_id: string; p_delivery_id: string }
+        Returns: Json
+      }
+      crm_claim_frdo_email: {
         Args: { p_actor_id: string; p_delivery_id: string }
         Returns: Json
       }
@@ -2426,12 +2611,26 @@ export type Database = {
         Args: { p_actor_id: string; p_attachments: Json; p_delivery_id: string }
         Returns: Json
       }
+      crm_finalize_frdo_email: {
+        Args: { p_actor_id: string; p_attachments: Json; p_delivery_id: string }
+        Returns: Json
+      }
       crm_finish_document_email: {
         Args: {
           p_actor_id: string
           p_delivery_id: string
           p_error: string
           p_receipt: Json
+          p_state: string
+        }
+        Returns: Json
+      }
+      crm_finish_frdo_email: {
+        Args: {
+          p_actor_id: string
+          p_delivery_id: string
+          p_error: string
+          p_receipt: string
           p_state: string
         }
         Returns: Json
@@ -2447,6 +2646,11 @@ export type Database = {
       crm_frdo_presence_json: {
         Args: { p_client: Database["public"]["Tables"]["clients"]["Row"] }
         Returns: Json
+      }
+      crm_frdo_require_private_storage: { Args: never; Returns: undefined }
+      crm_frdo_require_worker: {
+        Args: { p_actor_id: string }
+        Returns: undefined
       }
       crm_get_company_bank_policy: { Args: never; Returns: Json }
       crm_get_frdo_access_status: {
@@ -2492,6 +2696,19 @@ export type Database = {
         }
         Returns: Json
       }
+      crm_prepare_frdo_email: {
+        Args: {
+          p_body: string
+          p_client_id: string
+          p_expected_client_revision: number
+          p_expected_inn: string
+          p_recipient: string
+          p_request_id: string
+          p_subject: string
+          p_templates: Json
+        }
+        Returns: Json
+      }
       crm_register_client_file: {
         Args: {
           p_client_id: string
@@ -2502,6 +2719,10 @@ export type Database = {
           p_sha256: string
           p_source_file_id: string
         }
+        Returns: Json
+      }
+      crm_register_signed_pdf: {
+        Args: { p_artifact: Json; p_request: Json; p_request_id: string }
         Returns: Json
       }
       crm_save_client: {
