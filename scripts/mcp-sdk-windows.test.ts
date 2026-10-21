@@ -86,7 +86,7 @@ describe("pinned Windows MCP SDK resolver correction", () => {
     expect(compiled.indexOf("@ts-nocheck")).toBeLessThan(compiled.indexOf("import "));
     expect(compiled).toContain("Deno.serve(createSupabaseHandler(");
     expect(compiled).toContain("_meta: tool._meta");
-    for (const name of ["crm_import_client_pdf", "crm_import_client_file"]) {
+    for (const name of ["crm_import_client_pdf", "crm_import_client_file", "crm_inspect_pdf_for_signing", "crm_apply_company_marks_to_pdf"]) {
       const fileTool = manifest.mcp.tools.find(tool => tool.name === name);
       expect(fileTool._meta["openai/fileParams"]).toEqual(["file"]);
       expect(fileTool.inputSchema.properties.file.required).toEqual(["download_url", "file_id"]);

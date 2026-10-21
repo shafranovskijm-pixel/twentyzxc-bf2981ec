@@ -23,6 +23,10 @@ verify_jwt = false
 [functions.crm-document-email]
 verify_jwt = false
 
+# Verifies the supplied JWT and admin role before catalogue, storage or outbox work.
+[functions.crm-frdo-email]
+verify_jwt = false
+
 [functions.sales-assistant]
 verify_jwt = false
 

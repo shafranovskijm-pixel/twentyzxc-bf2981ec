@@ -14,6 +14,7 @@
     "test:crm": "vitest run --config vitest.crm.config.ts",
     "test:crm:sql": "node scripts/test-crm-sql.mjs",
     "test:crm:frdo:sql": "node scripts/test-crm-frdo-credentials-sql.mjs",
+    "test:crm:frdo-documents:sql": "node scripts/test-crm-frdo-documents-sql.mjs",
     "mcp:manifest": "node scripts/extract-crm-manifest.mjs"
   },
   "dependencies": {
