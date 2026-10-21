@@ -1,0 +1,98 @@
+[
+  {
+    "id": "instruktsiya",
+    "revision": 1,
+    "label": "Инструкция",
+    "fileName": "instruktsiya.docx",
+    "contentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/instruktsiya.docx",
+    "size": 11050,
+    "sha256": "5afe855a645afd8d3ea54a6d09eb8d34dc11eb7035a277f0392cee0ef100c57f",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  },
+  {
+    "id": "prikaz",
+    "revision": 1,
+    "label": "Приказ ФРДО №1",
+    "fileName": "Prikaz_FRDO_1.docx",
+    "contentType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/Prikaz_FRDO_1.docx",
+    "size": 19144,
+    "sha256": "d3e08ca4f65e6212efb0a3603a209988661e523d36ac74262d71e4af6494eb50",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  },
+  {
+    "id": "prikaz-pdf",
+    "revision": 1,
+    "label": "Приказ ФРДО (PDF, с подписью и печатью)",
+    "fileName": "Prikaz_FRDO_podpisan.pdf",
+    "contentType": "application/pdf",
+    "url": "https://twentyzxc.lovable.app/__l5e/assets-v1/7c6be8ce-d17c-4d7a-b04c-63c0f37500a4/Prikaz_FRDO_podpisan.pdf",
+    "size": 468328,
+    "sha256": "dda7906c56d5fd5f1cdb873438c4a86ce4bfce4fcec30b3d53f605dc76513832",
+    "servedContentType": "application/pdf",
+    "magic": "255044462d312e33"
+  },
+  {
+    "id": "terms",
+    "revision": 1,
+    "label": "Пользовательское соглашение (Terms of Use)",
+    "fileName": "terms-of-use.pdf",
+    "contentType": "application/pdf",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/terms-of-use.pdf",
+    "size": 136163,
+    "sha256": "1fa118709cb02cb4a5b0a2a58dbf7870cf3ca44b29c495691d3f2898377e5715",
+    "servedContentType": "application/pdf",
+    "magic": "255044462d312e35"
+  },
+  {
+    "id": "dpo-template",
+    "revision": 1,
+    "label": "ДПО — шаблон-образец",
+    "fileName": "DPO-shablon-obrazets.xlsx",
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/DPO-shablon-obrazets.xlsx",
+    "size": 180702,
+    "sha256": "11f2581e99b2a37458855cfa9a874179c95239df7bee0c8f22b50dbc2fc23b54",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  },
+  {
+    "id": "dpo-dated",
+    "revision": 1,
+    "label": "ДПО — 06.11.2023",
+    "fileName": "DPO-06.11.2023.xlsx",
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/DPO-06.11.2023.xlsx",
+    "size": 156367,
+    "sha256": "3824efc21a11a3d57ea946684d4cd97d55f7b3c10b7d66dae7041248f3135fcd",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  },
+  {
+    "id": "po-template",
+    "revision": 1,
+    "label": "ПО — образец",
+    "fileName": "PO_obrazets.xlsx",
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/PO_obrazets.xlsx",
+    "size": 254065,
+    "sha256": "b4bbda45fdb04bd271cf2741db114c49d4ca9a1be54feb2cb1343837312b8348",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  },
+  {
+    "id": "po-dated",
+    "revision": 1,
+    "label": "ПО — 06.11.2023",
+    "fileName": "PO-06.11.2023.xlsx",
+    "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "url": "https://veedztdijmscebgadzyx.supabase.co/storage/v1/object/public/document-assets/frdo/PO-06.11.2023.xlsx",
+    "size": 265250,
+    "sha256": "6a0e12b71883095be2ea1f99855a6b30194df016043bbf781d12c70de14a43aa",
+    "servedContentType": "application/octet-stream",
+    "magic": "504b030414000600"
+  }
+]

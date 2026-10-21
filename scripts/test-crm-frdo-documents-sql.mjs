@@ -54,7 +54,7 @@ try {
   await db.exec(await migration("20261021010000_crm_frdo_documents.sql"));
 
   // Independent exact registry comparison against the verified public source manifest.
-  const expected = JSON.parse(await readFile(path.join(root, ".restoration/frdo-catalog.json"), "utf8")).templates;
+  const expected = JSON.parse(await readFile(path.join(root, "src/test/fixtures/frdo-originals.json"), "utf8"));
   const actual = (await db.query("SELECT * FROM public.crm_frdo_template_catalog ORDER BY id")).rows;
   if (actual.length !== 8 || expected.length !== 8) throw new Error("Registry must contain exactly eight originals");
   for (const template of expected) {
@@ -63,9 +63,9 @@ try {
       row.content_type !== template.contentType || Number(row.size) !== template.size || row.sha256 !== template.sha256 ||
       row.source_url !== template.url) throw new Error("Registry differs from verified original metadata");
   }
-  const pins = JSON.parse(await readFile(path.join(root, ".restoration/company-assets.json"), "utf8"));
+  const pins = JSON.parse(await readFile(path.join(root, "src/test/fixtures/company-document-assets.json"), "utf8"));
   const assetRows = (await db.query("SELECT * FROM public.crm_pdf_asset_catalog ORDER BY id")).rows;
-  const assetList = Array.isArray(pins.assets) ? pins.assets : Object.entries(pins.assets ?? {}).map(([id,value])=>({id,...value}));
+  const assetList = pins;
   if (assetList.length !== 2 || assetRows.length !== 2) throw new Error("Own PNG registry must have exactly two assets");
   for (const asset of assetList) {
     const row = assetRows.find(item => item.id === asset.id);

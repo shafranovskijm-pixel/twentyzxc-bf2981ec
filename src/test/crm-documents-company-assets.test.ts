@@ -6,7 +6,9 @@ import { PDFDict, PDFDocument, PDFName, PDFString, degrees } from "pdf-lib";
 import {
   COMPANY_DOCUMENT_ASSETS, CrmCompanyAssetsService, companyAssetSha256, downloadCompanyAsset, runCompanyAssetsTool,
   type ApplyCompanyAssetsInput, type CompanyDocumentAsset,
+  publicCompanyAssetsError,
 } from "../lib/mcp/company-assets-service";
+import { CrmError } from "../lib/mcp/service";
 
 const actorId = "11111111-1111-4111-8111-111111111111";
 const requestId = "22222222-2222-4222-8222-222222222222";
@@ -103,6 +105,12 @@ async function setup(options: Parameters<typeof sourcePdf>[0] = {}) {
 }
 
 describe("original company assets", () => {
+  it("replaces all external error messages with fixed public messages", () => {
+    for (const error of [new CrmError("CRM_PDF_INVALID", "PRIVATE_TOKEN"), new CrmError("CRM_PRIVATE_TOKEN", "PRIVATE_TOKEN"), new Error("PRIVATE_TOKEN")]) {
+      expect(JSON.stringify(publicCompanyAssetsError(error))).not.toContain("PRIVATE_TOKEN");
+    }
+    expect(publicCompanyAssetsError(new CrmError("CRM_PDF_INVALID", "injected"))).toMatchObject({ code: "CRM_PDF_INVALID" });
+  });
   it("pins only the two original supplier PNGs and verifies bytes before reporting availability", async () => {
     expect(COMPANY_DOCUMENT_ASSETS.map(asset => asset.url)).toEqual(["https://24zxc.ru/images/signature.png", "https://24zxc.ru/images/stamp.png"]);
     const f = await setup(); f.state.settings.push({ key: "smtp_password", value: "DO_NOT_RETURN" });

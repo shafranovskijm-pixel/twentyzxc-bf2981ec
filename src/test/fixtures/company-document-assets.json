@@ -1,0 +1,16 @@
+[
+  {
+    "id": "signature",
+    "sha256": "e18804c80605fe11ca29e93613ddd360f4a81252d4f5c705227c999aff75f787",
+    "size": 4902,
+    "contentType": "image/png",
+    "url": "https://24zxc.ru/images/signature.png"
+  },
+  {
+    "id": "stamp",
+    "sha256": "21481d87bc5f80bd8382e8a0137f19824babf61fd4b72bedbf07c7c14d1e14ef",
+    "size": 220242,
+    "contentType": "image/png",
+    "url": "https://24zxc.ru/images/stamp.png"
+  }
+]

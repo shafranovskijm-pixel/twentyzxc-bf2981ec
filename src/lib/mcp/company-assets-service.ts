@@ -43,6 +43,39 @@ const DATABASE_MESSAGES: Record<string, string> = {
   CRM_INVALID_ARGUMENT: "Проверьте исходный PDF, имя файла, точные координаты и хеши изображений.",
   CRM_REQUEST_CONFLICT: "Этот requestId уже использован для другого PDF, позиции или версии изображения.",
 };
+const PUBLIC_MESSAGES: Record<string, string> = {
+  ...DATABASE_MESSAGES,
+  UNAUTHORIZED: "Подключите учётную запись CRM.", FORBIDDEN: "Работа с PDF разрешена администратору CRM.",
+  NOT_CONFIGURED: "Не настроено подключение к CRM.",
+  CRM_COMPANY_ASSET_CHANGED: "Оригинал подписи или печати изменился. Перечитайте сведения об изображениях.",
+  CRM_COMPANY_ASSET_HASH_REQUIRED: "Передайте точные хеши всех используемых изображений из CRM.",
+  CRM_COMPANY_ASSET_INVALID: "Формат оригинала подписи или печати не подтверждён.",
+  CRM_COMPANY_ASSET_UNAVAILABLE: "Оригинал подписи или печати недоступен. Изображение не заменяется.",
+  CRM_INVALID_PDF_FILENAME: "Укажите имя нового PDF до 200 символов без папок и управляющих символов.",
+  CRM_INVALID_PDF_PLACEMENTS: "Укажите точные страницы, координаты и положительные размеры изображений.",
+  CRM_INVALID_PDF_REFERENCE: "Передайте исходный PDF через файловый параметр ChatGPT.",
+  CRM_INVALID_SIGNED_PDF_ID: "Укажите точный ID сохранённого PDF.",
+  CRM_INVALID_SIGNED_PDF_REQUEST: "Укажите requestId и точный SHA256 исходного PDF из inspection.",
+  CRM_PDF_DIGITAL_SIGNATURE_PRESENT: "В PDF есть поле электронной подписи. Передайте неподписанный оригинал.",
+  CRM_PDF_ENCRYPTED: "Передайте незашифрованный оригинал PDF.", CRM_PDF_INVALID: "Не удалось прочитать исходный PDF.",
+  CRM_PDF_PAGE_GEOMETRY: "Геометрия страницы требует отдельной проверки.", CRM_PDF_PAGE_LIMIT: "Допустим PDF от 1 до 500 страниц.",
+  CRM_PDF_PAGE_NOT_FOUND: "В исходном PDF нет указанной страницы.",
+  CRM_PDF_PLACEMENT_OUT_OF_BOUNDS: "Подпись или печать выходит за границы страницы.",
+  CRM_PDF_ROTATION_UNSUPPORTED: "Наложение поддерживается на страницах без поворота.",
+  CRM_PDF_SOURCE_CHANGED: "Исходный PDF отличается от проверенного. Выполните inspection заново.",
+  CRM_SIGNED_PDF_DATABASE_ERROR: "Операция не подтверждена. Проверьте результат и повторяйте с тем же requestId.",
+  CRM_SIGNED_PDF_LINK_FAILED: "Временная ссылка недоступна. Повторно прочитайте результат по ID.",
+  CRM_SIGNED_PDF_NOT_FOUND: "PDF не найден среди сохранённых вами результатов.",
+  CRM_SIGNED_PDF_TOO_LARGE: "PDF после наложения превышает 10 МиБ.",
+  CRM_SIGNED_PDF_UNCONFIRMED: "Метаданные PDF не подтверждены. Повторите с тем же requestId.",
+  CRM_SIGNED_PDF_UPLOAD_UNCONFIRMED: "Сохранение PDF не подтверждено. Повторите с тем же requestId.",
+  CRM_COMPANY_ASSET_OPERATION_FAILED: "Операция с подписью или печатью не подтверждена. Исходный файл не изменяется.",
+};
+export function publicCompanyAssetsError(error: unknown) {
+  const code = error instanceof CrmError && Object.prototype.hasOwnProperty.call(PUBLIC_MESSAGES, error.code)
+    ? error.code : "CRM_COMPANY_ASSET_OPERATION_FAILED";
+  return { code, message: PUBLIC_MESSAGES[code] };
+}
 function databaseError(error: { message?: string } | null) {
   if (!error) return;
   const code = error.message?.match(/CRM_[A-Z_]+/)?.[0];
@@ -339,8 +372,7 @@ export async function runCompanyAssetsTool<T>(ctx: ToolContext, action: (service
     const result = await action(new CrmCompanyAssetsService(db, ctx.getUserId()!));
     return { structuredContent: result, content: [{ type: "text" as const, text: JSON.stringify(result) }] };
   } catch (error) {
-    const result = error instanceof CrmError ? { code: error.code, message: error.message }
-      : { code: "CRM_COMPANY_ASSET_OPERATION_FAILED", message: "Операция с оригинальной подписью или печатью не подтверждена. Исходный файл не изменяется." };
+    const result = publicCompanyAssetsError(error);
     return { isError: true, content: [{ type: "text" as const, text: JSON.stringify(result) }] };
   }
 }
