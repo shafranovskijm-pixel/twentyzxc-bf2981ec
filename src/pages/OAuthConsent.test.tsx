@@ -43,6 +43,64 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("CRM OAuth consent", () => {
+  it("returns to the exact desktop loopback only after explicit approval", async () => {
+    const nativeCallback = "http://127.0.0.1:48731/oauth/callback?code=server-code&state=server-state";
+    api.approveAuthorization.mockResolvedValue({ data: { redirect_url: nativeCallback }, error: null });
+    const redirect = mount();
+    const approve = await screen.findByRole("button", { name: "Разрешить подключение" });
+    expect(redirect).not.toHaveBeenCalled();
+    expect(api.approveAuthorization).not.toHaveBeenCalled();
+    fireEvent.click(approve);
+    await waitFor(() => expect(redirect).toHaveBeenCalledWith(nativeCallback));
+  });
+
+  it("preserves the server-returned desktop denial callback", async () => {
+    const nativeCallback = "http://127.0.0.1:48731/oauth/callback?error=access_denied&state=server-state";
+    api.denyAuthorization.mockResolvedValue({ data: { redirect_url: nativeCallback }, error: null });
+    const redirect = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Отклонить" }));
+    await waitFor(() => expect(redirect).toHaveBeenCalledWith(nativeCallback));
+    expect(api.approveAuthorization).not.toHaveBeenCalled();
+  });
+
+  it("continues an already-approved desktop callback without a second grant", async () => {
+    const nativeCallback = "http://127.0.0.1:48731/oauth/callback?code=server-code&state=server-state";
+    api.getAuthorizationDetails.mockResolvedValue({ data: { redirect_url: nativeCallback }, error: null });
+    const redirect = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Продолжить в приложении" }));
+    await waitFor(() => expect(redirect).toHaveBeenCalledWith(nativeCallback));
+    expect(api.approveAuthorization).not.toHaveBeenCalled();
+  });
+
+  it("ignores a callback supplied through frontend query parameters", async () => {
+    const hostile = "http://127.0.0.1:48731/oauth/callback?code=untrusted&state=untrusted";
+    const redirect = mount(`authorization_id=${requestId}&redirect_uri=${encodeURIComponent(hostile)}`);
+    fireEvent.click(await screen.findByRole("button", { name: "Разрешить подключение" }));
+    await waitFor(() => expect(redirect).toHaveBeenCalledWith(callback));
+    expect(redirect).not.toHaveBeenCalledWith(hostile);
+  });
+
+  it.each([
+    "http://localhost:48731/oauth/callback?code=a&state=b",
+    "http://0.0.0.0:48731/oauth/callback?code=a&state=b",
+    "http://[::1]:48731/oauth/callback?code=a&state=b",
+    "http://127.0.0.1:48732/oauth/callback?code=a&state=b",
+    "http://127.0.0.1:48731/other?code=a&state=b",
+    "http://127.0.0.1:48731/oauth/callback/?code=a&state=b",
+    "http://127.0.0.1:48731/oauth/callback?code=a&state=b#fragment",
+    "http://user:pass@127.0.0.1:48731/oauth/callback?code=a&state=b",
+    "http://127.0.0.1.evil.example:48731/oauth/callback?code=a&state=b",
+    "http://127.1:48731/oauth/callback?code=a&state=b",
+    "http://2130706433:48731/oauth/callback?code=a&state=b",
+    "http://external.example:48731/oauth/callback?code=a&state=b",
+  ])("rejects an HTTP callback outside the exact desktop exception: %s", async (redirectUrl) => {
+    api.approveAuthorization.mockResolvedValue({ data: { redirect_url: redirectUrl }, error: null });
+    const redirect = mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Разрешить подключение" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Подключение не завершено");
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
   it.each(["", "authorization_id=bad%2Fpath", "authorization_id=a&authorization_id=b"])("rejects a missing, malformed or ambiguous request: %s", async (query) => {
     mount(query);
     expect(await screen.findByRole("alert")).toHaveTextContent("нет корректного запроса");

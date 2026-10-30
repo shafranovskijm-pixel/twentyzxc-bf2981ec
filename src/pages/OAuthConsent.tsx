@@ -28,7 +28,17 @@ function oauthRedirectUrl(value: unknown): string | null {
   if (typeof value !== "string") return null;
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && !url.username && !url.password ? url.href : null;
+    if (url.username || url.password) return null;
+    if (url.protocol === "https:") return url.href;
+    // Native OAuth uses a loopback listener; Supabase still validates the
+    // registered redirect, and the desktop client checks state and PKCE.
+    // Match the literal authority as well so URL host normalization cannot
+    // expand this exception to other loopback spellings or destinations.
+    const desktopCallback = "http://127.0.0.1:48731/oauth/callback";
+    return url.protocol === "http:" && url.hostname === "127.0.0.1"
+      && url.port === "48731" && url.pathname === "/oauth/callback"
+      && !url.hash && value.split("?")[0] === desktopCallback
+      ? url.href : null;
   } catch {
     return null;
   }
