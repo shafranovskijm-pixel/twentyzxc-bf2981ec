@@ -5124,11 +5124,12 @@ var BaseMetricRecorder = class {
   }
 };
 var cloudflareEnvPromise;
+var cloudflareWorkersModule = "cloudflare:workers";
 async function readCloudflareEnv(name) {
   try {
     cloudflareEnvPromise ??= import(
       /* @vite-ignore */
-      "npm:cloudflare:workers"
+      cloudflareWorkersModule
     ).then((m) => m.env).catch((err) => {
       log.debug("metrics.cloudflare_env_import_failed", describeError(err));
     });
@@ -5804,6 +5805,7 @@ function createMcpProtocolHandler(mcp, options2 = {}) {
         description: tool.description,
         inputSchema: tool.inputSchema,
         outputSchema: tool.outputSchema,
+        _meta: tool._meta,
         annotations: tool.annotations
       }, adaptToolToSdkCallback(tool, authResult.auth, recorder));
       const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: void 0 });
@@ -5908,6 +5910,7 @@ function buildMcpListing(mcp) {
       name: tool.name,
       title: tool.title,
       description: tool.description,
+      _meta: tool._meta,
       annotations: tool.annotations,
       inputSchema: shapeToJsonSchema(tool.inputSchema),
       outputSchema: shapeToJsonSchema(tool.outputSchema)
