@@ -88,7 +88,7 @@ function snapshot(item: FrdoTemplate): FrdoSnapshot {
 }
 
 /** Reject mismatched snapshots; the DB row is not an authority for arbitrary files. */
-export function checkedFrdoDelivery(raw: unknown, resolve = getFrdoTemplate, expected?: { id?: string; actor?: string; client?: string }): FrdoDelivery {
+export function checkedFrdoDelivery(raw: unknown, resolve: FrdoDeliveryDependencies["resolve"] = getFrdoTemplate, expected?: { id?: string; actor?: string; client?: string }): FrdoDelivery {
   if (!record(raw) || !uuid(raw.id) || !uuid(raw.request_id) || raw.request_id !== raw.id || !uuid(raw.actor_id) || !uuid(raw.client_id)
     || (expected?.id && raw.id !== expected.id) || (expected?.actor && raw.actor_id !== expected.actor)
     || (expected?.client && raw.client_id !== expected.client) || !mailbox(raw.recipient)
